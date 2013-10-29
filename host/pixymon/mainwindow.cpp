@@ -6,6 +6,7 @@
 #include "console.h"
 #include "interpreter.h"
 #include "chirpmon.h"
+#include "dfu.h"
 #include "ui_mainwindow.h"
 
 extern ChirpProc c_grabFrame;
@@ -16,6 +17,17 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     m_ui->setupUi(this);
     setWindowTitle("PixyMon");
+
+    try
+    {
+        Dfu *dfu;
+        dfu = new Dfu();
+        dfu->download("video.bin.hdr");
+    }
+    catch (std::runtime_error &exception)
+    {
+        QMessageBox::critical(this, "Error", exception.what());
+    }
 
     m_console = new ConsoleWidget(this);
     m_video = new VideoWidget(this);
