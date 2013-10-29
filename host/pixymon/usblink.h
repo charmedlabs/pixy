@@ -2,7 +2,7 @@
 #define _USBLINK_H
 
 #include "link.h"
-#include "lusb0_usb.h"
+#include "libusb.h"
 
 class USBLink : public Link
 {
@@ -15,7 +15,8 @@ public:
     virtual int receive(uint8_t *data, uint32_t len, uint16_t timeoutMs);
 
 private:
-   usb_dev_handle *m_dev;
+    libusb_context *m_context;
+    libusb_device_handle *m_handle;
 };
 #endif
 

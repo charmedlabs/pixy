@@ -18,7 +18,7 @@ SOURCES += main.cpp\
     interpreter.cpp \
     renderer.cpp \
     chirpmon.cpp \
-    ../libpixy/chirp.cpp \
+    ../../device/libpixy/chirp.cpp \
     calc.cpp \
     blob.cpp \
     blobs.cpp \
@@ -32,7 +32,7 @@ HEADERS  += mainwindow.h \
     interpreter.h \
     renderer.h \
     chirpmon.h \
-    ../libpixy/chirp.hpp \
+    ../../device/libpixy/chirp.hpp \
     calc.h \
     blobs.h \
     blob.h \
@@ -42,7 +42,7 @@ INCLUDEPATH += ../libpixy
 
 FORMS    += mainwindow.ui
 
-LIBS += ./libusb.a
+LIBS += ./libusb-1.0.dll.a
 
 RESOURCES += \
     resources.qrc

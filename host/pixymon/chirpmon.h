@@ -1,7 +1,7 @@
 #ifndef CHIRPTHREAD_H
 #define CHIRPTHREAD_H
 
-#include "../libpixy/chirp.hpp"
+#include "../../device/libpixy/chirp.hpp"
 #include "usblink.h"
 
 class Interpreter;

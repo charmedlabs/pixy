@@ -3,86 +3,64 @@
 
 USBLink::USBLink()
 {
-    m_dev = 0;
+    m_handle = 0;
+    m_context = 0;
     m_flags = LINK_FLAG_ERROR_CORRECTED;
 }
 
 USBLink::~USBLink()
 {
-    if (m_dev)
-        usb_close(m_dev);
+    if (m_handle)
+        libusb_close(m_handle);
+    if (m_context)
+        libusb_exit(m_context);
 }
 
 int USBLink::open()
 {
-    struct usb_bus *bus, *busses;
-    int conf;
+    libusb_init(&m_context);
 
-    usb_init();
-    usb_find_busses();
-    usb_find_devices();
-
-    busses = usb_get_busses();
-
-    for (bus=busses; bus; bus = bus->next)
+    m_handle = libusb_open_device_with_vid_pid(m_context, 0xb1ac, 0xf000);
+    if (m_handle==NULL)
+        return -1;
+    if (libusb_set_configuration(m_handle, 1)<0)
     {
-        struct usb_device *dev;
-        for (dev=bus->devices; dev; dev = dev->next)
-        {
-            if (dev->descriptor.idVendor==0xb1ac && dev->descriptor.idProduct==0xf000)
-            {
-                for (conf=0; conf<dev->descriptor.bNumConfigurations; conf++)
-                {
-                    m_dev = usb_open(dev);
-
-                    if (usb_set_configuration(m_dev, 1)<0)
-                    {
-                        usb_close(m_dev);
-                        return -1;
-                    }
-                    if (usb_claim_interface(m_dev, 1)<0)
-                    {
-                        usb_close(m_dev);
-                        return -1;
-                    }
-                    // clear receive buffer-- it seems that the libusb driver will buffer and send stale data
-                    // unless you reset
-                    usb_resetep(m_dev, 0x82);
-                    usb_resetep(m_dev, 0x02);
-
-                    return 0;
-                }
-            }
-        }
+        libusb_close(m_handle);
+        return -1;
     }
-    return -1;
+    if (libusb_claim_interface(m_handle, 1)<0)
+    {
+        libusb_close(m_handle);
+        return -1;
+    }
+
+    return 0;
 }
+
+
 
 int USBLink::send(const uint8_t *data, uint32_t len, uint16_t timeoutMs)
 {
-    int res;
+    int res, transferred;
 
-    if ((res=usb_bulk_write(m_dev, 0x02, (char *)data, len, timeoutMs))<0)
+    if ((res=libusb_bulk_transfer(m_handle, 0x02, (unsigned char *)data, len, &transferred, timeoutMs))<0)
     {
-        qDebug() << "usb_bulk_write " << res;
-        //usb_reset(m_dev);
-        //usb_close(m_dev);
-        //open();
+        qDebug() << "libusb_bulk_write " << res;
         return res;
     }
-    return len;
+    return transferred;
 }
 
 int USBLink::receive(uint8_t *data, uint32_t len, uint16_t timeoutMs)
 {
-    int res;
+    int res, transferred;
 
-    if ((res=usb_bulk_read(m_dev, 0x82, (char *)data, len, timeoutMs))<0)
+    if ((res=libusb_bulk_transfer(m_handle, 0x82, (unsigned char *)data, len, &transferred, timeoutMs))<0)
     {
-        qDebug() << "usb_bulk_read " << res;
+        qDebug() << "libusb_bulk_read " << res;
         return res;
     }
-    return len;
+    return transferred;
 }
 
 
