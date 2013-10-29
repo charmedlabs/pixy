@@ -34,6 +34,7 @@
      <string>File</string>
     </property>
     <addaction name="actionSave_Image"/>
+    <addaction name="actionProgram"/>
     <addaction name="actionConfigure"/>
     <addaction name="actionExit"/>
    </widget>
@@ -94,6 +95,11 @@
   <action name="actionConfigure">
    <property name="text">
     <string>Configure...</string>
+   </property>
+  </action>
+  <action name="actionProgram">
+   <property name="text">
+    <string>Program...</string>
    </property>
   </action>
  </widget>

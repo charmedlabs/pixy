@@ -23,7 +23,8 @@ SOURCES += main.cpp\
     blob.cpp \
     blobs.cpp \
     clut.cpp \
-    dfu.cpp
+    dfu.cpp \
+    connectevent.cpp
 
 HEADERS  += mainwindow.h \
     link.h \
@@ -40,7 +41,9 @@ HEADERS  += mainwindow.h \
     clut.h \
     dfu.h \
     usb_dfu.h \
-    dfu_info.h
+    dfu_info.h \
+    connectevent.h \
+    pixy.h
 
 INCLUDEPATH += ../libpixy
 
@@ -50,6 +53,9 @@ LIBS += ./libusb-1.0.dll.a
 
 RESOURCES += \
     resources.qrc
+
+
+
 
 
 

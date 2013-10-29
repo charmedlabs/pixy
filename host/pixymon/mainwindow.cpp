@@ -18,41 +18,15 @@ MainWindow::MainWindow(QWidget *parent) :
     m_ui->setupUi(this);
     setWindowTitle("PixyMon");
 
-    try
-    {
-        Dfu *dfu;
-        dfu = new Dfu();
-        dfu->download("video.bin.hdr");
-    }
-    catch (std::runtime_error &exception)
-    {
-        QMessageBox::critical(this, "Error", exception.what());
-    }
+    m_interpreter = 0;
+    m_pixyConnected = false;
+    m_pixyDFUConnected = false;
+
+    // start looking for devices
+    m_connect = new ConnectEvent(this);
 
     m_console = new ConsoleWidget(this);
     m_video = new VideoWidget(this);
-
-    try
-    {
-        m_interpreter = new Interpreter(m_console, m_video);
-    }
-    catch (std::runtime_error &exception)
-    {
-        QMessageBox::critical(this, "Error", exception.what());
-        exit(1);
-    }
-
-    // start with a program (normally would be read from a config file instead of hard-coded)
-    m_interpreter->beginProgram();
-#if 1
-    m_interpreter->call("cam_getFrame 33, 0, 0, 320, 200");
-#else
-    m_interpreter->call("img_getComponents 16744579, 65, 0");
-    //m_interpreter->m_chirp->callAsync(ChirpMon::getComponents,
-    //                   UINT32(0x00ff8083), UINT32(65), UINT32(0), END_OUT_ARGS);
-#endif
-    m_interpreter->endProgram();
-    m_interpreter->runProgram();
 
     m_ui->imageLayout->addWidget(m_video);
     m_ui->imageLayout->addWidget(m_console);
@@ -62,13 +36,15 @@ MainWindow::MainWindow(QWidget *parent) :
     m_ui->actionConfigure->setIcon(QIcon(":/icons/icons/config.png"));
     m_ui->toolBar->addAction(m_ui->actionConfigure);
 
-    connect(m_interpreter, SIGNAL(runState(bool)), this, SLOT(handleRunState(bool)));
-
     updateButtons();
 }
 
 MainWindow::~MainWindow()
 {
+    if (m_interpreter)
+        delete m_interpreter;
+    if (m_connect)
+        delete m_connect;
     delete m_ui;
 }
 
@@ -77,18 +53,15 @@ void MainWindow::updateButtons()
     if (m_interpreter->programRunning())
     {
         m_ui->actionPlay_Pause->setIcon(QIcon(":/icons/icons/pause.png"));
-
     }
     else
     {
         m_ui->actionPlay_Pause->setIcon(QIcon(":/icons/icons/play.png"));
-
     }
 }
 
 void MainWindow::close()
 {
-    delete m_interpreter;
     QCoreApplication::exit();
 }
 
@@ -102,6 +75,89 @@ void MainWindow::handleRunState(bool state)
     updateButtons();
 }
 
+void MainWindow::connectPixyDFU(bool state)
+{
+    // if we're disconnected, start the connect thread
+    if (state)
+    {
+        try
+        {
+            Dfu *dfu;
+            dfu = new Dfu();
+            dfu->download("video.bin.hdr");
+            m_pixyDFUConnected = true;
+            delete dfu;
+            m_connect = new ConnectEvent(this);
+        }
+        catch (std::runtime_error &exception)
+        {
+            m_pixyDFUConnected = false;
+            QMessageBox::critical(this, "Error", exception.what());
+        }
+    }
+    else
+    {
+        m_connect = new ConnectEvent(this);
+        m_pixyDFUConnected = false;
+    }
+
+    updateButtons();
+}
+
+void MainWindow::connectPixy(bool state)
+{
+    if (state)
+    {
+        try
+        {
+            if (m_pixyDFUConnected) // we're in programming mode
+            {
+                // m_flash = new Flash(this);
+            }
+            else
+            {
+                m_interpreter = new Interpreter(m_console, m_video);
+                // start with a program (normally would be read from a config file instead of hard-coded)
+                m_interpreter->beginProgram();
+                m_interpreter->call("cam_getFrame 33, 0, 0, 320, 200");
+                m_interpreter->endProgram();
+                m_interpreter->runProgram();
+
+                connect(m_interpreter, SIGNAL(runState(bool)), this, SLOT(handleRunState(bool)));
+            }
+            m_pixyConnected = true;
+        }
+        catch (std::runtime_error &exception)
+        {
+            QMessageBox::critical(this, "Error", exception.what());
+            m_pixyConnected = false;
+        }
+
+    }
+    else
+    {
+        delete m_interpreter;
+        m_interpreter = NULL;
+        // if we're disconnected, start the connect thread
+        m_connect = new ConnectEvent(this);
+        m_pixyConnected = false;
+    }
+
+    updateButtons();
+}
+
+void MainWindow::handleConnected(ConnectEvent::Device device, bool state)
+{
+    // kill connect thread
+    delete m_connect;
+    m_connect = NULL;
+
+    if (device==ConnectEvent::PIXY)
+        connectPixy(state);
+    else if (device==ConnectEvent::PIXY_DFU)
+        connectPixyDFU(state);
+}
+
 void MainWindow::on_actionPlay_Pause_triggered()
 {
     if (m_interpreter->programRunning())
@@ -109,6 +165,11 @@ void MainWindow::on_actionPlay_Pause_triggered()
     else
         m_interpreter->resumeProgram();
     updateButtons();
+}
+
+void MainWindow::on_actionProgram_triggered()
+{
+    //program();
 }
 
 void MainWindow::on_actionExit_triggered()

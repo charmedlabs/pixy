@@ -1,5 +1,6 @@
 #include <QDebug>
 #include "usblink.h"
+#include "pixy.h"
 
 USBLink::USBLink()
 {
@@ -20,7 +21,7 @@ int USBLink::open()
 {
     libusb_init(&m_context);
 
-    m_handle = libusb_open_device_with_vid_pid(m_context, 0xb1ac, 0xf000);
+    m_handle = libusb_open_device_with_vid_pid(m_context, PIXY_VID, PIXY_DID);
     if (m_handle==NULL)
         return -1;
     if (libusb_set_configuration(m_handle, 1)<0)
