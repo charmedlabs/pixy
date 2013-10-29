@@ -709,7 +709,7 @@ int Renderer::renderVISU(uint32_t cc_num, int16_t* c_components)
     }
     //qDebug() << "t: " << t << "\tr: " << r << "\tb: " << b << "\tl: " << l;
 
-    m_video->callMeMaybe(VISUcallback);
+    //m_video->callMeMaybe(VISUcallback);
 
     return 0;
 }

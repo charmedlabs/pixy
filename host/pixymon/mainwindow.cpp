@@ -1,6 +1,7 @@
 #include <stdexcept>
 #include <QDebug>
 #include <QMessageBox>
+#include <QFileDialog>
 #include "mainwindow.h"
 #include "videowidget.h"
 #include "console.h"
@@ -16,14 +17,11 @@ MainWindow::MainWindow(QWidget *parent) :
     m_ui(new Ui::MainWindow)
 {
     m_ui->setupUi(this);
-    setWindowTitle("PixyMon");
+    setWindowTitle(PIXYMON_TITLE);
 
     m_interpreter = 0;
     m_pixyConnected = false;
     m_pixyDFUConnected = false;
-
-    // start looking for devices
-    m_connect = new ConnectEvent(this);
 
     m_console = new ConsoleWidget(this);
     m_video = new VideoWidget(this);
@@ -37,6 +35,12 @@ MainWindow::MainWindow(QWidget *parent) :
     m_ui->toolBar->addAction(m_ui->actionConfigure);
 
     updateButtons();
+
+    // start looking for devices
+    m_connect = new ConnectEvent(this);
+    if (m_connect->getConnected()==ConnectEvent::NONE)
+        QMessageBox::information(this, PIXYMON_TITLE,
+                                 "No Pixy devices have been detected.");
 }
 
 MainWindow::~MainWindow()
@@ -50,13 +54,26 @@ MainWindow::~MainWindow()
 
 void MainWindow::updateButtons()
 {
-    if (m_interpreter->programRunning())
+    if (m_interpreter && m_interpreter->programRunning())
     {
         m_ui->actionPlay_Pause->setIcon(QIcon(":/icons/icons/pause.png"));
     }
     else
     {
         m_ui->actionPlay_Pause->setIcon(QIcon(":/icons/icons/play.png"));
+    }
+
+    if (m_pixyDFUConnected && m_pixyConnected) // we're in programming mode
+    {
+        m_ui->actionPlay_Pause->setEnabled(false);
+    }
+    else if (m_pixyConnected)
+    {
+        m_ui->actionPlay_Pause->setEnabled(true);
+    }
+    else // nothing connected
+    {
+        m_ui->actionPlay_Pause->setEnabled(false);
     }
 }
 
@@ -117,6 +134,8 @@ void MainWindow::connectPixy(bool state)
             else
             {
                 m_interpreter = new Interpreter(m_console, m_video);
+                connect(m_interpreter, SIGNAL(connected(ConnectEvent::Device,bool)), this, SLOT(handleConnected(ConnectEvent::Device,bool)));
+
                 // start with a program (normally would be read from a config file instead of hard-coded)
                 m_interpreter->beginProgram();
                 m_interpreter->call("cam_getFrame 33, 0, 0, 320, 200");
@@ -136,8 +155,13 @@ void MainWindow::connectPixy(bool state)
     }
     else
     {
-        delete m_interpreter;
-        m_interpreter = NULL;
+        if (m_interpreter)
+        {
+            delete m_interpreter;
+            m_interpreter = NULL;
+        }
+        m_video->clear();
+        m_console->clear();
         // if we're disconnected, start the connect thread
         m_connect = new ConnectEvent(this);
         m_pixyConnected = false;
@@ -149,9 +173,11 @@ void MainWindow::connectPixy(bool state)
 void MainWindow::handleConnected(ConnectEvent::Device device, bool state)
 {
     // kill connect thread
-    delete m_connect;
-    m_connect = NULL;
-
+    if (m_connect)
+    {
+        delete m_connect;
+        m_connect = NULL;
+    }
     if (device==ConnectEvent::PIXY)
         connectPixy(state);
     else if (device==ConnectEvent::PIXY_DFU)
@@ -169,7 +195,30 @@ void MainWindow::on_actionPlay_Pause_triggered()
 
 void MainWindow::on_actionProgram_triggered()
 {
-    //program();
+    if (!m_pixyDFUConnected || !m_pixyConnected)
+    {
+        QMessageBox::information(this, PIXYMON_TITLE,
+                                 "Pixy needs to be put into programming mode.\n"
+                                 "Do this by unplugging the USB cable, holding down the button,\n"
+                                 "and then plugging the USB cable back in while continuing to\n"
+                                 "hold down the button. You may do this now.");
+    }
+    else
+    {
+        QFileDialog fd(this);
+        fd.setWindowTitle("Select a Firmware File");
+        fd.setDirectory(QDir("\\"));
+        fd.setNameFilter("Firmware (*.hex)");
+
+        if (fd.exec())
+        {
+            QStringList slist = fd.selectedFiles();
+            if (slist.size()==1)
+            {
+
+            }
+        }
+    }
 }
 
 void MainWindow::on_actionExit_triggered()

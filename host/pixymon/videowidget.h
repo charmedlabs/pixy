@@ -20,8 +20,7 @@ public:
     ~VideoWidget();
 
     void handleImage(void **args);
-
-    void callMeMaybe(void (*overlayCallback)(QImage* image));
+    void clear();
 
 protected:
     void paintEvent(QPaintEvent *event);

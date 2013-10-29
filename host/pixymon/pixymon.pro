@@ -43,7 +43,8 @@ HEADERS  += mainwindow.h \
     usb_dfu.h \
     dfu_info.h \
     connectevent.h \
-    pixy.h
+    pixy.h \
+    libusb.h
 
 INCLUDEPATH += ../libpixy
 
@@ -53,6 +54,7 @@ LIBS += ./libusb-1.0.dll.a
 
 RESOURCES += \
     resources.qrc
+
 
 
 

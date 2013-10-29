@@ -4,6 +4,8 @@
 #include <QMainWindow>
 #include "connectevent.h"
 
+#define PIXYMON_TITLE   "PixyMon"
+
 namespace Ui {
     class MainWindow;
 }

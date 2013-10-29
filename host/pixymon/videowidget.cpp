@@ -55,6 +55,12 @@ void VideoWidget::handleImage(QImage image, bool bl)
     //callPaintCallbacks(&image);
 }
 
+void VideoWidget::clear()
+{
+    m_pm->fill(Qt::black);
+    repaint();
+}
+
 void VideoWidget::paintEvent(QPaintEvent *event)
 {
     //callPaintCallbacks();
@@ -86,11 +92,6 @@ void VideoWidget::paintEvent(QPaintEvent *event)
     if (m_selection)
         p.drawRect((m_x0-m_xOffset)/m_scale+.5, (m_y0-m_yOffset)/m_scale+.5, m_sbWidth/m_scale+.5, m_sbHeight/m_scale+.5);
     p.restore();
-}
-
-void VideoWidget::callMeMaybe(void (*overlayCallback)(QImage* image))
-{
-    paintCallbacks.push_back(overlayCallback);
 }
 
 int VideoWidget::heightForWidth(int w) const
@@ -152,14 +153,6 @@ void VideoWidget::resizeEvent(QResizeEvent *event)
 void VideoWidget::acceptInput(uint type)
 {
 
-}
-
-void VideoWidget::callPaintCallbacks(QImage* image)
-{
-    // Call everyone's callbacks so outside functions can overlay stuff on image
-    for ( std::list<paintCallback>::iterator cb = paintCallbacks.begin(); cb != paintCallbacks.end(); ++cb )
-        (*cb)(image);
-    paintCallbacks.clear();
 }
 
 void VideoWidget::blend(QImage *foreground)

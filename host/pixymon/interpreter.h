@@ -9,6 +9,7 @@
 #include "chirpmon.h"
 #include "blobs.h"
 #include "clut.h"
+#include "connectevent.h"
 
 #define PROMPT  ">"
 
@@ -55,6 +56,7 @@ signals:
     void prompt(const QString &text);
     void videoPrompt(uint type);
     void enableConsole(bool enable);
+    void connected(ConnectEvent::Device device, bool state);
 
 public slots:
 

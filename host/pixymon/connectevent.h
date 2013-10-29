@@ -2,6 +2,8 @@
 #define CONNECTEVENT_H
 
 #include <QThread>
+#include <QMutex>
+#include "libusb.h"
 
 class MainWindow;
 
@@ -10,10 +12,12 @@ class ConnectEvent : public QThread
     Q_OBJECT
 
 public:
+    enum Device {NONE, PIXY, PIXY_DFU};
+
     ConnectEvent(MainWindow *main);
+    Device getConnected();
     ~ConnectEvent();
 
-    enum Device {PIXY, PIXY_DFU};
 
 signals:
     void connected(ConnectEvent::Device device, bool state);
@@ -22,7 +26,9 @@ protected:
     virtual void run();
 
 private:
+    libusb_context *m_context;
     MainWindow *m_main;
+    QMutex m_mutex;
     bool m_run;
 };
 

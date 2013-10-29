@@ -1,6 +1,5 @@
 #include <QMetaType>
 #include "libusb.h"
-#include "connectevent.h"
 #include "pixy.h"
 #include "mainwindow.h"
 
@@ -9,6 +8,7 @@ ConnectEvent::ConnectEvent(MainWindow *main)
     qRegisterMetaType<ConnectEvent::Device>("ConnectEvent::Device");
     m_main = main;
     m_run = true;
+    libusb_init(&m_context);
     start();
 }
 
@@ -16,37 +16,46 @@ ConnectEvent::~ConnectEvent()
 {
     m_run = false;
     wait();
+    libusb_exit(m_context);
 }
 
+ConnectEvent::Device ConnectEvent::getConnected()
+{
+    Device res = NONE;
+    libusb_device_handle *handle = 0;
+
+    m_mutex.lock();
+    handle = libusb_open_device_with_vid_pid(m_context, PIXY_VID, PIXY_DID);
+    if (handle)
+        res = PIXY;
+    else
+    {
+        handle = libusb_open_device_with_vid_pid(m_context, PIXY_DFU_VID, PIXY_DFU_DID);
+        if (handle)
+            res = PIXY_DFU;
+    }
+    if (handle)
+        libusb_close(handle);
+    m_mutex.unlock();
+
+    return res;
+}
 
 void ConnectEvent::run()
 {
-    libusb_context *context;
-    libusb_device_handle *handle = 0;
+    Device dev;
 
     connect(this, SIGNAL(connected(ConnectEvent::Device,bool)), m_main, SLOT(handleConnected(ConnectEvent::Device,bool)));
 
-    libusb_init(&context);
-
     while(m_run)
     {
-        handle = libusb_open_device_with_vid_pid(context, PIXY_VID, PIXY_DID);
-        if (handle)
+        dev = getConnected();
+        if (dev!=NONE)
         {
-            emit connected(PIXY, true);
-            break;
-        }
-        handle = libusb_open_device_with_vid_pid(context, PIXY_DFU_VID, PIXY_DFU_DID);
-        if (handle)
-        {
-            emit connected(PIXY_DFU, true);
+            emit connected(dev, true);
             break;
         }
         msleep(1000);
     }
-
-    if (handle)
-        libusb_close(handle);
-    libusb_exit(context);
 }
 

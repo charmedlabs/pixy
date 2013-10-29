@@ -48,6 +48,8 @@ Interpreter::~Interpreter()
 
 int Interpreter::execute()
 {
+    int res;
+
     while(1)
     {
         for (; m_pc<m_program.size(); m_pc++)
@@ -57,7 +59,9 @@ int Interpreter::execute()
                 prompt();
                 return 0;
             }
-            m_chirp->execute(m_program[m_pc]);
+            res = m_chirp->execute(m_program[m_pc]);
+            if (res<0)
+                return res;
         }
         m_pc = 0;
     }
@@ -294,12 +298,21 @@ int Interpreter::addProgram(const QStringList &argv)
 
 void Interpreter::run()
 {
+    int res;
+
     if (m_programRunning)
-        execute();
+    {
+
+        res = execute();
+        // check for cable disconnect
+        if (res==LIBUSB_ERROR_PIPE)
+        {
+            emit connected(ConnectEvent::PIXY, false);
+            return;
+        }
+    }
     else
     {
-        int res;
-
         res = call(m_argv, true);
 
         if (res<0 &&m_programming)
@@ -886,7 +899,7 @@ int Interpreter::call(const QStringList &argv, bool interactive)
     ChirpProc proc;
     ProcInfo info;
     int args[20];
-    int i, j, n, base;
+    int i, j, n, base, res;
     bool ok;
     ArgList list;
 
@@ -990,10 +1003,16 @@ int Interpreter::call(const QStringList &argv, bool interactive)
         }
 
         // make chirp call
-        m_chirp->callAsync(proc, args[0], args[1], args[2], args[3], args[4], args[5], args[6],
+        res = m_chirp->callAsync(proc, args[0], args[1], args[2], args[3], args[4], args[5], args[6],
                            args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15],
                            args[16], args[17], args[18], args[19], END_OUT_ARGS);
 
+        // check for cable disconnect
+        if (res==LIBUSB_ERROR_PIPE)
+        {
+            emit connected(ConnectEvent::PIXY, false);
+            return res;
+        }
         // get response if we're not programming, save text if we are
         if (m_programming)
             addProgram(argv);
