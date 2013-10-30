@@ -21,7 +21,7 @@ Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video)
 
     m_chirp = new ChirpMon(this);
     if (m_chirp->open()<0)
-        throw std::runtime_error("Cannot connect to camera, or no camera found.");
+        throw std::runtime_error("Cannot connect/reconnect to Pixy.");
 
     m_renderer = new Renderer(m_video);
     m_lut = m_renderer->m_blobs.getLut();
@@ -305,7 +305,7 @@ void Interpreter::run()
 
         res = execute();
         // check for cable disconnect
-        if (res==LIBUSB_ERROR_PIPE)
+        if (res) //==LIBUSB_ERROR_PIPE)
         {
             emit connected(ConnectEvent::PIXY, false);
             return;
@@ -1008,7 +1008,7 @@ int Interpreter::call(const QStringList &argv, bool interactive)
                            args[16], args[17], args[18], args[19], END_OUT_ARGS);
 
         // check for cable disconnect
-        if (res==LIBUSB_ERROR_PIPE)
+        if (res) //res==LIBUSB_ERROR_PIPE)
         {
             emit connected(ConnectEvent::PIXY, false);
             return res;

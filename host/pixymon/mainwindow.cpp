@@ -94,8 +94,7 @@ void MainWindow::handleRunState(bool state)
 
 void MainWindow::connectPixyDFU(bool state)
 {
-    // if we're disconnected, start the connect thread
-    if (state)
+    if (state) // connect
     {
         try
         {
@@ -112,8 +111,10 @@ void MainWindow::connectPixyDFU(bool state)
             QMessageBox::critical(this, "Error", exception.what());
         }
     }
-    else
+    else // disconnect
     {
+        QMessageBox::critical(this, "Error", "Pixy DFU has stopped working.");
+        // if we're disconnected, start the connect thread
         m_connect = new ConnectEvent(this);
         m_pixyDFUConnected = false;
     }
@@ -123,7 +124,7 @@ void MainWindow::connectPixyDFU(bool state)
 
 void MainWindow::connectPixy(bool state)
 {
-    if (state)
+    if (state) // connect
     {
         try
         {
@@ -134,7 +135,7 @@ void MainWindow::connectPixy(bool state)
             else
             {
                 m_interpreter = new Interpreter(m_console, m_video);
-                connect(m_interpreter, SIGNAL(connected(ConnectEvent::Device,bool)), this, SLOT(handleConnected(ConnectEvent::Device,bool)));
+                connect(m_interpreter, SIGNAL(connected(ConnectEvent::Device,bool)), this, SLOT(handleConnected(ConnectEvent::Device,bool)), Qt::QueuedConnection);
 
                 // start with a program (normally would be read from a config file instead of hard-coded)
                 m_interpreter->beginProgram();
@@ -153,8 +154,9 @@ void MainWindow::connectPixy(bool state)
         }
 
     }
-    else
+    else // disconnect
     {
+        QMessageBox::critical(this, "Error", "Pixy has stopped working.");
         if (m_interpreter)
         {
             delete m_interpreter;
@@ -215,7 +217,15 @@ void MainWindow::on_actionProgram_triggered()
             QStringList slist = fd.selectedFiles();
             if (slist.size()==1)
             {
+                try
+                {
 
+                    // m_program->program(slist.at(0));
+                }
+                catch (std::runtime_error &exception)
+                {
+                    QMessageBox::critical(this, "Error", exception.what());
+                }
             }
         }
     }

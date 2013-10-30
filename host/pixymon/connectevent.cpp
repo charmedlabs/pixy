@@ -41,6 +41,7 @@ ConnectEvent::Device ConnectEvent::getConnected()
     return res;
 }
 
+// this polling loop is much more portable between OSs than detecting actual connect/disconnect events
 void ConnectEvent::run()
 {
     Device dev;
