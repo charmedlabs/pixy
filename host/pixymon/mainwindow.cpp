@@ -134,8 +134,7 @@ void MainWindow::connectPixy(bool state)
             }
             else
             {
-                m_interpreter = new Interpreter(m_console, m_video);
-                connect(m_interpreter, SIGNAL(connected(ConnectEvent::Device,bool)), this, SLOT(handleConnected(ConnectEvent::Device,bool)), Qt::QueuedConnection);
+                m_interpreter = new Interpreter(m_console, m_video, this);
 
                 // start with a program (normally would be read from a config file instead of hard-coded)
                 m_interpreter->beginProgram();

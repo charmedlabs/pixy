@@ -5,15 +5,17 @@
 #include "interpreter.h"
 #include "videowidget.h"
 #include "console.h"
+#include "mainwindow.h"
 #include "renderer.h"
 #include "calc.h"
 
 QString printType(uint32_t val, bool parens=false);
 
-Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video)
+Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, MainWindow *main)
 {
     m_console = console;
     m_video = video;
+    m_main = main;
     m_pc = 0;
     m_programming = false;
     m_programRunning = false;
@@ -33,6 +35,8 @@ Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video)
     connect(this, SIGNAL(prompt(QString)), m_console, SLOT(prompt(QString)));
     connect(this, SIGNAL(videoPrompt(uint)), m_video, SLOT(acceptInput(uint)));
     connect(m_video, SIGNAL(selection(int,int,int,int)), this, SLOT(handleSelection(int,int,int,int)));
+    // we necessarily want to execute in the gui thread, so queue
+    connect(this, SIGNAL(connected(ConnectEvent::Device,bool)), m_main, SLOT(handleConnected(ConnectEvent::Device,bool)), Qt::QueuedConnection);
 }
 
 Interpreter::~Interpreter()
