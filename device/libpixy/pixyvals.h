@@ -1,6 +1,7 @@
 #ifndef PIXYVALS_H
 #define PIXYVALS_H
 
+#define XTALFREQ                 12000000
 #define CLKFREQ                  204000000
 #define CLKFREQ_MS               (CLKFREQ/1000)
 #define CLKFREQ_US               (CLKFREQ/1000000)

@@ -10,7 +10,7 @@ void delayus(uint32_t us)
 		for (j=0; j<38; j++);
 }
 
-uint32_t button()
+uint32_t button(void)
 {
 	static uint32_t bPrev = 0;
 	uint32_t b;

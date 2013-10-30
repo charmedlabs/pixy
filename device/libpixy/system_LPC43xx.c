@@ -25,15 +25,6 @@
 
 #include "lpc43xx.h"
 
-/*----------------------------------------------------------------------------
-  Define clocks
- *----------------------------------------------------------------------------*/
-#define __IRC            (12000000UL)    /* IRC Oscillator frequency          */
-
-/*----------------------------------------------------------------------------
-  Clock Variable definitions
- *----------------------------------------------------------------------------*/
-uint32_t SystemCoreClock = __IRC;		/*!< System Clock Frequency (Core Clock)*/
 
 extern uint32_t getPC(void);
 
@@ -48,13 +39,8 @@ extern uint32_t getPC(void);
  */
 void SystemInit (void)
 {
-    SystemCoreClock = __IRC;
-
 #if defined(CORE_M4) || defined(CORE_M3)
 	// Enable VTOR register to point to vector table
 	SCB->VTOR = getPC() & 0xFFFF0000;
 #endif
-
-    /*Enable Buffer for External Flash*/
-    LPC_EMC->STATICCONFIG0 |= 1<<19;
 }

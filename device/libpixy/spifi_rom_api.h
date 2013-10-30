@@ -13,7 +13,7 @@
 * warranty that such application will be suitable for the specified
 * use without further testing or modification.
 * Permission to use, copy, modify, and distribute this software and its
-* documentation is hereby granted, under NXP Semiconductors’
+* documentation is hereby granted, under NXP Semiconductors'
 * relevant copyright in the software, without fee, provided that it
 * is used in conjunction with NXP Semiconductors microcontrollers.  This
 * copyright, permission, and disclaimer notice must appear in all copies of
@@ -24,6 +24,12 @@
 #define SPIFI_ROM_API_H
 
 #include <stdint.h>
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 /* define the symbol TESTING in the environment	if test output desired */
 
 /* maintain LONGEST_PROT >= the length (in bytes) of the largest
@@ -195,7 +201,9 @@ typedef struct {
   int32_t (*wait_busy)       (SPIFIobj *obj, uc prog_or_erase);
 } SPIFI_RTNS;
 
-#define define_spifi_romPtr(name) const SPIFI_RTNS *name=*((SPIFI_RTNS **)SPIFI_ROM_PTR)
+//#define SPIFI_ROM_PTR  0x10400118
+
+#define define_spifi_romPtr(ROM_BASE, name) const SPIFI_RTNS *name=*((SPIFI_RTNS **)ROM_BASE)
 #endif /* OMIT_ROM_TABLE */
 
 #ifdef USE_SPIFI_LIB
@@ -249,6 +257,12 @@ void pullMISO(int high);
 unsigned short getProtBytes (SPIFIobj *obj, unsigned short *sectors);
 /* predeclare a debug routine */
 void wait_sample (volatile unsigned *addr, unsigned mask, unsigned value);
+#endif
+
+extern SPIFIobj g_spifi;
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif /* SPIFI_ROM_API_H */

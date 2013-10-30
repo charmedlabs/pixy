@@ -5,8 +5,9 @@
 #include "lpc43xx_cgu.h"
 #include "lpc_types.h"
 #include "spifi_rom_api.h"
+#include "misc.h"
 
-SPIFIobj sobj;
+SPIFIobj g_spifi;
 
 /**********************************************************************
  ** Function prototypes
@@ -49,8 +50,6 @@ void platformInit(void) {
  *----------------------------------------------------------------------------*/
 void vIOInit(void)
 {	
-	uint32_t *conf;
-
 	// disable clocks to peripherals we don't use	
 	LPC_CCU1->CLK_APB3_I2C1_CFG = 0;
 	LPC_CCU1->CLK_APB3_DAC_CFG = 0;
@@ -77,10 +76,6 @@ void vIOInit(void)
 	LPC_CCU2->CLK_APB2_USART3_CFG = 0;
 	LPC_CCU2->CLK_APB2_USART2_CFG = 0;
 	LPC_CCU2->CLK_SDIO_CFG = 0;
-
-	// reset all pin configs
-	for (conf=(uint32_t *)0x40086000; conf<(uint32_t *)0x400867ac; conf++)
-		*conf = 0; 
 
 	scu_pinmux(0x0, 0,  (MD_PUP | MD_EZI | MD_ZI | MD_EHS), FUNC0); 	     // gpio0[0] siod
 	scu_pinmux(0x0, 1,  (MD_PLN | MD_EZI | MD_ZI | MD_EHS), FUNC0); 	     // gpio0[1] sioc
@@ -140,15 +135,10 @@ void vIOInit(void)
   Initialize clocks
  *----------------------------------------------------------------------------*/
 
-void waitUS(volatile uint32_t us)
-{
-	us *= (SystemCoreClock / 1000000) / 3;
-	while(us--);
-}
 
 void waitMS(uint32_t ms)
 {
-	waitUS(ms * 1000);
+	delayus(ms * 1000);
 }
 
 #define __CRYSTAL        (12000000UL)    /* Crystal Oscillator frequency */
@@ -209,12 +199,10 @@ void clockInit(void)
 	LPC_SCU->SFSP3_4=LPC_SCU->SFSP3_5=LPC_SCU->SFSP3_6=LPC_SCU->SFSP3_7 = 0xD3;
 	LPC_SCU->SFSP3_8 = 0x13; /* CS doesn't need feedback */
 
-	EMCClk = CGU_GetPCLKFrequency(CGU_PERIPHERAL_M3CORE)/2;
-	if (spifi_init(&sobj, 9, S_RCVCLK | S_FULLCLK, EMCClk)) {
-		if (spifi_init(&sobj, 9, S_RCVCLK | S_FULLCLK, EMCClk)) {
-			while(1);
-		}
-	}
+	EMCClk = CGU_GetPCLKFrequency(CGU_PERIPHERAL_SPIFI)/1000000;
+	if (spifi_init(&g_spifi, EMCClk/5, S_RCVCLK | S_FULLCLK, EMCClk))
+		while(1);
+
 	__enable_irq();
 }
 
