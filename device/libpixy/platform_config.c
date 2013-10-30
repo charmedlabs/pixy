@@ -4,9 +4,9 @@
 #include "lpc43xx_scu.h"
 #include "lpc43xx_cgu.h"
 #include "lpc_types.h"
-//#include "lpc43xx_emc.h"
-//#include "reloc_irq_table.h"
+#include "spifi_rom_api.h"
 
+SPIFIobj sobj;
 
 /**********************************************************************
  ** Function prototypes
@@ -155,7 +155,7 @@ void waitMS(uint32_t ms)
 
 void clockInit(void)
 {
-	//uint32_t EMCClk;
+	uint32_t EMCClk;
 
 	__disable_irq();
  	/* Set the XTAL oscillator frequency to 12MHz*/
@@ -204,24 +204,18 @@ void clockInit(void)
 
 	CGU_UpdateClock();
 
-	//EMCFlashInit();
-
-	//vEMC_InitSRDRAM(SDRAM_BASE_ADDR, SDRAM_WIDTH, SDRAM_SIZE_MBITS, SDRAM_DATA_BUS_BITS, SDRAM_COL_ADDR_BITS);
 	LPC_SCU->SFSP3_3 = 0xF3; /* high drive for SCLK */
 	/* IO pins */
 	LPC_SCU->SFSP3_4=LPC_SCU->SFSP3_5=LPC_SCU->SFSP3_6=LPC_SCU->SFSP3_7 = 0xD3;
 	LPC_SCU->SFSP3_8 = 0x13; /* CS doesn't need feedback */
 
-#if 0
 	EMCClk = CGU_GetPCLKFrequency(CGU_PERIPHERAL_M3CORE)/2;
 	if (spifi_init(&sobj, 9, S_RCVCLK | S_FULLCLK, EMCClk)) {
 		if (spifi_init(&sobj, 9, S_RCVCLK | S_FULLCLK, EMCClk)) {
 			while(1);
 		}
 	}
-#endif
 	__enable_irq();
-//	SPIFI_Init();
 }
 
 

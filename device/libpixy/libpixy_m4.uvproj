@@ -516,6 +516,26 @@
               <FileType>8</FileType>
               <FilePath>.\power.cpp</FilePath>
             </File>
+            <File>
+              <FileName>spi.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>.\spi.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>lpc43xx_ssp.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\lpc43xx_ssp.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>libs</GroupName>
+          <Files>
+            <File>
+              <FileName>spifi_drv_M4.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>.\spifi_drv_M4.lib</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>

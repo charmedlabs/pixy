@@ -607,7 +607,7 @@ int main(void)
 		}
 	}
 #endif
-#if 1
+#if 0
 
 	uint16_t buf[16];
 
@@ -666,7 +666,7 @@ int main(void)
 
 	}
 #endif   	
-#if 0
+#if 1
 	while(1)
 	{
 		g_chirpUsb->service();
