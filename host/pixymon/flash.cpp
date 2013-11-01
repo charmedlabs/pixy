@@ -1,0 +1,56 @@
+#include <QFile>
+#include <stdexcept>
+#include "flash.h"
+
+
+Flash::Flash()
+{
+    uint32_t sectorSizeProc;
+
+    if (m_link.open()<0)
+        throw std::runtime_error("Cannot initialize USB for flash programming.");
+    m_chirp.setLink(&m_link);
+    m_chirp.remoteInit();
+
+    sectorSizeProc = m_chirp.getProc("flash_sectorSize");
+    m_programProc = m_chirp.getProc("flash_program");
+
+    if (sectorSizeProc<0 || m_programProc<0)
+        throw std::runtime_error("Cannot get flash procedures.");
+
+    if (m_chirp.callSync(sectorSizeProc, END_OUT_ARGS,
+                     &m_sectorSize, END_IN_ARGS)<0)
+        throw std::runtime_error("Cannot get flash sector size.");
+
+    m_buf = new char[m_sectorSize];
+}
+
+Flash::~Flash()
+{
+    delete[] m_buf;
+}
+
+void Flash::program(const QString &filename)
+{
+    QFile file(filename);
+    uint32_t len;
+    uint32_t addr;
+    int32_t response;
+
+    if (!file.open(QIODevice::ReadOnly))
+        throw std::runtime_error((QString("Cannot open file ") + filename + QString(".")).toStdString());
+
+    for(addr=0x14000000; !file.atEnd(); addr+=len)
+    {
+        len =(uint32_t)file.read(m_buf, m_sectorSize);
+        m_chirp.callSync(m_programProc, UINT32(addr), UINTS8(len, m_buf), END_OUT_ARGS,
+                         &response, END_IN_ARGS);
+        if (response==-1)
+            throw std::runtime_error("Invalid address range.");
+        else if (response==-3)
+            throw std::runtime_error("Error during verify.");
+        else if (response<0)
+            throw std::runtime_error("Error during programming.");
+    }
+}
+

@@ -8,6 +8,7 @@
 #include "interpreter.h"
 #include "chirpmon.h"
 #include "dfu.h"
+#include "flash.h"
 #include "ui_mainwindow.h"
 
 extern ChirpProc c_grabFrame;
@@ -20,6 +21,7 @@ MainWindow::MainWindow(QWidget *parent) :
     setWindowTitle(PIXYMON_TITLE);
 
     m_interpreter = 0;
+    m_flash = NULL;
     m_pixyConnected = false;
     m_pixyDFUConnected = false;
 
@@ -100,7 +102,7 @@ void MainWindow::connectPixyDFU(bool state)
         {
             Dfu *dfu;
             dfu = new Dfu();
-            dfu->download("video.bin.hdr");
+            dfu->download("pixyflash.bin.hdr");
             m_pixyDFUConnected = true;
             delete dfu;
             m_connect = new ConnectEvent(this);
@@ -130,18 +132,27 @@ void MainWindow::connectPixy(bool state)
         {
             if (m_pixyDFUConnected) // we're in programming mode
             {
-                // m_flash = new Flash(this);
+                try
+                {
+                    m_flash = new Flash();
+                }
+                catch (std::runtime_error &exception)
+                {
+                    QMessageBox::critical(this, "Error", exception.what());
+                    m_flash = NULL;
+                    m_pixyDFUConnected = false;
+                }
             }
             else
             {
                 m_interpreter = new Interpreter(m_console, m_video, this);
-
+#if 1
                 // start with a program (normally would be read from a config file instead of hard-coded)
                 m_interpreter->beginProgram();
                 m_interpreter->call("cam_getFrame 33, 0, 0, 320, 200");
                 m_interpreter->endProgram();
                 m_interpreter->runProgram();
-
+#endif
                 connect(m_interpreter, SIGNAL(runState(bool)), this, SLOT(handleRunState(bool)));
             }
             m_pixyConnected = true;
@@ -151,7 +162,6 @@ void MainWindow::connectPixy(bool state)
             QMessageBox::critical(this, "Error", exception.what());
             m_pixyConnected = false;
         }
-
     }
     else // disconnect
     {
@@ -216,14 +226,16 @@ void MainWindow::on_actionProgram_triggered()
             QStringList slist = fd.selectedFiles();
             if (slist.size()==1)
             {
-                try
+                if (m_flash)
                 {
-
-                    // m_program->program(slist.at(0));
-                }
-                catch (std::runtime_error &exception)
-                {
-                    QMessageBox::critical(this, "Error", exception.what());
+                    try
+                    {
+                        m_flash->program(slist.at(0));
+                    }
+                    catch (std::runtime_error &exception)
+                    {
+                        QMessageBox::critical(this, "Error", exception.what());
+                    }
                 }
             }
         }

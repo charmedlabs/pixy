@@ -14,6 +14,7 @@ class ChirpMon;
 class VideoWidget;
 class ConsoleWidget;
 class Interpreter;
+class Flash;
 
 class MainWindow : public QMainWindow
 {
@@ -48,6 +49,7 @@ private:
     ConsoleWidget *m_console;
     Interpreter *m_interpreter;
     ConnectEvent *m_connect;
+    Flash *m_flash;
     Ui::MainWindow *m_ui;
 };
 

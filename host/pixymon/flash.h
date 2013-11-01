@@ -1,0 +1,24 @@
+#ifndef FLASH_H
+#define FLASH_H
+
+#include <QString>
+#include "usblink.h"
+#include "../../device/libpixy/chirp.hpp"
+
+class Flash
+{
+public:
+    Flash();
+    ~Flash();
+
+    void program(const QString &filename);
+
+private:
+    char *m_buf;
+    USBLink m_link;
+    Chirp m_chirp;
+    uint32_t m_sectorSize;
+    ChirpProc m_programProc;
+};
+
+#endif // FLASH_H
