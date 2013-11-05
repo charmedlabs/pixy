@@ -9,5 +9,6 @@ void flash_init();
 
 uint32_t flash_sectorSize();
 int32_t flash_program(const uint32_t &addr, const uint32_t &len, const uint8_t *data);
+int32_t flash_reset();
 
 #endif

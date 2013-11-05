@@ -82,10 +82,8 @@ void CameraInit(void)
 
 }
 
-void pixyInit(uint32_t slaveRomStart, const unsigned char slaveImage[], uint32_t imageSize)
+void GPIOInit(void)
 {
-	platformInit();
-
 	// button, SPI_SSEL
 	LPC_GPIO_PORT->MASK[5] = 0;
 	LPC_GPIO_PORT->PIN[5] = 0x20; // negate SPI_SS
@@ -94,7 +92,10 @@ void pixyInit(uint32_t slaveRomStart, const unsigned char slaveImage[], uint32_t
 	// deal with P4_1, GPIO2[1]
 	LPC_GPIO_PORT->MASK[2] = 0;
 	LPC_GPIO_PORT->DIR[2] = 0;
+}
 
+void timerInit(void)
+{
 	// set timer so we count clock cycles
 	LPC_TIMER1->IR = 0;
  	LPC_TIMER1->TCR = 1;
@@ -104,12 +105,22 @@ void pixyInit(uint32_t slaveRomStart, const unsigned char slaveImage[], uint32_t
 	LPC_TIMER2->IR = 0;
  	LPC_TIMER2->TCR = 1;
 	LPC_TIMER2->PR = CLKFREQ_US-1;
+}
 
-  	debug_frmwrk_init_clk(CLKFREQ);
-
+void commonInit(void)
+{
+	platformInit();
+	GPIOInit();
+	timerInit();
 	USB_UserInit();
 
+  	debug_frmwrk_init_clk(CLKFREQ);
 	lpc_printf("M4 start\n");
+}
+
+void pixyInit(uint32_t slaveRomStart, const unsigned char slaveImage[], uint32_t imageSize)
+{
+	commonInit();
 
 	IPC_haltSlave();
 
@@ -118,8 +129,11 @@ void pixyInit(uint32_t slaveRomStart, const unsigned char slaveImage[], uint32_t
 	CameraInit();
 
 	// start slave
-	IPC_downloadSlaveImage(slaveRomStart, slaveImage, imageSize);
-	IPC_startSlave();
+	if (slaveRomStart && slaveImage && imageSize)
+	{
+		IPC_downloadSlaveImage(slaveRomStart, slaveImage, imageSize);
+		IPC_startSlave();
+	}
 
 	// initialize chirp objects
 	g_chirpUsb = new ChirpUsb();
@@ -132,5 +146,12 @@ void pixyInit(uint32_t slaveRomStart, const unsigned char slaveImage[], uint32_t
 	rcs_init();
 	led_init();
 	//cc_init();
+}
+
+void pixySimpleInit(void)
+{
+	commonInit();
+
+	g_chirpUsb = new ChirpUsb();
 }
 

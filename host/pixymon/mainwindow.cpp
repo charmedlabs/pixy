@@ -231,6 +231,8 @@ void MainWindow::on_actionProgram_triggered()
                     try
                     {
                         m_flash->program(slist.at(0));
+                        QMessageBox::information(this, PIXYMON_TITLE,
+                                                 "Programming successful.");
                     }
                     catch (std::runtime_error &exception)
                     {

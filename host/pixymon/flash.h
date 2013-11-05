@@ -19,6 +19,7 @@ private:
     Chirp m_chirp;
     uint32_t m_sectorSize;
     ChirpProc m_programProc;
+    ChirpProc m_reset;
 };
 
 #endif // FLASH_H

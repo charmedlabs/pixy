@@ -25,7 +25,8 @@ SOURCES += main.cpp\
     clut.cpp \
     dfu.cpp \
     connectevent.cpp \
-    flash.cpp
+    flash.cpp \
+    reader.cpp
 
 HEADERS  += mainwindow.h \
     link.h \
@@ -46,7 +47,8 @@ HEADERS  += mainwindow.h \
     connectevent.h \
     pixy.h \
     libusb.h \
-    flash.h
+    flash.h \
+    reader.h
 
 INCLUDEPATH += ../libpixy
 
@@ -56,6 +58,8 @@ LIBS += ./libusb-1.0.dll.a
 
 RESOURCES += \
     resources.qrc
+
+
 
 
 

@@ -12,6 +12,7 @@
 #define FLASH_END_B		(FLASH_BEGIN_B+FLASH_SIZE)
 #define FLASH_OFFSET    (FLASH_BEGIN_B-FLASH_BEGIN_A)
 
+uint8_t g_resetFlag = 0;
 
 uint8_t *g_eraseMap;
 
@@ -34,6 +35,13 @@ static const ProcModule g_module[] =
 	"@p len length of data"
 	"@r voltage in millivolts"
 	},
+	{
+	"flash_reset",
+	(ProcPtr)flash_reset, 
+	{END}, 
+	"Reset processor (execute program)."
+	"@r always returns 0"
+	},
 	END
 };	
 
@@ -48,54 +56,16 @@ void flash_init()
 	 
 	g_eraseMap = new uint8_t[mapsize];
 	memset((void *)g_eraseMap, 0, mapsize);
-
-#if 0	 
-	SPIFIopers spifi;
-	memset((void *)&spifi, 0, sizeof(spifi));
-	char datab[4] = {0, 0x12, 0x34, 0x56};
-	spifi.dest = (char *)g_spifi.base;
-	spifi.length = g_spifi.memSize;
-	spifi.scratch = NULL;
-	spifi.options = S_VERIFY_ERASE;
-	if (spifi_erase(&g_spifi, &spifi)) 
-		return;
-
-	int i;
-
-	for (i=0; i<0x10000; i+=4)
-	{
-		spifi.dest = (char *)g_spifi.base+i;
-		spifi.length = 4;
-		spifi.scratch = (char *) NULL;
-		spifi.protect = 0;
-		spifi.options = S_VERIFY_PROG;
-		if (spifi_program(&g_spifi, datab, &spifi))
-			break;
-	}
-
-
-	spifi.dest = (char *)g_spifi.base;
-	spifi.length = 0x1000;
-	spifi.scratch = NULL;
-	spifi.options = S_VERIFY_ERASE;
-
-	if (spifi_erase(&g_spifi, &spifi)) 
-		return;
-
-
-	spifi.dest = (char *)g_spifi.base+0x1000;
-	spifi.length = 0x1000;
-	spifi.scratch = NULL;
-	spifi.options = S_VERIFY_ERASE;
-
-	if (spifi_erase(&g_spifi, &spifi)) 
-		return;
-#endif
 }
 
 int32_t erase(uint32_t addr)
 {
 	SPIFIopers spifi;
+
+	// if we've already erased, just return 
+	if (g_eraseMap[(addr-FLASH_BEGIN_B)/SECTOR_SIZE]==1)
+		return 0;
+
 	memset((void *)&spifi, 0, sizeof(spifi));
 
 	addr = SECTOR_MASK(addr);
@@ -105,6 +75,9 @@ int32_t erase(uint32_t addr)
 	spifi.options = S_VERIFY_ERASE;
 	if (spifi_erase(&g_spifi, &spifi)) 
 		return -1;
+
+	// update map
+	g_eraseMap[(addr-FLASH_BEGIN_B)/SECTOR_SIZE] = 1;
 
 	return 0;
 }
@@ -139,14 +112,14 @@ int32_t flash_program(const uint32_t &addr, const uint32_t &len, const uint8_t *
 		laddr += FLASH_OFFSET;
 
 	// check range
-	if (laddr<FLASH_BEGIN_B || laddr>FLASH_END_B)
+	if (laddr<FLASH_BEGIN_B || laddr>FLASH_END_B || laddr+len>FLASH_END_B)
 		return -1;
 
-	if (g_eraseMap[(laddr-FLASH_BEGIN_B)/SECTOR_SIZE]==0)
+	// erase all sectors spanned by this segment
+	for (i=SECTOR_MASK(laddr); i<laddr+len; i+=SECTOR_SIZE)
 	{
-		if (erase(laddr)<0)
+		if (erase(i)<0)
 			return -3;
-		g_eraseMap[(laddr-FLASH_BEGIN_B)/SECTOR_SIZE] = 1;
 	}
 	
 	if (program(laddr, data, len)<0)
@@ -158,6 +131,13 @@ int32_t flash_program(const uint32_t &addr, const uint32_t &len, const uint8_t *
 		if (*(uint8_t *)(laddr+i) != data[i])
 			return -4;
 	}
+
+	return 0;
+}
+
+int32_t flash_reset()
+{
+	g_resetFlag = 1;
 
 	return 0;
 }

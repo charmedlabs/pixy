@@ -589,7 +589,7 @@ int main(void)
  {	
  	pixyInit(SRAM3_LOC, &LR0[0], sizeof(LR0));
 	cc_init(g_chirpUsb);
-#if 1
+#if 0
 	SPIFIopers spifi;
 	memset((void *)&spifi, 0, sizeof(spifi));
 	char datab[4] = {0, 0x12, 0x34, 0x56};

@@ -396,6 +396,11 @@
               <FileType>8</FileType>
               <FilePath>.\flash.cpp</FilePath>
             </File>
+            <File>
+              <FileName>lpc43xx_rgu.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\lpc43xx_rgu.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
