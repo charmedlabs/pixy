@@ -11,6 +11,7 @@ ConsoleWidget::ConsoleWidget(MainWindow *main) : QPlainTextEdit((QWidget *)main)
     m_main = main;
     // a block is a line, so this is the maximum number of lines to buffer
     setMaximumBlockCount(CW_SCROLLHEIGHT);
+    acceptInput(false);
 }
 
 ConsoleWidget::~ConsoleWidget()
@@ -27,6 +28,11 @@ void ConsoleWidget::print(const QString &text)
     insertPlainText(text);
     m_waitPrint.wakeAll();
     m_mutexPrint.unlock();
+}
+
+void ConsoleWidget::error(const QString &text)
+{
+    print("error: " + text);
 }
 
 void ConsoleWidget::prompt(const QString &text)

@@ -41,8 +41,7 @@ MainWindow::MainWindow(QWidget *parent) :
     // start looking for devices
     m_connect = new ConnectEvent(this);
     if (m_connect->getConnected()==ConnectEvent::NONE)
-        QMessageBox::information(this, PIXYMON_TITLE,
-                                 "No Pixy devices have been detected.");
+        m_console->error("No Pixy devices have been detected.\n");
 }
 
 MainWindow::~MainWindow()
@@ -98,6 +97,7 @@ void MainWindow::connectPixyDFU(bool state)
 {
     if (state) // connect
     {
+        m_console->print("Pixy programming state detected.\n");
         try
         {
             Dfu *dfu;
@@ -110,12 +110,12 @@ void MainWindow::connectPixyDFU(bool state)
         catch (std::runtime_error &exception)
         {
             m_pixyDFUConnected = false;
-            QMessageBox::critical(this, "Error", exception.what());
+            m_console->error(QString(exception.what())+"\n");
         }
     }
     else // disconnect
     {
-        QMessageBox::critical(this, "Error", "Pixy DFU has stopped working.");
+        m_console->error("Pixy DFU has stopped working.\n");
         // if we're disconnected, start the connect thread
         m_connect = new ConnectEvent(this);
         m_pixyDFUConnected = false;
@@ -138,13 +138,14 @@ void MainWindow::connectPixy(bool state)
                 }
                 catch (std::runtime_error &exception)
                 {
-                    QMessageBox::critical(this, "Error", exception.what());
+                    m_console->error(QString(exception.what())+"\n");
                     m_flash = NULL;
                     m_pixyDFUConnected = false;
                 }
             }
             else
             {
+                m_console->print("Pixy detected.\n");
                 m_interpreter = new Interpreter(m_console, m_video, this);
 #if 1
                 // start with a program (normally would be read from a config file instead of hard-coded)
@@ -154,25 +155,25 @@ void MainWindow::connectPixy(bool state)
                 m_interpreter->runProgram();
 #endif
                 connect(m_interpreter, SIGNAL(runState(bool)), this, SLOT(handleRunState(bool)));
+                m_console->acceptInput(true);
             }
             m_pixyConnected = true;
         }
         catch (std::runtime_error &exception)
         {
-            QMessageBox::critical(this, "Error", exception.what());
+            m_console->error(QString(exception.what())+"\n");
             m_pixyConnected = false;
         }
     }
     else // disconnect
     {
-        QMessageBox::critical(this, "Error", "Pixy has stopped working.");
+        m_console->error("Pixy has stopped working.\n");
         if (m_interpreter)
         {
             delete m_interpreter;
             m_interpreter = NULL;
         }
         m_video->clear();
-        m_console->clear();
         // if we're disconnected, start the connect thread
         m_connect = new ConnectEvent(this);
         m_pixyConnected = false;
@@ -208,11 +209,10 @@ void MainWindow::on_actionProgram_triggered()
 {
     if (!m_pixyDFUConnected || !m_pixyConnected)
     {
-        QMessageBox::information(this, PIXYMON_TITLE,
-                                 "Pixy needs to be put into programming mode.\n"
-                                 "Do this by unplugging the USB cable, holding down the button,\n"
-                                 "and then plugging the USB cable back in while continuing to\n"
-                                 "hold down the button. You may do this now.");
+        m_console->print("Pixy needs to be put into programming mode.\n"
+                         "Do this by unplugging the USB cable, holding down the button,\n"
+                         "and then plugging the USB cable back in while continuing to\n"
+                         "hold down the button. You may do this now.\n");
     }
     else
     {
@@ -230,13 +230,16 @@ void MainWindow::on_actionProgram_triggered()
                 {
                     try
                     {
+                        m_console->print("Programming...\n");
                         m_flash->program(slist.at(0));
-                        QMessageBox::information(this, PIXYMON_TITLE,
-                                                 "Programming successful.");
+                        m_console->print("done!\n");
+                        // start looking for devices again
+                        m_connect = new ConnectEvent(this);
+
                     }
                     catch (std::runtime_error &exception)
                     {
-                        QMessageBox::critical(this, "Error", exception.what());
+                        m_console->error(QString(exception.what())+"\n");
                     }
                 }
             }

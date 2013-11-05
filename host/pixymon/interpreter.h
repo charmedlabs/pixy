@@ -55,6 +55,7 @@ public:
 signals:
     void runState(bool state);
     void textOut(const QString &text);
+    void error(const QString &text);
     void prompt(const QString &text);
     void videoPrompt(uint type);
     void enableConsole(bool enable);

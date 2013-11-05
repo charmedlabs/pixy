@@ -31,6 +31,7 @@ Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, MainWindow 
     connect(m_console, SIGNAL(textLine(QString)), this, SLOT(command(QString)));
     connect(m_console, SIGNAL(controlKey(Qt::Key)), this, SLOT(controlKey(Qt::Key)));
     connect(this, SIGNAL(textOut(QString)), m_console, SLOT(print(QString)));
+    connect(this, SIGNAL(error(QString)), m_console, SLOT(error(QString)));
     connect(this, SIGNAL(enableConsole(bool)), m_console, SLOT(acceptInput(bool)));
     connect(this, SIGNAL(prompt(QString)), m_console, SLOT(prompt(QString)));
     connect(this, SIGNAL(videoPrompt(uint)), m_video, SLOT(acceptInput(uint)));
@@ -556,7 +557,7 @@ void Interpreter::handleHelp(const QStringList &argv)
         if ((proc=m_chirp->getProc(argv[1].toLocal8Bit()))>=0 && m_chirp->getProcInfo(proc, &info)>=0)
             emit textOut(printProc(&info, 1));
         else
-            emit textOut("error: can't find procedure.\n");
+            emit error("can't find procedure.\n");
     }
 }
 
@@ -958,7 +959,7 @@ int Interpreter::call(const QStringList &argv, bool interactive)
             }
             else
             {
-                emit textOut("error: too few arguments.\n");
+                emit error("too few arguments.\n");
                 return -1;
             }
         }
@@ -980,7 +981,7 @@ int Interpreter::call(const QStringList &argv, bool interactive)
                     args[j++] = argv[i+1].toInt(&ok, base);
                     if (!ok)
                     {
-                        emit textOut("error: argument didn't parse.\n");
+                        emit error("argument didn't parse.\n");
                         return -1;
                     }
                 }
@@ -1025,7 +1026,7 @@ int Interpreter::call(const QStringList &argv, bool interactive)
     }
     else
     {
-        emit textOut("error: procedure unsupported.\n");
+        emit error("procedure unsupported.\n");
         return -1;
     }
 

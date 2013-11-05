@@ -22,6 +22,7 @@ public:
 
 public slots:
     void print(const QString &text);
+    void error(const QString &text);
     void prompt(const QString &text);
     void type(const QString &text);
     void acceptInput(bool accept);

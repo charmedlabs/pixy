@@ -3,7 +3,7 @@
 #include "flash.h"
 #include "lpc43xx_rgu.h"
 
-#if 0
+#if 1
 #define USE_SPIFI_LIB
 #include "spifi_rom_api.h"
 
@@ -64,7 +64,7 @@ int main(void)
 	while(1)
 	{
 		g_chirpUsb->service();
-		//handleReset();
+		handleReset();
 	}
 }
 

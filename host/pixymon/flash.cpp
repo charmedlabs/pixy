@@ -56,9 +56,6 @@ void Flash::program(const QString &filename)
             throw std::runtime_error("Error during programming.");
     }
 
-    if (m_chirp.callSync(m_reset, END_OUT_ARGS,
-                         &response, END_IN_ARGS)<0)
-        throw std::runtime_error("Unable to reset.");
 #else
     IReader *reader;
     unsigned long addr, len;
@@ -70,8 +67,9 @@ void Flash::program(const QString &filename)
         res = reader->read((unsigned char *)m_buf, m_sectorSize, &addr, &len);
         if (len)
         {
-            m_chirp.callSync(m_programProc, UINT32(addr), UINTS8(len, m_buf), END_OUT_ARGS,
-                             &response, END_IN_ARGS);
+            if (m_chirp.callSync(m_programProc, UINT32(addr), UINTS8(len, m_buf), END_OUT_ARGS,
+                             &response, END_IN_ARGS)<0)
+                throw std::runtime_error("Communication error during programming.");
             if (response==-1)
                 throw std::runtime_error("Invalid address range.");
             else if (response==-3)
@@ -82,8 +80,11 @@ void Flash::program(const QString &filename)
         if (res<0)
             break;
     }
-    destroyReader(reader);
-
 #endif
+    // reset Pixy
+    if (m_chirp.callSync(m_reset, END_OUT_ARGS,
+                         &response, END_IN_ARGS)<0)
+        throw std::runtime_error("Unable to reset.");
+    destroyReader(reader);
 }
 
