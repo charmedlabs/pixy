@@ -14,7 +14,7 @@ class ConnectEvent : public QThread
 public:
     enum Device {NONE, PIXY, PIXY_DFU};
 
-    ConnectEvent(MainWindow *main);
+    ConnectEvent(MainWindow *main, unsigned int sleep=0);
     Device getConnected();
     ~ConnectEvent();
 
@@ -28,6 +28,7 @@ protected:
 private:
     libusb_context *m_context;
     MainWindow *m_main;
+    unsigned int m_sleep;
     QMutex m_mutex;
     bool m_run;
 };

@@ -3,10 +3,11 @@
 #include "pixy.h"
 #include "mainwindow.h"
 
-ConnectEvent::ConnectEvent(MainWindow *main)
+ConnectEvent::ConnectEvent(MainWindow *main, unsigned int sleep)
 {
     qRegisterMetaType<ConnectEvent::Device>("ConnectEvent::Device");
     m_main = main;
+    m_sleep = sleep;
     m_run = true;
     libusb_init(&m_context);
     start();
@@ -48,6 +49,8 @@ void ConnectEvent::run()
 
     connect(this, SIGNAL(connected(ConnectEvent::Device,bool)), m_main, SLOT(handleConnected(ConnectEvent::Device,bool)));
 
+    // sleep a while (so we can wait for other devices to be de-registered)
+    msleep(m_sleep);
     while(m_run)
     {
         dev = getConnected();

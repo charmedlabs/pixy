@@ -133,7 +133,8 @@ void VideoWidget::mousePressEvent(QMouseEvent *event)
     m_selection = false;
     repaint();
 
-    m_main->m_interpreter->m_renderer->setFilter(0x00, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff);
+    if (m_main->m_interpreter)
+        m_main->m_interpreter->m_renderer->setFilter(0x00, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff);
     QWidget::mousePressEvent(event);
 }
 

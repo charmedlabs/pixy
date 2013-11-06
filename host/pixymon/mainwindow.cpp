@@ -205,6 +205,7 @@ void MainWindow::on_actionPlay_Pause_triggered()
     updateButtons();
 }
 
+
 void MainWindow::on_actionProgram_triggered()
 {
     if (!m_pixyDFUConnected || !m_pixyConnected)
@@ -231,16 +232,24 @@ void MainWindow::on_actionProgram_triggered()
                     try
                     {
                         m_console->print("Programming...\n");
+                        QApplication::processEvents(); // render message before we continue
                         m_flash->program(slist.at(0));
-                        m_console->print("done!\n");
-                        // start looking for devices again
-                        m_connect = new ConnectEvent(this);
+                        m_console->print("done! (Reset Pixy by unplugging/plugging USB cable.)\n");
 
                     }
                     catch (std::runtime_error &exception)
                     {
                         m_console->error(QString(exception.what())+"\n");
                     }
+
+                    // clean up...
+                    delete m_flash;
+                    m_flash = NULL;
+                    m_pixyDFUConnected = false;
+                    m_pixyConnected = false;
+
+                    // start looking for devices again (wait 4 seconds before we start looking though)
+                    m_connect = new ConnectEvent(this, 4000);
                 }
             }
         }
