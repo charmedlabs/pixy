@@ -24,7 +24,13 @@ Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, MainWindow 
     m_chirp = new ChirpMon(this);
     if (m_chirp->open()<0)
         throw std::runtime_error("Cannot connect/reconnect to Pixy.");
+#if 0
+    ChirpProc proc;
+    proc=m_chirp->getProc("prm_setParam");
 
+    int response;
+    m_chirp->callSync(proc, STRING("hello"), UINT32(0), UINT32(1), UINT32(2), UINT32(3), UINT32(4), UINT32(5), END_OUT_ARGS, &response, END_IN_ARGS);
+#endif
     m_renderer = new Renderer(m_video);
     m_lut = m_renderer->m_blobs.getLut();
 
@@ -985,6 +991,13 @@ int Interpreter::call(const QStringList &argv, bool interactive)
                         return -1;
                     }
                 }
+#if 0
+                else if (m_argTypes[i]==CRP_STRING)
+                {
+                    args[j++] = m_argTypes[i];
+                    // string goes where?  can't cast pointer to int...
+                }
+#endif
                 else
                 {
                     // deal with non-integer types

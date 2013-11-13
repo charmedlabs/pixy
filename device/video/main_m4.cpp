@@ -7,9 +7,11 @@
 #include "camera.h"
 #include "led.h"
 #include "conncomp.h"
+#include "param.h"
 #include "rcservo.h"
 #include "spi.h"
 #include "spifi_rom_api.h"
+
 
 #define RLS_MEMORY_SIZE     0x8000 // bytes
 #define RLS_MEMORY          ((uint8_t *)SRAM0_LOC)
@@ -589,6 +591,7 @@ int main(void)
  {	
  	pixyInit(SRAM3_LOC, &LR0[0], sizeof(LR0));
 	cc_init(g_chirpUsb);
+	//prm_init(g_chirpUsb);
 #if 0
 	SPIFIopers spifi;
 	memset((void *)&spifi, 0, sizeof(spifi));

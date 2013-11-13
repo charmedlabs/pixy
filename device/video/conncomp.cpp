@@ -121,12 +121,12 @@ int32_t cc_getRLSFrameChirp(Chirp *chirp)
 	uint32_t prebuf, numRls;
 
 	// force an error to get prebuf length
-	CRP_RETURN(chirp, USE_BUFFER(RLS_MEMORY_SIZE, RLS_MEMORY), HTYPE(0), UINT16(0), UINT16(0), UINTS32(0, 0), END);
-	prebuf = chirp->getPreBufLen();
+	//CRP_RETURN(chirp, USE_BUFFER(RLS_MEMORY_SIZE, RLS_MEMORY), HTYPE(0), UINT16(0), UINT16(0), UINTS32(0, 0), END);
+	//prebuf = chirp->getPreBufLen();
 
-	if ((result=cc_getRLSFrame((uint32_t *)(RLS_MEMORY+prebuf), RLS_MEMORY_SIZE-prebuf, LUT_MEMORY, &numRls))>=0)
+	//if ((result=cc_getRLSFrame((uint32_t *)(RLS_MEMORY+prebuf), RLS_MEMORY_SIZE-prebuf, LUT_MEMORY, &numRls))>=0)
 		// send frame, use in-place buffer	
-		CRP_RETURN(chirp, USE_BUFFER(RLS_MEMORY_SIZE, RLS_MEMORY), HTYPE(FOURCC('C','C','Q','1')), UINT16(CAM_RES2_WIDTH), UINT16(CAM_RES2_HEIGHT), UINTS32(numRls, RLS_MEMORY+prebuf), END);
+	//	CRP_RETURN(chirp, USE_BUFFER(RLS_MEMORY_SIZE, RLS_MEMORY), HTYPE(FOURCC('C','C','Q','1')), UINT16(CAM_RES2_WIDTH), UINT16(CAM_RES2_HEIGHT), UINTS32(numRls, RLS_MEMORY+prebuf), END);
 
 	return result;
 }

@@ -45,6 +45,7 @@
 
 #define CRP_ARRAY                       0x80 // bit
 #define CRP_FLT                         0x10 // bit
+#define CRP_NO_COPY                     0x10 // bit
 #define CRP_HINT                        0x40 // bit
 #define CRP_NULLTERM_ARRAY              (0x20 | CRP_ARRAY) // bits
 #define CRP_INT8                        0x01
@@ -57,11 +58,11 @@
 #define CRP_FLT64                       (CRP_FLT | 0x08)
 #define CRP_STRING                      (CRP_NULLTERM_ARRAY | CRP_INT8)
 #define CRP_TYPE_HINT                   0x64 // type hint identifier
-#define CRP_USE_BUFFER                  0xff
 #define CRP_INTS8                       (CRP_INT8 | CRP_ARRAY)
 #define CRP_INTS16                      (CRP_INT16 | CRP_ARRAY)
 #define CRP_INTS32                      (CRP_INT32 | CRP_ARRAY)
 #define CRP_UINTS8                      CRP_INTS8
+#define CRP_UINTS8_NO_COPY              (CRP_INTS8 | CRP_NO_COPY)
 #define CRP_UINTS16                     CRP_INTS16
 #define CRP_UINTS32                     CRP_INTS32
 #define CRP_FLTS32                      (CRP_FLT32 | CRP_ARRAY)
@@ -87,6 +88,7 @@
 #define STRING(s)                       CRP_STRING, s
 #define INTS8(len, a)                   CRP_INTS8, len, a
 #define UINTS8(len, a)                  CRP_INTS8, len, a
+#define UINTS8_NO_COPY(len)             CRP_UINTS8_NO_COPY, len
 #define INTS16(len, a)                  CRP_INTS16, len, a
 #define UINTS16(len, a)                 CRP_INTS16, len, a
 #define INTS32(len, a)                  CRP_INTS32, len, a
@@ -195,10 +197,12 @@ public:
 
     int call(uint8_t service, ChirpProc proc, ...);
     static uint8_t getType(void *arg);
-    uint32_t getPreBufLen();
     int service();
     int assemble(int dummy, ...);
     int remoteInit();
+
+	int args2mem(bool header, uint8_t *buf, uint32_t bufSize, ...);
+	void useBuffer(uint8_t *buf, uint32_t len);
 
 protected:
     int recvChirp(uint8_t *type, ChirpProc *proc, void *args[], bool wait=false); // null pointer terminates
@@ -206,6 +210,7 @@ protected:
     virtual int sendChirp(uint8_t type, ChirpProc proc);
 
     uint8_t *m_buf;
+	uint8_t *m_bufSave;
     uint32_t m_len;
     uint32_t m_offset;
     uint32_t m_bufSize;
@@ -234,6 +239,8 @@ private:
     int32_t handleEnumerateInfo(ChirpProc *proc);
     int assembleHelper(va_list *args);
     int loadArgs(va_list *args, void *recvArgs[]);
+  	int args2memHelper(uint32_t offset, uint8_t *buf, uint32_t bufSize, va_list *args);
+	void restoreBuffer();
 
     uint16_t calcCrc(uint8_t *buf, uint32_t len);
     ChirpProc updateTable(const char *procName, ProcPtr procPtr);
@@ -249,11 +256,6 @@ private:
     uint8_t m_retries;
     bool m_remoteInit;
     bool m_connected;
-    bool m_bufFlag;
-
-    uint8_t *m_buf2;
-    uint32_t m_bufSize2;
-    uint32_t m_preBuf;
 };
 
 #endif // CHIRP_H

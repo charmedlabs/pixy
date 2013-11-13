@@ -18,7 +18,6 @@ SOURCES += main.cpp\
     interpreter.cpp \
     renderer.cpp \
     chirpmon.cpp \
-    ../../device/libpixy/chirp.cpp \
     calc.cpp \
     blob.cpp \
     blobs.cpp \
@@ -26,7 +25,8 @@ SOURCES += main.cpp\
     dfu.cpp \
     connectevent.cpp \
     flash.cpp \
-    reader.cpp
+    reader.cpp \
+    ../../device/libpixy/chirp.cpp
 
 HEADERS  += mainwindow.h \
     link.h \
@@ -36,7 +36,6 @@ HEADERS  += mainwindow.h \
     interpreter.h \
     renderer.h \
     chirpmon.h \
-    ../../device/libpixy/chirp.hpp \
     calc.h \
     blobs.h \
     blob.h \
@@ -48,7 +47,8 @@ HEADERS  += mainwindow.h \
     pixy.h \
     libusb.h \
     flash.h \
-    reader.h
+    reader.h \
+    ../../device/libpixy/chirp.hpp
 
 INCLUDEPATH += ../libpixy
 
@@ -58,6 +58,12 @@ LIBS += ./libusb-1.0.dll.a
 
 RESOURCES += \
     resources.qrc
+
+
+
+
+
+
 
 
 

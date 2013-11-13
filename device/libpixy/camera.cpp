@@ -466,17 +466,16 @@ int32_t cam_getFrame(uint8_t *memory, uint32_t memSize, uint8_t type, uint16_t x
 
 int32_t cam_getFrameChirp(const uint8_t &type, const uint16_t &xOffset, const uint16_t &yOffset, const uint16_t &xWidth, const uint16_t &yWidth, Chirp *chirp)
 {
-	int32_t result, prebuf;
+	int32_t result, len;
 	uint8_t *frame = (uint8_t *)SRAM0_LOC;
 
-	// force an error to get prebuf length
-	CRP_RETURN(chirp, USE_BUFFER(SRAM0_SIZE, frame), HTYPE(0), UINT16(0), UINT16(0), UINTS8(0, 0), END);
-	prebuf = chirp->getPreBufLen();
+	// fill buffer contents manually for return data 
+	len = chirp->args2mem(true, frame, SRAM0_SIZE, HTYPE(FOURCC('B','A','8','1')), UINT16(xWidth), UINT16(yWidth), UINTS8_NO_COPY(xWidth*yWidth), END);
+	// write frame after chirp args
+	result = cam_getFrame(frame+len, SRAM0_SIZE-len, type, xOffset, yOffset, xWidth, yWidth);
 
-	if ((result=cam_getFrame(frame+prebuf, SRAM0_SIZE-prebuf, type, xOffset, yOffset, xWidth, yWidth))>=0)
-		// send frame, use in-place buffer	
-		CRP_RETURN(chirp, USE_BUFFER(SRAM0_SIZE, frame), HTYPE(FOURCC('B','A','8','1')), UINT16(xWidth), UINT16(yWidth), UINTS8(xWidth*yWidth, frame+prebuf), END);
-
+	// tell chirp to use this buffer
+	chirp->useBuffer(frame, len+xWidth*yWidth); 
 	return result;
 }
 

@@ -20,8 +20,7 @@ Chirp::Chirp(bool hinterested, Link *link)
     m_errorCorrected = false;
     m_sharedMem = false;
     m_buf = NULL;
-    m_buf2 = NULL;
-    m_preBuf = 0;
+	m_bufSave = NULL;
 
     m_maxNak = CRP_MAX_NAK;
     m_retries = CRP_RETRIES;
@@ -96,19 +95,58 @@ int Chirp::assemble(int dummy, ...)
 
 int Chirp::assembleHelper(va_list *args)
 {
+    int len;
+
+    len = args2memHelper(m_headerLen+m_len, m_buf, m_bufSize, args);
+
+    // set length (don't include header)
+    m_len = len - m_headerLen;
+
+    return CRP_RES_OK;
+}
+
+void Chirp::useBuffer(uint8_t *buf, uint32_t len)
+{
+	m_bufSave = m_buf;
+	m_buf = buf;
+	m_len = len-m_headerLen;
+}
+
+void Chirp::restoreBuffer()
+{
+	if (m_bufSave)
+	{
+		m_buf = m_bufSave;
+		m_bufSave = NULL;
+	}	
+}
+
+
+int Chirp::args2mem(bool header, uint8_t *buf, uint32_t bufSize, ...)
+{
+    int res;
+	uint32_t offset;
+    va_list args;
+
+	offset = header ? m_headerLen+m_len : 0;
+    va_start(args, bufSize);
+    res = args2memHelper(offset, buf, bufSize, &args);
+    va_end(args);
+
+    return res;
+}
+
+int Chirp::args2memHelper(uint32_t offset, uint8_t *buf, uint32_t bufSize, va_list *args)
+{
     int res;
     uint8_t type, origType;
     uint32_t i, si;
+	bool copy = true;
 
-    // restore buffer if we use CRP_USE_BUFFER
-    if (m_buf2)
-    {
-        m_buf = m_buf2;
-        m_bufSize = m_bufSize2;
-        m_buf2 = NULL;
-    }
+    i = offset;
+    bufSize -= offset;
 
-    for (i=m_headerLen+m_len; true;)
+    while(1)
     {
 #if defined(__WIN32__) || defined(__arm)
         type = va_arg(*args, int);
@@ -118,22 +156,12 @@ int Chirp::assembleHelper(va_list *args)
 
         if (type==END)
             break;
-        else if (type==CRP_USE_BUFFER && !m_sharedMem)
-        {   // save buffer
-            m_buf2 = m_buf;
-            m_bufSize2 = m_bufSize;
-            m_bufFlag = false;
-            // set new buffer
-            m_bufSize = va_arg(*args, uint32_t);
-            m_buf = va_arg(*args, uint8_t *);
-            continue;
-        }
 
         si = i; // save index so we can skip over data if needed
-        m_buf[i++] = type;
+        buf[i++] = type;
 
         // treat hints like other types for now
-        // but if gotoe isn't interested  in hints (m_hinformer=false),
+        // but if gotoe (guy on the other end) isn't interested in hints (m_hinformer=false),
         // we'll restore index to si and effectively skip data.
         origType = type;
         type &= ~CRP_HINT;
@@ -145,7 +173,7 @@ int Chirp::assembleHelper(va_list *args)
 #else
             int8_t val = va_arg(*args, int8_t);
 #endif
-            *(int8_t *)(m_buf+i) = val;
+            *(int8_t *)(buf+i) = val;
             i += 1;
         }
         else if (type==CRP_INT16)
@@ -157,16 +185,16 @@ int Chirp::assembleHelper(va_list *args)
 #endif
             ALIGN(i, 2);
             // rewrite type so getType will work (even though we might add padding between type and data)
-            m_buf[i-1] = origType;
-            *(int16_t *)(m_buf+i) = val;
+            buf[i-1] = origType;
+            *(int16_t *)(buf+i) = val;
             i += 2;
         }
         else if (type==CRP_INT32 || origType==CRP_TYPE_HINT) // CRP_TYPE_HINT is a special case...
         {
             int32_t val = va_arg(*args, int32_t);
             ALIGN(i, 4);
-            m_buf[i-1] = origType;
-            *(int32_t *)(m_buf+i) = val;
+            buf[i-1] = origType;
+            *(int32_t *)(buf+i) = val;
             i += 4;
         }
         else if (type==CRP_FLT32)
@@ -177,8 +205,8 @@ int Chirp::assembleHelper(va_list *args)
             float val = va_arg(*args, float);
 #endif
             ALIGN(i, 4);
-            m_buf[i-1] = origType;
-            *(float *)(m_buf+i) = val;
+            buf[i-1] = origType;
+            *(float *)(buf+i) = val;
             i += 4;
         }
         else if (type==CRP_STRING)
@@ -186,10 +214,17 @@ int Chirp::assembleHelper(va_list *args)
             int8_t *s = va_arg(*args, int8_t *);
             uint32_t len = strlen((char *)s)+1; // include null
 
-            if (len+i > m_bufSize-CRP_BUFPAD && (res=realloc(len+i))<0)
-                return res;
+            if (len+i > bufSize-CRP_BUFPAD)
+            {
+                if (buf!=m_buf)
+                    return CRP_RES_ERROR_MEMORY;
+                else if ((res=realloc(len+i))<0)
+                    return res;
+				buf = m_buf;
+				bufSize = m_bufSize;
+            }
 
-            memcpy(m_buf+i, s, len);
+            memcpy(buf+i, s, len);
             i += len;
         }
         else if (type&CRP_ARRAY)
@@ -197,27 +232,39 @@ int Chirp::assembleHelper(va_list *args)
             uint8_t size = type&0x0f;
             uint32_t len = va_arg(*args, int32_t);
 
+			// deal with no copy case (use our own buffer)
+			if (type==CRP_UINTS8_NO_COPY)
+			{
+				// rewrite type so as not to confuse gotoe
+				origType = type &= ~CRP_NO_COPY;
+            	buf[i-1] = origType;				
+				copy = false;
+			}
+
             ALIGN(i, 4);
-            m_buf[i-1] = origType;
-            *(uint32_t *)(m_buf+i) = len;
+            buf[i-1] = origType;
+            *(uint32_t *)(buf+i) = len;
             i += 4;
             ALIGN(i, size);
-            len *= size; // scale by size of array elements
 
-            if (len+i>m_bufSize-CRP_BUFPAD && (res=realloc(len+i))<0)
-                return res;
+			if (copy)
+			{
+            	len *= size; // scale by size of array elements
 
-            int8_t *ptr = va_arg(*args, int8_t *);
-            if (m_buf2==NULL || m_bufFlag) // normal buffer, do copy
-                memcpy(m_buf+i, ptr, len);
-            else if (m_buf+i != (uint8_t *)ptr)	// otherwise check pointer
-            {
-                m_preBuf = i;
-                return CRP_RES_ERROR_PARSE;
-            }
-            // m_bufFlag and USE_BUFFER set means we copy remaining data.
-            m_bufFlag = true;
-            i += len;
+            	if (len+i > bufSize-CRP_BUFPAD)
+            	{
+                	if (buf!=m_buf)
+                   		return CRP_RES_ERROR_MEMORY;
+                	else if ((res=realloc(len+i))<0)
+                    	return res;
+					buf = m_buf;
+					bufSize = m_bufSize;
+            	}
+
+            	int8_t *ptr = va_arg(*args, int8_t *);
+            	memcpy(buf+i, ptr, len);
+            	i += len;
+			}
         }
         else
             return CRP_RES_ERROR_PARSE;
@@ -226,15 +273,21 @@ int Chirp::assembleHelper(va_list *args)
         if (!m_hinformer && origType&CRP_HINT)
             i = si;
 
-        if (i>m_bufSize-CRP_BUFPAD && (res=realloc())<0)
-            return res;
+        if (i > bufSize-CRP_BUFPAD)
+        {
+            if (buf!=m_buf)
+                return CRP_RES_ERROR_MEMORY;
+            else if ((res=realloc(i))<0)
+                return res;
+		   	buf = m_buf;
+			bufSize = m_bufSize;
+        }
     }
 
-    // set length
-    m_len = i-m_headerLen;
-
-    return CRP_RES_OK;
+    // return length
+    return i;
 }
+
 
 // this isn't completely necessary, but it makes things a lot easier to use.
 // passing a pointer to a pointer and then having to dereference is just confusing....
@@ -300,6 +353,8 @@ int Chirp::call(uint8_t service, ChirpProc proc, ...)
     // parse args and assemble in m_buf
     va_start(args, proc);
     m_len = 0;
+	// restore buffer in case it was changed
+	restoreBuffer();
     if ((res=assembleHelper(&args))<0)
     {
         va_end(args);
@@ -320,6 +375,7 @@ int Chirp::call(uint8_t service, ChirpProc proc, ...)
         va_end(args);
         return res;
     }
+
 
     // if the service is synchronous, receive response while servicing other calls
     if (service==SYNC)
@@ -365,14 +421,6 @@ int Chirp::sendChirpRetry(uint8_t type, ChirpProc proc)
         res = sendChirp(type, proc);
         if (res==CRP_RES_OK)
             break;
-    }
-
-    // restore buffer if we use CRP_USE_BUFFER
-    if (m_buf2)
-    {
-        m_buf = m_buf2;
-        m_bufSize = m_bufSize2;
-        m_buf2 = NULL;
     }
 
     // if sending the chirp fails after retries, we should assume we're no longer connected
@@ -671,7 +719,7 @@ int32_t Chirp::handleEnumerateInfo(ChirpProc *proc)
 
 int Chirp::realloc(uint32_t min)
 {
-    if (m_sharedMem || m_buf2!=NULL)
+    if (m_sharedMem)
         return CRP_RES_ERROR_MEMORY;
 
     if (!min)
@@ -709,6 +757,8 @@ int Chirp::recvChirp(uint8_t *type, ChirpProc *proc, void *args[], bool wait) //
     int res;
     uint8_t dataType, size, a;
     uint32_t i;
+
+	restoreBuffer();
 
     // receive
     if (m_errorCorrected)
@@ -786,11 +836,6 @@ int Chirp::recvChirp(uint8_t *type, ChirpProc *proc, void *args[], bool wait) //
     args[a] = NULL; // terminate list
 
     return CRP_RES_OK;
-}
-
-uint32_t Chirp::getPreBufLen()
-{
-    return m_preBuf;
 }
 
 uint8_t Chirp::getType(void *arg)
