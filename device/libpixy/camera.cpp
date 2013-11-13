@@ -470,7 +470,7 @@ int32_t cam_getFrameChirp(const uint8_t &type, const uint16_t &xOffset, const ui
 	uint8_t *frame = (uint8_t *)SRAM0_LOC;
 
 	// fill buffer contents manually for return data 
-	len = chirp->args2mem(true, frame, SRAM0_SIZE, HTYPE(FOURCC('B','A','8','1')), UINT16(xWidth), UINT16(yWidth), UINTS8_NO_COPY(xWidth*yWidth), END);
+	len = chirp->serialize(true, frame, SRAM0_SIZE, HTYPE(FOURCC('B','A','8','1')), UINT16(xWidth), UINT16(yWidth), UINTS8_NO_COPY(xWidth*yWidth), END);
 	// write frame after chirp args
 	result = cam_getFrame(frame+len, SRAM0_SIZE-len, type, xOffset, yOffset, xWidth, yWidth);
 

@@ -200,8 +200,9 @@ public:
     int assemble(int dummy, ...);
     int remoteInit();
 
-	int args2mem(bool header, uint8_t *buf, uint32_t bufSize, ...);
-	void useBuffer(uint8_t *buf, uint32_t len);
+    int serialize(bool header, uint8_t *buf, uint32_t bufSize, ...);
+    int deserialize(uint8_t *buf, uint32_t len, ...);
+    void useBuffer(uint8_t *buf, uint32_t len);
 
 protected:
     int recvChirp(uint8_t *type, ChirpProc *proc, void *args[], bool wait=false); // null pointer terminates
@@ -237,10 +238,10 @@ private:
     int32_t handleInit(uint16_t *blkSize, uint8_t *hintSource);
     int32_t handleEnumerateInfo(ChirpProc *proc);
     int assembleHelper(va_list *args);
-    int buf2args(uint8_t *buf, uint32_t len, void *args[]);
+    int deserializeHelper(uint8_t *buf, uint32_t len, void *args[]);
     int loadArgs(va_list *args, void *recvArgs[]);
-  	int args2memHelper(uint32_t offset, uint8_t *buf, uint32_t bufSize, va_list *args);
-	void restoreBuffer();
+    int serializeHelper(uint32_t offset, uint8_t *buf, uint32_t bufSize, va_list *args);
+    void restoreBuffer();
 
     uint16_t calcCrc(uint8_t *buf, uint32_t len);
     ChirpProc updateTable(const char *procName, ProcPtr procPtr);

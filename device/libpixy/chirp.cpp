@@ -100,7 +100,7 @@ int Chirp::assembleHelper(va_list *args)
 {
     int len;
 
-    len = args2memHelper(m_headerLen+m_len, m_buf, m_bufSize, args);
+    len = serializeHelper(m_headerLen+m_len, m_buf, m_bufSize, args);
 
     // set length (don't include header)
     m_len = len - m_headerLen;
@@ -125,7 +125,7 @@ void Chirp::restoreBuffer()
 }
 
 
-int Chirp::args2mem(bool header, uint8_t *buf, uint32_t bufSize, ...)
+int Chirp::serialize(bool header, uint8_t *buf, uint32_t bufSize, ...)
 {
     int res;
     uint32_t offset;
@@ -133,13 +133,13 @@ int Chirp::args2mem(bool header, uint8_t *buf, uint32_t bufSize, ...)
 
     offset = header ? m_headerLen+m_len : 0;
     va_start(args, bufSize);
-    res = args2memHelper(offset, buf, bufSize, &args);
+    res = serializeHelper(offset, buf, bufSize, &args);
     va_end(args);
 
     return res;
 }
 
-int Chirp::args2memHelper(uint32_t offset, uint8_t *buf, uint32_t bufSize, va_list *args)
+int Chirp::serializeHelper(uint32_t offset, uint8_t *buf, uint32_t bufSize, va_list *args)
 {
     int res;
     uint8_t type, origType;
@@ -790,8 +790,7 @@ int Chirp::recvChirp(uint8_t *type, ChirpProc *proc, void *args[], bool wait) //
     // get responseInt from response
     if (*type&CRP_RESPONSE)
     {
-        // add responseInt to arg list
-        //args[0] = (void *)(m_buf+m_headerLen);
+        // fake responseInt so it gets inserted
         *(m_buf+m_headerLen-4) = CRP_UINT32; // write type so it parses correctly
         *(m_buf+m_headerLen-1) = CRP_UINT32; 
         // increment pointer
@@ -800,13 +799,27 @@ int Chirp::recvChirp(uint8_t *type, ChirpProc *proc, void *args[], bool wait) //
     }
     else // call has no responseInt
         offset = m_headerLen;
-    if ((res=buf2args(m_buf+offset, m_len, args))<0)
-        return res;
 
-    return CRP_RES_OK;
+    return deserializeHelper(m_buf+offset, m_len, args);
 }
 
-int Chirp::buf2args(uint8_t *buf, uint32_t len, void *args[])
+int Chirp::deserialize(uint8_t *buf, uint32_t len, ...)
+{
+    int res;
+    va_list args;
+    void *recvArgs[CRP_MAX_ARGS+1];
+
+    if ((res=deserializeHelper(buf, len, recvArgs))<0)
+        return res;
+
+    va_start(args, len);
+    res = loadArgs(&args, recvArgs);
+    va_end(args);
+
+    return res;
+}
+
+int Chirp::deserializeHelper(uint8_t *buf, uint32_t len, void *args[])
 {
     uint8_t dataType, size, a;
     uint32_t i;
