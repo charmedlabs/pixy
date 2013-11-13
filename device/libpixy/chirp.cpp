@@ -20,7 +20,7 @@ Chirp::Chirp(bool hinterested, Link *link)
     m_errorCorrected = false;
     m_sharedMem = false;
     m_buf = NULL;
-	m_bufSave = NULL;
+    m_bufSave = NULL;
 
     m_maxNak = CRP_MAX_NAK;
     m_retries = CRP_RETRIES;
@@ -44,7 +44,10 @@ Chirp::Chirp(bool hinterested, Link *link)
 Chirp::~Chirp()
 {
     if (!m_sharedMem)
+    {
+        restoreBuffer();
         delete[] m_buf;
+    }
     delete[] m_procTable;
 }
 
@@ -107,28 +110,28 @@ int Chirp::assembleHelper(va_list *args)
 
 void Chirp::useBuffer(uint8_t *buf, uint32_t len)
 {
-	m_bufSave = m_buf;
-	m_buf = buf;
-	m_len = len-m_headerLen;
+    m_bufSave = m_buf;
+    m_buf = buf;
+    m_len = len-m_headerLen;
 }
 
 void Chirp::restoreBuffer()
 {
-	if (m_bufSave)
-	{
-		m_buf = m_bufSave;
-		m_bufSave = NULL;
-	}	
+    if (m_bufSave)
+    {
+        m_buf = m_bufSave;
+        m_bufSave = NULL;
+    }
 }
 
 
 int Chirp::args2mem(bool header, uint8_t *buf, uint32_t bufSize, ...)
 {
     int res;
-	uint32_t offset;
+    uint32_t offset;
     va_list args;
 
-	offset = header ? m_headerLen+m_len : 0;
+    offset = header ? m_headerLen+m_len : 0;
     va_start(args, bufSize);
     res = args2memHelper(offset, buf, bufSize, &args);
     va_end(args);
@@ -141,7 +144,7 @@ int Chirp::args2memHelper(uint32_t offset, uint8_t *buf, uint32_t bufSize, va_li
     int res;
     uint8_t type, origType;
     uint32_t i, si;
-	bool copy = true;
+    bool copy = true;
 
     i = offset;
     bufSize -= offset;
@@ -220,8 +223,8 @@ int Chirp::args2memHelper(uint32_t offset, uint8_t *buf, uint32_t bufSize, va_li
                     return CRP_RES_ERROR_MEMORY;
                 else if ((res=realloc(len+i))<0)
                     return res;
-				buf = m_buf;
-				bufSize = m_bufSize;
+                buf = m_buf;
+                bufSize = m_bufSize;
             }
 
             memcpy(buf+i, s, len);
@@ -232,14 +235,14 @@ int Chirp::args2memHelper(uint32_t offset, uint8_t *buf, uint32_t bufSize, va_li
             uint8_t size = type&0x0f;
             uint32_t len = va_arg(*args, int32_t);
 
-			// deal with no copy case (use our own buffer)
-			if (type==CRP_UINTS8_NO_COPY)
-			{
-				// rewrite type so as not to confuse gotoe
-				origType = type &= ~CRP_NO_COPY;
-            	buf[i-1] = origType;				
-				copy = false;
-			}
+            // deal with no copy case (use our own buffer)
+            if (type==CRP_UINTS8_NO_COPY)
+            {
+                // rewrite type so as not to confuse gotoe
+                origType = type &= ~CRP_NO_COPY;
+                buf[i-1] = origType;
+                copy = false;
+            }
 
             ALIGN(i, 4);
             buf[i-1] = origType;
@@ -247,24 +250,24 @@ int Chirp::args2memHelper(uint32_t offset, uint8_t *buf, uint32_t bufSize, va_li
             i += 4;
             ALIGN(i, size);
 
-			if (copy)
-			{
-            	len *= size; // scale by size of array elements
+            if (copy)
+            {
+                len *= size; // scale by size of array elements
 
-            	if (len+i > bufSize-CRP_BUFPAD)
-            	{
-                	if (buf!=m_buf)
-                   		return CRP_RES_ERROR_MEMORY;
-                	else if ((res=realloc(len+i))<0)
-                    	return res;
-					buf = m_buf;
-					bufSize = m_bufSize;
-            	}
+                if (len+i > bufSize-CRP_BUFPAD)
+                {
+                    if (buf!=m_buf)
+                        return CRP_RES_ERROR_MEMORY;
+                    else if ((res=realloc(len+i))<0)
+                        return res;
+                    buf = m_buf;
+                    bufSize = m_bufSize;
+                }
 
-            	int8_t *ptr = va_arg(*args, int8_t *);
-            	memcpy(buf+i, ptr, len);
-            	i += len;
-			}
+                int8_t *ptr = va_arg(*args, int8_t *);
+                memcpy(buf+i, ptr, len);
+                i += len;
+            }
         }
         else
             return CRP_RES_ERROR_PARSE;
@@ -279,8 +282,8 @@ int Chirp::args2memHelper(uint32_t offset, uint8_t *buf, uint32_t bufSize, va_li
                 return CRP_RES_ERROR_MEMORY;
             else if ((res=realloc(i))<0)
                 return res;
-		   	buf = m_buf;
-			bufSize = m_bufSize;
+            buf = m_buf;
+            bufSize = m_bufSize;
         }
     }
 
@@ -353,8 +356,8 @@ int Chirp::call(uint8_t service, ChirpProc proc, ...)
     // parse args and assemble in m_buf
     va_start(args, proc);
     m_len = 0;
-	// restore buffer in case it was changed
-	restoreBuffer();
+    // restore buffer in case it was changed
+    restoreBuffer();
     if ((res=assembleHelper(&args))<0)
     {
         va_end(args);
@@ -755,10 +758,9 @@ int Chirp::service()
 int Chirp::recvChirp(uint8_t *type, ChirpProc *proc, void *args[], bool wait) // null pointer terminates
 {
     int res;
-    uint8_t dataType, size, a;
-    uint32_t i;
+    uint32_t i, offset;
 
-	restoreBuffer();
+    restoreBuffer();
 
     // receive
     if (m_errorCorrected)
@@ -789,52 +791,60 @@ int Chirp::recvChirp(uint8_t *type, ChirpProc *proc, void *args[], bool wait) //
     if (*type&CRP_RESPONSE)
     {
         // add responseInt to arg list
-        args[0] = (void *)(m_buf+m_headerLen);
-        *(m_buf+m_headerLen-1) = CRP_UINT32; // write type so it parses correctly
+        //args[0] = (void *)(m_buf+m_headerLen);
+        *(m_buf+m_headerLen-4) = CRP_UINT32; // write type so it parses correctly
+        *(m_buf+m_headerLen-1) = CRP_UINT32; 
         // increment pointer
-        i = m_headerLen+4;
-        a = 1;
+        offset = m_headerLen-4;
+        m_len+=4;
     }
     else // call has no responseInt
-    {
-        i = m_headerLen;
-        a = 0;
-    }
+        offset = m_headerLen;
+    if ((res=buf2args(m_buf+offset, m_len, args))<0)
+        return res;
+
+    return CRP_RES_OK;
+}
+
+int Chirp::buf2args(uint8_t *buf, uint32_t len, void *args[])
+{
+    uint8_t dataType, size, a;
+    uint32_t i;
+
     // parse remaining args
-    for(; i<m_len+m_headerLen; a++)
+    for(i=0, a=0; i<len; a++)
     {
         if (a==CRP_MAX_ARGS)
             return CRP_RES_ERROR;
 
-        dataType = m_buf[i++];
+        dataType = buf[i++];
         size = dataType&0x0f;
         if (!(dataType&CRP_ARRAY)) // if we're a scalar
         {
             ALIGN(i, size);
-            args[a] = (void *)(m_buf+i);
+            args[a] = (void *)(buf+i);
             i += dataType&0x0f; // extract size of scalar, add it
         }
         else // we're an array
         {
             if (dataType==CRP_STRING) // string is a special case
             {
-                args[a] = (void *)(m_buf+i);
-                i += strlen((char *)(m_buf+i))+1; // +1 include null character
+                args[a] = (void *)(buf+i);
+                i += strlen((char *)(buf+i))+1; // +1 include null character
             }
             else
             {
                 ALIGN(i, 4);
-                uint32_t len = *(uint32_t *)(m_buf+i);
-                args[a++] = (void *)(m_buf+i);
+                uint32_t len = *(uint32_t *)(buf+i);
+                args[a++] = (void *)(buf+i);
                 i += 4;
                 ALIGN(i, size);
-                args[a] = (void *)(m_buf+i);
+                args[a] = (void *)(buf+i);
                 i += len*size;
             }
         }
     }
     args[a] = NULL; // terminate list
-
     return CRP_RES_OK;
 }
 

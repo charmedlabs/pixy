@@ -95,7 +95,6 @@
 #define UINTS32(len, a)                 CRP_INTS32, len, a
 #define FLTS32(len, a)                  CRP_FLTS32, len, a
 #define FLTS64(len, a)                  CRP_FLTS64, len, a
-#define USE_BUFFER(size, buf)           CRP_USE_BUFFER, size, buf
 
 // hint call args
 #define HINT8(v)                        CRP_HINT8, v
@@ -238,6 +237,7 @@ private:
     int32_t handleInit(uint16_t *blkSize, uint8_t *hintSource);
     int32_t handleEnumerateInfo(ChirpProc *proc);
     int assembleHelper(va_list *args);
+    int buf2args(uint8_t *buf, uint32_t len, void *args[]);
     int loadArgs(va_list *args, void *recvArgs[]);
   	int args2memHelper(uint32_t offset, uint8_t *buf, uint32_t bufSize, va_list *args);
 	void restoreBuffer();
