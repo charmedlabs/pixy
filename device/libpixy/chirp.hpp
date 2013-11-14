@@ -200,8 +200,8 @@ public:
     int assemble(int dummy, ...);
     int remoteInit();
 
-    int serialize(bool header, uint8_t *buf, uint32_t bufSize, ...);
-    int deserialize(uint8_t *buf, uint32_t len, ...);
+    static int serialize(Chirp *chirp, uint8_t *buf, uint32_t bufSize, ...);
+    static int deserialize(uint8_t *buf, uint32_t len, ...);
     void useBuffer(uint8_t *buf, uint32_t len);
 
 protected:
@@ -238,9 +238,9 @@ private:
     int32_t handleInit(uint16_t *blkSize, uint8_t *hintSource);
     int32_t handleEnumerateInfo(ChirpProc *proc);
     int assembleHelper(va_list *args);
-    int deserializeHelper(uint8_t *buf, uint32_t len, void *args[]);
-    int loadArgs(va_list *args, void *recvArgs[]);
-    int serializeHelper(uint32_t offset, uint8_t *buf, uint32_t bufSize, va_list *args);
+    static int deserializeHelper(uint8_t *buf, uint32_t len, void *args[]);
+    static int serializeHelper(Chirp *chirp, uint8_t *buf, uint32_t bufSize, va_list *args);
+    static int loadArgs(va_list *args, void *recvArgs[]);
     void restoreBuffer();
 
     uint16_t calcCrc(uint8_t *buf, uint32_t len);

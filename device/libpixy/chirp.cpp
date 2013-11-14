@@ -100,7 +100,7 @@ int Chirp::assembleHelper(va_list *args)
 {
     int len;
 
-    len = serializeHelper(m_headerLen+m_len, m_buf, m_bufSize, args);
+    len = serializeHelper(this, m_buf, m_bufSize, args);
 
     // set length (don't include header)
     m_len = len - m_headerLen;
@@ -125,29 +125,42 @@ void Chirp::restoreBuffer()
 }
 
 
-int Chirp::serialize(bool header, uint8_t *buf, uint32_t bufSize, ...)
+int Chirp::serialize(Chirp *chirp, uint8_t *buf, uint32_t bufSize, ...)
 {
     int res;
-    uint32_t offset;
     va_list args;
 
-    offset = header ? m_headerLen+m_len : 0;
     va_start(args, bufSize);
-    res = serializeHelper(offset, buf, bufSize, &args);
+    res = serializeHelper(chirp, buf, bufSize, &args);
     va_end(args);
 
     return res;
 }
 
-int Chirp::serializeHelper(uint32_t offset, uint8_t *buf, uint32_t bufSize, va_list *args)
+#define RESIZE_BUF(size) \
+    if (size > bufSize-CRP_BUFPAD) \
+    { \
+        if (!chirp) \
+            return CRP_RES_ERROR_MEMORY; \
+        else \
+        { \
+            if ((res=chirp->realloc(size))<0) \
+                return res; \
+            buf = chirp->m_buf; \
+            bufSize = chirp->m_bufSize; \
+        } \
+    } \
+
+
+int Chirp::serializeHelper(Chirp *chirp, uint8_t *buf, uint32_t bufSize, va_list *args)
 {
     int res;
     uint8_t type, origType;
     uint32_t i, si;
     bool copy = true;
 
-    i = offset;
-    bufSize -= offset;
+    i = chirp ? chirp->m_headerLen+chirp->m_len : 0;
+    bufSize -= i;
 
     while(1)
     {
@@ -217,15 +230,7 @@ int Chirp::serializeHelper(uint32_t offset, uint8_t *buf, uint32_t bufSize, va_l
             int8_t *s = va_arg(*args, int8_t *);
             uint32_t len = strlen((char *)s)+1; // include null
 
-            if (len+i > bufSize-CRP_BUFPAD)
-            {
-                if (buf!=m_buf)
-                    return CRP_RES_ERROR_MEMORY;
-                else if ((res=realloc(len+i))<0)
-                    return res;
-                buf = m_buf;
-                bufSize = m_bufSize;
-            }
+            RESIZE_BUF(len+i);
 
             memcpy(buf+i, s, len);
             i += len;
@@ -254,15 +259,7 @@ int Chirp::serializeHelper(uint32_t offset, uint8_t *buf, uint32_t bufSize, va_l
             {
                 len *= size; // scale by size of array elements
 
-                if (len+i > bufSize-CRP_BUFPAD)
-                {
-                    if (buf!=m_buf)
-                        return CRP_RES_ERROR_MEMORY;
-                    else if ((res=realloc(len+i))<0)
-                        return res;
-                    buf = m_buf;
-                    bufSize = m_bufSize;
-                }
+                RESIZE_BUF(len+i);
 
                 int8_t *ptr = va_arg(*args, int8_t *);
                 memcpy(buf+i, ptr, len);
@@ -273,18 +270,10 @@ int Chirp::serializeHelper(uint32_t offset, uint8_t *buf, uint32_t bufSize, va_l
             return CRP_RES_ERROR_PARSE;
 
         // skip hint data if we're not a source
-        if (!m_hinformer && origType&CRP_HINT)
+        if (chirp && !chirp->m_hinformer && origType&CRP_HINT)
             i = si;
 
-        if (i > bufSize-CRP_BUFPAD)
-        {
-            if (buf!=m_buf)
-                return CRP_RES_ERROR_MEMORY;
-            else if ((res=realloc(i))<0)
-                return res;
-            buf = m_buf;
-            bufSize = m_bufSize;
-        }
+        RESIZE_BUF(i);
     }
 
     // return length
