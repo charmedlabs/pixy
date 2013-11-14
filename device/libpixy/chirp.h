@@ -68,10 +68,12 @@
 #define CRP_FLT64                       (CRP_FLT | 0x08)
 #define CRP_STRING                      (CRP_NULLTERM_ARRAY | CRP_INT8)
 #define CRP_TYPE_HINT                   0x64 // type hint identifier
-#define CRP_USE_BUFFER                  0xff
 #define CRP_INTS8                       (CRP_INT8 | CRP_ARRAY)
 #define CRP_INTS16                      (CRP_INT16 | CRP_ARRAY)
 #define CRP_INTS32                      (CRP_INT32 | CRP_ARRAY)
+#define CRP_UINTS8                      CRP_INTS8
+#define CRP_UINTS16                     CRP_INTS16
+#define CRP_UINTS32                     CRP_INTS32
 #define CRP_FLTS32                      (CRP_FLT32 | CRP_ARRAY)
 #define CRP_FLTS64                      (CRP_FLT64 | CRP_ARRAY)
 #define CRP_HINTS8                      (CRP_INT8 | CRP_ARRAY | CRP_HINT)
@@ -79,7 +81,9 @@
 #define CRP_HINTS32                     (CRP_INT32 | CRP_ARRAY | CRP_HINT)
 #define CRP_HFLTS32                     (CRP_FLT32 | CRP_ARRAY | CRP_HINT)
 #define CRP_HFLTS64                     (CRP_FLT64 | CRP_ARRAY | CRP_HINT)
-#define CRP_HSTRING                     (CRP_STRING | CRP_HINT) 
+#define CRP_HSTRING                     (CRP_STRING | CRP_HINT)
+// CRP_HTYPE is for arg lists which are uint8_t arrays
+#define CRP_HTYPE(v)                    CRP_TYPE_HINT, (uint8_t)(v>>0&0xff), (uint8_t)(v>>8&0xff), (uint8_t)(v>>16&0xff), (uint8_t)(v>>24&0xff)
 
 // regular call args
 #define INT8(v)                         CRP_INT8, v
@@ -99,7 +103,6 @@
 #define UINTS32(len, a)                 CRP_INTS32, len, a
 #define FLTS32(len, a)                  CRP_FLTS32, len, a
 #define FLTS64(len, a)                  CRP_FLTS64, len, a
-#define USE_BUFFER(size, buf)           CRP_USE_BUFFER, size, buf
 
 // hint call args
 #define HINT8(v)                        CRP_HINT8, v

@@ -51,17 +51,17 @@ static int reallocTable(void);
 // for gcc-- void __attribute__((weak)) foo()
 __weak uint32_t linkBlockSize()
 {
-	return CRP_BLK_SIZE;
+    return CRP_BLK_SIZE;
 }
 
 __weak uint32_t linkGetFlags(uint8_t index)
 {
-	return 0;
+    return 0;
 }
 
 __weak int32_t chirpInit(void)
 {
-	return 0;
+    return 0;
 }
 
 // assume that destination is aligned on the correct boundary and copy the source byte by byte
@@ -76,7 +76,7 @@ int chirpOpen()
 {
     g_connected = FALSE;
     g_remoteInit = FALSE;
-	g_hinformer = FALSE;
+    g_hinformer = FALSE;
 
 #ifndef CRP_SHARED_MEM
     g_bufSize = CRP_BUFSIZE;
@@ -121,7 +121,7 @@ int assembleHelper(va_list *args)
     int res;
     uint8_t type, origType;
     uint32_t i, si;
-	int8_t *ptr;
+    int8_t *ptr;
 
     for (i=CRP_HEADER_LEN+g_len; TRUE;)
     {
@@ -134,14 +134,14 @@ int assembleHelper(va_list *args)
         if (type==END)
             break;
 
-		si = i; // save index so we can skip over data if needed
+        si = i; // save index so we can skip over data if needed
         g_buf[i++] = type;
 
-		// treat hints like other types for now
-		// but if gotoe isn't interested  in hints (m_hinformer=false),
-		// we'll restore index to si and effectively skip data. 
-		origType = type;
-		type &= ~CRP_HINT;
+        // treat hints like other types for now
+        // but if gotoe isn't interested  in hints (m_hinformer=false),
+        // we'll restore index to si and effectively skip data.
+        origType = type;
+        type &= ~CRP_HINT;
 
         if (type==CRP_INT8)
         {
@@ -219,9 +219,9 @@ int assembleHelper(va_list *args)
         else
             return CRP_RES_ERROR_PARSE;
 
-		// skip hint data if we're not a source
-		if (!g_hinformer && origType&CRP_HINT)
-			i = si; 
+        // skip hint data if we're not a source
+        if (!g_hinformer && origType&CRP_HINT)
+            i = si;
 
         if (i>g_bufSize-CRP_BUFPAD && (res=reallocate(g_bufSize))<0)
             return res;
@@ -267,12 +267,12 @@ int loadArgs(va_list *args, void *recvArgs[])
                 *(char **)recvArg = (char *)recvArgs[i];
             else
             {
-            	*(uint32_t *)recvArg = *(uint32_t *)recvArgs[i++];
-            	recvArg = va_arg(*args, void **);
-            	if (recvArg==NULL)
-               		return CRP_RES_ERROR_PARSE;
-            	*(void **)recvArg = recvArgs[i];
-			}
+                *(uint32_t *)recvArg = *(uint32_t *)recvArgs[i++];
+                recvArg = va_arg(*args, void **);
+                if (recvArg==NULL)
+                    return CRP_RES_ERROR_PARSE;
+                *(void **)recvArg = recvArgs[i];
+            }
         }
     }
     // check to see if last arg is NULL, if not, we have a parse error
@@ -296,7 +296,7 @@ int chirpCall(uint8_t service, ChirpProc proc, ...)
 
     // parse args and assemble in g_buf
     va_start(args, proc);
-	g_len = 0;
+    g_len = 0;
     if ((res=assembleHelper(&args))<0)
     {
         va_end(args);
@@ -375,14 +375,14 @@ int sendChirp(uint8_t type, ChirpProc proc)
 {
     int res;
 #ifdef CRP_ERROR_CORRECTED
-        res = sendFull(type, proc);
+    res = sendFull(type, proc);
 #else
-        // we'll linkSend forever as long as we get naks
-        // we rely on receiver to give up
-        while((res=sendHeader(type, proc))==CRP_RES_ERROR_CRC);
-        if (res!=CRP_RES_OK)
-            return res;
-        res = sendData();
+    // we'll linkSend forever as long as we get naks
+    // we rely on receiver to give up
+    while((res=sendHeader(type, proc))==CRP_RES_ERROR_CRC);
+    if (res!=CRP_RES_OK)
+        return res;
+    res = sendData();
 #endif
 
     if (res!=CRP_RES_OK)
@@ -395,7 +395,7 @@ int handleChirp(uint8_t type, ChirpProc proc, void *args[])
     int res;
     uint32_t responseInt = 0;
     uint8_t n;
-	ProcPtr ptr;
+    ProcPtr ptr;
 
     // reset data in case there is a null response
     g_len = 4; // leave room for responseInt
@@ -403,13 +403,13 @@ int handleChirp(uint8_t type, ChirpProc proc, void *args[])
     // check for intrinsic calls
     if (type&CRP_INTRINSIC)
     {
-    	if (type==CRP_CALL_ENUMERATE)
-        	responseInt = handleEnumerate((char *)args[0], (ChirpProc *)args[1]);
-    	else if (type==CRP_CALL_INIT)
-        	responseInt = handleInit((uint16_t *)args[0], (uint8_t *)args[1]);
-		else
-			return CRP_RES_ERROR;
-	}
+        if (type==CRP_CALL_ENUMERATE)
+            responseInt = handleEnumerate((char *)args[0], (ChirpProc *)args[1]);
+        else if (type==CRP_CALL_INIT)
+            responseInt = handleInit((uint16_t *)args[0], (uint8_t *)args[1]);
+        else
+            return CRP_RES_ERROR;
+    }
     else // normal chirpCall
     {
         if (proc>=g_procTableSize)
@@ -452,7 +452,7 @@ int handleChirp(uint8_t type, ChirpProc proc, void *args[])
     {
         // write responseInt
         *(uint32_t *)(g_buf+CRP_HEADER_LEN) = responseInt;
-		// send response
+        // send response
         if ((res=sendChirpRetry(CRP_RESPONSE | (type&~CRP_CALL), g_procTable[proc].chirpProc))!=CRP_RES_OK) // convert chirpCall into response
             return res;
     }
@@ -462,22 +462,22 @@ int handleChirp(uint8_t type, ChirpProc proc, void *args[])
 
 int reallocTable(void)
 {
-	ProcTableEntry *newProcTable;
-	int newProcTableSize;
+    ProcTableEntry *newProcTable;
+    int newProcTableSize;
 
-	// allocate new table, zero
-	newProcTableSize = g_procTableSize+CRP_PROCTABLE_LEN;
-	newProcTable = (ProcTableEntry *)malloc(sizeof(ProcTableEntry)*newProcTableSize);
+    // allocate new table, zero
+    newProcTableSize = g_procTableSize+CRP_PROCTABLE_LEN;
+    newProcTable = (ProcTableEntry *)malloc(sizeof(ProcTableEntry)*newProcTableSize);
     memset(newProcTable, 0, sizeof(ProcTableEntry)*newProcTableSize);
-	// copy to new table
+    // copy to new table
     memcpy(newProcTable, g_procTable, sizeof(ProcTableEntry)*g_procTableSize);
-	// delete old table
-	free(g_procTable);
-   	// set to new
-	g_procTable = newProcTable;
-	g_procTableSize = newProcTableSize;
+    // delete old table
+    free(g_procTable);
+    // set to new
+    g_procTable = newProcTable;
+    g_procTableSize = newProcTableSize;
 
-	return CRP_RES_OK;
+    return CRP_RES_OK;
 }
 
 ChirpProc lookupTable(const char *procName)
@@ -495,7 +495,7 @@ ChirpProc lookupTable(const char *procName)
 
 ChirpProc updateTable(const char *procName, ProcPtr procPtr)
 {
-	ChirpProc proc;
+    ChirpProc proc;
     // if it exists already, update,
     // if it doesn't exist, add it
     if (procName==NULL)
@@ -506,10 +506,10 @@ ChirpProc updateTable(const char *procName, ProcPtr procPtr)
     {
         for (proc=0; proc<g_procTableSize && g_procTable[proc].procName; proc++);
         if (proc==g_procTableSize)
-		{
-			reallocTable();
-			return updateTable(procName, procPtr);
-		}
+        {
+            reallocTable();
+            return updateTable(procName, procPtr);
+        }
     }
 
     // add to table
@@ -521,19 +521,19 @@ ChirpProc updateTable(const char *procName, ProcPtr procPtr)
 
 ChirpProc chirpGetProc(const char *procName, ProcPtr callback)
 {
-	uint32_t res;
+    uint32_t res;
     ChirpProc cproc = -1;
 
     if (callback)
         cproc = updateTable(procName, callback);
 
     if (chirpCall(CRP_CALL_ENUMERATE, 0,
-             STRING(procName), // linkSend name
-             INT16(cproc), // linkSend local index
-             END_SEND_ARGS,
-             &res, // get remote index
-             END_RECV_ARGS
-             )>=0)
+                  STRING(procName), // linkSend name
+                  INT16(cproc), // linkSend local index
+                  END_SEND_ARGS,
+                  &res, // get remote index
+                  END_RECV_ARGS
+                  )>=0)
         return res;
 
     // a negative ChirpProc is an error
@@ -542,28 +542,28 @@ ChirpProc chirpGetProc(const char *procName, ProcPtr callback)
 
 int chirpRemoteInit()
 {
-	int res;
-	uint32_t responseInt;
+    int res;
+    uint32_t responseInt;
     uint8_t hinformer;
 
     if (g_remoteInit)
         return CRP_RES_OK;
 
     res = chirpCall(CRP_CALL_INIT, 0,
-                INT16(g_blkSize), // linkSend block size
-                UINT8(0),         // send whether we're interested in hints or not (we're not)
-                END_SEND_ARGS,
-				&responseInt,
-                &hinformer,       // receive whether we should send hints
-                END_RECV_ARGS
-                );
-	if (res>=0)
-	{
-		g_connected = TRUE;
+                    INT16(g_blkSize), // linkSend block size
+                    UINT8(0),         // send whether we're interested in hints or not (we're not)
+                    END_SEND_ARGS,
+                    &responseInt,
+                    &hinformer,       // receive whether we should send hints
+                    END_RECV_ARGS
+                    );
+    if (res>=0)
+    {
+        g_connected = TRUE;
         g_hinformer = hinformer;
-	 	return responseInt;
-	}
-	return res;
+        return responseInt;
+    }
+    return res;
 }
 
 int chirpSetProc(const char *procName, ProcPtr proc)
@@ -606,7 +606,7 @@ int reallocate(uint32_t min)
 #ifdef CRP_SHARED_MEM
     return CRP_RES_ERROR_MEMORY;
 #else
-	uint8_t *newbuf;
+    uint8_t *newbuf;
 
     min += CRP_BUFSIZE;
     newbuf = malloc(min);
@@ -644,26 +644,26 @@ int recvChirp(uint8_t *type, ChirpProc *proc, void *args[], bool wait) // null p
 
     // linkReceive
 #ifdef CRP_ERROR_CORRECTED
-        res = recvFull(type, proc, wait);
+    res = recvFull(type, proc, wait);
 #else
-        for (i=0; TRUE; i++)
+    for (i=0; TRUE; i++)
+    {
+        res = recvHeader(type, proc, wait);
+        if (res==CRP_RES_ERROR_CRC)
         {
-            res = recvHeader(type, proc, wait);
-            if (res==CRP_RES_ERROR_CRC)
-            {
-                if (i<CRP_MAX_NAK)
-                    continue;
-                else
-                    return CRP_RES_ERROR_MAX_NAK;
-            }
-            else if (res==CRP_RES_OK)
-                break;
+            if (i<CRP_MAX_NAK)
+                continue;
             else
-                return res;
+                return CRP_RES_ERROR_MAX_NAK;
         }
-        res = recvData();
+        else if (res==CRP_RES_OK)
+            break;
+        else
+            return res;
+    }
+    res = recvData();
 #endif
-       if (res!=CRP_RES_OK)
+    if (res!=CRP_RES_OK)
         return res;
 
     // get responseInt from response
@@ -698,20 +698,20 @@ int recvChirp(uint8_t *type, ChirpProc *proc, void *args[], bool wait) // null p
         else // we're an array
         {
             if (dataType==CRP_STRING) // string is a special case
-			{
-            	args[a] = (void *)(g_buf+i);
-               	i += strlen((char *)(g_buf+i))+1; // +1 include null character
-			}
-			else
-			{
-            	ALIGN(i, 4);
-            	len = *(uint32_t *)(g_buf+i);
-            	args[a++] = (void *)(g_buf+i);
-            	i += 4;
-            	ALIGN(i, size);
-            	args[a] = (void *)(g_buf+i);
-            	i += len*size;
-			}
+            {
+                args[a] = (void *)(g_buf+i);
+                i += strlen((char *)(g_buf+i))+1; // +1 include null character
+            }
+            else
+            {
+                ALIGN(i, 4);
+                len = *(uint32_t *)(g_buf+i);
+                args[a++] = (void *)(g_buf+i);
+                i += 4;
+                ALIGN(i, size);
+                args[a] = (void *)(g_buf+i);
+                i += len*size;
+            }
         }
     }
     args[a] = NULL; // terminate list
