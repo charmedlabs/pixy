@@ -6,6 +6,7 @@
 #include <stdarg.h>
 #include "link.h"
 
+#define ALIGN(v, n)  v = v&((n)-1) ? (v&~((n)-1))+(n) : v
 #define FOURCC(a, b, c, d)  (((uint32_t)a<<0)|((uint32_t)b<<8)|((uint32_t)c<<16)|((uint32_t)d<<24))
 
 #define CRP_RES_OK                      0
@@ -200,9 +201,14 @@ public:
     int assemble(int dummy, ...);
     int remoteInit();
 
+    // utility methods
     static int serialize(Chirp *chirp, uint8_t *buf, uint32_t bufSize, ...);
     static int deserialize(uint8_t *buf, uint32_t len, ...);
+    static int vdeserialize(uint8_t *buf, uint32_t len, va_list *args);
+    static int vserialize(Chirp *chirp, uint8_t *buf, uint32_t bufSize, va_list *args);
     void useBuffer(uint8_t *buf, uint32_t len);
+
+    static uint16_t calcCrc(uint8_t *buf, uint32_t len);
 
 protected:
     int recvChirp(uint8_t *type, ChirpProc *proc, void *args[], bool wait=false); // null pointer terminates
@@ -237,13 +243,11 @@ private:
     int32_t handleEnumerate(char *procName, ChirpProc *callback);
     int32_t handleInit(uint16_t *blkSize, uint8_t *hintSource);
     int32_t handleEnumerateInfo(ChirpProc *proc);
-    int assembleHelper(va_list *args);
-    static int deserializeHelper(uint8_t *buf, uint32_t len, void *args[]);
-    static int serializeHelper(Chirp *chirp, uint8_t *buf, uint32_t bufSize, va_list *args);
+    int vassemble(va_list *args);
+    static int deserializeParse(uint8_t *buf, uint32_t len, void *args[]);
     static int loadArgs(va_list *args, void *recvArgs[]);
     void restoreBuffer();
 
-    uint16_t calcCrc(uint8_t *buf, uint32_t len);
     ChirpProc updateTable(const char *procName, ProcPtr procPtr);
     ChirpProc lookupTable(const char *procName);
     int realloc(uint32_t min=0);

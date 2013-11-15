@@ -4,8 +4,6 @@
 // todo yield, sleep() while waiting for sync response
 // todo
 
-#define ALIGN(v, n)  v = v&((n)-1) ? (v&~((n)-1))+(n) : v
-
 // assume that destination is aligned on the correct boundary and copy the source byte by byte
 void copyAlign(char *dest, const char *src, int size)
 {
@@ -90,17 +88,17 @@ int Chirp::assemble(int dummy, ...)
     va_list args;
 
     va_start(args, dummy);
-    res = assembleHelper(&args);
+    res = vassemble(&args);
     va_end(args);
 
     return res;
 }
 
-int Chirp::assembleHelper(va_list *args)
+int Chirp::vassemble(va_list *args)
 {
     int len;
 
-    len = serializeHelper(this, m_buf, m_bufSize, args);
+    len = vserialize(this, m_buf, m_bufSize, args);
 
     // set length (don't include header)
     m_len = len - m_headerLen;
@@ -131,7 +129,7 @@ int Chirp::serialize(Chirp *chirp, uint8_t *buf, uint32_t bufSize, ...)
     va_list args;
 
     va_start(args, bufSize);
-    res = serializeHelper(chirp, buf, bufSize, &args);
+    res = vserialize(chirp, buf, bufSize, &args);
     va_end(args);
 
     return res;
@@ -152,7 +150,7 @@ int Chirp::serialize(Chirp *chirp, uint8_t *buf, uint32_t bufSize, ...)
     } \
 
 
-int Chirp::serializeHelper(Chirp *chirp, uint8_t *buf, uint32_t bufSize, va_list *args)
+int Chirp::vserialize(Chirp *chirp, uint8_t *buf, uint32_t bufSize, va_list *args)
 {
     int res;
     uint8_t type, origType;
@@ -347,7 +345,7 @@ int Chirp::call(uint8_t service, ChirpProc proc, ...)
     m_len = 0;
     // restore buffer in case it was changed
     restoreBuffer();
-    if ((res=assembleHelper(&args))<0)
+    if ((res=vassemble(&args))<0)
     {
         va_end(args);
         return res;
@@ -789,7 +787,7 @@ int Chirp::recvChirp(uint8_t *type, ChirpProc *proc, void *args[], bool wait) //
     else // call has no responseInt
         offset = m_headerLen;
 
-    return deserializeHelper(m_buf+offset, m_len, args);
+    return deserializeParse(m_buf+offset, m_len, args);
 }
 
 int Chirp::deserialize(uint8_t *buf, uint32_t len, ...)
@@ -798,7 +796,7 @@ int Chirp::deserialize(uint8_t *buf, uint32_t len, ...)
     va_list args;
     void *recvArgs[CRP_MAX_ARGS+1];
 
-    if ((res=deserializeHelper(buf, len, recvArgs))<0)
+    if ((res=deserializeParse(buf, len, recvArgs))<0)
         return res;
 
     va_start(args, len);
@@ -808,7 +806,18 @@ int Chirp::deserialize(uint8_t *buf, uint32_t len, ...)
     return res;
 }
 
-int Chirp::deserializeHelper(uint8_t *buf, uint32_t len, void *args[])
+int Chirp::vdeserialize(uint8_t *buf, uint32_t len, va_list *args)
+{
+    int res;
+    void *recvArgs[CRP_MAX_ARGS+1];
+
+    if ((res=deserializeParse(buf, len, recvArgs))<0)
+        return res;
+
+    return loadArgs(args, recvArgs);
+}
+
+int Chirp::deserializeParse(uint8_t *buf, uint32_t len, void *args[])
 {
     uint8_t dataType, size, a;
     uint32_t i;
