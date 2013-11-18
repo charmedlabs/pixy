@@ -204,8 +204,8 @@ public:
     // utility methods
     static int serialize(Chirp *chirp, uint8_t *buf, uint32_t bufSize, ...);
     static int deserialize(uint8_t *buf, uint32_t len, ...);
-    static int vdeserialize(uint8_t *buf, uint32_t len, va_list *args);
     static int vserialize(Chirp *chirp, uint8_t *buf, uint32_t bufSize, va_list *args);
+    static int vdeserialize(uint8_t *buf, uint32_t len, va_list *args);
     void useBuffer(uint8_t *buf, uint32_t len);
 
     static uint16_t calcCrc(uint8_t *buf, uint32_t len);
@@ -216,7 +216,7 @@ protected:
     virtual int sendChirp(uint8_t type, ChirpProc proc);
 
     uint8_t *m_buf;
-	uint8_t *m_bufSave;
+    uint8_t *m_bufSave;
     uint32_t m_len;
     uint32_t m_offset;
     uint32_t m_bufSize;

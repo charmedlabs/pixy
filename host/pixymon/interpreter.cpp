@@ -25,13 +25,30 @@ Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, MainWindow 
     if (m_chirp->open()<0)
         throw std::runtime_error("Cannot connect/reconnect to Pixy.");
 #if 1
-    ChirpProc proc;
+    ChirpProc proc, procGet, procGetInfo, procGetAll;
     uint8_t buf[0x40];
     proc = m_chirp->getProc("prm_set");
+    procGet = m_chirp->getProc("prm_get");
+    procGetInfo = m_chirp->getProc("prm_getInfo");
+    procGetAll = m_chirp->getProc("prm_getAll");
 
-    int response, len;
-    len = m_chirp->serialize(false, buf, 0x40, UINT32(0xdead), UINT16(0xbeef), UINT8(0xab), UINT32(0xbaad), END);
-    m_chirp->callSync(proc, STRING("hello"), UINTS8(len, buf), END_OUT_ARGS, &response, END_IN_ARGS);
+    uint32_t dead, baad;
+    uint16_t beef;
+    uint8_t ab;
+    uint8_t *buf2;
+    char *desc;
+    char *id;
+    int response, len, res;
+    len = m_chirp->serialize(false, buf, 0x40, UINT32(0xa1b2c3d4), UINT16(0xc1ab), UINT8(0xca), UINT32(0xea12345), END);
+    res = m_chirp->callSync(proc, STRING("hello"), UINTS8(len, buf), END_OUT_ARGS, &response, END_IN_ARGS);
+    res = m_chirp->callSync(procGet, STRING("hello"), END_OUT_ARGS, &response, &len, &buf2, END_IN_ARGS);
+    res = Chirp::deserialize(buf2, len, &dead, &beef, &ab, &baad, END);
+    res = m_chirp->callSync(procGetInfo, STRING("hello"), END_OUT_ARGS, &response, &desc, END_IN_ARGS);
+    res = m_chirp->callSync(procGetAll, UINT16(0), END_OUT_ARGS, &response, &id, &desc, &len, &buf2, END_IN_ARGS);
+    res = m_chirp->callSync(procGetAll, UINT16(1), END_OUT_ARGS, &response, &id, &desc, &len, &buf2, END_IN_ARGS);
+    res = m_chirp->callSync(procGetAll, UINT16(2), END_OUT_ARGS, &response, &id, &desc, &len, &buf2, END_IN_ARGS);
+    res = m_chirp->callSync(procGetAll, UINT16(3), END_OUT_ARGS, &response, &id, &desc, &len, &buf2, END_IN_ARGS);
+
 #endif
 
     m_renderer = new Renderer(m_video);

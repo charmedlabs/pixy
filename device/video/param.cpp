@@ -18,7 +18,8 @@
 #define PRM_DATA_LEN      (PRM_MAX_LEN-PRM_HEADER_LEN)
 #define PRM_ALLOCATED_LEN (SECTOR_SIZE*2) // 2 sectors
 #define PRM_FLASH_LOC	  (FLASH_BEGIN_A + FLASH_SIZE - PRM_ALLOCATED_LEN)  // last sectors
-#define PRM_END_RECORD	  (PRM_FLASH_LOC + (PRM_ALLOCATED_LEN/PRM_MAX_LEN)*PRM_MAX_LEN)  // last sector
+#define PRM_ENDREC_OFFSET ((PRM_ALLOCATED_LEN/PRM_MAX_LEN)*PRM_MAX_LEN)  // last sector
+#define PRM_ENDREC	      (PRM_FLASH_LOC + PRM_ENDREC_OFFSET)  // last sector
 
 static const ProcModule g_module[] =
 {
@@ -36,6 +37,22 @@ static const ProcModule g_module[] =
 	(ProcPtr)prm_getChirp, 
 	{CRP_STRING, END}, 
 	"Get parameter value"
+	"@p parameter identifier (string)"
+	"@r 0 if success, negative if error"
+	},
+	{
+	"prm_getInfo",
+	(ProcPtr)prm_getInfo, 
+	{CRP_STRING, END}, 
+	"Get parameter information"
+	"@p parameter identifier (string)"
+	"@r 0 if success, negative if error"
+	},
+	{
+	"prm_getAll",
+	(ProcPtr)prm_getAll, 
+	{CRP_STRING, END}, 
+	"Get parameter information"
 	"@p parameter identifier (string)"
 	"@r 0 if success, negative if error"
 	},
@@ -106,14 +123,23 @@ int prm_init(Chirp *chirp)
 	prm_get("hello", &dead, &beef, &ab, &baad, END);	
 	prm_get("there", &dead, &beef, &ab, &baad, END);	
 	prm_get("you", &dead, &beef, &ab, &baad, END);
+
+	prm_set("there", UINT32(0xabcdef12), UINT16(0xdeed), UINT8(0xc1), UINT32(0xbaadf00d), END);
+	prm_get("there", &dead, &beef, &ab, &baad, END);	
 		
 	return 0;	
 }
 
-
-int prm_format()
+const char *prm_getId(ParamRecord *prm)
 {
-	return flash_erase(PRM_FLASH_LOC, PRM_ALLOCATED_LEN);
+	return (char *)prm+PRM_HEADER_LEN;
+}
+
+const char *prm_getDesc(ParamRecord *prm)
+{
+	uint32_t offset = PRM_HEADER_LEN;
+	offset += strlen((char *)prm+offset) + 1;
+	return (char *)prm+offset;
 }
 
 uint32_t prm_getDataOffset(const ParamRecord *record)
@@ -130,6 +156,44 @@ uint32_t prm_getDataOffset(const ParamRecord *record)
 	return offset; 
 }
 
+int32_t  prm_getInfo(const char *id, Chirp *chirp)
+{
+	ParamRecord *prm;
+
+	for (prm=(ParamRecord *)PRM_FLASH_LOC; prm->crc!=0xffff && prm<(ParamRecord *)PRM_ENDREC; prm++)
+	{
+		if(strcmp(id, (char *)prm->data)==0)
+		{
+			CRP_RETURN(chirp, STRING(prm_getDesc(prm)));
+			return 0;
+		}
+	}
+	return -1;	
+}
+
+
+int32_t  prm_getAll(const uint16_t &index, Chirp *chirp)
+{
+	uint16_t i;
+	ParamRecord *prm;
+
+	for (i=0, prm=(ParamRecord *)PRM_FLASH_LOC; prm->crc!=0xffff && prm<(ParamRecord *)PRM_ENDREC; i++, prm++)
+	{
+		if(i==index)
+		{
+			CRP_RETURN(chirp, STRING(prm_getId(prm)), STRING(prm_getDesc(prm)),  UINTS8(prm->len, (uint8_t *)prm+prm_getDataOffset(prm)));
+			return 0;
+		}
+	}
+	return -1;	
+}
+
+
+int prm_format()
+{
+	return flash_erase(PRM_FLASH_LOC, PRM_ALLOCATED_LEN);
+}
+
 uint16_t prm_crc(const ParamRecord *record)
 {
 	uint16_t crc;
@@ -143,11 +207,22 @@ uint16_t prm_crc(const ParamRecord *record)
 	return crc;
 }
 
-ParamRecord *prm_find(const char *id)
+ParamRecord *prm_find(const char *id, uint8_t *buf=NULL)
 {
-	ParamRecord *prm;
+	ParamRecord *prm, *begin, *end;
 
-	for (prm=(ParamRecord *)PRM_FLASH_LOC; prm->crc!=0xffff && prm<(ParamRecord *)PRM_END_RECORD; prm++)
+	if (buf)
+	{
+		begin =  (ParamRecord *)buf;
+		end = (ParamRecord *)(buf+SECTOR_SIZE);
+	}
+	else
+	{
+		begin =	(ParamRecord *)PRM_FLASH_LOC;
+		end = (ParamRecord *)PRM_ENDREC;
+	}
+	
+	for (prm=begin; prm->crc!=0xffff && prm<end; prm++)
 	{
 		if(strcmp(id, (char *)prm->data)==0)
 			return prm;
@@ -159,9 +234,9 @@ uint32_t prm_nextFree()
 {
 	ParamRecord *prm;
 
-	for (prm=(ParamRecord *)PRM_FLASH_LOC; prm->crc!=0xffff && prm<(ParamRecord *)PRM_END_RECORD; prm++);
+	for (prm=(ParamRecord *)PRM_FLASH_LOC; prm->crc!=0xffff && prm<(ParamRecord *)PRM_ENDREC; prm++);
 
-	if (prm>=(ParamRecord *)PRM_END_RECORD)
+	if (prm>=(ParamRecord *)PRM_ENDREC)
 		return NULL;
 	return (uint32_t)prm; 
 }
@@ -175,7 +250,7 @@ bool prm_verifyAll()
 {
 	ParamRecord *prm;
 
-	for (prm=(ParamRecord *)PRM_FLASH_LOC; prm->crc!=0xffff && prm<(ParamRecord *)PRM_END_RECORD; prm++)
+	for (prm=(ParamRecord *)PRM_FLASH_LOC; prm->crc!=0xffff && prm<(ParamRecord *)PRM_ENDREC; prm++)
 	{
 		if (prm_verifyRecord(prm)==false)
 			return false;
@@ -186,12 +261,56 @@ bool prm_verifyAll()
 
 int32_t prm_set(const char *id, ...)
 {
+	va_list args;
+	int res;
+   	uint8_t buf[PRM_MAX_LEN];
+
+	va_start(args, id);
+	res = Chirp::vserialize(NULL, buf, PRM_MAX_LEN, &args);
+	va_end(args);
+	if (res<0)
+		return res;
+
+	prm_setChirp(id, res, buf);
+
 	return 0;
 }
 
-int32_t prm_setChirp(const char *id, const uint32_t &valLen, const uint8_t *val, Chirp *chirp)
+int32_t prm_setChirp(const char *id, const uint32_t &valLen, const uint8_t *val)
 {
-	printf("set %d\n", valLen);
+	ParamRecord *prm;
+	uint8_t *buf;
+	uint32_t offset;
+	void *sector;
+
+	buf = (uint8_t *)malloc(SECTOR_SIZE);
+
+	if (buf==NULL)
+		return -2;
+
+	prm = prm_find(id);
+
+	if (prm==NULL)
+		return -1;
+
+	sector = (void *)SECTOR_MASK((uint32_t)prm);
+	memcpy(buf, sector, SECTOR_SIZE);
+
+	prm = prm_find(id, buf);
+
+	if (prm==NULL)
+		return -1;
+
+	offset = prm_getDataOffset(prm);	
+	memcpy((uint8_t *)prm+offset, val, valLen);
+	 	
+	prm->len = valLen;
+	prm->crc = prm_crc(prm);
+	
+	flash_erase((uint32_t)sector, SECTOR_SIZE); 
+	flash_program((uint32_t)sector, buf, SECTOR_SIZE);
+
+	free(buf); 	
 	return 0;
 }
 
@@ -214,13 +333,17 @@ int32_t prm_get(const char *id, ...)
 
 int32_t prm_getChirp(const char *id, Chirp *chirp)
 {
+	ParamRecord *prm;
+
+	prm = prm_find(id);
+	if (prm==NULL)
+		return -1;
+	
+	CRP_RETURN(chirp, UINTS8(prm->len, (uint8_t *)prm+prm_getDataOffset(prm)), END);
+
 	return 0;
 }
 
-int32_t prm_setParam(const char *id, ...)
-{
-	return 0;
-}
 
 int prm_add(const char *id, const char *desc, ...)
 {
@@ -238,8 +361,16 @@ int prm_add(const char *id, const char *desc, ...)
 
 	strcpy((char *)record+offset, id);
 	offset += strlen(id) + 1;
-	strcpy((char *)record+offset, desc);
-	offset += strlen(desc) + 1;
+	if (desc!=NULL)
+	{
+		strcpy((char *)record+offset, desc);
+		offset += strlen(desc) + 1;
+	}
+	else
+	{
+		*(char *)(record+offset) = '\0';
+	 	offset++;
+	}
 
 	// data section should be aligned to 4 bytes	
 	ALIGN(offset, 4);
