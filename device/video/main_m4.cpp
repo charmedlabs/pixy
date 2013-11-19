@@ -591,7 +591,6 @@ int main(void)
  {	
  	pixyInit(SRAM3_LOC, &LR0[0], sizeof(LR0));
 	cc_init(g_chirpUsb);
-	prm_init(g_chirpUsb);
 #if 0
 	SPIFIopers spifi;
 	memset((void *)&spifi, 0, sizeof(spifi));

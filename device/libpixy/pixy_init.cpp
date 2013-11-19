@@ -1,5 +1,6 @@
 #include "pixy_init.h"
 #include "platform_config.h"
+#include "param.h"
 #include "camera.h"
 #include "rcservo.h"
 #include "led.h"	  
@@ -140,6 +141,7 @@ void pixyInit(uint32_t slaveRomStart, const unsigned char slaveImage[], uint32_t
   	g_chirpM0 = new ChirpM0();
 
 	// initialize devices/modules
+	prm_init(g_chirpUsb);
 	pwr_init();
 	spi_init();
 	cam_init();
