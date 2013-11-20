@@ -12,9 +12,10 @@ void copyAlign(char *dest, const char *src, int size)
         dest[i] = src[i];
 }
 
-Chirp::Chirp(bool hinterested, Link *link)
+Chirp::Chirp(bool hinterested, Link *link, XdataCallback xdataCallback)
 {
     m_link = NULL;
+    m_xdataCallback = NULL;
     m_errorCorrected = false;
     m_sharedMem = false;
     m_buf = NULL;
@@ -27,6 +28,7 @@ Chirp::Chirp(bool hinterested, Link *link)
     m_idleTimeout = CRP_IDLE_TIMEOUT;
     m_sendTimeout = CRP_SEND_TIMEOUT;
     m_remoteInit = false;
+    m_call = false;
     m_connected = false;
     m_hinformer = false;
     m_hinterested = hinterested;
@@ -35,6 +37,8 @@ Chirp::Chirp(bool hinterested, Link *link)
     m_procTable = new ProcTableEntry[m_procTableSize];
     memset(m_procTable, 0, sizeof(ProcTableEntry)*m_procTableSize);
 
+    if (xdataCallback)
+        setXdataCallback(xdataCallback);
     if (link)
         setLink(link);
 }
@@ -81,16 +85,30 @@ void Chirp::setLink(Link *link)
     init();
 }
 
+void Chirp::setXdataCallback(XdataCallback callback)
+{
+    m_xdataCallback = callback;
+}
+
+
 
 int Chirp::assemble(int dummy, ...)
 {
     int res;
     va_list args;
 
+    if (!m_call)
+        m_len = 0;
+
     va_start(args, dummy);
     res = vassemble(&args);
     va_end(args);
 
+    if (!m_call && res==CRP_RES_OK) // if we're not a call, we're extra data, so we need to send
+    {
+        if ((res=sendChirpRetry(CRP_XDATA, 0))!=CRP_RES_OK) // convert call into response
+            return res;
+    }
     return res;
 }
 
@@ -99,6 +117,9 @@ int Chirp::vassemble(va_list *args)
     int len;
 
     len = vserialize(this, m_buf, m_bufSize, args);
+    // check for error
+    if (len<0)
+        return len;
 
     // set length (don't include header)
     m_len = len - m_headerLen;
@@ -406,6 +427,10 @@ int Chirp::sendChirpRetry(uint8_t type, ChirpProc proc)
 {
     int i, res;
 
+    if (!m_connected && !(type&CRP_INTRINSIC))
+        return CRP_RES_ERROR_NOT_CONNECTED;
+    if (m_len==0) // deal with case where there is no actual data (e.g. it's all hint data and gotoe isn't hinterested)
+        return CRP_RES_OK;
     for (i=0; i<m_retries; i++)
     {
         res = sendChirp(type, proc);
@@ -451,6 +476,7 @@ int Chirp::handleChirp(uint8_t type, ChirpProc proc, void *args[])
     // check for intrinsic calls
     if (type&CRP_INTRINSIC)
     {
+        m_call = true; // indicate to ourselves that this is a chirp call
         if (type==CRP_CALL_ENUMERATE)
             responseInt = handleEnumerate((char *)args[0], (ChirpProc *)args[1]);
         else if (type==CRP_CALL_INIT)
@@ -458,7 +484,17 @@ int Chirp::handleChirp(uint8_t type, ChirpProc proc, void *args[])
         else if (type==CRP_CALL_ENUMERATE_INFO)
             responseInt = handleEnumerateInfo((ChirpProc *)args[0]);
         else
+        {
+            m_call = false;
             return CRP_RES_ERROR;
+        }
+        m_call = false;
+    }
+    else if (type==CRP_XDATA)
+    {
+        if (m_xdataCallback)
+            (*m_xdataCallback)(args);
+        return CRP_RES_OK;
     }
     else // normal call
     {
@@ -472,6 +508,8 @@ int Chirp::handleChirp(uint8_t type, ChirpProc proc, void *args[])
         // count args
         for (n=0; args[n]!=NULL; n++);
 
+        m_call = true; // indicate to ourselves that this is a chirp call
+        // this is probably overkill....
         if (n==0)
             responseInt = (*ptr)(this);
         else if (n==1)
@@ -494,6 +532,7 @@ int Chirp::handleChirp(uint8_t type, ChirpProc proc, void *args[])
             responseInt = (*(uint32_t(*)(void*,void*,void*,void*,void*,void*,void*,void*,void*,Chirp*))ptr)(args[0],args[1],args[2],args[3],args[4],args[5],args[6],args[7],args[8],this);
         else if (n==10)
             responseInt = (*(uint32_t(*)(void*,void*,void*,void*,void*,void*,void*,void*,void*,void*,Chirp*))ptr)(args[0],args[1],args[2],args[3],args[4],args[5],args[6],args[7],args[8],args[9],this);
+        m_call = false;
     }
 
     // if it's a chirp call, we need to send back the result

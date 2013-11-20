@@ -61,21 +61,6 @@ struct ParamRecord
 int prm_init(Chirp *chirp)
 {
 	chirp->registerModule(g_module);
-
-//	prm_format();
-	prm_add("hello", "this is the description",  UINT32(0xdead), UINT16(0xbeef), UINT8(0xab), UINT32(0xbaad), END);
-	prm_add("there", "this is another description",  UINT32(0xbaadf00d), UINT16(0xbeef), UINT8(0xab), UINT32(0xbaad), END);
-	prm_verifyAll();
-	
-	uint32_t dead, beef, baad;
-	uint8_t ab;
-
-	prm_get("hello", &dead, &beef, &ab, &baad, END);	
-	prm_get("there", &dead, &beef, &ab, &baad, END);	
-	prm_get("you", &dead, &beef, &ab, &baad, END);
-
-	prm_set("there", UINT32(0xabcdef12), UINT16(0xdeed), UINT8(0xc1), UINT32(0xbaadf00d), END);
-	prm_get("there", &dead, &beef, &ab, &baad, END);	
 		
 	return 0;	
 }

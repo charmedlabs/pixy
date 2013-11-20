@@ -36,6 +36,7 @@
 #define CRP_RESPONSE          		0x40
 #define CRP_INTRINSIC          		0x20
 #define CRP_DATA                        0x10
+#define CRP_XDATA                       0x18 // data not associated with no associated procedure)
 #define CRP_CALL_ENUMERATE    		(CRP_CALL | CRP_INTRINSIC | 0x00)
 #define CRP_CALL_INIT         		(CRP_CALL | CRP_INTRINSIC | 0x01)
 #define CRP_CALL_ENUMERATE_INFO         (CRP_CALL | CRP_INTRINSIC | 0x02)
@@ -153,6 +154,8 @@ typedef int16_t ChirpProc; // negative values are invalid
 
 typedef uint32_t (*ProcPtr)(Chirp *);
 
+typedef int (*XdataCallback)(void *data[]);
+
 struct ProcModule
 {
     char *procName;
@@ -185,11 +188,12 @@ struct ProcTableEntry
 class Chirp
 {
 public:
-    Chirp(bool hintSink=false, Link *link=NULL);
+    Chirp(bool hinterested=false, Link *link=NULL, XdataCallback xdataCallback=NULL);
     ~Chirp();
 
     virtual int init();
     void setLink(Link *link);
+    void setXdataCallback(XdataCallback callback);
     ChirpProc getProc(const char *procName, ProcPtr callback=0);
     int setProc(const char *procName, ProcPtr proc,  ProcTableExtension *extension=NULL);
     int getProcInfo(ChirpProc proc, ProcInfo *info);
@@ -260,7 +264,9 @@ private:
     uint8_t m_maxNak;
     uint8_t m_retries;
     bool m_remoteInit;
+    bool m_call;
     bool m_connected;
+    XdataCallback m_xdataCallback;
 };
 
 #endif // CHIRP_H

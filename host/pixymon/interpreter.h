@@ -80,6 +80,7 @@ private:
     int addProgram(ChirpCallData data);
     int addProgram(const QStringList &argv);
     int execute();
+    bool checkRemoteProgram();
     void prompt();
     QStringList getSections(const QString &id, const QString &string);
     int getArgs(const ProcInfo *info, ArgList *argList);
@@ -115,6 +116,7 @@ private:
     // for program
     bool m_programming;
     bool m_programRunning;
+    bool m_remoteProgramRunning;
     std::vector<ChirpCallData> m_program;
     std::vector<QStringList> m_programText;
 

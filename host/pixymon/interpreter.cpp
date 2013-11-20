@@ -19,6 +19,7 @@ Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, MainWindow 
     m_pc = 0;
     m_programming = false;
     m_programRunning = false;
+    m_remoteProgramRunning = false;
     m_rcount = 0;
 
     m_chirp = new ChirpMon(this);
@@ -326,12 +327,25 @@ int Interpreter::addProgram(const QStringList &argv)
     return 0;
 }
 
+bool Interpreter::checkRemoteProgram()
+{
+    m_remoteProgramRunning = true;
+    return m_remoteProgramRunning;
+}
 
 void Interpreter::run()
 {
     int res;
 
-    if (m_programRunning)
+#if 0
+    if (checkRemoteProgram()) // check if remote program is running, if so, poll
+    {
+        while(m_remoteProgramRunning)
+            m_chirp->service();
+    }
+    else
+#endif
+        if (m_programRunning)
     {
 
         res = execute();

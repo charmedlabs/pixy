@@ -406,11 +406,6 @@
               <FileType>8</FileType>
               <FilePath>.\cblob.cpp</FilePath>
             </File>
-            <File>
-              <FileName>param.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>.\param.cpp</FilePath>
-            </File>
           </Files>
         </Group>
       </Groups>
@@ -814,11 +809,6 @@
               <FileName>cblob.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>.\cblob.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>param.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>.\param.cpp</FilePath>
             </File>
           </Files>
         </Group>
