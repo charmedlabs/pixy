@@ -526,6 +526,16 @@
               <FileType>1</FileType>
               <FilePath>.\lpc43xx_ssp.c</FilePath>
             </File>
+            <File>
+              <FileName>param.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>.\param.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>flash.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>.\flash.cpp</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

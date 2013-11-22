@@ -12,10 +12,9 @@ void copyAlign(char *dest, const char *src, int size)
         dest[i] = src[i];
 }
 
-Chirp::Chirp(bool hinterested, Link *link, XdataCallback xdataCallback)
+Chirp::Chirp(bool hinterested, Link *link)
 {
     m_link = NULL;
-    m_xdataCallback = NULL;
     m_errorCorrected = false;
     m_sharedMem = false;
     m_buf = NULL;
@@ -37,8 +36,6 @@ Chirp::Chirp(bool hinterested, Link *link, XdataCallback xdataCallback)
     m_procTable = new ProcTableEntry[m_procTableSize];
     memset(m_procTable, 0, sizeof(ProcTableEntry)*m_procTableSize);
 
-    if (xdataCallback)
-        setXdataCallback(xdataCallback);
     if (link)
         setLink(link);
 }
@@ -84,12 +81,6 @@ void Chirp::setLink(Link *link)
     // link is set up, need to call init
     init();
 }
-
-void Chirp::setXdataCallback(XdataCallback callback)
-{
-    m_xdataCallback = callback;
-}
-
 
 
 int Chirp::assemble(int dummy, ...)
@@ -429,7 +420,9 @@ int Chirp::sendChirpRetry(uint8_t type, ChirpProc proc)
 
     if (!m_connected && !(type&CRP_INTRINSIC))
         return CRP_RES_ERROR_NOT_CONNECTED;
-    if (m_len==0) // deal with case where there is no actual data (e.g. it's all hint data and gotoe isn't hinterested)
+    // deal with case where there is no actual data (e.g. it's all hint data and gotoe isn't hinterested)
+    // but chirp calls can have no data of course
+    if (m_len==0 && !(type&CRP_CALL))
         return CRP_RES_OK;
     for (i=0; i<m_retries; i++)
     {
@@ -492,8 +485,7 @@ int Chirp::handleChirp(uint8_t type, ChirpProc proc, void *args[])
     }
     else if (type==CRP_XDATA)
     {
-        if (m_xdataCallback)
-            (*m_xdataCallback)(args);
+        handleXdata(args);
         return CRP_RES_OK;
     }
     else // normal call
@@ -877,7 +869,7 @@ int Chirp::deserializeParse(uint8_t *buf, uint32_t len, void *args[])
         }
         else // we're an array
         {
-            if (dataType==CRP_STRING) // string is a special case
+            if (dataType==CRP_STRING || dataType==CRP_HSTRING) // string is a special case
             {
                 args[a] = (void *)(buf+i);
                 i += strlen((char *)(buf+i))+1; // +1 include null character

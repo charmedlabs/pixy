@@ -9,6 +9,7 @@
 ConsoleWidget::ConsoleWidget(MainWindow *main) : QPlainTextEdit((QWidget *)main)
 {
     m_main = main;
+    m_color = CW_DEFAULT_COLOR;
     // a block is a line, so this is the maximum number of lines to buffer
     setMaximumBlockCount(CW_SCROLLHEIGHT);
     acceptInput(false);
@@ -21,21 +22,29 @@ ConsoleWidget::~ConsoleWidget()
     m_mutexPrint.unlock();
 }
 
-void ConsoleWidget::print(const QString &text)
+void ConsoleWidget::print(QString text, QColor color)
 {
-    m_mutexPrint.lock();
+
     moveCursor(QTextCursor::End);
+    if (color!=m_color)
+    {
+        QTextCharFormat tf = currentCharFormat();
+        tf.setForeground(color);
+        setCurrentCharFormat(tf);
+        m_color = color;
+    }
+    m_mutexPrint.lock();
     insertPlainText(text);
     m_waitPrint.wakeAll();
     m_mutexPrint.unlock();
 }
 
-void ConsoleWidget::error(const QString &text)
+void ConsoleWidget::error(QString text)
 {
     print("error: " + text);
 }
 
-void ConsoleWidget::prompt(const QString &text)
+void ConsoleWidget::prompt(QString text)
 {
     QString text2 = text;
 
@@ -57,7 +66,7 @@ void ConsoleWidget::prompt(const QString &text)
     m_prompt = text2;
 }
 
-void ConsoleWidget::type(const QString &text)
+void ConsoleWidget::type(QString text)
 {
 }
 

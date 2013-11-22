@@ -1,6 +1,7 @@
 #include <QTimer>
 #include <QPainter>
 #include <QDebug>
+#include <QMouseEvent>
 #include "mainwindow.h"
 #include "videowidget.h"
 #include "console.h"

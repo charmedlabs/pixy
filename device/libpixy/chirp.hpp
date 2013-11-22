@@ -154,8 +154,6 @@ typedef int16_t ChirpProc; // negative values are invalid
 
 typedef uint32_t (*ProcPtr)(Chirp *);
 
-typedef int (*XdataCallback)(void *data[]);
-
 struct ProcModule
 {
     char *procName;
@@ -188,12 +186,11 @@ struct ProcTableEntry
 class Chirp
 {
 public:
-    Chirp(bool hinterested=false, Link *link=NULL, XdataCallback xdataCallback=NULL);
+    Chirp(bool hinterested=false, Link *link=NULL);
     ~Chirp();
 
     virtual int init();
     void setLink(Link *link);
-    void setXdataCallback(XdataCallback callback);
     ChirpProc getProc(const char *procName, ProcPtr callback=0);
     int setProc(const char *procName, ProcPtr proc,  ProcTableExtension *extension=NULL);
     int getProcInfo(ChirpProc proc, ProcInfo *info);
@@ -217,6 +214,7 @@ public:
 protected:
     int recvChirp(uint8_t *type, ChirpProc *proc, void *args[], bool wait=false); // null pointer terminates
     virtual int handleChirp(uint8_t type, ChirpProc proc, void *args[]); // null pointer terminates
+    virtual void handleXdata(void *data[]) {}
     virtual int sendChirp(uint8_t type, ChirpProc proc);
 
     uint8_t *m_buf;
@@ -266,7 +264,6 @@ private:
     bool m_remoteInit;
     bool m_call;
     bool m_connected;
-    XdataCallback m_xdataCallback;
 };
 
 #endif // CHIRP_H

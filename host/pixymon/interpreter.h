@@ -4,6 +4,7 @@
 #include <QWaitCondition>
 #include <QMutex>
 #include <QStringList>
+#include <QColor>
 #include <vector>
 #include <utility>
 #include "chirpmon.h"
@@ -31,12 +32,12 @@ public:
     int beginProgram();
     int endProgram();
     int runProgram();
-    int resumeProgram();
+    int runRemoteProgram();
     int stopProgram();
     int clearProgram();
     bool programRunning()
     {
-        return m_programRunning;
+        return m_programRunning || m_remoteProgramRunning;
     }
 
     int call(const QString &command);
@@ -54,9 +55,9 @@ public:
 
 signals:
     void runState(bool state);
-    void textOut(const QString &text);
-    void error(const QString &text);
-    void prompt(const QString &text);
+    void textOut(QString text, QColor color=Qt::black);
+    void error(QString text);
+    void prompt(QString text);
     void videoPrompt(uint type);
     void enableConsole(bool enable);
     void connected(ConnectEvent::Device device, bool state);
@@ -76,11 +77,13 @@ private:
     void handleCall(const QStringList &argv);
     void listProgram();
     int call(const QStringList &argv, bool interactive=false);
-    int handleResponse(void *args[]);
+    void handleResponse(void *args[]);
+    void handleData(void *args[]);
     int addProgram(ChirpCallData data);
     int addProgram(const QStringList &argv);
     int execute();
     bool checkRemoteProgram();
+    int stopRemoteProgram();
     void prompt();
     QStringList getSections(const QString &id, const QString &string);
     int getArgs(const ProcInfo *info, ArgList *argList);
@@ -112,6 +115,9 @@ private:
     QWaitCondition m_waitInput;
 
     unsigned int m_pc;
+    ChirpProc m_exec_run;
+    ChirpProc m_exec_running;
+    ChirpProc m_exec_stop;
 
     // for program
     bool m_programming;
@@ -121,6 +127,7 @@ private:
     std::vector<QStringList> m_programText;
 
     QString m_command;
+    QString m_print;
     Qt::Key m_key;
     uint32_t m_rcount;
     QStringList m_argv;

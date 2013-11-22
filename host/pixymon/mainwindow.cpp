@@ -147,7 +147,7 @@ void MainWindow::connectPixy(bool state)
             {
                 m_console->print("Pixy detected.\n");
                 m_interpreter = new Interpreter(m_console, m_video, this);
-#if 1
+#if 0
                 // start with a program (normally would be read from a config file instead of hard-coded)
                 m_interpreter->beginProgram();
                 m_interpreter->call("cam_getFrame 33, 0, 0, 320, 200");
@@ -201,7 +201,7 @@ void MainWindow::on_actionPlay_Pause_triggered()
     if (m_interpreter->programRunning())
         m_interpreter->stopProgram();
     else
-        m_interpreter->resumeProgram();
+        m_interpreter->runRemoteProgram();
     updateButtons();
 }
 

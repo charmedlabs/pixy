@@ -28,19 +28,19 @@ int USBLink::send(const uint8_t *data, uint32_t len, uint16_t timeoutMs)
 
  	if (!USB_handleState())
 	{
-		g_complete = 0;
+		g_sendComplete = 0;
 		return -1;
 	}
 
 	USB_Send(data, len);
 	while(1)
 	{
-		start = g_timerStart; // avoid race condition with usb interrupt routine-- sample here 
+		start = g_sendTimerStart; // avoid race condition with usb interrupt routine-- sample here 
 		time = LPC_TIMER1->TC; // time is guaranteed to be more recent than start
-		if ((uint32_t)(time-start) > timeout || g_complete)
+		if ((uint32_t)(time-start) > timeout || g_sendComplete)
 			break;
 	}
-  	if (g_complete)
+  	if (g_sendComplete)
 		return len;
 	else
 	{
@@ -56,7 +56,7 @@ int USBLink::receive(uint8_t *data, uint32_t len, uint16_t timeoutMs)
  	if (!USB_handleState())
 	{
 		g_bufUsed = 0;
-		g_complete = 0;
+		g_recvComplete = 0;
 		return -1;
 	}
 
@@ -71,7 +71,7 @@ int USBLink::receive(uint8_t *data, uint32_t len, uint16_t timeoutMs)
 			// register	receive buffer
 			USB_Recv(g_buf, g_bufUsed);
 		}
-		else if (g_complete) // if it has come in, then copy
+		else if (g_recvComplete) // if it has come in, then copy
 		{
 			memcpy((void *)data, (void *)g_buf, len);
 			g_bufUsed = 0;
@@ -89,12 +89,12 @@ int USBLink::receive(uint8_t *data, uint32_t len, uint16_t timeoutMs)
    	// wait
 	while(1)
 	{
-		start = g_timerStart; // avoid race condition with usb interrupt routine-- sample here 
+		start = g_recvTimerStart; // avoid race condition with usb interrupt routine-- sample here 
 		time = LPC_TIMER1->TC; // time is guaranteed to be more recent than start
-		if ((uint32_t)(time-start) > timeout || g_complete)
+		if ((uint32_t)(time-start) > timeout || g_recvComplete)
 			break;
 	}
-  	if (g_complete)
+  	if (g_recvComplete)
 		return len;
 	else 
 	{

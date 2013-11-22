@@ -7,7 +7,7 @@
 #include "camera.h"
 #include "led.h"
 #include "conncomp.h"
-#include "param.h"
+#include "exec.h"
 #include "rcservo.h"
 #include "spi.h"
 #include "spifi_rom_api.h"
@@ -587,10 +587,21 @@ uint32_t transmitCallback(uint16_t *data, uint32_t len)
 	return 10;
 } 	
 
+
 int main(void) 
  {	
  	pixyInit(SRAM3_LOC, &LR0[0], sizeof(LR0));
 	cc_init(g_chirpUsb);
+	exec_init(g_chirpUsb);
+#if 1
+	exec_loop();
+   	while(1)
+	{
+		delayus(100000);
+		g_chirpUsb->assemble(0, HSTRING("hello\n"), END);
+		g_chirpUsb->service();
+	}
+#endif
 #if 0
 	SPIFIopers spifi;
 	memset((void *)&spifi, 0, sizeof(spifi));

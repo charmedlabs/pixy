@@ -44,6 +44,9 @@ int USBLink::send(const uint8_t *data, uint32_t len, uint16_t timeoutMs)
 {
     int res, transferred;
 
+    if (timeoutMs==0) // 0 equals infinity
+        timeoutMs = 10;
+
     if ((res=libusb_bulk_transfer(m_handle, 0x02, (unsigned char *)data, len, &transferred, timeoutMs))<0)
     {
         qDebug() << "libusb_bulk_write " << res;
@@ -55,6 +58,9 @@ int USBLink::send(const uint8_t *data, uint32_t len, uint16_t timeoutMs)
 int USBLink::receive(uint8_t *data, uint32_t len, uint16_t timeoutMs)
 {
     int res, transferred;
+
+    if (timeoutMs==0) // 0 equals infinity
+        timeoutMs = 10;
 
     if ((res=libusb_bulk_transfer(m_handle, 0x82, (unsigned char *)data, len, &transferred, timeoutMs))<0)
     {

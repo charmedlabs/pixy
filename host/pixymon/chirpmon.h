@@ -38,6 +38,7 @@ public:
 
 protected:
     virtual int handleChirp(uint8_t type, ChirpProc proc, void *args[]); // null pointer terminates
+    virtual void handleXdata(void *data[]);
     virtual int sendChirp(uint8_t type, ChirpProc proc);
 
 private:

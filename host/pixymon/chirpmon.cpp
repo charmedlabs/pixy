@@ -55,9 +55,17 @@ int ChirpMon::init()
 int ChirpMon::handleChirp(uint8_t type, ChirpProc proc, void *args[])
 {
     if (type==CRP_RESPONSE)
-        return m_interpreter->handleResponse(args);
+    {
+        m_interpreter->handleResponse(args);
+        return 0;
+    }
 
     return Chirp::handleChirp(type, proc, args);
+}
+
+void ChirpMon::handleXdata(void *data[])
+{
+    m_interpreter->handleData(data);
 }
 
 int ChirpMon::sendChirp(uint8_t type, ChirpProc proc)

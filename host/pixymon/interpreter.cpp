@@ -13,6 +13,7 @@ QString printType(uint32_t val, bool parens=false);
 
 Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, MainWindow *main)
 {
+
     m_console = console;
     m_video = video;
     m_main = main;
@@ -25,7 +26,14 @@ Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, MainWindow 
     m_chirp = new ChirpMon(this);
     if (m_chirp->open()<0)
         throw std::runtime_error("Cannot connect/reconnect to Pixy.");
-#if 1
+
+    // get program control procedures
+    m_exec_run = m_chirp->getProc("run");
+    m_exec_running = m_chirp->getProc("running");
+    m_exec_stop = m_chirp->getProc("stop");
+    if (m_exec_run<0 || m_exec_running<0 || m_exec_stop<0)
+        throw std::runtime_error("Unable to communicate with Pixy.");
+#if 0
     ChirpProc proc, procGet, procGetInfo, procGetAll;
     uint8_t buf[0x40];
     proc = m_chirp->getProc("prm_set");
@@ -57,7 +65,7 @@ Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, MainWindow 
 
     connect(m_console, SIGNAL(textLine(QString)), this, SLOT(command(QString)));
     connect(m_console, SIGNAL(controlKey(Qt::Key)), this, SLOT(controlKey(Qt::Key)));
-    connect(this, SIGNAL(textOut(QString)), m_console, SLOT(print(QString)));
+    connect(this, SIGNAL(textOut(QString, QColor)), m_console, SLOT(print(QString, QColor)));
     connect(this, SIGNAL(error(QString)), m_console, SLOT(error(QString)));
     connect(this, SIGNAL(enableConsole(bool)), m_console, SLOT(acceptInput(bool)));
     connect(this, SIGNAL(prompt(QString)), m_console, SLOT(prompt(QString)));
@@ -65,6 +73,8 @@ Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, MainWindow 
     connect(m_video, SIGNAL(selection(int,int,int,int)), this, SLOT(handleSelection(int,int,int,int)));
     // we necessarily want to execute in the gui thread, so queue
     connect(this, SIGNAL(connected(ConnectEvent::Device,bool)), m_main, SLOT(handleConnected(ConnectEvent::Device,bool)), Qt::QueuedConnection);
+
+    start();
 }
 
 Interpreter::~Interpreter()
@@ -273,40 +283,51 @@ QString printType(uint32_t val, bool parens)
     return res;
 }
 
-int Interpreter::handleResponse(void *args[])
+void Interpreter::handleResponse(void *args[])
+{
+    // strip off response, add to print string
+    m_print = "response " + QString::number(m_rcount++) + ": " +
+            QString::number(*(int *)args[0]) + " (0x" + QString::number((uint)*(uint *)args[0], 16) + ")";
+
+    // render rest of response, if present
+    handleData(args+1);
+}
+
+void Interpreter::handleData(void *args[])
 {
     int i;
     uint8_t type;
-    QString print;
+    QColor color = CW_DEFAULT_COLOR;
 
-    print = "response " + QString::number(m_rcount++) + ": " +
-            QString::number(*(int *)args[0]) + " (0x" + QString::number((uint)*(uint *)args[0], 16) + ")";
-
-    for(i=1; args[i]; i++)
+    for(i=0; args[i]; i++)
     {
-        type = m_chirp->getType(args[i]);
+        type = Chirp::getType(args[i]);
         if (type==CRP_TYPE_HINT)
         {
-            print += ", " + printType(*(uint32_t *)args[i]) + "\n";
+            m_print += ", " + printType(*(uint32_t *)args[i]) + "\n";
             m_renderer->render(*(uint32_t *)args[i], &args[i+1]);
+        }
+        else if (type==CRP_HSTRING)
+        {
+            m_print +=  (char *)args[i];
+            color = Qt::blue;
         }
     }
 
-    if (print.right(1)!="\n")
-        print += "\n";
+    if (m_print.right(1)!="\n")
+        m_print += "\n";
 
     // wait queue business keeps worker thread from getting too far ahead of gui thread
     // (when this happens, things can get sluggish.)
-    if (m_programRunning)
+    if (m_programRunning || m_remoteProgramRunning)
         m_console->m_mutexPrint.lock();
-    emit textOut(print);
-    if (m_programRunning)
+    emit textOut(m_print, color);
+    m_print = "";
+    if (m_programRunning || m_remoteProgramRunning)
     {
         m_console->m_waitPrint.wait(&m_console->m_mutexPrint);
         m_console->m_mutexPrint.unlock();
     }
-
-    return 0;
 }
 
 int Interpreter::addProgram(ChirpCallData data)
@@ -329,23 +350,50 @@ int Interpreter::addProgram(const QStringList &argv)
 
 bool Interpreter::checkRemoteProgram()
 {
-    m_remoteProgramRunning = true;
+    int res;
+
+    res = m_chirp->callSync(m_exec_running, END_OUT_ARGS, &m_remoteProgramRunning, END_IN_ARGS);
+    if (res<0)
+        return false;
+
+    emit runState(m_remoteProgramRunning);
+    emit enableConsole(!m_remoteProgramRunning);
+
     return m_remoteProgramRunning;
+}
+
+int Interpreter::stopRemoteProgram()
+{
+    int i, res, response;
+
+    res = m_chirp->callSync(m_exec_stop, END_OUT_ARGS, &response, END_IN_ARGS);
+    if (res<0)
+        return -1;
+
+    // poll for 500ms for program to stop
+    for (i=0; i<10; i++)
+    {
+        res = m_chirp->callSync(m_exec_running, END_OUT_ARGS, &response, END_IN_ARGS);
+        if (res<0)
+            return -1;
+        if (response==0)
+            return 0;
+        msleep(50);
+    }
+    return -1;
 }
 
 void Interpreter::run()
 {
     int res;
 
-#if 0
     if (checkRemoteProgram()) // check if remote program is running, if so, poll
     {
         while(m_remoteProgramRunning)
             m_chirp->service();
+        stopRemoteProgram();
     }
-    else
-#endif
-        if (m_programRunning)
+    else if (m_programRunning)
     {
 
         res = execute();
@@ -382,6 +430,7 @@ int Interpreter::endProgram()
 {
     if (!m_programming)
         return -1;
+    m_pc = 0;
     m_programming = false;
     return 0;
 }
@@ -393,7 +442,6 @@ int Interpreter::runProgram()
     if (m_programRunning || m_program.size()==0)
         return -1;
 
-    m_pc = 0;
     m_programRunning = true;
 
     // start thread
@@ -405,14 +453,14 @@ int Interpreter::runProgram()
     return 0;
 }
 
-int Interpreter::resumeProgram()
+int Interpreter::runRemoteProgram()
 {
+    int res, response;
     QMutexLocker locker(&m_mutex);
 
-    if (m_programRunning || m_program.size()==0)
+    res = m_chirp->callSync(m_exec_run, STRING(""), END_OUT_ARGS, &response, END_IN_ARGS);
+    if (res<0)
         return -1;
-
-    m_programRunning = true;
 
     // start thread
     start();
@@ -422,12 +470,15 @@ int Interpreter::resumeProgram()
 
     return 0;
 }
+
+
 
 int Interpreter::stopProgram()
 {
-    if (!m_programRunning)
+    if (!m_programRunning && !m_remoteProgramRunning)
         return -1;
     m_programRunning = false;
+    m_remoteProgramRunning = false;
 
     emit runState(false);
     emit enableConsole(true);
@@ -523,7 +574,7 @@ void Interpreter::command(const QString &command)
         listProgram();
     else if (words[0].left(4)=="cont")
     {
-        resumeProgram();
+        runProgram();
         return;
     }
     else if (words[0]=="load")

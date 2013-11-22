@@ -56,8 +56,10 @@ extern void USB_Recv(uint8_t *data, uint32_t len);
 extern void USB_Send(const uint8_t *data, uint32_t len);
 extern void USB_RecvReset(void);
 extern void USB_SendReset(void);
-extern volatile uint8_t g_complete;
-extern volatile uint32_t g_timerStart;
+extern volatile uint8_t g_sendComplete;
+extern volatile uint8_t g_recvComplete;
+extern volatile uint32_t g_sendTimerStart;
+extern volatile uint32_t g_recvTimerStart;
 
 #ifdef __cplusplus
  }

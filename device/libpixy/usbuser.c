@@ -287,12 +287,18 @@ void bulkOutNak(void){
 
 #define MAX_CHUNK		     0x4000
 
-const uint8_t *g_data = NULL;
-uint32_t g_len = 0;
-uint32_t g_offset = 0;
-volatile uint8_t g_complete = 0;
+const uint8_t *g_recvData = NULL;
+uint32_t g_recvLen = 0;
+uint32_t g_recvOffset = 0;
+volatile uint8_t g_recvComplete = 0;
+volatile uint32_t g_recvTimerStart = 0;
 
-extern volatile uint32_t g_timerStart = 0;
+const uint8_t *g_sendData = NULL;
+uint32_t g_sendLen = 0;
+uint32_t g_sendOffset = 0;
+volatile uint8_t g_sendComplete = 0;
+volatile uint32_t g_sendTimerStart = 0;
+
 
 
 void sendChunk(void)
@@ -300,22 +306,22 @@ void sendChunk(void)
 	uint32_t chunk;
 
 	// reset timer
-	g_timerStart = LPC_TIMER1->TC;
+	g_sendTimerStart = LPC_TIMER1->TC;
 
-	if (g_offset>=g_len)
+	if (g_sendOffset>=g_sendLen)
 	{
-		g_complete = 1;
+		g_sendComplete = 1;
 		return;
 	}
 
-	if (g_len-g_offset>=USB_MAX_CHUNK)
+	if (g_sendLen-g_sendOffset>=USB_MAX_CHUNK)
 		chunk = USB_MAX_CHUNK;
 	else
-		chunk = g_len-g_offset;
+		chunk = g_sendLen-g_sendOffset;
 	
-	USB_WriteEP(USB_BULK_IN_EP, (uint8_t *)g_data + g_offset, chunk);
+	USB_WriteEP(USB_BULK_IN_EP, (uint8_t *)g_sendData + g_sendOffset, chunk);
 
-	g_offset += chunk;
+	g_sendOffset += chunk;
 }
 
 void recvChunk(void)
@@ -323,23 +329,23 @@ void recvChunk(void)
 	uint32_t chunk;
 
 	// reset timer
-	g_timerStart = LPC_TIMER1->TC;
+	g_recvTimerStart = LPC_TIMER1->TC;
 
-	if (g_offset>=g_len)
+	if (g_recvOffset>=g_recvLen)
 	{
-		g_complete = 1;
+		g_recvComplete = 1;
 		return;
 	}
 
-	if (g_len-g_offset>=USB_MAX_CHUNK)
+	if (g_recvLen-g_recvOffset>=USB_MAX_CHUNK)
 		chunk = USB_MAX_CHUNK;
 	else
-		chunk = g_len-g_offset;
+		chunk = g_recvLen-g_recvOffset;
 	
 	
-	USB_ReadReqEP(USB_BULK_OUT_EP, (uint8_t *)g_data + g_offset, chunk);
+	USB_ReadReqEP(USB_BULK_OUT_EP, (uint8_t *)g_recvData + g_recvOffset, chunk);
 
-	g_offset += chunk;
+	g_recvOffset += chunk;
 }
 
 void USB_Send(const uint8_t *data, uint32_t len)
@@ -347,10 +353,10 @@ void USB_Send(const uint8_t *data, uint32_t len)
 	if ((uint32_t)data&0x3)
 		return;
 
-	g_data = data;
-	g_len = len;
-	g_offset = 0;
-	g_complete = 0;
+	g_sendData = data;
+	g_sendLen = len;
+	g_sendOffset = 0;
+	g_sendComplete = 0;
 
 	sendChunk();
 }
@@ -361,10 +367,10 @@ void USB_Recv(uint8_t *data, uint32_t len)
 	if ((uint32_t)data&0x03)
 		return;
 
-	g_data = data;
-	g_len = len;
-	g_offset = 0;
-	g_complete = 0;
+	g_recvData = data;
+	g_recvLen = len;
+	g_recvOffset = 0;
+	g_recvComplete = 0;
 
 	recvChunk();
 }  

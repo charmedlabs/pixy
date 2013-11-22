@@ -6,6 +6,7 @@
 #include <QWaitCondition>
 
 #define CW_SCROLLHEIGHT     10000
+#define CW_DEFAULT_COLOR    Qt::black
 
 class MainWindow;
 
@@ -21,10 +22,10 @@ public:
     QWaitCondition m_waitPrint;
 
 public slots:
-    void print(const QString &text);
-    void error(const QString &text);
-    void prompt(const QString &text);
-    void type(const QString &text);
+    void print(QString text, QColor color=CW_DEFAULT_COLOR);
+    void error(QString text);
+    void prompt(QString text);
+    void type(QString text);
     void acceptInput(bool accept);
 
 signals:
@@ -38,6 +39,7 @@ protected:
 private:
     MainWindow *m_main;
     QString m_prompt;
+    QColor m_color;
 
 };
 
