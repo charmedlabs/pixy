@@ -22,10 +22,8 @@ ConsoleWidget::~ConsoleWidget()
     m_mutexPrint.unlock();
 }
 
-void ConsoleWidget::print(QString text, QColor color)
+void ConsoleWidget::handleColor(const QColor &color)
 {
-
-    moveCursor(QTextCursor::End);
     if (color!=m_color)
     {
         QTextCharFormat tf = currentCharFormat();
@@ -33,6 +31,12 @@ void ConsoleWidget::print(QString text, QColor color)
         setCurrentCharFormat(tf);
         m_color = color;
     }
+}
+
+void ConsoleWidget::print(QString text, QColor color)
+{
+    moveCursor(QTextCursor::End);
+    handleColor(color);
     m_mutexPrint.lock();
     insertPlainText(text);
     m_waitPrint.wakeAll();
@@ -41,7 +45,7 @@ void ConsoleWidget::print(QString text, QColor color)
 
 void ConsoleWidget::error(QString text)
 {
-    print("error: " + text);
+    print("error: " + text, Qt::red);
 }
 
 void ConsoleWidget::prompt(QString text)
@@ -50,6 +54,8 @@ void ConsoleWidget::prompt(QString text)
 
     QTextCursor cursor = textCursor();
     moveCursor(QTextCursor::End);
+
+    handleColor(); // change to default color
 
     // add space because it looks better
     text2 += " ";

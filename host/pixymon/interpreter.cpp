@@ -33,6 +33,8 @@ Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, MainWindow 
     m_exec_stop = m_chirp->getProc("stop");
     if (m_exec_run<0 || m_exec_running<0 || m_exec_stop<0)
         throw std::runtime_error("Unable to communicate with Pixy.");
+    checkRemoteProgram(); // get initial state (is program running or not?)
+
 #if 0
     ChirpProc proc, procGet, procGetInfo, procGetAll;
     uint8_t buf[0x40];
@@ -387,11 +389,12 @@ void Interpreter::run()
 {
     int res;
 
-    if (checkRemoteProgram()) // check if remote program is running, if so, poll
+    if (m_remoteProgramRunning)
     {
         while(m_remoteProgramRunning)
             m_chirp->service();
         stopRemoteProgram();
+        prompt();
     }
     else if (m_programRunning)
     {
@@ -413,7 +416,6 @@ void Interpreter::run()
             endProgram();
             clearProgram();
         }
-
         prompt();
     }
 }
@@ -461,7 +463,7 @@ int Interpreter::runRemoteProgram()
     res = m_chirp->callSync(m_exec_run, STRING(""), END_OUT_ARGS, &response, END_IN_ARGS);
     if (res<0)
         return -1;
-
+    m_remoteProgramRunning = true;
     // start thread
     start();
 

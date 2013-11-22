@@ -57,7 +57,7 @@ void MainWindow::updateButtons()
 {
     if (m_interpreter && m_interpreter->programRunning())
     {
-        m_ui->actionPlay_Pause->setIcon(QIcon(":/icons/icons/pause.png"));
+        m_ui->actionPlay_Pause->setIcon(QIcon(":/icons/icons/stop.png"));
     }
     else
     {

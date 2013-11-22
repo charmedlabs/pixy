@@ -37,6 +37,8 @@ protected:
     virtual void keyPressEvent(QKeyEvent *event);
 
 private:
+    void handleColor(const QColor &color=CW_DEFAULT_COLOR);
+
     MainWindow *m_main;
     QString m_prompt;
     QColor m_color;
