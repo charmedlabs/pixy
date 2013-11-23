@@ -11,7 +11,6 @@ Flash::Flash()
     if (m_link.open()<0)
         throw std::runtime_error("Cannot initialize USB for flash programming.");
     m_chirp.setLink(&m_link);
-    m_chirp.remoteInit();
 
     sectorSizeProc = m_chirp.getProc("flash_sectorSize");
     m_programProc = m_chirp.getProc("flash_program");

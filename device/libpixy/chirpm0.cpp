@@ -2,14 +2,10 @@
 
 ChirpM0::ChirpM0()
 {
+	m_client = true;
 	setLink(&m_link);
 }
 
 ChirpM0::~ChirpM0()
 {
-}
-
-int ChirpM0::init()
-{
-	return remoteInit();
 }

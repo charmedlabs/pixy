@@ -6,6 +6,7 @@ USBLink::USBLink()
 {
     m_handle = 0;
     m_context = 0;
+    m_blockSize = 64;
     m_flags = LINK_FLAG_ERROR_CORRECTED;
 }
 

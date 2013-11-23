@@ -27,7 +27,7 @@ static const ProcModule g_module[] =
 	"@r returns 0 if successful, -1 otherwise"
 	},
 	{
-	"list",
+	"progs",
 	(ProcPtr)exec_list, 
 	{END}, 
 	"List available programs"
@@ -84,12 +84,16 @@ void loop0()
 
 void exec_loop()
 {
-	exec_run("");
+	exec_run();
 	while(1)
 	{
 		while(!g_run)
+		{
 			g_chirpUsb->service();
-
+			if (!g_chirpUsb->connected() || !USB_Configuration)
+				exec_run();
+		}
+		 	
 		setup0();
 		while(g_run)
 		{

@@ -12,7 +12,7 @@ void copyAlign(char *dest, const char *src, int size)
         dest[i] = src[i];
 }
 
-Chirp::Chirp(bool hinterested, Link *link)
+Chirp::Chirp(bool hinterested, bool client, Link *link)
 {
     m_link = NULL;
     m_errorCorrected = false;
@@ -26,11 +26,11 @@ Chirp::Chirp(bool hinterested, Link *link)
     m_dataTimeout = CRP_DATA_TIMEOUT;
     m_idleTimeout = CRP_IDLE_TIMEOUT;
     m_sendTimeout = CRP_SEND_TIMEOUT;
-    m_remoteInit = false;
     m_call = false;
     m_connected = false;
     m_hinformer = false;
     m_hinterested = hinterested;
+    m_client = client;
 
     m_procTableSize = CRP_PROCTABLE_LEN;
     m_procTable = new ProcTableEntry[m_procTableSize];
@@ -50,7 +50,7 @@ Chirp::~Chirp()
     delete[] m_procTable;
 }
 
-int Chirp::init()
+int Chirp::init(bool connect)
 {
     return CRP_RES_OK;
 }
@@ -79,7 +79,8 @@ void Chirp::setLink(Link *link)
     }
 
     // link is set up, need to call init
-    init();
+    if (m_client)
+        remoteInit(true);
 }
 
 
@@ -116,6 +117,11 @@ int Chirp::vassemble(va_list *args)
     m_len = len - m_headerLen;
 
     return CRP_RES_OK;
+}
+
+bool Chirp::connected()
+{
+    return m_connected;
 }
 
 void Chirp::useBuffer(uint8_t *buf, uint32_t len)
@@ -620,18 +626,14 @@ ChirpProc Chirp::getProc(const char *procName, ProcPtr callback)
     return -1;
 }
 
-int Chirp::remoteInit()
+int Chirp::remoteInit(bool connect)
 {
     int res;
     uint32_t responseInt;
     uint8_t hinformer;
 
-    // if we're being called remotely, don't call back
-    if (m_remoteInit)
-        return CRP_RES_OK;
-
     res = call(CRP_CALL_INIT, 0,
-               UINT16(m_blkSize), // send block size
+               UINT16(connect ? m_blkSize : 0), // send block size
                UINT8(m_hinterested), // send whether we're interested in hints or not
                END_OUT_ARGS,
                &responseInt,
@@ -640,7 +642,7 @@ int Chirp::remoteInit()
                );
     if (res>=0)
     {
-        m_connected = true;
+        m_connected = connect;
         m_hinformer = hinformer;
         return responseInt;
     }
@@ -702,10 +704,9 @@ int32_t Chirp::handleInit(uint16_t *blkSize, uint8_t *hinformer)
 {
     int32_t responseInt;
 
-    m_remoteInit = true;
-    responseInt = init();
-    m_remoteInit = false;
-    m_connected = true;
+    bool connect = *blkSize ? true : false;
+    responseInt = init(connect);
+    m_connected = connect;
     m_blkSize = *blkSize;  // get block size, write it
     m_hinformer = *hinformer;
 

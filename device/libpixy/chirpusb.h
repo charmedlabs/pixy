@@ -9,7 +9,6 @@ class ChirpUsb : public Chirp
 public:
 	ChirpUsb();
 	~ChirpUsb();
-	virtual int init();
 
 private:
 	USBLink m_link;

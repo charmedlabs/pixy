@@ -27,10 +27,9 @@ class ChirpMon : public Chirp
 {
 public:
     ChirpMon(Interpreter *interpreter);
-    ~ChirpMon();
+    virtual ~ChirpMon();
 
     int open();
-    virtual int init();
 
     int serviceChirp();
 

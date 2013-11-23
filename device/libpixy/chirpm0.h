@@ -9,7 +9,6 @@ class ChirpM0 : public Chirp
 public:
 	ChirpM0();
 	~ChirpM0();
-	virtual int init();
 
 private:
 	SMLink m_link;

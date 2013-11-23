@@ -547,7 +547,7 @@ void Interpreter::command(const QString &command)
     if (isRunning())
     {
         QString command2 = command;
-        command2.remove(QRegExp("[\\s(),\\t]"));
+        command2.remove(QRegExp("[(),\\t]"));
         m_command = command2;
         m_key = (Qt::Key)0;
         m_waitInput.wakeAll();
@@ -1045,7 +1045,7 @@ int Interpreter::call(const QStringList &argv, bool interactive)
 
                     if (m_key==Qt::Key_Escape)
                         return -1;
-                    cargv << m_command.split(QRegExp("\\s+"));
+                    cargv << m_command.split(QRegExp("\\s+"))[0];
                 }
                 // call ourselves again, now that we have all the args
                 return call(cargv, true);

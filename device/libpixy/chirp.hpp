@@ -186,10 +186,10 @@ struct ProcTableEntry
 class Chirp
 {
 public:
-    Chirp(bool hinterested=false, Link *link=NULL);
+    Chirp(bool hinterested=false, bool client=false, Link *link=NULL);
     ~Chirp();
 
-    virtual int init();
+    virtual int init(bool connect);
     void setLink(Link *link);
     ChirpProc getProc(const char *procName, ProcPtr callback=0);
     int setProc(const char *procName, ProcPtr proc,  ProcTableExtension *extension=NULL);
@@ -200,7 +200,7 @@ public:
     static uint8_t getType(void *arg);
     int service();
     int assemble(int dummy, ...);
-    int remoteInit();
+    bool connected();
 
     // utility methods
     static int serialize(Chirp *chirp, uint8_t *buf, uint32_t bufSize, ...);
@@ -212,6 +212,7 @@ public:
     static uint16_t calcCrc(uint8_t *buf, uint32_t len);
 
 protected:
+    int remoteInit(bool connect);
     int recvChirp(uint8_t *type, ChirpProc *proc, void *args[], bool wait=false); // null pointer terminates
     virtual int handleChirp(uint8_t type, ChirpProc proc, void *args[]); // null pointer terminates
     virtual void handleXdata(void *data[]) {}
@@ -226,6 +227,7 @@ protected:
     bool m_sharedMem;
     bool m_hinformer;
     bool m_hinterested;
+    bool m_client;
     uint32_t m_headerLen;
     uint16_t m_headerTimeout;
     uint16_t m_dataTimeout;
@@ -261,7 +263,6 @@ private:
     uint16_t m_blkSize;
     uint8_t m_maxNak;
     uint8_t m_retries;
-    bool m_remoteInit;
     bool m_call;
     bool m_connected;
 };

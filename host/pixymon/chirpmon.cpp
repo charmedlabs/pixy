@@ -6,11 +6,13 @@
 ChirpMon::ChirpMon(Interpreter *interpreter)
 {
     m_hinterested = true;
+    m_client = true;
     m_interpreter = interpreter;
 }
 
 ChirpMon::~ChirpMon()
 {
+    remoteInit(false);
 }
 
 
@@ -46,11 +48,6 @@ int ChirpMon::open()
     return 0;
 }
 
-
-int ChirpMon::init()
-{
-    return remoteInit();
-}
 
 int ChirpMon::handleChirp(uint8_t type, ChirpProc proc, void *args[])
 {
