@@ -198,7 +198,7 @@ public:
 
     int call(uint8_t service, ChirpProc proc, ...);
     static uint8_t getType(void *arg);
-    int service();
+    int service(bool all=true);
     int assemble(int dummy, ...);
     bool connected();
 
@@ -207,7 +207,7 @@ public:
     static int deserialize(uint8_t *buf, uint32_t len, ...);
     static int vserialize(Chirp *chirp, uint8_t *buf, uint32_t bufSize, va_list *args);
     static int vdeserialize(uint8_t *buf, uint32_t len, va_list *args);
-    void useBuffer(uint8_t *buf, uint32_t len);
+    int useBuffer(uint8_t *buf, uint32_t len);
 
     static uint16_t calcCrc(uint8_t *buf, uint32_t len);
 

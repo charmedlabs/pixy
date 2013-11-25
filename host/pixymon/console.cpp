@@ -48,11 +48,17 @@ void ConsoleWidget::error(QString text)
     print("error: " + text, Qt::red);
 }
 
+void ConsoleWidget::emptyLine()
+{
+    QTextCursor cursor = textCursor();
+    if (cursor.block().text()!="")
+        insertPlainText("\n");
+}
+
 void ConsoleWidget::prompt(QString text)
 {
     QString text2 = text;
 
-    QTextCursor cursor = textCursor();
     moveCursor(QTextCursor::End);
 
     handleColor(); // change to default color
@@ -61,8 +67,7 @@ void ConsoleWidget::prompt(QString text)
     text2 += " ";
 
     // go to new line if line isn't empty
-    if (cursor.block().text()!="")
-        insertPlainText("\n");
+    emptyLine();
     insertPlainText(text2);
 
     // if we have trouble keeping viewport

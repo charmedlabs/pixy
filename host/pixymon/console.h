@@ -18,6 +18,8 @@ public:
     ConsoleWidget(MainWindow *main);
     ~ConsoleWidget();
 
+    void emptyLine();
+
     QMutex m_mutexPrint;
     QWaitCondition m_waitPrint;
 

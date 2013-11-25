@@ -89,9 +89,6 @@ int Chirp::assemble(int dummy, ...)
     int res;
     va_list args;
 
-    if (!m_call)
-        m_len = 0;
-
     va_start(args, dummy);
     res = vassemble(&args);
     va_end(args);
@@ -124,11 +121,25 @@ bool Chirp::connected()
     return m_connected;
 }
 
-void Chirp::useBuffer(uint8_t *buf, uint32_t len)
+int Chirp::useBuffer(uint8_t *buf, uint32_t len)
 {
-    m_bufSave = m_buf;
-    m_buf = buf;
+	int res; 
+
+	if (m_bufSave==NULL)
+	{
+    	m_bufSave = m_buf;
+    	m_buf = buf;
+	}
+	else if (buf!=m_buf)
+		return CRP_RES_ERROR_MEMORY;
+
     m_len = len-m_headerLen;
+    if (!m_call) // if we're not a call, we're extra data, so we need to send
+    {
+        if ((res=sendChirpRetry(CRP_XDATA, 0))!=CRP_RES_OK) // convert call into response
+            return res;
+    }
+	return CRP_RES_OK;
 }
 
 void Chirp::restoreBuffer()
@@ -175,7 +186,15 @@ int Chirp::vserialize(Chirp *chirp, uint8_t *buf, uint32_t bufSize, va_list *arg
     uint32_t i, si;
     bool copy = true;
 
-    i = chirp ? chirp->m_headerLen+chirp->m_len : 0;
+    if (chirp)
+    {
+        if (!chirp->m_call)
+            chirp->m_len = 0;
+        i = chirp->m_headerLen+chirp->m_len;
+    }
+    else
+        i = 0;
+
     bufSize -= i;
 
     while(1)
@@ -758,17 +777,21 @@ int Chirp::realloc(uint32_t min)
 }
 
 // service deals with calls and callbacks
-int Chirp::service()
+int Chirp::service(bool all)
 {
-    int i = 0;
+    int i;
     uint8_t type;
     ChirpProc recvProc;
     void *args[CRP_MAX_ARGS+1];
 
-    while(recvChirp(&type, &recvProc, args)==CRP_RES_OK)
+    for (i=0; true; i++)
     {
-        handleChirp(type, recvProc, args);
-        i++;
+        if (recvChirp(&type, &recvProc, args)==CRP_RES_OK)
+            handleChirp(type, recvProc, args);
+        else
+            break;
+        if (!all)
+            break;
     }
 
     return i;

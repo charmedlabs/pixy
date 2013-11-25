@@ -22,18 +22,8 @@ Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, MainWindow 
     m_programRunning = false;
     m_remoteProgramRunning = false;
     m_rcount = 0;
+    m_init = true;
 
-    m_chirp = new ChirpMon(this);
-    if (m_chirp->open()<0)
-        throw std::runtime_error("Cannot connect/reconnect to Pixy.");
-
-    // get program control procedures
-    m_exec_run = m_chirp->getProc("run");
-    m_exec_running = m_chirp->getProc("running");
-    m_exec_stop = m_chirp->getProc("stop");
-    if (m_exec_run<0 || m_exec_running<0 || m_exec_stop<0)
-        throw std::runtime_error("Unable to communicate with Pixy.");
-    checkRemoteProgram(); // get initial state (is program running or not?)
 
 #if 0
     ChirpProc proc, procGet, procGetInfo, procGetAll;
@@ -289,7 +279,7 @@ void Interpreter::handleResponse(void *args[])
 {
     // strip off response, add to print string
     m_print = "response " + QString::number(m_rcount++) + ": " +
-            QString::number(*(int *)args[0]) + " (0x" + QString::number((uint)*(uint *)args[0], 16) + ")";
+            QString::number(*(int *)args[0]) + " (0x" + QString::number((uint)*(uint *)args[0], 16) + ") ";
 
     // render rest of response, if present
     handleData(args+1);
@@ -306,7 +296,7 @@ void Interpreter::handleData(void *args[])
         type = Chirp::getType(args[i]);
         if (type==CRP_TYPE_HINT)
         {
-            m_print += ", " + printType(*(uint32_t *)args[i]) + "\n";
+            m_print += printType(*(uint32_t *)args[i]) + "\n";
             m_renderer->render(*(uint32_t *)args[i], &args[i+1]);
         }
         else if (type==CRP_HSTRING)
@@ -315,7 +305,6 @@ void Interpreter::handleData(void *args[])
             color = Qt::blue;
         }
     }
-
     if (m_print.right(1)!="\n")
         m_print += "\n";
 
@@ -389,10 +378,31 @@ void Interpreter::run()
 {
     int res;
 
+    if (m_init)
+    {
+        m_chirp = new ChirpMon(this);
+        if (m_chirp->open()<0)
+        {
+            emit error("Cannot connect/reconnect to Pixy.");
+            return;
+        }
+        m_exec_run = m_chirp->getProc("run");
+        m_exec_running = m_chirp->getProc("running");
+        m_exec_stop = m_chirp->getProc("stop");
+        if (m_exec_run<0 || m_exec_running<0 || m_exec_stop<0)
+        {
+            emit error("Communication error with Pixy.");
+            return;
+        }
+        checkRemoteProgram(); // get initial state (is program running or not?)
+        m_init = false;
+        qDebug() << "*** init done";
+    }
+
     if (m_remoteProgramRunning)
     {
         while(m_remoteProgramRunning)
-            m_chirp->service();
+            m_chirp->service(false);
         stopRemoteProgram();
         prompt();
     }
@@ -449,6 +459,7 @@ int Interpreter::runProgram()
     // start thread
     start();
 
+    m_console->emptyLine(); // don't want to start printing on line with prompt
     emit runState(true);
     emit enableConsole(false);
 
@@ -463,10 +474,13 @@ int Interpreter::runRemoteProgram()
     res = m_chirp->callSync(m_exec_run, STRING(""), END_OUT_ARGS, &response, END_IN_ARGS);
     if (res<0)
         return -1;
+
     m_remoteProgramRunning = true;
+
     // start thread
     start();
 
+    m_console->emptyLine(); // don't want to start printing on line with prompt
     emit runState(true);
     emit enableConsole(false);
 

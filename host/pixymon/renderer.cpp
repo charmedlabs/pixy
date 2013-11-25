@@ -29,7 +29,7 @@ Renderer::Renderer(VideoWidget *video)
 
     m_mode = 3;
 
-    connect(this, SIGNAL(image(QImage, bool)), m_video, SLOT(handleImage(QImage, bool)));
+    connect(this, SIGNAL(image(QImage, bool)), m_video, SLOT(handleImage(QImage, bool))); // Qt::BlockingQueuedConnection);
 }
 
 

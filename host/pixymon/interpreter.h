@@ -123,6 +123,7 @@ private:
     bool m_programming;
     bool m_programRunning;
     bool m_remoteProgramRunning;
+    bool m_init;
     std::vector<ChirpCallData> m_program;
     std::vector<QStringList> m_programText;
 

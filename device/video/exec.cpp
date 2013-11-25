@@ -1,6 +1,8 @@
+#include <stdio.h>
 #include "pixy_init.h"
 #include "misc.h"
 #include "exec.h"
+#include "camera.h"
 
 static const ProcModule g_module[] =
 {
@@ -76,10 +78,23 @@ void setup0()
 {
 }
 
+void cprintf(const char *format, ...)
+{
+    char  buf[128];
+    va_list args;
+    va_start(args, format);
+    vsprintf((char *)buf, (char const *)format, args);
+    va_end(args);
+
+	g_chirpUsb->assemble(0, HSTRING(buf), END);
+}
+
 void loop0()
 {
-	delayus(100000);
-	g_chirpUsb->assemble(0, HSTRING("hello\n"), END);
+	static int i = 0;
+	//delayus(100000);
+	//cprintf("hello %d\n", i++);
+	cam_getFrameChirp(0x21, 0, 0, 320, 200, g_chirpUsb);
 }
 
 void exec_loop()
@@ -98,7 +113,7 @@ void exec_loop()
 		while(g_run)
 		{
 			loop0();
-			g_chirpUsb->service();
+			while(g_chirpUsb->service());
 		}
 		// set variable to indicate we've stopped
 		g_running = false;

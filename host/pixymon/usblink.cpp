@@ -61,7 +61,7 @@ int USBLink::receive(uint8_t *data, uint32_t len, uint16_t timeoutMs)
     int res, transferred;
 
     if (timeoutMs==0) // 0 equals infinity
-        timeoutMs = 10;
+        timeoutMs = 50;
 
     if ((res=libusb_bulk_transfer(m_handle, 0x82, (unsigned char *)data, len, &transferred, timeoutMs))<0)
     {
