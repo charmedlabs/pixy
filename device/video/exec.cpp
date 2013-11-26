@@ -68,16 +68,6 @@ int32_t exec_run(const char *prog)
 	g_running = true;		
 	return 0;
 }
-
-int32_t exec_list()
-{
- 	return 0;
-}
-
-void setup0()
-{
-}
-
 void cprintf(const char *format, ...)
 {
     char  buf[128];
@@ -88,6 +78,19 @@ void cprintf(const char *format, ...)
 
 	CRP_SEND_XDATA(g_chirpUsb, HSTRING(buf));
 }
+
+int32_t exec_list()
+{
+	cprintf("video\n");
+	cprintf("track\n");
+
+ 	return 0;
+}
+
+void setup0()
+{
+}
+
 
 void loop0()
 {

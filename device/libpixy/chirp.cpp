@@ -93,16 +93,20 @@ int Chirp::assemble(uint8_t type, ...)
 {
     int res;
     va_list args;
+    bool save = m_call;
+
+    if (type==CRP_XDATA)
+        m_call = false;
 
     va_start(args, type);
     res = vassemble(&args);
     va_end(args);
 
     if (type==CRP_XDATA || (!m_call && res==CRP_RES_OK)) // if we're not a call, we're extra data, so we need to send
-    {
-        if ((res=sendChirpRetry(CRP_XDATA, 0))!=CRP_RES_OK) // convert call into response
-            return res;
-    }
+        res = sendChirpRetry(CRP_XDATA, 0);
+
+    m_call = save;
+
     return res;
 }
 
@@ -128,15 +132,15 @@ bool Chirp::connected()
 
 int Chirp::useBuffer(uint8_t *buf, uint32_t len)
 {
-	int res; 
+    int res;
 
-	if (m_bufSave==NULL)
-	{
-    	m_bufSave = m_buf;
-    	m_buf = buf;
-	}
-	else if (buf!=m_buf)
-		return CRP_RES_ERROR_MEMORY;
+    if (m_bufSave==NULL)
+    {
+        m_bufSave = m_buf;
+        m_buf = buf;
+    }
+    else if (buf!=m_buf)
+        return CRP_RES_ERROR_MEMORY;
 
     m_len = len-m_headerLen;
     if (!m_call) // if we're not a call, we're extra data, so we need to send
@@ -144,7 +148,7 @@ int Chirp::useBuffer(uint8_t *buf, uint32_t len)
         if ((res=sendChirpRetry(CRP_XDATA, 0))!=CRP_RES_OK) // convert call into response
             return res;
     }
-	return CRP_RES_OK;
+    return CRP_RES_OK;
 }
 
 void Chirp::restoreBuffer()
@@ -171,16 +175,16 @@ int Chirp::serialize(Chirp *chirp, uint8_t *buf, uint32_t bufSize, ...)
 
 #define RESIZE_BUF(size) \
     if (size > bufSize-CRP_BUFPAD) \
-    { \
-        if (!chirp) \
-            return CRP_RES_ERROR_MEMORY; \
-        else \
-        { \
-            if ((res=chirp->realloc(size))<0) \
-                return res; \
-            buf = chirp->m_buf; \
-            bufSize = chirp->m_bufSize; \
-        } \
+{ \
+    if (!chirp) \
+    return CRP_RES_ERROR_MEMORY; \
+    else \
+{ \
+    if ((res=chirp->realloc(size))<0) \
+    return res; \
+    buf = chirp->m_buf; \
+    bufSize = chirp->m_bufSize; \
+    } \
     } \
 
 
@@ -193,9 +197,10 @@ int Chirp::vserialize(Chirp *chirp, uint8_t *buf, uint32_t bufSize, va_list *arg
 
     if (chirp)
     {
-        if (!chirp->m_call)
-            chirp->m_len = 0;
-        i = chirp->m_headerLen+chirp->m_len;
+        if (chirp->m_call) // reserve an extra 4 for responseint
+            i = chirp->m_headerLen+4;
+        else // if it's a chirp call, just reserve the header
+            i = chirp->m_headerLen;
     }
     else
         i = 0;
@@ -490,11 +495,8 @@ int Chirp::sendChirp(uint8_t type, ChirpProc proc)
 int Chirp::handleChirp(uint8_t type, ChirpProc proc, void *args[])
 {
     int res;
-    uint32_t responseInt = 0;
+    int32_t responseInt = 0;
     uint8_t n;
-
-    // reset data in case there is a null response
-    m_len = 4; // leave room for responseInt
 
     // check for intrinsic calls
     if (type&CRP_INTRINSIC)
@@ -507,10 +509,7 @@ int Chirp::handleChirp(uint8_t type, ChirpProc proc, void *args[])
         else if (type==CRP_CALL_ENUMERATE_INFO)
             responseInt = handleEnumerateInfo((ChirpProc *)args[0]);
         else
-        {
-            m_call = false;
-            return CRP_RES_ERROR;
-        }
+            responseInt = CRP_RES_ERROR;
         m_call = false;
     }
     else if (type==CRP_XDATA)
@@ -554,6 +553,8 @@ int Chirp::handleChirp(uint8_t type, ChirpProc proc, void *args[])
             responseInt = (*(uint32_t(*)(void*,void*,void*,void*,void*,void*,void*,void*,void*,Chirp*))ptr)(args[0],args[1],args[2],args[3],args[4],args[5],args[6],args[7],args[8],this);
         else if (n==10)
             responseInt = (*(uint32_t(*)(void*,void*,void*,void*,void*,void*,void*,void*,void*,void*,Chirp*))ptr)(args[0],args[1],args[2],args[3],args[4],args[5],args[6],args[7],args[8],args[9],this);
+        else
+            responseInt = CRP_RES_ERROR;
         m_call = false;
     }
 
@@ -839,7 +840,7 @@ int Chirp::recvChirp(uint8_t *type, ChirpProc *proc, void *args[], bool wait) //
     {
         // fake responseInt so it gets inserted
         *(m_buf+m_headerLen-4) = CRP_UINT32; // write type so it parses correctly
-        *(m_buf+m_headerLen-1) = CRP_UINT32; 
+        *(m_buf+m_headerLen-1) = CRP_UINT32;
         // increment pointer
         offset = m_headerLen-4;
         m_len+=4;

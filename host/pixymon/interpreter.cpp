@@ -23,7 +23,7 @@ Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, MainWindow 
     m_remoteProgramRunning = false;
     m_rcount = 0;
     m_init = true;
-
+    m_chirp = NULL;
 
 #if 0
     ChirpProc proc, procGet, procGetInfo, procGetAll;
@@ -77,7 +77,8 @@ Interpreter::~Interpreter()
     m_console->m_mutexPrint.unlock();
     wait();
     clearProgram();
-    delete m_chirp;
+    if (m_chirp)
+        delete m_chirp;
 }
 
 int Interpreter::execute()
