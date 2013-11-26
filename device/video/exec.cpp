@@ -68,16 +68,6 @@ int32_t exec_run(const char *prog)
 	g_running = true;		
 	return 0;
 }
-void cprintf(const char *format, ...)
-{
-    char  buf[128];
-    va_list args;
-    va_start(args, format);
-    vsprintf((char *)buf, (char const *)format, args);
-    va_end(args);
-
-	CRP_SEND_XDATA(g_chirpUsb, HSTRING(buf));
-}
 
 int32_t exec_list()
 {

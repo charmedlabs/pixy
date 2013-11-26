@@ -498,6 +498,9 @@ int Chirp::handleChirp(uint8_t type, ChirpProc proc, void *args[])
     int32_t responseInt = 0;
     uint8_t n;
 
+    // default case, we return one integer (responseint)
+    m_len = 4;
+
     // check for intrinsic calls
     if (type&CRP_INTRINSIC)
     {

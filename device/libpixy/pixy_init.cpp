@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "pixy_init.h"
 #include "platform_config.h"
 #include "param.h"
@@ -7,8 +8,8 @@
 #include "power.h"
 #include "spi.h"
 
-ChirpUsb *g_chirpUsb = NULL;
-ChirpM0 *g_chirpM0 = NULL;
+Chirp *g_chirpUsb = NULL;
+Chirp *g_chirpM0 = NULL;
 
 void ADCInit()
 {
@@ -137,8 +138,10 @@ void pixyInit(uint32_t slaveRomStart, const unsigned char slaveImage[], uint32_t
 	}
 
 	// initialize chirp objects
-	g_chirpUsb = new ChirpUsb();
-  	g_chirpM0 = new ChirpM0();
+	USBLink *usbLink = new USBLink;
+	g_chirpUsb = new Chirp(false, false, usbLink);
+	SMLink *smLink = new SMLink;
+  	g_chirpM0 = new Chirp(false, true, smLink);
 
 	// initialize devices/modules
 	prm_init(g_chirpUsb);
@@ -156,4 +159,16 @@ void pixySimpleInit(void)
 
 	g_chirpUsb = new ChirpUsb();
 }
+
+void cprintf(const char *format, ...)
+{
+    char  buf[128];
+    va_list args;
+    va_start(args, format);
+    vsprintf((char *)buf, (char const *)format, args);
+    va_end(args);
+
+	CRP_SEND_XDATA(g_chirpUsb, HSTRING(buf));
+}
+
 
