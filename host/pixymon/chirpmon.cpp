@@ -1,18 +1,21 @@
 #include <QDebug>
 #include <QMutexLocker>
+#include <stdexcept>
 #include "chirpmon.h"
 #include "interpreter.h"
 
-ChirpMon::ChirpMon(Interpreter *interpreter)
+ChirpMon::ChirpMon(Interpreter *interpreter, USBLink *link)
 {
     m_hinterested = true;
     m_client = true;
     m_interpreter = interpreter;
+
+    if (setLink(link)<0)
+        throw std::runtime_error("Unable to connect to device.");
 }
 
 ChirpMon::~ChirpMon()
 {
-    remoteInit(false);
 }
 
 
@@ -32,19 +35,6 @@ int ChirpMon::serviceChirp()
         if (type&CRP_RESPONSE)
             break;
     }
-    return 0;
-}
-
-
-int ChirpMon::open()
-{
-    int res;
-
-    if ((res=m_link.open())<0)
-        return res;
-
-    setLink(&m_link);
-
     return 0;
 }
 

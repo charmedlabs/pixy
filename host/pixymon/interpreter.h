@@ -11,6 +11,7 @@
 #include "blobs.h"
 #include "clut.h"
 #include "connectevent.h"
+#include "usblink.h"
 
 #define PROMPT  ">"
 
@@ -105,6 +106,9 @@ private:
 #endif
 
     unsigned int fileIn(const QString &name, char *data, unsigned int size);
+
+    USBLink m_link;
+
     uint8_t *m_lut;
 
     uint8_t m_tempLut[LUT_SIZE];

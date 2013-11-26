@@ -86,14 +86,14 @@ void cprintf(const char *format, ...)
     vsprintf((char *)buf, (char const *)format, args);
     va_end(args);
 
-	g_chirpUsb->assemble(0, HSTRING(buf), END);
+	CRP_SEND_XDATA(g_chirpUsb, HSTRING(buf));
 }
 
 void loop0()
 {
 	static int i = 0;
 	//delayus(100000);
-	//cprintf("hello %d\n", i++);
+	cprintf("hello %d\n", i++);
 	cam_getFrameChirp(0x21, 0, 0, 320, 200, g_chirpUsb);
 }
 

@@ -296,7 +296,7 @@ void Interpreter::handleData(void *args[])
         type = Chirp::getType(args[i]);
         if (type==CRP_TYPE_HINT)
         {
-            m_print += printType(*(uint32_t *)args[i]) + "\n";
+            m_print += printType(*(uint32_t *)args[i]) + " frame data\n";
             m_renderer->render(*(uint32_t *)args[i], &args[i+1]);
         }
         else if (type==CRP_HSTRING)
@@ -380,18 +380,20 @@ void Interpreter::run()
 
     if (m_init)
     {
-        m_chirp = new ChirpMon(this);
-        if (m_chirp->open()<0)
+        try
         {
-            emit error("Cannot connect/reconnect to Pixy.");
-            return;
+            if (m_link.open()<0)
+                throw std::runtime_error("Unable to open USB device.");
+            m_chirp = new ChirpMon(this, &m_link);
+            m_exec_run = m_chirp->getProc("run");
+            m_exec_running = m_chirp->getProc("running");
+            m_exec_stop = m_chirp->getProc("stop");
+            if (m_exec_run<0 || m_exec_running<0 || m_exec_stop<0)
+                throw std::runtime_error("Communication error with Pixy.");
         }
-        m_exec_run = m_chirp->getProc("run");
-        m_exec_running = m_chirp->getProc("running");
-        m_exec_stop = m_chirp->getProc("stop");
-        if (m_exec_run<0 || m_exec_running<0 || m_exec_stop<0)
+        catch (std::runtime_error &exception)
         {
-            emit error("Communication error with Pixy.");
+            emit error(QString(exception.what()));
             return;
         }
         checkRemoteProgram(); // get initial state (is program running or not?)

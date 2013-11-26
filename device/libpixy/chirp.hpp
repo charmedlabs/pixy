@@ -144,7 +144,8 @@
 #define SYNC                            0
 #define ASYNC                           1
 
-#define CRP_RETURN(chirp, ...)          chirp->assemble(NULL, __VA_ARGS__, END)
+#define CRP_RETURN(chirp, ...)          chirp->assemble(0, __VA_ARGS__, END)
+#define CRP_SEND_XDATA(chirp, ...)      chirp->assemble(CRP_XDATA, __VA_ARGS__, END)
 #define callSync(...)                   call(SYNC, __VA_ARGS__, END)
 #define callAsync(...)                  call(ASYNC, __VA_ARGS__, END)
 
@@ -190,7 +191,7 @@ public:
     ~Chirp();
 
     virtual int init(bool connect);
-    void setLink(Link *link);
+    int setLink(Link *link);
     ChirpProc getProc(const char *procName, ProcPtr callback=0);
     int setProc(const char *procName, ProcPtr proc,  ProcTableExtension *extension=NULL);
     int getProcInfo(ChirpProc proc, ProcInfo *info);
@@ -199,7 +200,7 @@ public:
     int call(uint8_t service, ChirpProc proc, ...);
     static uint8_t getType(void *arg);
     int service(bool all=true);
-    int assemble(int dummy, ...);
+    int assemble(uint8_t type, ...);
     bool connected();
 
     // utility methods

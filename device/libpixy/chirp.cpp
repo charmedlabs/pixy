@@ -42,6 +42,9 @@ Chirp::Chirp(bool hinterested, bool client, Link *link)
 
 Chirp::~Chirp()
 {
+    // if we're a client, disconnect (let server know)
+    if (m_client)
+        remoteInit(false);
     if (!m_sharedMem)
     {
         restoreBuffer();
@@ -55,7 +58,7 @@ int Chirp::init(bool connect)
     return CRP_RES_OK;
 }
 
-void Chirp::setLink(Link *link)
+int Chirp::setLink(Link *link)
 {
     m_link = link;
     m_errorCorrected = m_link->getFlags()&LINK_FLAG_ERROR_CORRECTED;
@@ -80,20 +83,22 @@ void Chirp::setLink(Link *link)
 
     // link is set up, need to call init
     if (m_client)
-        remoteInit(true);
+        return remoteInit(true);
+
+    return CRP_RES_OK;
 }
 
 
-int Chirp::assemble(int dummy, ...)
+int Chirp::assemble(uint8_t type, ...)
 {
     int res;
     va_list args;
 
-    va_start(args, dummy);
+    va_start(args, type);
     res = vassemble(&args);
     va_end(args);
 
-    if (!m_call && res==CRP_RES_OK) // if we're not a call, we're extra data, so we need to send
+    if (type==CRP_XDATA || (!m_call && res==CRP_RES_OK)) // if we're not a call, we're extra data, so we need to send
     {
         if ((res=sendChirpRetry(CRP_XDATA, 0))!=CRP_RES_OK) // convert call into response
             return res;

@@ -2,9 +2,9 @@
 #define CHIRPTHREAD_H
 
 #include "../../device/libpixy/chirp.hpp"
-#include "usblink.h"
 
 class Interpreter;
+class USBLink;
 
 struct ChirpCallData
 {
@@ -26,10 +26,8 @@ struct ChirpCallData
 class ChirpMon : public Chirp
 {
 public:
-    ChirpMon(Interpreter *interpreter);
+    ChirpMon(Interpreter *interpreter, USBLink *link);
     virtual ~ChirpMon();
-
-    int open();
 
     int serviceChirp();
 
@@ -43,7 +41,6 @@ protected:
 private:
     int execute(const ChirpCallData &data);
 
-    USBLink m_link;
     Interpreter *m_interpreter;
 };
 
