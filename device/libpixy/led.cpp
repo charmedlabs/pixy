@@ -52,7 +52,7 @@ void led_init()
 	delayus(20000);
 
 	// get current of each led.  This is needed because each LED has a different forward voltage.  But current determines
-	// brightness (regardless of voltage drop.  So we normalize with respect to current for best color accuracy. 
+	// brightness regardless of voltage drop.  So we normalize with respect to current for best color accuracy. 
 	g_ledOnCurrent[LED_RED] = (float)adc_get(LED_RED_ADCCHAN)/ADC_MAX*ADC_VOLTAGE/LED_RED_RESISTOR;
 	g_ledOnCurrent[LED_GREEN] = (float)adc_get(LED_GREEN_ADCCHAN)/ADC_MAX*ADC_VOLTAGE/LED_GREEN_RESISTOR;
 	g_ledOnCurrent[LED_BLUE] = (float)adc_get(LED_BLUE_ADCCHAN)/ADC_MAX*ADC_VOLTAGE/LED_BLUE_RESISTOR;	

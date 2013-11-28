@@ -4,7 +4,7 @@
 #include "reader.h"
 
 
-Flash::Flash()
+Flash::Flash() : m_chirp(false, true) // not hinterested, client
 {
     uint32_t sectorSizeProc;
 

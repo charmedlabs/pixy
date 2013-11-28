@@ -1,6 +1,6 @@
 #include <pixy_init.h>
 #include <misc.h>
-#include "flash.h"
+#include "flashprog.h"
 #include "lpc43xx_rgu.h"
 
 #if 1

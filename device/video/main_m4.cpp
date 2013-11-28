@@ -11,6 +11,8 @@
 #include "rcservo.h"
 #include "spi.h"
 #include "spifi_rom_api.h"
+#include "lpc43xx_scu.h"
+
 
 
 #define RLS_MEMORY_SIZE     0x8000 // bytes
@@ -593,8 +595,55 @@ int main(void)
  	pixyInit(SRAM3_LOC, &LR0[0], sizeof(LR0));
 	cc_init(g_chirpUsb);
 	exec_init(g_chirpUsb);
+#if 0
+	// spi I/O test
+	scu_pinmux(0x1, 3, (MD_PLN | MD_EZI | MD_ZI | MD_EHS), FUNC0); 	         // SSP1_MISO 
+	scu_pinmux(0x1, 4, (MD_PLN | MD_EZI | MD_ZI | MD_EHS), FUNC0); 	         // SSP1_MOSI 
+	LPC_GPIO_PORT->MASK[0] = 0;
+	LPC_GPIO_PORT->PIN[0] = 0x0;
+	LPC_GPIO_PORT->DIR[0] = 0xc00;
+
+	while(1)
+	{
+		LPC_GPIO_PORT->PIN[0] = 0x400;	// pin 1 high
+		LPC_GPIO_PORT->PIN[0] = 0xc00;	// pin 4 high
+		LPC_GPIO_PORT->PIN[0] = 0x800;
+		LPC_GPIO_PORT->PIN[0] = 0x000;
+	}
+#endif
+#if 0
+	// uart I/O test
+	LPC_GPIO_PORT->MASK[5] = 0;
+	LPC_GPIO_PORT->PIN[5] = 0x0;
+	LPC_GPIO_PORT->DIR[5] = 0x3;
+
+	while(1)
+	{
+		LPC_GPIO_PORT->PIN[5] = 0x01;	// pin 4 high
+		LPC_GPIO_PORT->PIN[5] = 0x03;	// pin 1 high
+		LPC_GPIO_PORT->PIN[5] = 0x02;
+		LPC_GPIO_PORT->PIN[5] = 0x00;
+	}
+#endif
+#if 0
+	// dac test
+	LPC_DAC->CTRL =	8;
+	LPC_DAC->CR = 0 << 6;
+	LPC_DAC->CR = 100 << 6;
+	LPC_DAC->CR = 200 << 6;
+	LPC_DAC->CR = 300 << 6;
+	LPC_DAC->CR = 400 << 6;
+	LPC_DAC->CR = 500 << 6;
+	LPC_DAC->CR = 600 << 6;
+	LPC_DAC->CR = 700 << 6;
+	LPC_DAC->CR = 800 << 6;
+	LPC_DAC->CR = 900 << 6;
+	LPC_DAC->CR = 1000 << 6;
+#endif
 #if 1
 	exec_loop();
+#endif
+#if 0
    	while(1)
 	{
 		delayus(100000);

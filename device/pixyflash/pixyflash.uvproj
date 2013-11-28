@@ -392,14 +392,14 @@
               <FilePath>.\main.cpp</FilePath>
             </File>
             <File>
-              <FileName>flash.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>.\flash.cpp</FilePath>
-            </File>
-            <File>
               <FileName>lpc43xx_rgu.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\lpc43xx_rgu.c</FilePath>
+            </File>
+            <File>
+              <FileName>flashprog.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>.\flashprog.cpp</FilePath>
             </File>
           </Files>
         </Group>

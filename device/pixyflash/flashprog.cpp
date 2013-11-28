@@ -2,15 +2,7 @@
 #include "spifi_rom_api.h"
 #include "pixy_init.h"
 #include "flash.h"
-
-#define SECTOR_SIZE     0x1000
-#define SECTOR_MASK(a)	(a&(~(SECTOR_SIZE-1)))
-#define FLASH_SIZE      g_spifi.memSize
-#define FLASH_BEGIN_A	0x14000000
-#define FLASH_BEGIN_B	g_spifi.base
-#define FLASH_END_A		(FLASH_BEGIN_A+FLASH_SIZE)
-#define FLASH_END_B		(FLASH_BEGIN_B+FLASH_SIZE)
-#define FLASH_OFFSET    (FLASH_BEGIN_B-FLASH_BEGIN_A)
+#include "flashprog.h"
 
 uint8_t g_resetFlag = 0;
 
@@ -27,7 +19,7 @@ static const ProcModule g_module[] =
 	},
 	{
 	"flash_program",
-	(ProcPtr)flash_program, 
+	(ProcPtr)flash_program2, 
 	{CRP_INT32, CRP_INTS8, END}, 
 	"Program flash (including erasing and verifying)."
 	"@p addr destination address"
@@ -52,7 +44,7 @@ void flash_init()
 
    	g_chirpUsb->registerModule(g_module);
 
-	mapsize = g_spifi.memSize/SECTOR_SIZE;
+	mapsize = g_spifi.memSize/FLASH_SECTOR_SIZE;
 	 
 	g_eraseMap = new uint8_t[mapsize];
 	memset((void *)g_eraseMap, 0, mapsize);
@@ -60,39 +52,14 @@ void flash_init()
 
 int32_t erase(uint32_t addr)
 {
-	SPIFIopers spifi;
-
 	// if we've already erased, just return 
-	if (g_eraseMap[(addr-FLASH_BEGIN_B)/SECTOR_SIZE]==1)
+	if (g_eraseMap[(addr-FLASH_BEGIN_B)/FLASH_SECTOR_SIZE]==1)
 		return 0;
 
-	memset((void *)&spifi, 0, sizeof(spifi));
-
-	addr = SECTOR_MASK(addr);
-	spifi.dest = (char *)addr;
-	spifi.length = SECTOR_SIZE;
-	spifi.scratch = NULL;
-	spifi.options = S_VERIFY_ERASE;
-	if (spifi_erase(&g_spifi, &spifi)) 
-		return -1;
+	flash_erase(addr, 1);
 
 	// update map
-	g_eraseMap[(addr-FLASH_BEGIN_B)/SECTOR_SIZE] = 1;
-
-	return 0;
-}
-
-int32_t program(uint32_t addr, const uint8_t *data, uint32_t len)
-{
-	SPIFIopers spifi;
- 	memset((void *)&spifi, 0, sizeof(spifi));
-
-	spifi.dest = (char *)addr;
-	spifi.length = len;
-	spifi.scratch = NULL;
-	spifi.options = S_VERIFY_PROG;
-	if (spifi_program(&g_spifi, (char *)data, &spifi))
-		return -1;
+	g_eraseMap[(addr-FLASH_BEGIN_B)/FLASH_SECTOR_SIZE] = 1;
 
 	return 0;
 }
@@ -100,15 +67,15 @@ int32_t program(uint32_t addr, const uint8_t *data, uint32_t len)
 
 uint32_t flash_sectorSize()
 {
-	return SECTOR_SIZE; 
+	return FLASH_SECTOR_SIZE; 
 }
 
-int32_t flash_program(const uint32_t &addr, const uint32_t &len, const uint8_t *data)
+int32_t flash_program2(const uint32_t &addr, const uint32_t &len, const uint8_t *data)
 {
 	uint32_t i, laddr = addr;
 
 	// add offset
-	if (laddr>=FLASH_BEGIN_A && laddr<=FLASH_END_A)
+	if (laddr>=FLASH_BEGIN && laddr<=FLASH_END)
 		laddr += FLASH_OFFSET;
 
 	// check range
@@ -116,13 +83,13 @@ int32_t flash_program(const uint32_t &addr, const uint32_t &len, const uint8_t *
 		return -1;
 
 	// erase all sectors spanned by this segment
-	for (i=SECTOR_MASK(laddr); i<laddr+len; i+=SECTOR_SIZE)
+	for (i=FLASH_SECTOR_MASK(laddr); i<laddr+len; i+=FLASH_SECTOR_SIZE)
 	{
 		if (erase(i)<0)
 			return -3;
 	}
 	
-	if (program(laddr, data, len)<0)
+	if (flash_program(laddr, data, len)<0)
 		return -2;
 
 	// verify
