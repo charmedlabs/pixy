@@ -45,6 +45,7 @@ void ConsoleWidget::print(QString text, QColor color)
 
 void ConsoleWidget::error(QString text)
 {
+    emptyLine();
     print("error: " + text, Qt::red);
 }
 

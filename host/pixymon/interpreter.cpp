@@ -3,6 +3,7 @@
 #include <QFile>
 #include <QDebug>
 #include "interpreter.h"
+#include "disconnectevent.h"
 #include "videowidget.h"
 #include "console.h"
 #include "mainwindow.h"
@@ -22,6 +23,7 @@ Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, MainWindow 
     m_remoteProgramRunning = false;
     m_rcount = 0;
     m_init = true;
+    m_exit = false;
     m_chirp = NULL;
     m_disconnect = NULL;
 
@@ -71,12 +73,15 @@ Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, MainWindow 
 
 Interpreter::~Interpreter()
 {
+    m_exit = true;
     stopProgram();
     m_console->m_mutexPrint.lock();
     m_console->m_waitPrint.wakeAll();
     m_console->m_mutexPrint.unlock();
     wait();
     clearProgram();
+    if (m_disconnect)
+        delete m_disconnect;
     if (m_chirp)
         delete m_chirp;
 }
@@ -427,7 +432,7 @@ void Interpreter::run()
             m_exec_stop = m_chirp->getProc("stop");
             if (m_exec_run<0 || m_exec_running<0 || m_exec_stop<0)
                 throw std::runtime_error("Communication error with Pixy.");
-            //m_disconnect = new DisconnectEvent(this);
+            m_disconnect = new DisconnectEvent(this);
         }
         catch (std::runtime_error &exception)
         {
@@ -442,9 +447,16 @@ void Interpreter::run()
     if (m_remoteProgramRunning)
     {
         while(m_remoteProgramRunning)
+        {
+            m_chirp->m_mutex.lock();
             m_chirp->service(false);
-        stopRemoteProgram();
-        prompt();
+            m_chirp->m_mutex.unlock();
+        }
+        if (!m_exit)
+        {
+            stopRemoteProgram();
+            prompt();
+        }
     }
     else if (m_programRunning)
     {
@@ -461,7 +473,7 @@ void Interpreter::run()
     {
         res = call(m_argv, true);
 
-        if (res<0 &&m_programming)
+        if (res<0 && m_programming)
         {
             endProgram();
             clearProgram();

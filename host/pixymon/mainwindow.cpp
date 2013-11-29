@@ -177,6 +177,7 @@ void MainWindow::connectPixy(bool state)
             m_interpreter = NULL;
         }
         m_video->clear();
+        m_console->acceptInput(false);
         // if we're disconnected, start the connect thread
         m_connect = new ConnectEvent(this);
         m_pixyConnected = false;
