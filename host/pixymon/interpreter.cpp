@@ -73,7 +73,7 @@ Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, MainWindow 
 
 Interpreter::~Interpreter()
 {
-    m_exit = true;
+    m_exit = true; // this flag indicates that we're not just exiting the thread
     stopProgram();
     m_console->m_mutexPrint.lock();
     m_console->m_waitPrint.wakeAll();
@@ -349,17 +349,18 @@ int Interpreter::addProgram(const QStringList &argv)
 bool Interpreter::checkRemoteProgram()
 {
     int res;
+    bool result;
 
     res = getRunning();
     if (res<0)
         return false;
 
-    m_remoteProgramRunning = (bool)res;
+    result = (bool)res;
 
-    emit runState(m_remoteProgramRunning);
-    emit enableConsole(!m_remoteProgramRunning);
+    emit runState(result);
+    emit enableConsole(!result);
 
-    return m_remoteProgramRunning;
+    return result;
 }
 
 int Interpreter::stopRemoteProgram()
@@ -439,20 +440,23 @@ void Interpreter::run()
             emit error(QString(exception.what()));
             return;
         }
-        checkRemoteProgram(); // get initial state (is program running or not?)
+        m_remoteProgramRunning = checkRemoteProgram(); // get initial state (is program running or not?)
         m_init = false;
         qDebug() << "*** init done";
     }
 
     if (m_remoteProgramRunning)
     {
+        if (!getRunning()) // if we're not running, we should start
+            sendRun();
+
         while(m_remoteProgramRunning)
         {
             m_chirp->m_mutex.lock();
             m_chirp->service(false);
             m_chirp->m_mutex.unlock();
         }
-        if (!m_exit)
+        if (!m_exit)  // if we're being destructed we shouldn't stop the remote program or print the prompt
         {
             stopRemoteProgram();
             prompt();
@@ -520,13 +524,7 @@ int Interpreter::runProgram()
 
 int Interpreter::runRemoteProgram()
 {
-    int res;
-
-    res = sendRun();
-    if (res<0)
-        return -1;
-
-    m_remoteProgramRunning = true;
+     m_remoteProgramRunning = true;
 
     // start thread
     start();

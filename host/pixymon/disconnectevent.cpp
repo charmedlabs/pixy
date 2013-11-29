@@ -14,7 +14,8 @@ DisconnectEvent::~DisconnectEvent()
     wait();
 }
 
-
+// this thread simply "pings" pixy periodically checking for an error
+// It's simple, detects hangs on Pixy and is portable between OS's
 void DisconnectEvent::run()
 {
     int res;
