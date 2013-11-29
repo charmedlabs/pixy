@@ -2,34 +2,39 @@
 #define CAMERA_H
 
 #include "chirp.hpp"
+#include "sccb.h"
 #include <cameravals.h>
 
 
 int cam_init();
 
-int32_t cam_setMode(const uint8_t &mode, Chirp *chirp=NULL);
-uint32_t cam_getMode(Chirp *chirp=NULL);
+int32_t cam_setMode(const uint8_t &mode);
+uint32_t cam_getMode();
 
-int32_t cam_setAWB(const uint8_t &awb, Chirp *chirp=NULL);
-uint32_t cam_getAWB(Chirp *chirp=NULL);
+int32_t cam_setAWB(const uint8_t &awb);
+uint32_t cam_getAWB();
 							   
-int32_t cam_setWBV(const uint32_t &wbv, Chirp *chirp=NULL);
-uint32_t cam_getWBV(Chirp *chirp=NULL);
+int32_t cam_setWBV(const uint32_t &wbv);
+uint32_t cam_getWBV();
 
-int32_t cam_setAEC(const uint8_t &aec, Chirp *chirp=NULL);
-uint32_t cam_getAEC(Chirp *chirp=NULL);
+int32_t cam_setAEC(const uint8_t &aec);
+uint32_t cam_getAEC();
 
-int32_t cam_setECV(const uint32_t &ecv, Chirp *chirp=NULL);
-uint32_t cam_getECV(Chirp *chirp=NULL);
+int32_t cam_setECV(const uint32_t &ecv);
+uint32_t cam_getECV();
 
-int32_t cam_setBrightness(const uint8_t &brightness, Chirp *chirp=NULL);
-uint32_t cam_getBrightness(Chirp *chirp=NULL);
+int32_t cam_setBrightness(const uint8_t &brightness);
+uint32_t cam_getBrightness();
 
-int32_t cam_setLightMode(const uint8_t &mode, Chirp *chirp=NULL);
-uint32_t cam_getLightMode(Chirp *chirp=NULL);
+int32_t cam_setLightMode(const uint8_t &mode);
+uint32_t cam_getLightMode();
+
+int cam_testPattern(const uint8_t &enable);
 
 int32_t cam_getFrameChirp(const uint8_t &type, const uint16_t &xOffset, const uint16_t &yOffset, const uint16_t &xWidth, const uint16_t &yWidth, Chirp *chirp);
 int32_t cam_getFrame(uint8_t *memory, uint32_t memSize, uint8_t type, uint16_t xOffset, uint16_t yOffset, uint16_t xWidth, uint16_t yWidth);
+
+extern CSccb *g_sccb;
 
 /* default register values for OV9715
 0x0=0x0

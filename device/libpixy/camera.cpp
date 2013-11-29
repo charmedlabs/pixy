@@ -1,7 +1,6 @@
 #include <pixy_init.h>
 #include <pixyvals.h>
 #include "camera.h"
-#include "sccb.h"
 
 static const ProcModule g_module[] =
 {
@@ -111,6 +110,14 @@ static const ProcModule g_module[] =
 	"@r 0 if success, negative if error"
 	},
 	{
+	"cam_testPattern", 
+	(ProcPtr)cam_testPattern, 
+	{CRP_INT8, END},
+	"Set test pattern display"
+	"@p (0) normal mode (1) test pattern"
+	"@r always returns 0"
+	},
+	{
 	"cam_getFrame", 
 	(ProcPtr)cam_getFrameChirp, 
 	{CRP_INT8, CRP_INT16, CRP_INT16, CRP_INT16, CRP_INT16, END},
@@ -126,7 +133,7 @@ static const ProcModule g_module[] =
 	END
 };
 
-static CSccb *g_sccb = NULL;
+CSccb *g_sccb = NULL;
 static uint8_t g_mode = (uint8_t)-1;
 static uint8_t g_awb = 1;
 static uint8_t g_aec = 1;
@@ -242,7 +249,7 @@ int cam_init()
 	return 0;
 }
 
-int32_t cam_setMode(const uint8_t &mode, Chirp *chirp)
+int32_t cam_setMode(const uint8_t &mode)
 {
 	if (mode!=g_mode)
 	{
@@ -262,12 +269,12 @@ int32_t cam_setMode(const uint8_t &mode, Chirp *chirp)
 	return 0;
 }
 
-uint32_t cam_getMode(Chirp *chirp)
+uint32_t cam_getMode()
 {
 	return g_mode;
 }
 
-int32_t cam_setAWB(const uint8_t &awb, Chirp *chirp)
+int32_t cam_setAWB(const uint8_t &awb)
 {
 	if (awb!=g_awb)
 	{
@@ -287,12 +294,12 @@ int32_t cam_setAWB(const uint8_t &awb, Chirp *chirp)
 	return 0;
 }
 
-uint32_t cam_getAWB(Chirp *chirp)
+uint32_t cam_getAWB()
 {
 	return g_awb;
 }
 							   
-int32_t cam_setWBV(const uint32_t &wbv, Chirp *chirp)
+int32_t cam_setWBV(const uint32_t &wbv)
 {
 	uint32_t val = wbv;
 	g_sccb->Write(0x05, (unsigned char)(val&0xff));	// green
@@ -304,7 +311,7 @@ int32_t cam_setWBV(const uint32_t &wbv, Chirp *chirp)
 	return 0;			
 }
 
-uint32_t cam_getWBV(Chirp *chirp)
+uint32_t cam_getWBV()
 {
 	uint32_t wbv;
 
@@ -318,7 +325,7 @@ uint32_t cam_getWBV(Chirp *chirp)
 }
 
 
-int32_t cam_setAEC(const uint8_t &aec, Chirp *chirp)
+int32_t cam_setAEC(const uint8_t &aec)
 {
 	if (aec!=g_aec)
 	{
@@ -336,12 +343,12 @@ int32_t cam_setAEC(const uint8_t &aec, Chirp *chirp)
 	return 0;
 }
 
-uint32_t cam_getAEC(Chirp *chirp)
+uint32_t cam_getAEC()
 {
 	return g_aec;
 }
 
-int32_t cam_setECV(const uint32_t &ecv, Chirp *chirp)
+int32_t cam_setECV(const uint32_t &ecv)
 {
 	uint32_t val = ecv;
 
@@ -354,7 +361,7 @@ int32_t cam_setECV(const uint32_t &ecv, Chirp *chirp)
 	return 0;		
 }
 
-uint32_t cam_getECV(Chirp *chirp)
+uint32_t cam_getECV()
 {
 	uint32_t ecv;
 
@@ -367,7 +374,7 @@ uint32_t cam_getECV(Chirp *chirp)
 	return ecv;
 }
 
-int32_t cam_setBrightness(const uint8_t &brightness, Chirp *chirp)
+int32_t cam_setBrightness(const uint8_t &brightness)
 {
 	if (brightness>0xff)
 		return -1;
@@ -381,12 +388,12 @@ int32_t cam_setBrightness(const uint8_t &brightness, Chirp *chirp)
 	return 0;
 }
 
-uint32_t cam_getBrightness(Chirp *chirp)
+uint32_t cam_getBrightness()
 {
 	return g_brightness;
 }
 
-int32_t cam_setLightMode(const uint8_t &mode, Chirp *chirp)
+int32_t cam_setLightMode(const uint8_t &mode)
 {
 	uint8_t val13, val03;
 
@@ -419,9 +426,22 @@ int32_t cam_setLightMode(const uint8_t &mode, Chirp *chirp)
 	return 0; 
 }
 
-uint32_t cam_getLightMode(Chirp *chirp)
+uint32_t cam_getLightMode()
 {
 	return g_lightMode;
+}
+
+int cam_testPattern(const uint8_t &enable)
+{
+	uint8_t val;
+
+	val = g_sccb->Read(0x97); 
+	if (enable)
+		g_sccb->Write(0x97, val | 0x0a);
+	else
+		g_sccb->Write(0x97, val & ~0x0a);
+
+	return 0;
 }
 
 int32_t cam_getFrame(uint8_t *memory, uint32_t memSize, uint8_t type, uint16_t xOffset, uint16_t yOffset, uint16_t xWidth, uint16_t yWidth)

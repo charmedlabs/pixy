@@ -12,6 +12,7 @@
 #include "spi.h"
 #include "spifi_rom_api.h"
 #include "lpc43xx_scu.h"
+#include "camera.h"
 
 
 
@@ -592,6 +593,7 @@ uint32_t transmitCallback(uint16_t *data, uint32_t len)
 
 int main(void) 
  {	
+
  	pixyInit(SRAM3_LOC, &LR0[0], sizeof(LR0));
 	cc_init(g_chirpUsb);
 	exec_init(g_chirpUsb);
