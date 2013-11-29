@@ -11,6 +11,7 @@
 #include "blobs.h"
 #include "clut.h"
 #include "connectevent.h"
+#include "disconnectevent.h"
 #include "usblink.h"
 
 #define PROMPT  ">"
@@ -53,6 +54,7 @@ public:
     MainWindow *m_main;
 
     friend class ChirpMon;
+    friend class DisconnectEvent;
 
 signals:
     void runState(bool state);
@@ -61,7 +63,7 @@ signals:
     void prompt(QString text);
     void videoPrompt(uint type);
     void enableConsole(bool enable);
-    void connected(ConnectEvent::Device device, bool state);
+    void connected(Device device, bool state);
 
 public slots:
 
@@ -85,6 +87,11 @@ private:
     int execute();
     bool checkRemoteProgram();
     int stopRemoteProgram();
+
+    int getRunning();
+    int sendRun();
+    int sendStop();
+
     void prompt();
     QStringList getSections(const QString &id, const QString &string);
     int getArgs(const ProcInfo *info, ArgList *argList);
@@ -114,7 +121,7 @@ private:
     uint8_t m_tempLut[LUT_SIZE];
 
     // for thread
-    QMutex m_mutex;
+    QMutex m_mutexProg;
     QMutex m_mutexInput;
     QWaitCondition m_waitInput;
 
@@ -131,6 +138,7 @@ private:
     std::vector<ChirpCallData> m_program;
     std::vector<QStringList> m_programText;
 
+    DisconnectEvent *m_disconnect;
     QString m_command;
     QString m_print;
     Qt::Key m_key;

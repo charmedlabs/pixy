@@ -2,7 +2,6 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include "connectevent.h"
 
 #define PIXYMON_TITLE   "PixyMon"
 
@@ -15,6 +14,9 @@ class VideoWidget;
 class ConsoleWidget;
 class Interpreter;
 class Flash;
+class ConnectEvent;
+
+enum Device {NONE, PIXY, PIXY_DFU};
 
 class MainWindow : public QMainWindow
 {
@@ -29,7 +31,7 @@ public:
 
 private slots:
     void handleRunState(bool state);
-    void handleConnected(ConnectEvent::Device device, bool state);
+    void handleConnected(Device device, bool state);
     void on_actionPlay_Pause_triggered();
     void on_actionExit_triggered();
     void on_actionProgram_triggered();

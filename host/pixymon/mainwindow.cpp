@@ -2,6 +2,7 @@
 #include <QDebug>
 #include <QMessageBox>
 #include <QFileDialog>
+#include <QMetaType>
 #include "mainwindow.h"
 #include "videowidget.h"
 #include "console.h"
@@ -17,6 +18,8 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     m_ui(new Ui::MainWindow)
 {
+    qRegisterMetaType<Device>("Device");
+
     m_ui->setupUi(this);
     setWindowTitle(PIXYMON_TITLE);
 
@@ -40,7 +43,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // start looking for devices
     m_connect = new ConnectEvent(this);
-    if (m_connect->getConnected()==ConnectEvent::NONE)
+    if (m_connect->getConnected()==NONE)
         m_console->error("No Pixy devices have been detected.\n");
 }
 
@@ -182,7 +185,7 @@ void MainWindow::connectPixy(bool state)
     updateButtons();
 }
 
-void MainWindow::handleConnected(ConnectEvent::Device device, bool state)
+void MainWindow::handleConnected(Device device, bool state)
 {
     // kill connect thread
     if (m_connect)
@@ -190,9 +193,9 @@ void MainWindow::handleConnected(ConnectEvent::Device device, bool state)
         delete m_connect;
         m_connect = NULL;
     }
-    if (device==ConnectEvent::PIXY)
+    if (device==PIXY)
         connectPixy(state);
-    else if (device==ConnectEvent::PIXY_DFU)
+    else if (device==PIXY_DFU)
         connectPixyDFU(state);
 }
 

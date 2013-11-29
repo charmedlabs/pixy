@@ -1,6 +1,7 @@
 #ifndef CHIRPTHREAD_H
 #define CHIRPTHREAD_H
 
+#include <QMutex>
 #include "../../device/libpixy/chirp.hpp"
 
 class Interpreter;
@@ -42,6 +43,7 @@ private:
     int execute(const ChirpCallData &data);
 
     Interpreter *m_interpreter;
+    QMutex m_mutex;
 };
 
 #endif // CHIRPTHREAD_H

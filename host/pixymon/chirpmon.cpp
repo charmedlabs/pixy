@@ -4,7 +4,7 @@
 #include "chirpmon.h"
 #include "interpreter.h"
 
-ChirpMon::ChirpMon(Interpreter *interpreter, USBLink *link)
+ChirpMon::ChirpMon(Interpreter *interpreter, USBLink *link) : m_mutex(QMutex::Recursive)
 {
     m_hinterested = true;
     m_client = true;

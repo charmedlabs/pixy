@@ -4,23 +4,21 @@
 #include <QThread>
 #include <QMutex>
 #include "libusb.h"
+#include "mainwindow.h"
 
-class MainWindow;
 
 class ConnectEvent : public QThread
 {
     Q_OBJECT
 
 public:
-    enum Device {NONE, PIXY, PIXY_DFU};
 
     ConnectEvent(MainWindow *main, unsigned int sleep=0);
     Device getConnected();
     ~ConnectEvent();
 
-
 signals:
-    void connected(ConnectEvent::Device device, bool state);
+    void connected(Device device, bool state);
 
 protected:
     virtual void run();

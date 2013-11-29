@@ -13,7 +13,6 @@ QString printType(uint32_t val, bool parens=false);
 
 Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, MainWindow *main)
 {
-
     m_console = console;
     m_video = video;
     m_main = main;
@@ -24,6 +23,7 @@ Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, MainWindow 
     m_rcount = 0;
     m_init = true;
     m_chirp = NULL;
+    m_disconnect = NULL;
 
 #if 0
     ChirpProc proc, procGet, procGetInfo, procGetAll;
@@ -64,7 +64,7 @@ Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, MainWindow 
     connect(this, SIGNAL(videoPrompt(uint)), m_video, SLOT(acceptInput(uint)));
     connect(m_video, SIGNAL(selection(int,int,int,int)), this, SLOT(handleSelection(int,int,int,int)));
     // we necessarily want to execute in the gui thread, so queue
-    connect(this, SIGNAL(connected(ConnectEvent::Device,bool)), m_main, SLOT(handleConnected(ConnectEvent::Device,bool)), Qt::QueuedConnection);
+    connect(this, SIGNAL(connected(Device,bool)), m_main, SLOT(handleConnected(Device,bool)), Qt::QueuedConnection);
 
     start();
 }
@@ -172,6 +172,7 @@ QString Interpreter::printProc(const ProcInfo *info, int level)
 void Interpreter::printHelp()
 {
     ProcInfo info;
+    QMutexLocker locker(&m_chirp->m_mutex);
     ChirpProc p;
 
     for (p=0; true; p++)
@@ -324,7 +325,7 @@ void Interpreter::handleData(void *args[])
 
 int Interpreter::addProgram(ChirpCallData data)
 {
-    QMutexLocker locker(&m_mutex);
+    QMutexLocker locker(&m_mutexProg);
 
     m_program.push_back(data);
 
@@ -333,7 +334,7 @@ int Interpreter::addProgram(ChirpCallData data)
 
 int Interpreter::addProgram(const QStringList &argv)
 {
-    QMutexLocker locker(&m_mutex);
+    QMutexLocker locker(&m_mutexProg);
 
     m_programText.push_back(argv);
 
@@ -344,9 +345,11 @@ bool Interpreter::checkRemoteProgram()
 {
     int res;
 
-    res = m_chirp->callSync(m_exec_running, END_OUT_ARGS, &m_remoteProgramRunning, END_IN_ARGS);
+    res = getRunning();
     if (res<0)
         return false;
+
+    m_remoteProgramRunning = (bool)res;
 
     emit runState(m_remoteProgramRunning);
     emit enableConsole(!m_remoteProgramRunning);
@@ -356,23 +359,56 @@ bool Interpreter::checkRemoteProgram()
 
 int Interpreter::stopRemoteProgram()
 {
-    int i, res, response;
+    int i, res;
 
-    res = m_chirp->callSync(m_exec_stop, END_OUT_ARGS, &response, END_IN_ARGS);
+    res = sendStop();
     if (res<0)
         return -1;
 
     // poll for 500ms for program to stop
     for (i=0; i<10; i++)
     {
-        res = m_chirp->callSync(m_exec_running, END_OUT_ARGS, &response, END_IN_ARGS);
+        res = getRunning();
         if (res<0)
             return -1;
-        if (response==0)
+        if (res==false)
             return 0;
         msleep(50);
     }
     return -1;
+}
+
+int Interpreter::getRunning()
+{
+    int res, response;
+    QMutexLocker locker(&m_chirp->m_mutex);
+
+    res = m_chirp->callSync(m_exec_running, END_OUT_ARGS, &response, END_IN_ARGS);
+    if (res<0)
+        return res;
+    return response ? true : false;
+}
+
+int Interpreter::sendRun()
+{
+    int res, response;
+    QMutexLocker locker(&m_chirp->m_mutex);
+
+    res = m_chirp->callSync(m_exec_run, STRING(""), END_OUT_ARGS, &response, END_IN_ARGS);
+    if (res<0)
+        return res;
+    return response;
+}
+
+int Interpreter::sendStop()
+{
+    int res, response;
+    QMutexLocker locker(&m_chirp->m_mutex);
+
+    res = m_chirp->callSync(m_exec_stop, END_OUT_ARGS, &response, END_IN_ARGS);
+    if (res<0)
+        return res;
+    return response;
 }
 
 void Interpreter::run()
@@ -391,6 +427,7 @@ void Interpreter::run()
             m_exec_stop = m_chirp->getProc("stop");
             if (m_exec_run<0 || m_exec_running<0 || m_exec_stop<0)
                 throw std::runtime_error("Communication error with Pixy.");
+            //m_disconnect = new DisconnectEvent(this);
         }
         catch (std::runtime_error &exception)
         {
@@ -416,7 +453,7 @@ void Interpreter::run()
         // check for cable disconnect
         if (res) //==LIBUSB_ERROR_PIPE)
         {
-            emit connected(ConnectEvent::PIXY, false);
+            emit connected(PIXY, false);
             return;
         }
     }
@@ -452,7 +489,7 @@ int Interpreter::endProgram()
 
 int Interpreter::runProgram()
 {
-    QMutexLocker locker(&m_mutex);
+    QMutexLocker locker(&m_mutexProg);
 
     if (m_programRunning || m_program.size()==0)
         return -1;
@@ -471,10 +508,9 @@ int Interpreter::runProgram()
 
 int Interpreter::runRemoteProgram()
 {
-    int res, response;
-    QMutexLocker locker(&m_mutex);
+    int res;
 
-    res = m_chirp->callSync(m_exec_run, STRING(""), END_OUT_ARGS, &response, END_IN_ARGS);
+    res = sendRun();
     if (res<0)
         return -1;
 
@@ -507,7 +543,7 @@ int Interpreter::stopProgram()
 
 int Interpreter::clearProgram()
 {
-    QMutexLocker locker(&m_mutex);
+    QMutexLocker locker(&m_mutexProg);
     unsigned int i;
 
     for (i=0; i<m_program.size() && m_programRunning; i++)
@@ -523,7 +559,7 @@ int Interpreter::clearProgram()
 
 void Interpreter::listProgram()
 {
-    QMutexLocker locker(&m_mutex);
+    QMutexLocker locker(&m_mutexProg);
     QString print;
     unsigned int i;
     int j;
@@ -659,6 +695,7 @@ void Interpreter::handleHelp(const QStringList &argv)
 {
     ChirpProc proc;
     ProcInfo info;
+    QMutexLocker locker(&m_chirp->m_mutex);
 
     if (argv.size()==1)
         printHelp();
@@ -700,6 +737,7 @@ int Interpreter::uploadLut()
 {
     uint32_t i, sum;
     uint32_t responseInt;
+    QMutexLocker locker(&m_chirp->m_mutex);
 
     for (i=0, sum=0; i<LUT_SIZE; i++)
         sum += m_lut[i];
@@ -1017,6 +1055,7 @@ int Interpreter::call(const QStringList &argv, bool interactive)
     int i, j, n, base, res;
     bool ok;
     ArgList list;
+    QMutexLocker locker(&m_chirp->m_mutex);
 
     // not allowed
     if (argv.size()<1)
@@ -1132,7 +1171,7 @@ int Interpreter::call(const QStringList &argv, bool interactive)
         // check for cable disconnect
         if (res) //res==LIBUSB_ERROR_PIPE)
         {
-            emit connected(ConnectEvent::PIXY, false);
+            emit connected(PIXY, false);
             return res;
         }
         // get response if we're not programming, save text if we are
