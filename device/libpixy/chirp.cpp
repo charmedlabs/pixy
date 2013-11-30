@@ -379,7 +379,7 @@ int Chirp::loadArgs(va_list *args, void *recvArgs[])
 
 int Chirp::call(uint8_t service, ChirpProc proc, ...)
 {
-    int res;
+    int res, i;
     uint8_t type;
     va_list args;
 
@@ -415,7 +415,7 @@ int Chirp::call(uint8_t service, ChirpProc proc, ...)
 
 
     // if the service is synchronous, receive response while servicing other calls
-    if (service==SYNC)
+    if (!(service&ASYNC))
     {
         ChirpProc recvProc;
         void *recvArgs[CRP_MAX_ARGS+1];
@@ -436,8 +436,21 @@ int Chirp::call(uint8_t service, ChirpProc proc, ...)
             }
         }
 
-        // load args
-        if ((res=loadArgs(&args, recvArgs))<0)
+        // deal with args
+        if (service&RETURN_ARRAY) // copy array of args
+        {
+            void **recvArray;
+            while(1)
+            {
+                recvArray = va_arg(args, void **);
+                if (recvArray!=NULL)
+                    break;
+            }
+            for (i=0; recvArgs[i]; i++)
+                recvArray[i] = recvArgs[i];
+            recvArray[i] = NULL;
+        }
+        else if ((res=loadArgs(&args, recvArgs))<0)
         {
             va_end(args);
             return res;

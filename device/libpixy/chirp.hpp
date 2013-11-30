@@ -142,12 +142,15 @@
 
 // service types
 #define SYNC                            0
-#define ASYNC                           1
+#define ASYNC                           0x01 // bit
+#define RETURN_ARRAY                    0x02 // bit
+#define SYNC_RETURN_ARRAY               (SYNC | RETURN_ARRAY)
 
 #define CRP_RETURN(chirp, ...)          chirp->assemble(0, __VA_ARGS__, END)
 #define CRP_SEND_XDATA(chirp, ...)      chirp->assemble(CRP_XDATA, __VA_ARGS__, END)
 #define callSync(...)                   call(SYNC, __VA_ARGS__, END)
 #define callAsync(...)                  call(ASYNC, __VA_ARGS__, END)
+#define callSyncArray(...)              call(SYNC_RETURN_ARRAY, __VA_ARGS__, END)
 
 class Chirp;
 

@@ -490,6 +490,11 @@ int Interpreter::beginProgram()
 {
     if (m_programming)
         return -1;
+    if (m_disconnect)
+    {
+        delete m_disconnect;
+        m_disconnect = NULL;
+    }
     m_programming = true;
     return 0;
 }
@@ -500,6 +505,8 @@ int Interpreter::endProgram()
         return -1;
     m_pc = 0;
     m_programming = false;
+    if (m_disconnect==NULL)
+        m_disconnect = new DisconnectEvent(this);
     return 0;
 }
 
