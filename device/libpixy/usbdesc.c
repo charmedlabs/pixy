@@ -201,15 +201,12 @@ const uint8_t USB_StringDescriptor[] = {
   'b',0,
   's',0,
 /* Index 0x02: Product */
-  (7*2 + 2),                        /* bLength ( 17 Char + Type + lenght) */
+  (4*2 + 2),                        /* bLength ( 17 Char + Type + lenght) */
   USB_STRING_DESCRIPTOR_TYPE,        /* bDescriptorType */
-  'C',0,
-  'M',0,
-  'U',0,
-  'c',0,
-  'a',0,
-  'm',0,
-  '4',0,
+  'P',0,
+  'i',0,
+  'x',0,
+  'y',0,
 /* Index 0x03: Serial Number */
   (8*2 + 2),                        /* bLength (12 Char + Type + lenght) */
   USB_STRING_DESCRIPTOR_TYPE,        /* bDescriptorType */

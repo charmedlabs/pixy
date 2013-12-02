@@ -3,6 +3,7 @@
 #include "misc.h"
 #include "exec.h"
 #include "camera.h"
+#include "led.h"
 
 static const ProcModule g_module[] =
 {
@@ -89,6 +90,7 @@ void loop0()
 	cprintf("hello %d\n", i++);
 	cam_getFrameChirp(0x21, 0, 0, 320, 200, g_chirpUsb);
 }
+
 
 void exec_loop()
 {

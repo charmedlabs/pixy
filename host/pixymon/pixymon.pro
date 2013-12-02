@@ -26,8 +26,8 @@ SOURCES += main.cpp\
     connectevent.cpp \
     flash.cpp \
     reader.cpp \
-    ../../device/libpixy/chirp.cpp \
-    disconnectevent.cpp
+    disconnectevent.cpp \
+    ../../device/libpixy/chirp.cpp
 
 HEADERS  += mainwindow.h \
     link.h \
@@ -49,8 +49,8 @@ HEADERS  += mainwindow.h \
     libusb.h \
     flash.h \
     reader.h \
-    ../../device/libpixy/chirp.hpp \
-    disconnectevent.h
+    disconnectevent.h \
+    ../../device/libpixy/chirp.hpp
 
 INCLUDEPATH += ../libpixy
 
@@ -60,6 +60,10 @@ LIBS += ./libusb-1.0.dll.a
 
 RESOURCES += \
     resources.qrc
+
+
+
+
 
 
 
