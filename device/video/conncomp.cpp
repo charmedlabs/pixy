@@ -118,15 +118,17 @@ int32_t cc_setModel(const uint8_t &model, const uint16_t &xoffset, const uint16_
 int32_t cc_getRLSFrameChirp(Chirp *chirp)
 {
 	int32_t result;
-	uint32_t prebuf, numRls;
+	uint32_t len, numRls;
 
-	// force an error to get prebuf length
-	//CRP_RETURN(chirp, USE_BUFFER(RLS_MEMORY_SIZE, RLS_MEMORY), HTYPE(0), UINT16(0), UINT16(0), UINTS32(0, 0), END);
-	//prebuf = chirp->getPreBufLen();
+	// figure out prebuf length (we need the prebuf length and the number of runlength segments, but there's a chicken and egg problem...)
+	len = Chirp::serialize(chirp, RLS_MEMORY, RLS_MEMORY_SIZE,  HTYPE(0), UINT16(0), UINT16(0), UINTS32_NO_COPY(0), END);
 
-	//if ((result=cc_getRLSFrame((uint32_t *)(RLS_MEMORY+prebuf), RLS_MEMORY_SIZE-prebuf, LUT_MEMORY, &numRls))>=0)
-		// send frame, use in-place buffer	
-	//	CRP_RETURN(chirp, USE_BUFFER(RLS_MEMORY_SIZE, RLS_MEMORY), HTYPE(FOURCC('C','C','Q','1')), UINT16(CAM_RES2_WIDTH), UINT16(CAM_RES2_HEIGHT), UINTS32(numRls, RLS_MEMORY+prebuf), END);
+	if ((result=cc_getRLSFrame((uint32_t *)(RLS_MEMORY+len), RLS_MEMORY_SIZE-len, LUT_MEMORY, &numRls))>=0)
+	{
+		// send frame, use in-place buffer
+		Chirp::serialize(chirp, RLS_MEMORY, RLS_MEMORY_SIZE,  HTYPE(FOURCC('C','C','Q','1')), UINT16(CAM_RES2_WIDTH), UINT16(CAM_RES2_HEIGHT), UINTS32_NO_COPY(numRls), END);
+		chirp->useBuffer(RLS_MEMORY, len+numRls*4);
+	}	
 
 	return result;
 }

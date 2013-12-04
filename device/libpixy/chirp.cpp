@@ -286,7 +286,7 @@ int Chirp::vserialize(Chirp *chirp, uint8_t *buf, uint32_t bufSize, va_list *arg
             uint32_t len = va_arg(*args, int32_t);
 
             // deal with no copy case (use our own buffer)
-            if (type==CRP_UINTS8_NO_COPY)
+            if ((type&CRP_NO_COPY)==CRP_NO_COPY)
             {
                 // rewrite type so as not to confuse gotoe
                 origType = type &= ~CRP_NO_COPY;

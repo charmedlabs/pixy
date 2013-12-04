@@ -47,7 +47,7 @@
 
 #define CRP_ARRAY                       0x80 // bit
 #define CRP_FLT                         0x10 // bit
-#define CRP_NO_COPY                     0x10 // bit
+#define CRP_NO_COPY                     (0x10 | 0x20)
 #define CRP_HINT                        0x40 // bit
 #define CRP_NULLTERM_ARRAY              (0x20 | CRP_ARRAY) // bits
 #define CRP_INT8                        0x01
@@ -65,6 +65,8 @@
 #define CRP_INTS32                      (CRP_INT32 | CRP_ARRAY)
 #define CRP_UINTS8                      CRP_INTS8
 #define CRP_UINTS8_NO_COPY              (CRP_INTS8 | CRP_NO_COPY)
+#define CRP_UINTS16_NO_COPY             (CRP_INTS16 | CRP_NO_COPY)
+#define CRP_UINTS32_NO_COPY             (CRP_INTS32 | CRP_NO_COPY)
 #define CRP_UINTS16                     CRP_INTS16
 #define CRP_UINTS32                     CRP_INTS32
 #define CRP_FLTS32                      (CRP_FLT32 | CRP_ARRAY)
@@ -91,6 +93,8 @@
 #define INTS8(len, a)                   CRP_INTS8, len, a
 #define UINTS8(len, a)                  CRP_INTS8, len, a
 #define UINTS8_NO_COPY(len)             CRP_UINTS8_NO_COPY, len
+#define UINTS16_NO_COPY(len)            CRP_UINTS16_NO_COPY, len
+#define UINTS32_NO_COPY(len)            CRP_UINTS32_NO_COPY, len
 #define INTS16(len, a)                  CRP_INTS16, len, a
 #define UINTS16(len, a)                 CRP_INTS16, len, a
 #define INTS32(len, a)                  CRP_INTS32, len, a
