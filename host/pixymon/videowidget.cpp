@@ -2,6 +2,7 @@
 #include <QPainter>
 #include <QDebug>
 #include <QMouseEvent>
+#include <QMutexLocker>
 #include "mainwindow.h"
 #include "videowidget.h"
 #include "console.h"
@@ -45,8 +46,10 @@ void VideoWidget::handleImage(QImage image)
         m_backgroundFrame = false;
     }
     else
-        blend(&image);
+        g_foreground = image;
+        //blend(&image);
 }
+
 
 void VideoWidget::handleFlush()
 {
@@ -54,6 +57,7 @@ void VideoWidget::handleFlush()
         return; // nothing to render...
 
     *m_pm = QPixmap::fromImage(*m_background);
+    g_fpm = QPixmap::fromImage(g_foreground);
     repaint();
     m_backgroundFrame = true;
 }
@@ -64,36 +68,53 @@ void VideoWidget::clear()
     repaint();
 }
 
+int VideoWidget::activeWidth()
+{
+    QMutexLocker locker(&m_mutex);
+    return m_width;
+}
+int  VideoWidget::activeHeight()
+{
+    QMutexLocker locker(&m_mutex);
+    return m_height;
+}
+
 void VideoWidget::paintEvent(QPaintEvent *event)
 {
-
-    int width = this->width();
-    int height = this->height();
-    float war = (float)width/(float)height; // widget aspect ratio
-    float pmar = (float)m_pm->width()/(float)m_pm->height();
+    QMutexLocker locker(&m_mutex);
+    m_width = this->width();
+    m_height = this->height();
+    float war;
+    float pmar;
     QPainter p(this);
+
+    war = (float)m_width/(float)m_height; // widget aspect ratio
+    pmar = (float)m_pm->width()/(float)m_pm->height();
+
+    p.setCompositionMode(QPainter::CompositionMode_SourceOver);
 
     if (war>pmar)
     {   // width is greater than video
-        width = this->height()*pmar;
-        m_xOffset = (this->width()-width)/2;
+        m_width = this->height()*pmar;
+        m_xOffset = (this->width()-m_width)/2;
         m_yOffset = 0;
     }
     else
     { // height is greater than video
-        height = this->width()/pmar;
-        m_yOffset = (this->height()-height)/2;
+        m_height = this->width()/pmar;
+        m_yOffset = (this->height()-m_height)/2;
         m_xOffset = 0;
     }
 
-    m_scale = (float)width/m_pm->width();
-    p.save();
-    p.translate(m_xOffset, m_yOffset);
-    p.scale(m_scale, m_scale);
-    p.drawPixmap(0, 0, *m_pm);
+    m_scale = (float)m_width/m_pm->width();
+    //p.save();
+    //p.translate(m_xOffset, m_yOffset);
+    //p.scale(m_scale, m_scale);
+    p.drawPixmap(QRect(m_xOffset, m_yOffset, m_width, m_height), *m_pm);
+    p.drawPixmap(QRect(m_xOffset, m_yOffset, m_width, m_height), g_fpm);
     if (m_selection)
-        p.drawRect((m_x0-m_xOffset)/m_scale+.5, (m_y0-m_yOffset)/m_scale+.5, m_sbWidth/m_scale+.5, m_sbHeight/m_scale+.5);
-    p.restore();
+        p.drawRect(m_x0-m_xOffset, m_y0-m_yOffset, m_sbWidth, m_sbHeight);
+    //p.restore();
 }
 
 int VideoWidget::heightForWidth(int w) const
@@ -158,49 +179,3 @@ void VideoWidget::acceptInput(uint type)
 
 }
 
-void VideoWidget::blend(QImage *foreground)
-{
-    int i, j;
-    unsigned int *fline, *bline;
-    unsigned int bpixel, fpixel, br, bg, bb, fr, fg, fb;
-    unsigned int ralpha;
-    uint32_t alpha;
-
-    alpha = 0x80;
-    if (m_background)
-    {
-        if (foreground->width()!=m_background->width() || foreground->height()!=m_background->height())
-            *foreground = foreground->scaled(m_background->width(), m_background->height());
-
-        for (i=0; i<foreground->height(); i++)
-        {
-            fline = (unsigned int *)foreground->scanLine(i);
-            bline = (unsigned int *)m_background->scanLine(i);
-            for (j=0; j<m_background->width(); j++)
-            {
-                bpixel = bline[j];
-                bb = bpixel&0xff;
-                bpixel >>= 8;
-                bg = bpixel&0xff;
-                bpixel >>= 8;
-                br = bpixel&0xff;
-
-                fpixel = fline[j];
-                fb = fpixel&0xff;
-                fpixel >>= 8;
-                fg = fpixel&0xff;
-                fpixel >>= 8;
-                fr = fpixel&0xff;
-                fpixel >>= 8;
-                alpha = fpixel&0xff;
-                ralpha = 0x100 - alpha;
-
-                bb = (alpha*fb + ralpha*bb)>>8;
-                bg = (alpha*fg + ralpha*bg)>>8;
-                br = (alpha*fr + ralpha*br)>>8;
-
-                bline[j] = (br<<16) | (bg<<8) | bb;
-            }
-        }
-    }
-}

@@ -16,6 +16,7 @@ Renderer::Renderer(VideoWidget *video)
     m_video = video;
 
     m_frameData = new uint8_t[0x20000];
+    m_backgroundFrame = true;
 
     m_hmin = 0x00;
     m_hmax = 0xff;
@@ -406,7 +407,7 @@ int Renderer::renderBA81Filter(uint16_t width, uint16_t height, uint32_t frameLe
     qDebug() << "hbias: " << (float)hbias/n << "\t" << n << "\t" << m_hmed << "\t" << m_hmin << "\t" << m_hmax;
     // send image to ourselves across threads
     // from chirp thread to gui thread
-    emit image(img);
+    emitImage(img);
     return 0;
 }
 
@@ -542,7 +543,7 @@ int Renderer::renderBA81(uint16_t width, uint16_t height, uint32_t frameLen, uin
     }
     // send image to ourselves across threads
     // from chirp thread to gui thread
-    emit image(img);
+    emitImage(img);
 
     if (m_mode&0x01)
     {
@@ -557,7 +558,7 @@ int Renderer::renderBA81(uint16_t width, uint16_t height, uint32_t frameLen, uin
         if (m_mode&0x02)
             renderCCB1(width, height, numBlobs, blobs);
     }
-    emit flushImage();
+    emitFlushImage();
 
     return 0;
 }
@@ -565,11 +566,13 @@ int Renderer::renderBA81(uint16_t width, uint16_t height, uint32_t frameLen, uin
 int Renderer::renderCCB1(uint16_t width, uint16_t height, uint16_t numBlobs, uint16_t *blobs)
 {
     uint16_t i, left, right, top, bottom;
-    QImage img(width, height, QImage::Format_ARGB32);
+    float scale = (float)m_video->activeWidth()/width;
+    QImage img(width*scale, height*scale, QImage::Format_ARGB32);
     QPainter p;
     uint8_t model;
     QString str;
     QString *label;
+
 
     //qDebug() << "numblobs " << numBlobs;
     img.fill(0x00000000);
@@ -577,7 +580,6 @@ int Renderer::renderCCB1(uint16_t width, uint16_t height, uint16_t numBlobs, uin
     p.setBrush(QBrush(QColor(0xff, 0xff, 0xff, 0x20)));
     p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
     QFont font("verdana", 9);
-    font.setStyleStrategy(QFont::NoAntialias);
     p.setFont(font);
     for (i=0; i<numBlobs; i++)
     {
@@ -587,10 +589,10 @@ int Renderer::renderCCB1(uint16_t width, uint16_t height, uint16_t numBlobs, uin
         model = blobs[i*4+0]&0x07;
         if (model==0)
             break;
-        left = blobs[i*4+0]>>3;
-        right = blobs[i*4+1]>>3;
-        top = blobs[i*4+2]>>3;
-        bottom = blobs[i*4+3]>>3;
+        left = scale*(blobs[i*4+0]>>3);
+        right = scale*(blobs[i*4+1]>>3);
+        top = scale*(blobs[i*4+2]>>3);
+        bottom = scale*(blobs[i*4+3]>>3);
         //qDebug() << left << " " << right << " " << top << " " << bottom;
         p.drawRect(left, top, right-left, bottom-top);
         label = m_blobs.getLabel(model);
@@ -604,7 +606,7 @@ int Renderer::renderCCB1(uint16_t width, uint16_t height, uint16_t numBlobs, uin
         p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
         p.drawText(left, top, str);
     }
-    //deal with coded bobls
+    //deal with coded blobs
     blobs += i*4;
     numBlobs -= i;
     for (i=0; i<numBlobs; i++)
@@ -648,7 +650,7 @@ int Renderer::renderCCB1(uint16_t width, uint16_t height, uint16_t numBlobs, uin
     //qDebug() << numBlobs;
     p.end();
 
-    emit image(img);
+    emitImage(img);
 
     return 0;
 }
@@ -775,8 +777,14 @@ int Renderer::renderCCQ1(uint16_t width, uint16_t height, uint32_t numVals, uint
     uint32_t i, startCol, length;
     uint8_t model;
     QImage img(width, height, QImage::Format_ARGB32);
-    //unsigned int palette[] = {0x00000000, 0x80ff0000, 0x8000ff00, 0x800000ff, 0x80ffff00, 0x8000ffff, 0x20ff00ff};
-    unsigned int palette[] = {0xff000000, 0xffff0000, 0xff00ff00, 0xff0000ff, 0xffffff00, 0xff00ffff, 0xffff00ff};
+    unsigned int palette[] = {0x00000000, 0x80ff0000, 0x8000ff00, 0x800000ff, 0x80ffff00, 0x8000ffff, 0x80ff00ff};
+
+    // if we're a background frame, set alpha to 1.0
+    if (m_backgroundFrame)
+    {
+        for (i=0; i<sizeof(palette)/sizeof(unsigned int); i++)
+            palette[i] |= 0xff000000;
+    }
 
     qDebug() << numVals;
 
@@ -784,7 +792,7 @@ int Renderer::renderCCQ1(uint16_t width, uint16_t height, uint32_t numVals, uint
     // | 4 bits    | 7 bits      | 9 bits | 9 bits    | 3 bits |
     // | shift val | shifted sum | length | begin col | model  |
 
-    img.fill(0xff000000);
+    img.fill(palette[0]);
     for (i=0, row=-1; i<numVals; i++)
     {
         if (qVals[i]==0)
@@ -799,10 +807,24 @@ int Renderer::renderCCQ1(uint16_t width, uint16_t height, uint32_t numVals, uint
         length = qVals[i]&0x1ff;
         handleRL(&img, palette[model], row, startCol, length);
     }
-    emit image(img);
+    emitImage(img);
 
     return 0;
 }
+
+// need this because we need synchronized knowledge of whether we're the background image or not
+void Renderer::emitImage(const QImage &img)
+{
+    m_backgroundFrame = false;
+    emit image(img);
+}
+
+void Renderer::emitFlushImage()
+{
+    emit flushImage();
+    m_backgroundFrame = true;
+}
+
 
 int Renderer::render(uint32_t type, void *args[])
 {
@@ -818,7 +840,7 @@ int Renderer::render(uint32_t type, void *args[])
     else // format not recognized
         return -1;
 
-    emit flushImage();
+    emitFlushImage();
     return res;
 }
 

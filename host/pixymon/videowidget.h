@@ -2,11 +2,9 @@
 #define VIDEOWIDGET_H
 
 #include <QWidget>
+#include <QMutex>
 
 #define VW_ASPECT_RATIO   ((float)1280/(float)800)
-
-// Define the callback used for inside of paint event
-typedef void (*paintCallback)(QImage* image);
 
 class UsbCam;
 class MainWindow;
@@ -22,6 +20,9 @@ public:
     void handleImage(void **args);
     void clear();
 
+    int activeWidth();
+    int activeHeight();
+
 protected:
     void paintEvent(QPaintEvent *event);
     virtual int heightForWidth(int w) const;
@@ -30,7 +31,6 @@ protected:
     virtual void mouseReleaseEvent(QMouseEvent *event);
     virtual void resizeEvent(QResizeEvent *event);
 
-    void callPaintCallbacks(QImage* image);
 
 signals:
     void selection(int x0, int y0, int width, int height);
@@ -43,13 +43,18 @@ public slots:
 private slots:
 
 private:
-    void blend(QImage *foreground);
-
     QImage *m_background;
 
     QPixmap *m_pm;
     MainWindow *m_main;
 
+    QImage g_foreground;
+    QPixmap g_fpm;
+
+    QMutex m_mutex;
+
+    int m_width;
+    int m_height;
     int m_xOffset;
     int m_yOffset;
     int m_x0;
@@ -60,8 +65,6 @@ private:
     bool m_drag;
     bool m_selection;
     bool m_backgroundFrame;
-
-    std::list<paintCallback> paintCallbacks;
 };
 
 #endif // VIDEOWIDGET_H

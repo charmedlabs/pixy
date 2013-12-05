@@ -40,11 +40,15 @@ private:
     int renderCCB1(uint16_t width, uint16_t height, uint16_t numBlobs, uint16_t *blobs);
     int renderVISU(uint32_t cc_num, int16_t* c_components);
 
+    void emitImage(const QImage &image);
+    void emitFlushImage();
+
     int renderBA81Filter(uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame);
 
     void handleRL(QImage *image, uint color, int row, int startCol, int len);
 
     VideoWidget *m_video;
+    bool m_backgroundFrame; // our own copy because we're in a different thread (not gui thread)
 
     // experimental
     int16_t m_hmin;
