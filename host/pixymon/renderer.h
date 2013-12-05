@@ -29,16 +29,16 @@ public:
     Blobs m_blobs;
 
 signals:
-    void image(QImage image, bool blend);
+    void image(QImage image);
+    void flushImage();
 
 private:
     inline void interpolateBayer(unsigned int width, unsigned int x, unsigned int y, unsigned char *pixel, unsigned int &r, unsigned int &g, unsigned int &b);
 
     int renderBA81(uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame);	
-    //int renderVISU(uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame, uint32_t cc_num, int16_t* c_components);
-    int renderVISU(uint32_t cc_num, int16_t* c_components);
     int renderCCQ1(uint16_t width, uint16_t height, uint32_t numVals, uint32_t *qVals);
     int renderCCB1(uint16_t width, uint16_t height, uint16_t numBlobs, uint16_t *blobs);
+    int renderVISU(uint32_t cc_num, int16_t* c_components);
 
     int renderBA81Filter(uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame);
 

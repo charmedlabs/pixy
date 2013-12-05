@@ -36,7 +36,8 @@ signals:
     void selection(int x0, int y0, int width, int height);
 
 public slots:
-    void handleImage(QImage image, bool blend);
+    void handleImage(QImage image);
+    void handleFlush();
     void acceptInput(uint type);
 
 private slots:
@@ -58,6 +59,7 @@ private:
     float m_scale;
     bool m_drag;
     bool m_selection;
+    bool m_backgroundFrame;
 
     std::list<paintCallback> paintCallbacks;
 };

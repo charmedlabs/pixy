@@ -14,11 +14,12 @@ VideoWidget::VideoWidget(MainWindow *main) : QWidget((QWidget *)main)
     m_main = main;
     m_xOffset=0;
     m_yOffset=0;
-    m_background = NULL;
     m_scale = 1.0;
     m_drag = false;
     m_selection = false;
     m_pm = new QPixmap;
+    m_background = new QImage;
+    m_backgroundFrame = true;
 
     // set size policy--- preferred aspect ratio
     QSizePolicy policy = sizePolicy();
@@ -31,29 +32,30 @@ VideoWidget::VideoWidget(MainWindow *main) : QWidget((QWidget *)main)
 VideoWidget::~VideoWidget()
 {
     delete m_pm;
-    if (m_background)
-        delete m_background;
+    delete m_background;
 }
 
 
 
-void VideoWidget::handleImage(QImage image, bool bl)
+void VideoWidget::handleImage(QImage image)
 {
-    if (bl)
-        blend(&image);
-    else
+    if (m_backgroundFrame)
     {
-        if (m_background==NULL)
-            m_background = new QImage;
-        else
-        {
-            *m_pm = QPixmap::fromImage(*m_background);
-            repaint();
-        }
-
         *m_background = image;
+        m_backgroundFrame = false;
     }
-    //callPaintCallbacks(&image);
+    else
+        blend(&image);
+}
+
+void VideoWidget::handleFlush()
+{
+    if (m_backgroundFrame)
+        return; // nothing to render...
+
+    *m_pm = QPixmap::fromImage(*m_background);
+    repaint();
+    m_backgroundFrame = true;
 }
 
 void VideoWidget::clear()
@@ -64,7 +66,6 @@ void VideoWidget::clear()
 
 void VideoWidget::paintEvent(QPaintEvent *event)
 {
-    //callPaintCallbacks();
 
     int width = this->width();
     int height = this->height();

@@ -29,7 +29,8 @@ Renderer::Renderer(VideoWidget *video)
 
     m_mode = 3;
 
-    connect(this, SIGNAL(image(QImage, bool)), m_video, SLOT(handleImage(QImage, bool))); // Qt::BlockingQueuedConnection);
+    connect(this, SIGNAL(image(QImage)), m_video, SLOT(handleImage(QImage))); // Qt::BlockingQueuedConnection);
+    connect(this, SIGNAL(flushImage()), m_video, SLOT(handleFlush()));
 }
 
 
@@ -405,7 +406,7 @@ int Renderer::renderBA81Filter(uint16_t width, uint16_t height, uint32_t frameLe
     qDebug() << "hbias: " << (float)hbias/n << "\t" << n << "\t" << m_hmed << "\t" << m_hmin << "\t" << m_hmax;
     // send image to ourselves across threads
     // from chirp thread to gui thread
-    emit image(img, false);
+    emit image(img);
     return 0;
 }
 
@@ -541,7 +542,7 @@ int Renderer::renderBA81(uint16_t width, uint16_t height, uint32_t frameLen, uin
     }
     // send image to ourselves across threads
     // from chirp thread to gui thread
-    emit image(img, false);
+    emit image(img);
 
     if (m_mode&0x01)
     {
@@ -556,6 +557,8 @@ int Renderer::renderBA81(uint16_t width, uint16_t height, uint32_t frameLen, uin
         if (m_mode&0x02)
             renderCCB1(width, height, numBlobs, blobs);
     }
+    emit flushImage();
+
     return 0;
 }
 
@@ -645,10 +648,7 @@ int Renderer::renderCCB1(uint16_t width, uint16_t height, uint16_t numBlobs, uin
     //qDebug() << numBlobs;
     p.end();
 
-    if (m_mode&0x02)
-        emit image(img, true);
-    else
-        emit image(img, false);
+    emit image(img);
 
     return 0;
 }
@@ -709,7 +709,6 @@ int Renderer::renderVISU(uint32_t cc_num, int16_t* c_components)
     }
     //qDebug() << "t: " << t << "\tr: " << r << "\tb: " << b << "\tl: " << l;
 
-    //m_video->callMeMaybe(VISUcallback);
 
     return 0;
 }
@@ -776,7 +775,8 @@ int Renderer::renderCCQ1(uint16_t width, uint16_t height, uint32_t numVals, uint
     uint32_t i, startCol, length;
     uint8_t model;
     QImage img(width, height, QImage::Format_ARGB32);
-    unsigned int palette[] = {0x00000000, 0x80ff0000, 0x8000ff00, 0x800000ff, 0x80ffff00, 0x8000ffff, 0x20ff00ff};
+    //unsigned int palette[] = {0x00000000, 0x80ff0000, 0x8000ff00, 0x800000ff, 0x80ffff00, 0x8000ffff, 0x20ff00ff};
+    unsigned int palette[] = {0xff000000, 0xffff0000, 0xff00ff00, 0xff0000ff, 0xffffff00, 0xff00ffff, 0xffff00ff};
 
     qDebug() << numVals;
 
@@ -784,7 +784,7 @@ int Renderer::renderCCQ1(uint16_t width, uint16_t height, uint32_t numVals, uint
     // | 4 bits    | 7 bits      | 9 bits | 9 bits    | 3 bits |
     // | shift val | shifted sum | length | begin col | model  |
 
-    img.fill(0x00000000);
+    img.fill(0xff000000);
     for (i=0, row=-1; i<numVals; i++)
     {
         if (qVals[i]==0)
@@ -799,24 +799,26 @@ int Renderer::renderCCQ1(uint16_t width, uint16_t height, uint32_t numVals, uint
         length = qVals[i]&0x1ff;
         handleRL(&img, palette[model], row, startCol, length);
     }
-    if (m_mode&0x04)
-        emit image(img, true);
-    else
-        emit image(img, false);
+    emit image(img);
 
     return 0;
 }
 
 int Renderer::render(uint32_t type, void *args[])
 {
+    int res;
+
     // choose fourcc for representing formats fourcc.org
     if (type==FOURCC('B','A','8','1'))
-        return renderBA81(*(uint16_t *)args[0], *(uint16_t *)args[1], *(uint32_t *)args[2], (uint8_t *)args[3]);
+        res = renderBA81(*(uint16_t *)args[0], *(uint16_t *)args[1], *(uint32_t *)args[2], (uint8_t *)args[3]);
     else if (type==FOURCC('V', 'I', 'S', 'U'))    // contains visualization data
-        return renderVISU(*(uint32_t *)args[0], (int16_t *)args[1]);
+        res = renderVISU(*(uint32_t *)args[0], (int16_t *)args[1]);
     else if (type==FOURCC('C','C','Q','1'))
-        return renderCCQ1(*(uint16_t *)args[0], *(uint16_t *)args[1], *(uint32_t *)args[2], (uint32_t *)args[3]);
-    // format not recognized
-    return -1;
+        res = renderCCQ1(*(uint16_t *)args[0], *(uint16_t *)args[1], *(uint32_t *)args[2], (uint32_t *)args[3]);
+    else // format not recognized
+        return -1;
+
+    emit flushImage();
+    return res;
 }
 
