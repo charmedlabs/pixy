@@ -120,7 +120,9 @@ void VideoWidget::paintEvent(QPaintEvent *event)
         p.drawPixmap(QRect(m_xOffset, m_yOffset, m_width, m_height), QPixmap::fromImage(m_renderedImages[i]));
 
     if (m_selection)
-        p.drawRect(m_x0-m_xOffset, m_y0-m_yOffset, m_sbWidth, m_sbHeight);
+        p.drawRect(m_x0, m_y0, m_sbWidth, m_sbHeight);
+
+    QWidget::paintEvent(event);
 }
 
 int VideoWidget::heightForWidth(int w) const
@@ -149,10 +151,21 @@ void VideoWidget::mouseMoveEvent(QMouseEvent *event)
     {
         m_sbWidth = x-m_x0;
         m_sbHeight = y-m_y0;
-        if (m_x0-m_xOffset>0 && m_y0-m_yOffset>0)
+        // check if we have clicked outside of active region
+        if (m_x0-m_xOffset>0 && m_y0-m_yOffset>0 && m_x0<m_xOffset+m_width && m_y0<m_yOffset+m_height)
+        {
             m_selection = true;
-
-        repaint();
+            // limit drag to within active region
+            if (m_x0-m_xOffset+m_sbWidth>m_width)
+                m_sbWidth = m_width-m_x0+m_xOffset;
+            if (m_y0-m_yOffset+m_sbHeight>m_height)
+                m_sbHeight = m_height-m_y0+m_yOffset;
+            if (m_x0-m_xOffset+m_sbWidth<0)
+                m_sbWidth = -m_x0+m_xOffset;
+            if (m_y0-m_yOffset+m_sbHeight<0)
+                m_sbHeight = -m_y0+m_yOffset;
+            repaint();
+        }
     }
     QWidget::mouseMoveEvent(event);
 }
@@ -162,15 +175,35 @@ void VideoWidget::mousePressEvent(QMouseEvent *event)
     m_selection = false;
     repaint();
 
-    if (m_main->m_interpreter)
-        m_main->m_interpreter->m_renderer->setFilter(0x00, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff);
     QWidget::mousePressEvent(event);
 }
 
 void VideoWidget::mouseReleaseEvent(QMouseEvent *event)
 {
     if (m_selection)
-        emit selection((m_x0-m_xOffset)/m_scale+.5, (m_y0-m_yOffset)/m_scale+.5, m_sbWidth/m_scale+.5, m_sbHeight/m_scale+.5);
+    {
+        int x, y, width, height;
+
+        x = (m_x0-m_xOffset)/m_scale+.5;
+        y = (m_y0-m_yOffset)/m_scale+.5;
+        width = m_sbWidth/m_scale+.5;
+        height = m_sbHeight/m_scale+.5;
+
+        // deal with box inversion
+        if (width<0)
+        {
+            x += width;
+            width = -width;
+        }
+        if (height<0)
+        {
+            y += height;
+            height = -height;
+        }
+        emit selection(x, y, width, height);
+        //qDebug() << x << " " << y << " " << width << " " << height;
+        m_selection = false;
+    }
     QWidget::mouseReleaseEvent(event);
 }
 
