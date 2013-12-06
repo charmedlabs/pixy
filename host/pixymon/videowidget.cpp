@@ -92,13 +92,17 @@ void VideoWidget::paintEvent(QPaintEvent *event)
     if (m_renderedImages.size()==0)
         return;
 
+    // background pixmap
     bgPixmap = QPixmap::fromImage(m_renderedImages[0]);
 
+    // calc aspect ratios
     war = (float)m_width/(float)m_height; // widget aspect ratio
     pmar = (float)bgPixmap.width()/(float)bgPixmap.height();
 
+    // set blending mode
     p.setCompositionMode(QPainter::CompositionMode_SourceOver);
 
+    // figure out if we need to offset our rendering rectangle
     if (war>pmar)
     {   // width is greater than video
         m_width = this->height()*pmar;
@@ -112,13 +116,17 @@ void VideoWidget::paintEvent(QPaintEvent *event)
         m_xOffset = 0;
     }
 
+    // figure out scale between background resolution and active width of widget
     m_scale = (float)m_width/bgPixmap.width();
 
+    // draw background
     p.drawPixmap(QRect(m_xOffset, m_yOffset, m_width, m_height), bgPixmap);
 
+    // draw/blend foreground images
     for (i=1; i<m_renderedImages.size(); i++)
         p.drawPixmap(QRect(m_xOffset, m_yOffset, m_width, m_height), QPixmap::fromImage(m_renderedImages[i]));
 
+    // draw selection rectangle
     if (m_selection)
         p.drawRect(m_x0, m_y0, m_sbWidth, m_sbHeight);
 

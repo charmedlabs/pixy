@@ -569,7 +569,7 @@ int Renderer::renderCCB1(uint16_t width, uint16_t height, uint16_t numBlobs, uin
     float scale = (float)m_video->activeWidth()/width;
     QImage img(width*scale, height*scale, QImage::Format_ARGB32);
     QPainter p;
-    uint8_t model;
+    uint16_t model;
     QString str;
     QString *label;
 
@@ -583,16 +583,13 @@ int Renderer::renderCCB1(uint16_t width, uint16_t height, uint16_t numBlobs, uin
     p.setFont(font);
     for (i=0; i<numBlobs; i++)
     {
-        if (blobs[i*4+0]==0)
-            continue;
-
-        model = blobs[i*4+0]&0x07;
+        model = blobs[i*5+0];
         if (model==0)
             break;
-        left = scale*(blobs[i*4+0]>>3);
-        right = scale*(blobs[i*4+1]>>3);
-        top = scale*(blobs[i*4+2]>>3);
-        bottom = scale*(blobs[i*4+3]>>3);
+        left = scale*blobs[i*5+1];
+        right = scale*blobs[i*5+2];
+        top = scale*blobs[i*5+3];
+        bottom = scale*blobs[i*5+4];
         //qDebug() << left << " " << right << " " << top << " " << bottom;
         p.drawRect(left, top, right-left, bottom-top);
         label = m_blobs.getLabel(model);
@@ -606,8 +603,9 @@ int Renderer::renderCCB1(uint16_t width, uint16_t height, uint16_t numBlobs, uin
         p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
         p.drawText(left, top, str);
     }
+#if 0
     //deal with coded blobs
-    blobs += i*4;
+    blobs += i*5;
     numBlobs -= i;
     for (i=0; i<numBlobs; i++)
     {
@@ -648,6 +646,7 @@ int Renderer::renderCCB1(uint16_t width, uint16_t height, uint16_t numBlobs, uin
 #endif
     }
     //qDebug() << numBlobs;
+#endif
     p.end();
 
     emitImage(img);

@@ -54,7 +54,7 @@ private:
     uint32_t *m_qmem;
     uint8_t *m_lut;
     uint32_t m_qindex;
-    uint16_t m_boxes[4*MAX_BLOBS];
+    uint16_t m_boxes[5*MAX_BLOBS];
     uint16_t m_numBoxes;
     uint16_t m_numCodedBoxes;
     std::vector<LabelPair> m_labels;

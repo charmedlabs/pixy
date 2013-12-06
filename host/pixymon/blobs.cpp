@@ -51,17 +51,17 @@ void Blobs::process(uint16_t width, uint16_t height, uint32_t frameLen, uint8_t 
 {
     rls(width, height, frameLen, frame);
     blobify();
-    clean();
-    while(clean2());
+    //clean();
+    //while(clean2());
     *blobs = m_boxes;
     if (numQVals)
         *numQVals = m_qindex;
     if (qVals)
         *qVals = m_qmem;
 
-    processCoded();
-    *numBlobs = m_numBoxes + m_numCodedBoxes;
-#if 1 // uncomment if we only want to show structured blobs
+    //processCoded();
+    *numBlobs = m_numBoxes; // + m_numCodedBoxes;
+#if 0 // uncomment if we only want to show structured blobs
     if (m_numCodedBoxes>0)
     {
         int i;
@@ -178,6 +178,8 @@ void Blobs::blobify()
     SSegment s;
     int32_t row;
     uint32_t qval, i, j;
+    CBlob *blob;
+    uint16_t left, top, right, bottom;
 
 
     // q val:
@@ -208,37 +210,35 @@ void Blobs::blobify()
         }
     }
 
-    CBlob *blob;
-    uint16_t left, top, right, bottom;
 
     for (i=0, m_numBoxes=0; i<NUM_MODELS; i++)
     {
         m_assembler[i].EndFrame();
         m_assembler[i].SortFinished();
 
-        for (j=0, blob=m_assembler[i].finishedBlobs; blob; j++)
+        for (j=m_numBoxes*5, blob=m_assembler[i].finishedBlobs; blob; blob=blob->next)
         {
-            if (j<20)
-            {
-                if (blob->GetArea()<MIN_AREA)
-                    continue;
-                blob->getBBox((short &)left, (short &)top, (short &)right, (short &)bottom);
-                // shift by 4 because we need to double the parameters (we're processing at 1/4 resolution)
-                m_boxes[m_numBoxes*4 + 0] = (left<<4) | (i+1);
-                m_boxes[m_numBoxes*4 + 1] = (right<<4) | (i+1);
-                m_boxes[m_numBoxes*4 + 2] = (top<<4) | (i+1);
-                m_boxes[m_numBoxes*4 + 3] = (bottom<<4) | (i+1);
-                m_numBoxes++;
+            if (blob->GetArea()<MIN_AREA)
+                continue;
+            blob->getBBox((short &)left, (short &)top, (short &)right, (short &)bottom);
+            // shift by 4 because we need to double the parameters (we're processing at 1/4 resolution)
+            m_boxes[j + 0] = i+1;
+            m_boxes[j + 1] = left<<1;
+            m_boxes[j + 2] = right<<1;
+            m_boxes[j + 3] = top<<1;
+            m_boxes[j + 4] = bottom<<1;
+            m_numBoxes++;
+            j += 5;
 
 #if 0
-                SMomentStats stats;
-                blob->moments.GetStats(stats);
-                qDebug() << "xcentroid " << stats.centroidX << "ycentroid " << stats.centroidY;
+            SMomentStats stats;
+            blob->moments.GetStats(stats);
+            qDebug() << "xcentroid " << stats.centroidX << "ycentroid " << stats.centroidY;
 #endif
-            }
-            blob = blob->next;
         }
     }
+    qDebug() << "blobs " << m_numBoxes;
+
 }
 
 void Blobs::compress()
