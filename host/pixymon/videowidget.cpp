@@ -10,7 +10,7 @@
 #include "interpreter.h"
 #include "renderer.h"
 
-VideoWidget::VideoWidget(MainWindow *main) : QWidget((QWidget *)main)
+VideoWidget::VideoWidget(MainWindow *main) : QWidget((QWidget *)main), m_mutex(QMutex::Recursive)
 {
     m_main = main;
     m_xOffset=0;
@@ -18,9 +18,6 @@ VideoWidget::VideoWidget(MainWindow *main) : QWidget((QWidget *)main)
     m_scale = 1.0;
     m_drag = false;
     m_selection = false;
-    m_pm = new QPixmap;
-    m_background = new QImage;
-    m_backgroundFrame = true;
 
     // set size policy--- preferred aspect ratio
     QSizePolicy policy = sizePolicy();
@@ -32,40 +29,41 @@ VideoWidget::VideoWidget(MainWindow *main) : QWidget((QWidget *)main)
 
 VideoWidget::~VideoWidget()
 {
-    delete m_pm;
-    delete m_background;
 }
 
 
 
 void VideoWidget::handleImage(QImage image)
 {
-    if (m_backgroundFrame)
-    {
-        *m_background = image;
-        m_backgroundFrame = false;
-    }
-    else
-        g_foreground = image;
-        //blend(&image);
+    QMutexLocker locker(&m_mutex);
+
+    m_images.push_back(image);
 }
 
 
 void VideoWidget::handleFlush()
 {
-    if (m_backgroundFrame)
+    QMutexLocker locker(&m_mutex);
+
+    if (m_images.size()==0)
         return; // nothing to render...
 
-    *m_pm = QPixmap::fromImage(*m_background);
-    g_fpm = QPixmap::fromImage(g_foreground);
+    m_renderedImages.clear();
+    m_renderedImages = m_images;
+    m_images.clear();
     repaint();
-    m_backgroundFrame = true;
 }
 
 void VideoWidget::clear()
 {
-    m_pm->fill(Qt::black);
-    repaint();
+    QMutexLocker locker(&m_mutex);
+
+    m_images.clear();
+    QImage img(m_width, m_height, QImage::Format_RGB32);
+    img.fill(Qt::black);
+
+    handleImage(img);
+    handleFlush();
 }
 
 int VideoWidget::activeWidth()
@@ -73,6 +71,7 @@ int VideoWidget::activeWidth()
     QMutexLocker locker(&m_mutex);
     return m_width;
 }
+
 int  VideoWidget::activeHeight()
 {
     QMutexLocker locker(&m_mutex);
@@ -82,14 +81,21 @@ int  VideoWidget::activeHeight()
 void VideoWidget::paintEvent(QPaintEvent *event)
 {
     QMutexLocker locker(&m_mutex);
+    unsigned int i;
     m_width = this->width();
     m_height = this->height();
     float war;
     float pmar;
     QPainter p(this);
+    QPixmap bgPixmap;
+
+    if (m_renderedImages.size()==0)
+        return;
+
+    bgPixmap = QPixmap::fromImage(m_renderedImages[0]);
 
     war = (float)m_width/(float)m_height; // widget aspect ratio
-    pmar = (float)m_pm->width()/(float)m_pm->height();
+    pmar = (float)bgPixmap.width()/(float)bgPixmap.height();
 
     p.setCompositionMode(QPainter::CompositionMode_SourceOver);
 
@@ -106,15 +112,15 @@ void VideoWidget::paintEvent(QPaintEvent *event)
         m_xOffset = 0;
     }
 
-    m_scale = (float)m_width/m_pm->width();
-    //p.save();
-    //p.translate(m_xOffset, m_yOffset);
-    //p.scale(m_scale, m_scale);
-    p.drawPixmap(QRect(m_xOffset, m_yOffset, m_width, m_height), *m_pm);
-    p.drawPixmap(QRect(m_xOffset, m_yOffset, m_width, m_height), g_fpm);
+    m_scale = (float)m_width/bgPixmap.width();
+
+    p.drawPixmap(QRect(m_xOffset, m_yOffset, m_width, m_height), bgPixmap);
+
+    for (i=1; i<m_renderedImages.size(); i++)
+        p.drawPixmap(QRect(m_xOffset, m_yOffset, m_width, m_height), QPixmap::fromImage(m_renderedImages[i]));
+
     if (m_selection)
         p.drawRect(m_x0-m_xOffset, m_y0-m_yOffset, m_sbWidth, m_sbHeight);
-    //p.restore();
 }
 
 int VideoWidget::heightForWidth(int w) const

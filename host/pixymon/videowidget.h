@@ -2,6 +2,7 @@
 #define VIDEOWIDGET_H
 
 #include <QWidget>
+#include <QImage>
 #include <QMutex>
 
 #define VW_ASPECT_RATIO   ((float)1280/(float)800)
@@ -43,15 +44,12 @@ public slots:
 private slots:
 
 private:
-    QImage *m_background;
-
-    QPixmap *m_pm;
     MainWindow *m_main;
 
-    QImage g_foreground;
-    QPixmap g_fpm;
-
     QMutex m_mutex;
+
+    std::vector<QImage> m_images;
+    std::vector<QImage> m_renderedImages;
 
     int m_width;
     int m_height;
@@ -64,7 +62,6 @@ private:
     float m_scale;
     bool m_drag;
     bool m_selection;
-    bool m_backgroundFrame;
 };
 
 #endif // VIDEOWIDGET_H

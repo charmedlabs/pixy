@@ -31,7 +31,7 @@ Renderer::Renderer(VideoWidget *video)
     m_mode = 3;
 
     connect(this, SIGNAL(image(QImage)), m_video, SLOT(handleImage(QImage))); // Qt::BlockingQueuedConnection);
-    connect(this, SIGNAL(flushImage()), m_video, SLOT(handleFlush()));
+    connect(this, SIGNAL(flushImage()), m_video, SLOT(handleFlush())); //, Qt::BlockingQueuedConnection);
 }
 
 
@@ -579,7 +579,7 @@ int Renderer::renderCCB1(uint16_t width, uint16_t height, uint16_t numBlobs, uin
     p.begin(&img);
     p.setBrush(QBrush(QColor(0xff, 0xff, 0xff, 0x20)));
     p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
-    QFont font("verdana", 9);
+    QFont font("verdana", 12);
     p.setFont(font);
     for (i=0; i<numBlobs; i++)
     {
@@ -613,18 +613,18 @@ int Renderer::renderCCB1(uint16_t width, uint16_t height, uint16_t numBlobs, uin
     {
 #ifdef RENDER_ANGLE
         int16_t angle;
-        model = blobs[i*6+0]>>3;
-        left = blobs[i*6+1];
-        right = blobs[i*6+2];
-        top = blobs[i*6+3];
-        bottom = blobs[i*6+4];
-        angle = blobs[i*6+5];
+        model = scale*(blobs[i*6+0]>>3);
+        left = scale*(blobs[i*6+1]);
+        right = scale*(blobs[i*6+2]);
+        top = scale*(blobs[i*6+3]);
+        bottom = scale*(blobs[i*6+4]);
+        angle = scale*(blobs[i*6+5]);
 #else
-        model = blobs[i*5+0]>>3;
-        left = blobs[i*5+1];
-        right = blobs[i*5+2];
-        top = blobs[i*5+3];
-        bottom = blobs[i*5+4];
+        model = scale*(blobs[i*5+0]>>3);
+        left = scale*(blobs[i*5+1]);
+        right = scale*(blobs[i*5+2]);
+        top = scale*(blobs[i*5+3]);
+        bottom = scale*(blobs[i*5+4]);
 #endif
         //qDebug() << left << " " << right << " " << top << " " << bottom;
         p.drawRect(left, top, right-left, bottom-top);
