@@ -18,6 +18,7 @@ Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, MainWindow 
     m_video = video;
     m_main = main;
     m_pc = 0;
+    m_setModel = 0;
     m_programming = false;
     m_programRunning = false;
     m_remoteProgramRunning = false;
@@ -445,7 +446,18 @@ void Interpreter::run()
         qDebug() << "*** init done";
     }
 
-    if (m_remoteProgramRunning)
+    if (m_setModel)
+    {
+        textOut("Select region with mouse.\n");
+        m_mutexSelection.lock();
+        m_waitSelection.wait(&m_mutexSelection);
+        m_mutexSelection.unlock();
+        m_renderer->m_blobs.generateLUT(m_setModel, m_selection.x(), m_selection.y(), m_selection.width(), m_selection.height(), m_renderer->m_frameData);
+        textOut("done.\n");
+        prompt();
+        m_setModel = 0;
+    }
+    else if (m_remoteProgramRunning)
     {
         if (!getRunning()) // if we're not running, we should start
             sendRun();
@@ -658,7 +670,17 @@ void Interpreter::command(const QString &command)
         else if (words.size()==3)
             res = loadLut(words[1], words[2].toInt());
         if (res<0)
-            emit textOut("There was an error (bad model number of filename.)\n");
+            emit error("There was an error (bad model number of filename.)\n");
+    }
+    else if(words[0]=="signature")
+    {
+        if (words.size()==1)
+            m_setModel = 1;
+        else
+            m_setModel = words[1].toInt();
+
+        start();
+        return;
     }
     else if (words[0]=="clear")
     {
@@ -767,6 +789,7 @@ int Interpreter::uploadLut()
 
 int Interpreter::loadLut(const QString &filename, int model)
 {
+#if 0
     int i;
     int model0;
 
@@ -798,6 +821,7 @@ int Interpreter::loadLut(const QString &filename, int model)
             m_lut[i] = model;
         }
     }
+#endif
     return 0;
 }
 
@@ -831,7 +855,6 @@ void Interpreter::writeFrame()
 
     int i, j, k;
      uint r, g, b;
-    uint8_t h, s, v, c;
 
     uint8_t *frame = m_renderer->m_frameData;
 
@@ -852,6 +875,8 @@ void Interpreter::writeFrame()
 
 }
 
+
+#if 0
 void Interpreter::getStats(int x0, int y0, int width, int height)
 {
     uint8_t list[0x10000];
@@ -984,6 +1009,7 @@ void Interpreter::getStats(int x0, int y0, int width, int height)
     //qDebug() << diff << " " << hmin << " " << hmin2 << " " << hmax << " " << hmax2;
     //qDebug() << "median: " << median << "hlb: " << hlb << "hub: " << hub;
 }
+#endif
 
 unsigned int Interpreter::fileIn(const QString &name, char *data, unsigned int size)
 {
@@ -1060,7 +1086,9 @@ void Interpreter::handleSelection(int x0, int y0, int width, int height)
         lut[i] = i;
     uploadLut(lut);
 #endif
-    getStats(x0, y0, width, height);
+
+    m_selection.setRect(x0, y0, width, height);
+    m_waitSelection.wakeAll();
 }
 
 int Interpreter::call(const QStringList &argv, bool interactive)

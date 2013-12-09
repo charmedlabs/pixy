@@ -1,6 +1,7 @@
 #include <QDebug>
 #include <math.h>
 #include "blobs.h"
+#include "clut.h"
 
 QString code2string(uint16_t code)
 {
@@ -365,7 +366,7 @@ uint16_t Blobs::combine2(uint16_t *boxes, uint16_t numBoxes)
             width = (right-left)/2;
             height = (bottom-top)/2;
 
-#if 0 // if corners touch....
+#if 1 // if corners touch....
             if (left<=left0 && left0-right<=m_mergeDist &&
                     ((top0<=top && top<=bottom0) || (top0<=bottom && bottom<=bottom0)))
             {
@@ -551,6 +552,43 @@ void Blobs::processCoded()
                 addCoded(i, j);
         }
     }
+}
+
+#define WIDTH 320
+#define HEIGHT 200
+
+int Blobs::generateLUT(uint8_t model, uint16_t x0, uint16_t y0, uint16_t width, uint16_t height, uint8_t *frame)
+{
+    uint8_t tempLut[LUT_SIZE];
+    uint32_t pixels[0x10000];
+
+    int i, j, k;
+    uint r, g, b;
+
+    x0 |= 0x01;
+    y0 |= 0x01;
+
+    for (k=0, i=y0; i<y0+height; i+=2)
+    {
+        for (j=x0; j<x0+width; j+=2, k+=3)
+        {
+            r = frame[i*WIDTH + j];
+            g = frame[i*WIDTH - WIDTH + j];
+            b = frame[i*WIDTH - WIDTH + j - 1];
+            pixels[k] = r;
+            pixels[k+1] = g;
+            pixels[k+2] = b;
+        }
+    }
+    CLUT::generateFromImgSample(pixels, k, tempLut);
+
+    for (i=0; i<LUT_SIZE; i++)
+    {
+        if (tempLut[i] && m_lut[i]<model)
+            m_lut[i] = model;
+    }
+
+    return 0;
 }
 
 int Blobs::setLabel(uint32_t model, const QString &label)

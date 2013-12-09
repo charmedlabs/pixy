@@ -8,7 +8,6 @@
 #include <vector>
 #include <utility>
 #include "chirpmon.h"
-#include "blobs.h"
 #include "clut.h"
 #include "connectevent.h"
 #include "disconnectevent.h"
@@ -118,12 +117,14 @@ private:
 
     uint8_t *m_lut;
 
-    uint8_t m_tempLut[LUT_SIZE];
-
     // for thread
     QMutex m_mutexProg;
     QMutex m_mutexInput;
     QWaitCondition m_waitInput;
+    QMutex m_mutexSelection;
+    QWaitCondition m_waitSelection;
+    QRect m_selection;
+    int m_setModel;
 
     unsigned int m_pc;
     ChirpProc m_exec_run;

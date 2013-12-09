@@ -8,7 +8,7 @@
 #define NUM_MODELS      7
 #define MAX_BLOBS       256
 #define MAX_MERGE_DIST  5
-#define MIN_AREA        10
+#define MIN_AREA        20
 
 #define QMEM_SIZE       0x4000
 #define LUT_SIZE        0x10000
@@ -35,6 +35,7 @@ public:
     int setLabel(uint32_t model, const QString &label);
     int setLabel(const QString &model, const QString &label);
     QString *getLabel(uint32_t model);
+    int generateLUT(uint8_t model, uint16_t x0, uint16_t y0, uint16_t width, uint16_t height, uint8_t *frame);
 
     friend class Renderer;
 private:

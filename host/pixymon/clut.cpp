@@ -7,7 +7,7 @@
 #include <QFile>
 
 double e = 0.95;
-double d = 1.5;
+double d = 0;
 double d2 = 2.0;
 double d3 = 2.0;
 double minsat = 0.18;
