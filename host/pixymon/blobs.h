@@ -8,7 +8,7 @@
 #define NUM_MODELS      7
 #define MAX_BLOBS       256
 #define MAX_MERGE_DIST  5
-#define MIN_AREA        1
+#define MIN_AREA        10
 
 #define QMEM_SIZE       0x4000
 #define LUT_SIZE        0x10000
@@ -40,9 +40,9 @@ public:
 private:
     void rls(uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame);
     void blobify();
-    void compress();
-    void clean();
-    int clean2();
+    uint16_t combine(uint16_t *boxes, uint16_t numBoxes);
+    uint16_t combine2(uint16_t *boxes, uint16_t numBoxes);
+    uint16_t compress(uint16_t *boxes, uint16_t numBoxes);
 
     bool closeby(int a, int b, int dist);
     void addCoded(int a, int b);
@@ -57,6 +57,8 @@ private:
     uint16_t m_boxes[5*MAX_BLOBS];
     uint16_t m_numBoxes;
     uint16_t m_numCodedBoxes;
+    uint32_t m_minArea;
+    uint16_t m_mergeDist;
     std::vector<LabelPair> m_labels;
 };
 

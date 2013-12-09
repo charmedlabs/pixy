@@ -681,7 +681,6 @@ void Interpreter::command(const QString &command)
     {
         if (words.size()==3)
         {
-            int model;
             words[1].remove(QRegExp("[\\s\\D]+"));
             m_renderer->m_blobs.setLabel(words[1], words[2]);
         }

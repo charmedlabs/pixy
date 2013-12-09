@@ -553,10 +553,12 @@ int Renderer::renderBA81(uint16_t width, uint16_t height, uint32_t frameLen, uin
         uint32_t *qVals;
 
         m_blobs.process(width, height, frameLen, frame0, &numBlobs, &blobs, &numQVals, &qVals);
+#if 1
         if (m_mode&0x04)
             renderCCQ1(width/2, height/2, numQVals, qVals);
         if (m_mode&0x02)
             renderCCB1(width, height, numBlobs, blobs);
+#endif
     }
     emitFlushImage();
 

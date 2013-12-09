@@ -39,6 +39,9 @@ Blobs::Blobs()
 
     for (i=0; i<LUT_SIZE; i++)
         m_lut[i] = 0;
+
+    m_minArea = MIN_AREA;
+    m_mergeDist = MAX_MERGE_DIST;
 }
 
 
@@ -49,10 +52,26 @@ Blobs::~Blobs()
 
 void Blobs::process(uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame, uint16_t *numBlobs, uint16_t **blobs, uint32_t *numQVals, uint32_t **qVals)
 {
+#if 0
+    uint16_t boxes[] = {
+        1, 20, 30, 10, 20,
+        1, 35, 45, 25, 35,
+        1, 20, 30, 10, 20,
+        1, 21, 22, 11, 12,
+        1, 25, 35, 20, 50,
+        1, 25, 35, 20, 50,
+        1, 25, 35, 20, 50,
+        1, 80, 90, 40, 50,
+        1, 80, 90, 60, 61
+    };
+
+    combine(boxes, 9);
+    combine2(boxes, 9);
+    compress(boxes, 9);
+    return;
+#endif
     rls(width, height, frameLen, frame);
     blobify();
-    //clean();
-    //while(clean2());
     *blobs = m_boxes;
     if (numQVals)
         *numQVals = m_qindex;
@@ -179,6 +198,8 @@ void Blobs::blobify()
     int32_t row;
     uint32_t qval, i, j;
     CBlob *blob;
+    uint16_t *boxesStart;
+    uint16_t numBoxesStart, invalid, invalid2;
     uint16_t left, top, right, bottom;
 
 
@@ -216,9 +237,10 @@ void Blobs::blobify()
         m_assembler[i].EndFrame();
         m_assembler[i].SortFinished();
 
-        for (j=m_numBoxes*5, blob=m_assembler[i].finishedBlobs; blob; blob=blob->next)
+        for (j=m_numBoxes*5, boxesStart=m_boxes+j, numBoxesStart=m_numBoxes, blob=m_assembler[i].finishedBlobs;
+             blob; blob=blob->next)
         {
-            if (blob->GetArea()<MIN_AREA)
+            if (blob->GetArea()<(int)m_minArea)
                 continue;
             blob->getBBox((short &)left, (short &)top, (short &)right, (short &)bottom);
             // shift by 4 because we need to double the parameters (we're processing at 1/4 resolution)
@@ -236,168 +258,176 @@ void Blobs::blobify()
             qDebug() << "xcentroid " << stats.centroidX << "ycentroid " << stats.centroidY;
 #endif
         }
-    }
-    qDebug() << "blobs " << m_numBoxes;
-
-}
-
-void Blobs::compress()
-{
-    uint16_t i, j;
-    uint16_t left0;
-
-    // compress list
-    for (i=0; i<m_numBoxes; i++)
-    {
-        left0 = m_boxes[i*4+0];
-
-        if (left0==0)
+        invalid = combine(boxesStart, m_numBoxes-numBoxesStart);
+        if (1)
         {
-            for (j=i+1; j<m_numBoxes; j++)
-            {
-                left0 = m_boxes[i*4+0];
-                if (left0!=0)
-                { // copy j to i
-                    m_boxes[i*4+0] = m_boxes[j*4+0];
-                    m_boxes[i*4+1] = m_boxes[j*4+1];
-                    m_boxes[i*4+2] = m_boxes[j*4+2];
-                    m_boxes[i*4+3] = m_boxes[j*4+3];
-                    m_boxes[j*4+0] = 0; // invalidate
-                    break;
-                }
-            }
-            if (j==m_numBoxes)
-            {
-                m_numBoxes = i;
-                break;
-            }
+            while ((invalid2=combine2(boxesStart, m_numBoxes-numBoxesStart)))
+                invalid += invalid2;
+        }
+        if (invalid)
+        {
+            invalid2 = compress(boxesStart, m_numBoxes-numBoxesStart);
+            m_numBoxes -= invalid2;
         }
     }
-
 }
 
-void Blobs::clean()
+uint16_t Blobs::compress(uint16_t *boxes, uint16_t numBoxes)
 {
-    uint16_t i, j, left0, right0, top0, bottom0;
+    uint16_t i, ii;
+    uint16_t *destination, invalid;
+
+    // compress list
+    for (i=0, ii=0, destination=NULL, invalid=0; i<numBoxes; i++, ii+=5)
+    {
+        if (boxes[ii+0]==0)
+        {
+            if (destination==NULL)
+                destination = boxes+ii;
+            invalid++;
+            continue;
+        }
+        if (destination)
+        {
+            destination[0] = boxes[ii+0];
+            destination[1] = boxes[ii+1];
+            destination[2] = boxes[ii+2];
+            destination[3] = boxes[ii+3];
+            destination[4] = boxes[ii+4];
+            destination += 5;
+        }
+    }
+    return invalid;
+}
+
+uint16_t Blobs::combine(uint16_t *boxes, uint16_t numBoxes)
+{
+    uint16_t i, j, ii, jj, left0, right0, top0, bottom0;
     uint16_t left, right, top, bottom;
-    uint8_t model0, model;
+    uint16_t invalid;
 
     // delete blobs that are fully enclosed by larger blobs
-    for (i=0; i<m_numBoxes; i++)
+    for (i=0, ii=0, invalid=0; i<numBoxes; i++, ii+=5)
     {
-        left0 = m_boxes[i*4+0];
-        if (left0==0)
+        if (boxes[ii+0]==0)
             continue;
-        model0 = left0&0x07;
-        left0 >>= 3;
-        right0 = m_boxes[i*4+1]>>3;
-        top0 = m_boxes[i*4+2]>>3;
-        bottom0 = m_boxes[i*4+3]>>3;
+        left0 = boxes[ii+1];
+        right0 = boxes[ii+2];
+        top0 = boxes[ii+3];
+        bottom0 = boxes[ii+4];
 
-
-        for (j=i+1; j<m_numBoxes; j++)
+        for (j=i+1, jj=ii+5; j<numBoxes; j++, jj+=5)
         {
-            left = m_boxes[j*4+0];
-            model = left&0x07;
-            if (model0!=model)
-                break;
-
-            left >>= 3;
-            right = m_boxes[j*4+1]>>3;
-            top = m_boxes[j*4+2]>>3;
-            bottom = m_boxes[j*4+3]>>3;
+            if (boxes[jj+0]==0)
+                continue;
+            left = boxes[jj+1];
+            right = boxes[jj+2];
+            top = boxes[jj+3];
+            bottom = boxes[jj+4];
 
             if (left0<=left && right0>=right &&
                     top0<=top && bottom0>=bottom)
             {
-                m_boxes[j*4+0] = 0; // invalidate
-                m_boxes[j*4+1] = 0; // invalidate
-                m_boxes[j*4+2] = 0; // invalidate
-                m_boxes[j*4+3] = 0; // invalidate
+                boxes[jj+0] = 0; // invalidate
+                invalid++;
             }
         }
     }
 
-    //compress();
+    return invalid;
 }
 
-int Blobs::clean2()
+uint16_t Blobs::combine2(uint16_t *boxes, uint16_t numBoxes)
 {
-    int16_t i, j, left0, right0, top0, bottom0;
-    int16_t left, right, top, bottom;
-    uint8_t model0, model;
-    int n = 0;
+    uint16_t i, j, ii, jj, left0, right0, top0, bottom0;
+    uint16_t left, right, top, bottom, height, width;
+    uint16_t invalid;
 
-    for (i=0; i<m_numBoxes; i++)
+    // delete blobs that are fully enclosed by larger blobs
+    for (i=0, ii=0, invalid=0; i<numBoxes; i++, ii+=5)
     {
-        left0 = m_boxes[i*4+0];
-        if (left0==0)
+        if (boxes[ii+0]==0)
             continue;
-        model0 = left0&0x07;
-        left0 >>= 3;
-        right0 = m_boxes[i*4+1]>>3;
-        top0 = m_boxes[i*4+2]>>3;
-        bottom0 = m_boxes[i*4+3]>>3;
+        left0 = boxes[ii+1];
+        right0 = boxes[ii+2];
+        top0 = boxes[ii+3];
+        bottom0 = boxes[ii+4];
 
-
-        for (j=i+1; j<m_numBoxes; j++)
+        for (j=i+1, jj=ii+5; j<numBoxes; j++, jj+=5)
         {
-            left = m_boxes[j*4+0];
-            model = left&0x07;
-            if (model0!=model)
-                break;
-            left >>= 3;
-            right = m_boxes[j*4+1]>>3;
-            top = m_boxes[j*4+2]>>3;
-            bottom = m_boxes[j*4+3]>>3;
+            if (boxes[jj+0]==0)
+                continue;
+            left = boxes[jj+1];
+            right = boxes[jj+2];
+            top = boxes[jj+3];
+            bottom = boxes[jj+4];
 
-            if (left<=left0 && left0-right<=MAX_MERGE_DIST &&
+            width = (right-left)/2;
+            height = (bottom-top)/2;
+
+#if 0 // if corners touch....
+            if (left<=left0 && left0-right<=m_mergeDist &&
                     ((top0<=top && top<=bottom0) || (top0<=bottom && bottom<=bottom0)))
             {
-                m_boxes[i*4+0] = (left<<3) | model;
-                m_boxes[j*4+0] = 0; // invalidate
-                m_boxes[j*4+1] = 0; // invalidate
-                m_boxes[j*4+2] = 0; // invalidate
-                m_boxes[j*4+3] = 0; // invalidate
-                n++;
+                boxes[ii+1] = left;
+                boxes[jj+0] = 0; // invalidate
+                invalid++;
             }
-            if (right>=right0 && left-right0<=MAX_MERGE_DIST &&
+            else if (right>=right0 && left-right0<=m_mergeDist &&
                     ((top0<=top && top<=bottom0) || (top0<=bottom && bottom<=bottom0)))
             {
-                m_boxes[i*4+1] = (right<<3) | model;
-                m_boxes[j*4+0] = 0; // invalidate
-                m_boxes[j*4+1] = 0; // invalidate
-                m_boxes[j*4+2] = 0; // invalidate
-                m_boxes[j*4+3] = 0; // invalidate
-                n++;
+                boxes[ii+2] = right;
+                boxes[jj+0] = 0; // invalidate
+                invalid++;
             }
-            if (top<=top0 && top0-bottom<=MAX_MERGE_DIST &&
+            else if (top<=top0 && top0-bottom<=m_mergeDist &&
                     ((left0<=left && left<=right0) || (left0<=right && right<=right0)))
             {
-                m_boxes[i*4+2] = (top<<3) | model;
-                m_boxes[j*4+0] = 0; // invalidate
-                m_boxes[j*4+1] = 0; // invalidate
-                m_boxes[j*4+2] = 0; // invalidate
-                m_boxes[j*4+3] = 0; // invalidate
-                n++;
+                boxes[ii+3] = top;
+                boxes[jj+0] = 0; // invalidate
+                invalid++;
             }
-            if (bottom>=bottom0 && top-bottom0<=MAX_MERGE_DIST &&
+            else if (bottom>=bottom0 && top-bottom0<=m_mergeDist &&
                     ((left0<=left && left<=right0) || (left0<=right && right<=right0)))
             {
-                m_boxes[i*4+3] = (bottom<<3) | model;
-                m_boxes[j*4+0] = 0; // invalidate
-                m_boxes[j*4+1] = 0; // invalidate
-                m_boxes[j*4+2] = 0; // invalidate
-                m_boxes[j*4+3] = 0; // invalidate
-                n++;
+                boxes[ii+4] = bottom;
+                boxes[jj+0] = 0; // invalidate
+                invalid++;
             }
+#else // at least half of a side (the smaller adjacent side) has to overlap
+            if (left<=left0 && left0-right<=m_mergeDist &&
+                    ((top<=top0 && top0<=top+height) || (top+height<=bottom0 && bottom0<=bottom)))
+            {
+                boxes[ii+1] = left;
+                boxes[jj+0] = 0; // invalidate
+                invalid++;
+            }
+            else if (right>=right0 && left-right0<=m_mergeDist &&
+                     ((top<=top0 && top0<=top+height) || (top+height<=bottom0 && bottom0<=bottom)))
+            {
+                boxes[ii+2] = right;
+                boxes[jj+0] = 0; // invalidate
+                invalid++;
+            }
+            else if (top<=top0 && top0-bottom<=m_mergeDist &&
+                     ((left<=left0 && left0<=left+width) || (left+width<=right0 && right0<=right)))
+            {
+                boxes[ii+3] = top;
+                boxes[jj+0] = 0; // invalidate
+                invalid++;
+            }
+            else if (bottom>=bottom0 && top-bottom0<=m_mergeDist &&
+                     ((left<=left0 && left0<=left+width) || (left+width<=right0 && right0<=right)))
+            {
+                boxes[ii+4] = bottom;
+                boxes[jj+0] = 0; // invalidate
+                invalid++;
+            }
+#endif
         }
     }
 
-//    if (n)
-//        compress();
-
-    return n;
+    return invalid;
 }
 
 #define MAX_CODED_DIST  10
@@ -408,7 +438,6 @@ bool Blobs::closeby(int a, int b, int dist)
     int16_t left0, right0, top0, bottom0;
     int16_t left, right, top, bottom;
     uint8_t model0, model;
-    int n = 0;
 
     left0 = m_boxes[a*4+0];
     if (left0==0)
@@ -542,7 +571,6 @@ int Blobs::setLabel(uint32_t model, const QString &label)
 
 int Blobs::setLabel(const QString &model, const QString &label)
 {
-    unsigned int i;
     uint16_t imodel;
 
     imodel = string2code(model);
