@@ -39,7 +39,7 @@ signals:
 public slots:
     void handleImage(QImage image);
     void handleFlush();
-    void acceptInput(uint type);
+    void acceptInput(bool state);
 
 private slots:
 
@@ -61,6 +61,7 @@ private:
     int m_sbHeight;
     float m_scale;
     bool m_drag;
+    bool m_acceptInput;
     bool m_selection;
 };
 

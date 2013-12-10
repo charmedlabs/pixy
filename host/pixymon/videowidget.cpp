@@ -17,6 +17,7 @@ VideoWidget::VideoWidget(MainWindow *main) : QWidget((QWidget *)main), m_mutex(Q
     m_yOffset=0;
     m_scale = 1.0;
     m_drag = false;
+    m_acceptInput = false;
     m_selection = false;
 
     // set size policy--- preferred aspect ratio
@@ -155,7 +156,7 @@ void VideoWidget::mouseMoveEvent(QMouseEvent *event)
         m_drag = false;
     }
 
-    if (m_drag)
+    if (m_drag && m_acceptInput)
     {
         m_sbWidth = x-m_x0;
         m_sbHeight = y-m_y0;
@@ -221,8 +222,15 @@ void VideoWidget::resizeEvent(QResizeEvent *event)
     QWidget::resizeEvent(event);
 }
 
-void VideoWidget::acceptInput(uint type)
+void VideoWidget::acceptInput(bool state)
 {
-
+    m_acceptInput = state;
+    if (state)
+        setCursor(Qt::CrossCursor);
+    else
+    {
+        m_selection = false;
+        setCursor(Qt::ArrowCursor);
+    }
 }
 

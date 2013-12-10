@@ -60,7 +60,7 @@ signals:
     void textOut(QString text, QColor color=Qt::black);
     void error(QString text);
     void prompt(QString text);
-    void videoPrompt(uint type);
+    void videoInput(bool state);
     void enableConsole(bool enable);
     void connected(Device device, bool state);
 

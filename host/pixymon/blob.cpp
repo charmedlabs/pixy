@@ -20,6 +20,7 @@ bool CBlob::testMoments= false;
 bool SMoments::computeAxes= false;
 int CBlob::leakcheck=0;
 
+#ifdef INCLUDE_STATS
 void SMoments::GetStats(SMomentStats &stats) const {
   stats.area= area;
   stats.centroidX = (float)sumX / (float)area;
@@ -83,6 +84,7 @@ void SSegment::GetMomentsTest(SMoments &moments) const {
     }
   }
 }
+#endif
 
 ///////////////////////////////////////////////////////////////////////////
 // CBlob
@@ -155,9 +157,11 @@ CBlob::Add(const SSegment &segment)
   moments.Add(segmentMoments);
 
   if (testMoments) {
+#ifdef INCLUDE_STATS
     SMoments test;
     segment.GetMomentsTest(test);
     assert(test == segmentMoments);
+#endif
   }
   if (recordSegments) {
     // Add segment to the _end_ of the linked list

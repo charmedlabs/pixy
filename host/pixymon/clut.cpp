@@ -6,8 +6,8 @@
 // DEBUG
 #include <QFile>
 
-double e = 0.95;
-double d = 0;
+double e = 0.90;
+double d = .2;
 double d2 = 2.0;
 double d3 = 2.0;
 double minsat = 0.18;

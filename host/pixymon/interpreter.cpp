@@ -64,7 +64,7 @@ Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, MainWindow 
     connect(this, SIGNAL(error(QString)), m_console, SLOT(error(QString)));
     connect(this, SIGNAL(enableConsole(bool)), m_console, SLOT(acceptInput(bool)));
     connect(this, SIGNAL(prompt(QString)), m_console, SLOT(prompt(QString)));
-    connect(this, SIGNAL(videoPrompt(uint)), m_video, SLOT(acceptInput(uint)));
+    connect(this, SIGNAL(videoInput(bool)), m_video, SLOT(acceptInput(bool)));
     connect(m_video, SIGNAL(selection(int,int,int,int)), this, SLOT(handleSelection(int,int,int,int)));
     // we necessarily want to execute in the gui thread, so queue
     connect(this, SIGNAL(connected(Device,bool)), m_main, SLOT(handleConnected(Device,bool)), Qt::QueuedConnection);
@@ -448,12 +448,14 @@ void Interpreter::run()
 
     if (m_setModel)
     {
-        textOut("Select region with mouse.\n");
+        textOut("Please select a region with your mouse.\n");
+        emit videoInput(true);
         m_mutexSelection.lock();
         m_waitSelection.wait(&m_mutexSelection);
         m_mutexSelection.unlock();
         m_renderer->m_blobs.generateLUT(m_setModel, m_selection.x(), m_selection.y(), m_selection.width(), m_selection.height(), m_renderer->m_frameData);
-        textOut("done.\n");
+        textOut("done!\n");
+        emit videoInput(false);
         prompt();
         m_setModel = 0;
     }
@@ -1128,7 +1130,7 @@ int Interpreter::call(const QStringList &argv, bool interactive)
                         if (n>i+4)
                         {
                             pstring += "(select region)";
-                            emit videoPrompt(*(uint *)&info.argTypes[i+1]);
+                            emit videoInput(true);
                             emit enableConsole(false);
                         }
 

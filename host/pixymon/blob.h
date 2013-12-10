@@ -43,6 +43,8 @@
 //#include <memory.h>
 #include <math.h>
 
+//#define INCLUDE_STATS
+
 // Uncomment this for verbose output for testing
 //#include <iostream.h>
 
@@ -68,14 +70,23 @@ struct SMoments {
   static bool computeAxes;
   
   int area; // number of pixels
+  void Reset() {
+    area = 0;
+#ifdef INCLUDE_STATS
+    sumX= sumY= sumXX= sumYY= sumXY= 0;
+#endif
+  }
+#ifdef INCLUDE_STATS
   int sumX; // sum of pixel x coords
   int sumY; // sum of pixel y coords
   // XX, XY, YY used for major/minor axis calculation
   long long sumXX; // sum of x^2 for each pixel
   long long sumYY; // sum of y^2 for each pixel
   long long sumXY; // sum of x*y for each pixel
+#endif
   void Add(const SMoments &moments) {
     area += moments.area;
+#ifdef INCLUDE_STATS
     sumX += moments.sumX;
     sumY += moments.sumY;
     if (computeAxes) {
@@ -83,11 +94,10 @@ struct SMoments {
       sumYY += moments.sumYY;
       sumXY += moments.sumXY;
     }
+#endif
   }
+#ifdef INCLUDE_STATS
   void GetStats(SMomentStats &stats) const;
-  void Reset() {
-    area= sumX= sumY= sumXX= sumYY= sumXY= 0;
-  }
   bool operator==(const SMoments &rhs) const {
     if (area != rhs.area) return 0;
     if (sumX != rhs.sumX) return 0;
@@ -99,6 +109,7 @@ struct SMoments {
     }
     return 1;
   }
+#endif
 };
 
 struct SSegment {
@@ -117,12 +128,13 @@ struct SSegment {
 
   void GetMoments(SMoments &moments) const {
     int s= startCol - 1;
-    int s2= s*s;
     int e= endCol;
-    int e2= e*e;
-    int y= row;
     
     moments.area  = (e-s);
+#ifdef INCLUDE_STATS
+    int e2= e*e;
+    int y= row;
+    int s2= s*s;
     moments.sumX = ( (e2-s2) + (e-s) ) / 2;
     moments.sumY = (e-s) * y;
 
@@ -133,9 +145,11 @@ struct SSegment {
       moments.sumXX= (2*(e3-s3) + 3*(e2-s2) + (e-s)) / 6;
       moments.sumYY= moments.sumY*y;
     }
+#endif
   }
-  
+#ifdef INCLUDE_STATS
   void GetMomentsTest(SMoments &moments) const;
+#endif
 };
 
 struct SLinkedSegment {
