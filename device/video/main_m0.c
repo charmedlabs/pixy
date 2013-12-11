@@ -493,8 +493,8 @@ dest6	LDR 	r6, [r0] 	// 2
 #if 0
 
 // assemble blue-green words to look like this
-// 32 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0
-//                                                     B  B  B  B  B  G G G G G
+// 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0
+//                                                  B  B  B  B  B  G G G G G
 __asm void lineProcessedRL0(uint32_t *gpio, uint16_t *memory, uint32_t width)
 { 
 		PRESERVE8
@@ -717,7 +717,7 @@ dest11A	LDR 	r3, [r0] 	// 2
 
 //#define RLTEST
 
-__asm uint32_t *lineProcessedRL1A(uint32_t *gpio, uint32_t *memory, uint8_t *lut, uint8_t *linestore, uint32_t width, uint8_t *shiftLut) // width in bytes
+__asm uint32_t *lineProcessedRL1A(uint32_t *gpio, uint32_t *memory, uint8_t *lut, uint8_t *linestore, uint32_t width, uint8_t *shiftLut, uint32_t *copyLoc) // width in bytes
 {
 // The code below does the following---
 // -- maintain pixel sync, read red and green pixels
@@ -731,7 +731,7 @@ __asm uint32_t *lineProcessedRL1A(uint32_t *gpio, uint32_t *memory, uint8_t *lut
 // Run-length segments are 1 pixel larger than actual, and the last hue line value is added twice in the sum.
 // Spurious noise pixels within a run-length segment present a problem.  When this happens the last hue line value 
 // is added to the sum to keep things unbiased.  ie, think of the case where a run-length consists of half 
-// spurious noise pixels.  We don't wnat the noise to affect the average--- only the pixels that agree with
+// spurious noise pixels.  We don't want the noise to affect the average--- only the pixels that agree with
 // the model number for that run-length.
 // All pixels are read and used--- the opponent color space (r-g, b-g) works well with the bayer pattern.
 // After the red pixel is read, about 12 cycles are used to create the index and look it up.  When the q val is 
@@ -822,7 +822,7 @@ $lx		QVAL
 		LSLS 	r5, r1, #12 // r5 gets shifted length
 		ORRS 	r6, r5 // combine
 		// *** PIXEL SYNC (red)
-		LDR		r5, [sp, #0x18] // bring in shift lut 
+		LDR		r5, [sp, #0x24] // bring in shift lut 
 		// cycle
 		LDRB 	r1, [r1, r5] // look up	number of shifts (log2)
 		// cycle
@@ -845,9 +845,9 @@ $lx		QVAL
 		PRESERVE8
 		IMPORT 	callSyncM1
 
-		PUSH	{r4-r7, lr}
+		PUSH	{r1-r7, lr}
 		// bring in ending column
-		LDR		r4, [sp, #0x14]
+		LDR		r4, [sp, #0x20]
 	   	MOV		r9, r4
 	  	MOVS	r5, #0x1
 		LSLS	r5, #11
@@ -952,8 +952,20 @@ dest20A	LDR 	r6, [r0] 	// 2
 		TST		r6, r5		// 1
 		BNE		dest20A		// 3
 
-		MOV     r0, r12 // return end of q mem
-		POP		{r4-r7, pc}
+	    // we have approx 1800 cycles to do something here
+		LDR		r0, [sp, #0x28] // bring in qq pointer (assume we have enough space (256 bytes) 
+		LDR		r1, [sp] // bring in original q memory location 
+lcpy	CMP		r12, r1	  // 1 if pointers are equal, we're done
+		BEQ		ecpy	  // 1 exit
+
+		LDR		r3, [r1]  // 2 copy (read)
+		STR		r3, [r1]  // 2 copy (write)
+		ADDS	r0, #4	  // 1 inc
+		ADDS 	r1, #4	  // 1 inc
+		B		lcpy	  // 3
+
+ecpy	MOV     r0, r12 // return end of q mem
+		POP		{r1-r7, pc}
 } 
 
 void skipLine()
@@ -1101,7 +1113,7 @@ int32_t getRLSFrame(uint32_t *memory, uint32_t *size /*bytes*/, uint32_t *lut)
 		*memory2++ = 0x0000; 
 		lineProcessedRL0A((uint32_t *)&CAM_PORT, lineStore, CAM_RES2_WIDTH); 
 #ifndef RLTEST
-		memory2 = lineProcessedRL1A((uint32_t *)&CAM_PORT, memory2, lut2, lineStore, CAM_RES2_WIDTH, g_logLut);
+		memory2 = lineProcessedRL1A((uint32_t *)&CAM_PORT, memory2, lut2, lineStore, CAM_RES2_WIDTH, g_logLut, (uint32_t *)0xdeadbeef);
 #else
 		memory2 = lineProcessedRL1A(rgData, memory2, lut2, (uint8_t *)bgData, CAM_RES2_WIDTH, g_logLut);
 #endif
@@ -1132,8 +1144,15 @@ void chirpInit(void)
 int main(void)
 {
 	//CTIMER_DECLARE();
+#if 0
+	uint32_t size = SRAM0_SIZE/2;
+	uint32_t memory = SRAM0_LOC;
+	uint32_t lut = SRAM0_LOC;
 		
-	printf("M0 start\n");
+ 	while(1)
+ 		getRLSFrame(&memory, &size, &lut); 
+#endif
+	//printf("M0 start\n");
 
 	chirpOpen();
 	chirpSetProc("getFrame", (ProcPtr)getFrame);

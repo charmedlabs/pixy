@@ -401,6 +401,11 @@
               <FileType>2</FileType>
               <FilePath>.\startup_LPC43xx_m0.s</FilePath>
             </File>
+            <File>
+              <FileName>qqueue.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\libpixy\qqueue.c</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>

@@ -411,6 +411,11 @@
               <FileType>8</FileType>
               <FilePath>.\exec.cpp</FilePath>
             </File>
+            <File>
+              <FileName>qqueue.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\libpixy\qqueue.cpp</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>
@@ -819,6 +824,11 @@
               <FileName>exec.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>.\exec.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>qqueue.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\libpixy\qqueue.cpp</FilePath>
             </File>
           </Files>
         </Group>
