@@ -150,9 +150,9 @@
 #define SYNC                            0
 #define ASYNC                           1
 
-#define CRP_RETURN(...)                 chirpAssemble(0, __VA_ARGS__)
-#define chirpCallSync(...)              chirpCall(SYNC, __VA_ARGS__)
-#define chirpCallAsync(...)             chirpCall(ASYNC, __VA_ARGS__)
+#define CRP_RETURN(...)                 chirpAssemble(0, __VA_ARGS__, END)
+#define chirpCallSync(...)              chirpCall(SYNC, __VA_ARGS__, END)
+#define chirpCallAsync(...)             chirpCall(ASYNC, __VA_ARGS__, END)
 
 
 typedef int bool;

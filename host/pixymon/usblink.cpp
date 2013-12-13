@@ -28,11 +28,13 @@ int USBLink::open()
     if (libusb_set_configuration(m_handle, 1)<0)
     {
         libusb_close(m_handle);
+        m_handle = 0;
         return -1;
     }
     if (libusb_claim_interface(m_handle, 1)<0)
     {
         libusb_close(m_handle);
+        m_handle = 0;
         return -1;
     }
 

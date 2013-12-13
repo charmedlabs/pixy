@@ -4,8 +4,10 @@
 #include "camera.h"
 #include "cameravals.h"
 #include "conncomp.h"
+#include "qqueue.h"
 
-//#include "global.h"
+
+Qqueue *g_qqueue;
 
 int g_loop = 0;
 
@@ -61,6 +63,8 @@ static ChirpProc g_getRLSFrameM0 = -1;
 int cc_init(Chirp *chirp)
 {
 	uint32_t i;
+
+	g_qqueue = new Qqueue;
 
 	chirp->registerModule(g_module);	
 
@@ -123,17 +127,18 @@ int32_t cc_getRLSFrameChirp(Chirp *chirp)
 	// figure out prebuf length (we need the prebuf length and the number of runlength segments, but there's a chicken and egg problem...)
 	len = Chirp::serialize(chirp, RLS_MEMORY, RLS_MEMORY_SIZE,  HTYPE(0), UINT16(0), UINT16(0), UINTS32_NO_COPY(0), END);
 
-	if ((result=cc_getRLSFrame((uint32_t *)(RLS_MEMORY+len), RLS_MEMORY_SIZE-len, LUT_MEMORY, &numRls))>=0)
-	{
-		// send frame, use in-place buffer
-		Chirp::serialize(chirp, RLS_MEMORY, RLS_MEMORY_SIZE,  HTYPE(FOURCC('C','C','Q','1')), UINT16(CAM_RES2_WIDTH), UINT16(CAM_RES2_HEIGHT), UINTS32_NO_COPY(numRls), END);
-		chirp->useBuffer(RLS_MEMORY, len+numRls*4);
-	}	
+	result = cc_getRLSFrame((uint32_t *)(RLS_MEMORY+len), LUT_MEMORY, &numRls);
+	// send frame, use in-place buffer
+	Chirp::serialize(chirp, RLS_MEMORY, RLS_MEMORY_SIZE,  HTYPE(FOURCC('C','C','Q','1')), UINT16(CAM_RES2_WIDTH), UINT16(CAM_RES2_HEIGHT), UINTS32_NO_COPY(numRls), END);
+	// copy from IPC memory to RLS_MEMORY
+	if (g_qqueue->readAll((Qval *)(RLS_MEMORY+len), (RLS_MEMORY_SIZE-len)/sizeof(Qval))!=numRls)
+		return -1;
+	chirp->useBuffer(RLS_MEMORY, len+numRls*4);
 
 	return result;
 }
 
-int32_t cc_getRLSFrame(uint32_t *memory, uint32_t memSize, /*hword size*/ uint8_t *lut, uint32_t *numRls, bool sync)
+int32_t cc_getRLSFrame(uint32_t *memory, uint8_t *lut, uint32_t *numRls, bool sync)
 {
 	int32_t res;
 	int32_t responseInt = -1;
@@ -146,14 +151,14 @@ int32_t cc_getRLSFrame(uint32_t *memory, uint32_t memSize, /*hword size*/ uint8_
 	if (sync)
 	{
 		g_chirpM0->callSync(g_getRLSFrameM0, 
-			UINT32((uint32_t)memory), UINT32(memSize), UINT32((uint32_t)lut), END_OUT_ARGS,
+			UINT32((uint32_t)memory), UINT32((uint32_t)lut), END_OUT_ARGS,
 			&responseInt, numRls, END_IN_ARGS);
 		return responseInt;
 	}
 	else
 	{
 		g_chirpM0->callAsync(g_getRLSFrameM0, 
-			UINT32((uint32_t)memory), UINT32(memSize), UINT32((uint32_t)lut), END_OUT_ARGS);
+			UINT32((uint32_t)memory), UINT32((uint32_t)lut), END_OUT_ARGS);
 		return 0;
 	}
 
@@ -178,7 +183,7 @@ int32_t cc_getRLSCCChirp(Chirp *chirp)
 	
 	uint32_t numRls, result;//, prebuf;
 	uint32_t *memory = (uint32_t *)RLS_MEMORY;
-	result = cc_getRLSFrame(memory, RLS_MEMORY_SIZE, LUT_MEMORY, &numRls);
+	result = cc_getRLSFrame(memory, LUT_MEMORY, &numRls);
 	
 	CBlobAssembler blobber;
 	

@@ -491,7 +491,7 @@ void blobProcess(void)
    	move(1);
 
    	// get first frame (primer)
-	result = cc_getRLSFrame(memory, RLS_MEMORY_SIZE, LUT_MEMORY, &g_numRls);
+	result = cc_getRLSFrame(memory, LUT_MEMORY, &g_numRls);
 			
 	while(1)
 	{
@@ -511,7 +511,7 @@ void blobProcess(void)
 
 
 			// kick off next frame
-			cc_getRLSFrame(memory, RLS_MEMORY_SIZE, LUT_MEMORY, NULL, false);
+			cc_getRLSFrame(memory, LUT_MEMORY, NULL, false);
 			// process this one
 			cc_getMaxBlob(g_qmem, g_numRls, bdata);
 			if (bdata[0]>0)
@@ -596,6 +596,14 @@ int main(void)
  	pixyInit(SRAM3_LOC, &LR0[0], sizeof(LR0));
 	cc_init(g_chirpUsb);
 	exec_init(g_chirpUsb);
+#if 0
+	uint32_t *memory = (uint32_t *)RLS_MEMORY;
+	int result;
+
+   	// get first frame (primer)
+	while(1)
+		result = cc_getRLSFrame(memory, LUT_MEMORY, &g_numRls);
+#endif
 #if 0
 	// spi I/O test
 	scu_pinmux(0x1, 3, (MD_PLN | MD_EZI | MD_ZI | MD_EHS), FUNC0); 	         // SSP1_MISO 

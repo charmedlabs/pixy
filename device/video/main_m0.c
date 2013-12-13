@@ -3,6 +3,7 @@
 #include <cycletimer.h>
 #include <pixyvals.h>
 #include <cameravals.h>
+#include "qqueue.h"
 
 #define CAM_PORT 		(LPC_GPIO_PORT->PIN[1])
 #define CAM_VSYNC() 	(CAM_PORT&0x1000)
@@ -717,7 +718,8 @@ dest11A	LDR 	r3, [r0] 	// 2
 
 //#define RLTEST
 
-__asm uint32_t *lineProcessedRL1A(uint32_t *gpio, uint32_t *memory, uint8_t *lut, uint8_t *linestore, uint32_t width, uint8_t *shiftLut, uint32_t *copyLoc) // width in bytes
+__asm uint32_t lineProcessedRL1A(uint32_t *gpio, Qval *memory, uint8_t *lut, uint8_t *linestore, uint32_t width, uint8_t *shiftLut, 
+	Qval *qqMem, uint32_t qqIndex, uint32_t qqSize) // width in bytes
 {
 // The code below does the following---
 // -- maintain pixel sync, read red and green pixels
@@ -953,18 +955,41 @@ dest20A	LDR 	r6, [r0] 	// 2
 		BNE		dest20A		// 3
 
 	    // we have approx 1800 cycles to do something here
-		LDR		r0, [sp, #0x28] // bring in qq pointer (assume we have enough space (256 bytes) 
+		// which is enough time to copy 64 qvals (256 bytes), maximum qvals/line = 320/5
+		// (this has been verified/tested)
+		// The advantage of doing this is that we don't need to buffer much data
+		// and it reduces the latency-- we can start processing qvals immediately
+		// We need to copy these because the memory the qvals comes from must not be 
+		// accessed by the M4, or wait states will be thrown in and we'll lose pixel sync for that line
+		MOV		r0, r12  // qval pointer
 		LDR		r1, [sp] // bring in original q memory location 
-lcpy	CMP		r12, r1	  // 1 if pointers are equal, we're done
+		SUBS	r0, r1 // get number of qvals*4
+
+		LDR		r2, [sp, #0x28] // bring in qq memory pointer 
+		LDR		r3, [sp, #0x2c] // bring in qq index
+		LSLS 	r3, #2 // qq index in bytes (4 bytes/qval)
+		LDR		r4, [sp, #0x30] // bring in qq size
+		LSLS 	r4, #2 // qq size in bytes (4 bytes/qval)
+
+		MOVS	r5, #0
+
+lcpy	CMP		r0, r5	  // 1 end condition
 		BEQ		ecpy	  // 1 exit
 
-		LDR		r3, [r1]  // 2 copy (read)
-		STR		r3, [r1]  // 2 copy (write)
-		ADDS	r0, #4	  // 1 inc
-		ADDS 	r1, #4	  // 1 inc
+		LDR		r6, [r1, r5]  // 2 copy (read)
+		STR		r6, [r2, r3]  // 2 copy (write)
+
+		ADDS	r3, #4	  // 1 inc qq index
+		ADDS	r5, #4	  // 1 inc counter
+
+		CMP		r4, r3    // 1 check for qq index wrap
+		BEQ		wrap	  // 1
 		B		lcpy	  // 3
 
-ecpy	MOV     r0, r12 // return end of q mem
+wrap	MOVS	r3, #0    // reset qq index
+		B lcpy
+
+ecpy	LSRS    r0, #2 // return number of qvals
 		POP		{r1-r7, pc}
 } 
 
@@ -1089,50 +1114,52 @@ uint32_t rgData[] =
 };
 #endif
 
-int32_t getRLSFrame(uint32_t *memory, uint32_t *size /*bytes*/, uint32_t *lut)
+#define MAX_QVALS_PER_LINE 	CAM_RES2_WIDTH/5	 // width/5 because that's the worst case with noise filtering
+
+int32_t getRLSFrame(uint32_t *m0Mem, uint32_t *lut)
 {
 	uint8_t *lut2 = (uint8_t *)*lut;
-	uint32_t *memory2 = (uint32_t *)*memory;
+	Qval *qvalStore = (Qval *)*m0Mem;
 	uint32_t line;
-	uint32_t *memory2Orig = memory2; 
-	uint8_t *lineStore = (uint8_t *)memory2 + *size-CAM_RES2_WIDTH*2-4;
-	uint8_t *logLut = lineStore + CAM_RES2_WIDTH + 4;
-	 
+	uint32_t numQvals;
+	uint32_t totalQvals;
+	uint8_t *lineStore;
+	uint8_t *logLut;
+
+	lineStore = (uint8_t *)(qvalStore + MAX_QVALS_PER_LINE);
+	logLut = lineStore + CAM_RES2_WIDTH + 4;
+	// m0mem needs to be at least 64*4 + CAM_RES2_WIDTH*2 + 4 =	900 ~ 1024
+
 	if (g_logLut!=logLut)
 	{
 		g_logLut = logLut; 
 	 	createLogLut();
 	}
 
+	// indicate start of frame
+	qq_enqueue(0xffffffff); 
 	skipLines(0);
-	for (line=0; line<CAM_RES2_HEIGHT; line++)
+	for (line=0, totalQvals=1; line<CAM_RES2_HEIGHT; line++)  // start totalQvals at 1 because of start of frame value
 	{
-		// mark beginning of this row (column 0 = 0)
-		// column 0 is a symbolic column to the left of column 1.  (column 1 is the first real column of pixels)
-		// (there is an implied end of line before the begin of line) 
-		*memory2++ = 0x0000; 
-		lineProcessedRL0A((uint32_t *)&CAM_PORT, lineStore, CAM_RES2_WIDTH); 
-#ifndef RLTEST
-		memory2 = lineProcessedRL1A((uint32_t *)&CAM_PORT, memory2, lut2, lineStore, CAM_RES2_WIDTH, g_logLut, (uint32_t *)0xdeadbeef);
-#else
-		memory2 = lineProcessedRL1A(rgData, memory2, lut2, (uint8_t *)bgData, CAM_RES2_WIDTH, g_logLut);
-#endif
-		if ((uint32_t *)lineStore-memory2<CAM_RES2_WIDTH/5)	// width/5 because that's the worst case with noise filtering
+		if (qq_free()<MAX_QVALS_PER_LINE)
 		{
-#ifndef RLTEST
-			CRP_RETURN(UINT32(memory2 - memory2Orig), END); 
+			CRP_RETURN(UINT32(totalQvals), END);
 			return -1; 
-#else
-			return memory2 - memory2Orig;
-#endif
 		}
+		// mark beginning of this row (column 0 = 0)
+		// column 1 is the first real column of pixels
+		qq_enqueue(0); 
+		lineProcessedRL0A((uint32_t *)&CAM_PORT, lineStore, CAM_RES2_WIDTH); 
+		numQvals = lineProcessedRL1A((uint32_t *)&CAM_PORT, qvalStore, lut2, lineStore, CAM_RES2_WIDTH, g_logLut, g_qqueue->data, g_qqueue->writeIndex, QQ_SIZE);
+		// modify qq to reflect added data
+		g_qqueue->writeIndex += numQvals;
+		if (g_qqueue->writeIndex>=QQ_SIZE)
+			g_qqueue->writeIndex -= QQ_SIZE;
+		g_qqueue->produced += numQvals;
+		totalQvals += numQvals+1; // +1 because of beginning of line 
 	}
-#ifndef RLTEST
-	CRP_RETURN(UINT32(memory2 - memory2Orig), END); 
+	CRP_RETURN(UINT32(totalQvals), END);
 	return 0;
-#else
-	return memory2 - memory2Orig;
-#endif
 }
 
 #if 0 // this would initialize our ChirpProcs, if we had any--- uncomment when we add some
@@ -1145,12 +1172,17 @@ int main(void)
 {
 	//CTIMER_DECLARE();
 #if 0
-	uint32_t size = SRAM0_SIZE/2;
 	uint32_t memory = SRAM0_LOC;
 	uint32_t lut = SRAM0_LOC;
-		
+
+	//while(1);
+	memset((void *)QQ_LOC, 0x01, 0x3000);
+	g_qqueue->writeIndex = 0;
+	g_qqueue->produced = 0;
+	g_qqueue->consumed = 0;
+
  	while(1)
- 		getRLSFrame(&memory, &size, &lut); 
+ 		getRLSFrame(&memory, &lut); 
 #endif
 	//printf("M0 start\n");
 
@@ -1191,7 +1223,7 @@ int main(void)
  		getRLSFrame(&memory, &size, (uint32_t *)&lut);
 }
 #endif
-	printf("M0 ready\n");
+	//printf("M0 ready\n");
 	while(1)
 		chirpService();
 }

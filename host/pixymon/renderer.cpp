@@ -481,6 +481,10 @@ int Renderer::renderCCQ1(uint16_t width, uint16_t height, uint32_t numVals, uint
     QImage img(width, height, QImage::Format_ARGB32);
     unsigned int palette[] = {0x00000000, 0x80ff0000, 0x8000ff00, 0x800000ff, 0x80ffff00, 0x8000ffff, 0x80ff00ff};
 
+    if (qVals[0]!=0xffffffff)
+        qDebug() << "error!";
+    qVals++; // skip beginning of frame marker
+    numVals--;
     // if we're a background frame, set alpha to 1.0
     if (m_backgroundFrame)
     {
