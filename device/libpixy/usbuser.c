@@ -266,19 +266,52 @@ void USB_UserInit(void)
 uint32_t USB_handleState(void)
 {
 	static uint32_t vbusPrev = 0;
+	static uint32_t count = 5000;
 	uint32_t vbus;
+	volatile uint32_t d;
+	int i;
+#if 1
 
+
+	if (USB_Configuration)
+	{
+		vbus = LPC_USB->OTGSC&(1<<11);
+		if (vbus)
+			count = 5000;
+		else if (count) 
+			count--;
+
+		if (count==0)
+		{
+			USB_ResetEP(USB_BULK_OUT_EP);
+			USB_ResetEP(USB_BULK_IN_EP);
+			USB_Configuration = 0;
+		}
+	}
+
+#else
 	vbus = LPC_USB->OTGSC&(1<<11);
-
 	// if we unplug, reset endpoints, reflect that we're no longer configured
 	if (!vbus && vbusPrev) 
 	{
-		USB_ResetEP(USB_BULK_OUT_EP);
-		USB_ResetEP(USB_BULK_IN_EP);
-		USB_Configuration = 0;
+		// make sure we're actually unplugged (need to investigate why this sometimes craps out)
+		// Why does this routine modify USB_Configuration?  Is this necessary?
+		// What about the other bits in LPC_USB->OTGSC?
+		for (i=0, vbus=0; i<300; i++)
+		{
+			vbus |= LPC_USB->OTGSC&(1<<11);
+			for (d=0; d<10000; d++);
+		}
+		if (!vbus)
+		{
+			USB_ResetEP(USB_BULK_OUT_EP);
+			USB_ResetEP(USB_BULK_IN_EP);
+			USB_Configuration = 0;
+		}	
 	}
 
 	vbusPrev = vbus;
+#endif
 	return USB_Configuration;
 }
 void bulkOutNak(void){

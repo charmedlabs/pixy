@@ -391,6 +391,7 @@ int Interpreter::getRunning()
     QMutexLocker locker(&m_chirp->m_mutex);
 
     res = m_chirp->callSync(m_exec_running, END_OUT_ARGS, &response, END_IN_ARGS);
+    qDebug() << "getRunning: " << res << " " << response;
     if (res<0)
         return res;
     return response ? true : false;

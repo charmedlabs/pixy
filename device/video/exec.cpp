@@ -44,6 +44,7 @@ uint8_t g_run = false;
 int8_t g_program = -1;
 
 static ChirpProc g_runM0 = -1;
+static ChirpProc g_runningM0 = -1;
 static ChirpProc g_stopM0 = -1;
 
 int exec_init(Chirp *chirp)
@@ -105,6 +106,7 @@ void setup1()
 	cam_setMode(CAM_MODE1);
 
 	g_runM0 = g_chirpM0->getProc("run", NULL);
+	g_runningM0 = g_chirpM0->getProc("running", NULL);
 	g_stopM0 = g_chirpM0->getProc("stop", NULL);	
 	g_chirpM0->callSync(g_runM0, UINT8(0), END_OUT_ARGS,
 		&responseInt, END_IN_ARGS);
@@ -133,8 +135,8 @@ void exec_loop()
 			if (!g_chirpUsb->connected() || !USB_Configuration)
 				exec_run();
 		}
-		 	
-		setup1();
+
+		setup1(); 	
 		while(g_run)
 		{
 			loop1();
