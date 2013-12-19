@@ -228,7 +228,8 @@ void Blobs::blobify()
             s.startCol = qval&0x1ff;
             qval >>= 9;
             s.endCol = (qval&0x1ff) + s.startCol;
-            m_assembler[s.model-1].Add(s);
+            if (m_assembler[s.model-1].Add(s)<0)
+                break;
         }
     }
 

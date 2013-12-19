@@ -72,12 +72,19 @@ void led_setPWM(uint8_t led, uint16_t pwm)
 	if (led>2)
 		return;
 
+#if 0
+	// this code causes some glitchy looking flashes because it messes with 
+	// the pwm state machine, although this isn't clear to me why it would 
+	// be slow enough to be visible....
+	// This code turns the LED completely off --- disabling for now though.  
 	if (pwm==0)
 	{
 	 	LPC_SCT->OUT[led].SET = 1<<15; // disable
 		LPC_SCT->OUT[led].CLR = 1<<3;
 	} 
-	else if (pwm==LED_MAX_PWM)
+	else
+#endif 
+	if (pwm==LED_MAX_PWM)
 	{
 		LPC_SCT->OUT[led].SET = 1<<3;
 	 	LPC_SCT->OUT[led].CLR = 1<<15; 

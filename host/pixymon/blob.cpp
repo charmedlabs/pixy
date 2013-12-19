@@ -1,3 +1,4 @@
+#include <new>
 #include "blob.h"
 
 #ifdef DEBUG
@@ -165,7 +166,9 @@ CBlob::Add(const SSegment &segment)
   }
   if (recordSegments) {
     // Add segment to the _end_ of the linked list
-    *lastSegmentPtr= new SLinkedSegment(segment);
+    *lastSegmentPtr= new (std::nothrow) SLinkedSegment(segment);
+      if (*lastSegmentPtr==NULL)
+          return;
     lastSegmentPtr= &((*lastSegmentPtr)->next);
   }
 }
@@ -234,7 +237,7 @@ CBlobAssembler::~CBlobAssembler()
 }
 
 // Call once for each segment in the color channel
-void CBlobAssembler::Add(const SSegment &segment) {
+int CBlobAssembler::Add(const SSegment &segment) {
   if (segment.row != currentRow) {
     // Start new row
     currentRow= segment.row;
@@ -287,17 +290,20 @@ void CBlobAssembler::Add(const SSegment &segment) {
 
           BlobNewRow(&currentBlob->next);
         }
-        return;
+        return 0;
       }
     }
   }
     
   // Could not attach to previous blob, insert new one before currentBlob
-  CBlob *newBlob= new CBlob();
+  CBlob *newBlob= new (std::nothrow) CBlob();
+  if (newBlob==NULL)
+      return -1;
   newBlob->next= currentBlob;
   *previousBlobPtr= newBlob;
   previousBlobPtr= &newBlob->next;
   newBlob->Add(segment);
+  return 0;
 }
 
 // Call at end of frame

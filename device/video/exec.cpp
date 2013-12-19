@@ -136,10 +136,10 @@ void exec_loop()
 				exec_run();
 		}
 
-		setup1(); 	
+		setup0(); 	
 		while(g_run)
 		{
-			loop1();
+			loop0();
 			while(g_chirpUsb->service());
 		}
 		// set variable to indicate we've stopped

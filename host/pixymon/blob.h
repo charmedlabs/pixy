@@ -287,7 +287,7 @@ public:
 
 
   // Call once for each segment in the color channel
-  void Add(const SSegment &segment);
+  int Add(const SSegment &segment);
 
   // Call at end of frame
   // Moves all active blobs to finished list

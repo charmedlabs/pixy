@@ -4,6 +4,7 @@
 #include <pixy_init.h>
 #include <misc.h>
 #include <string.h>
+#include <new>
 #include "camera.h"
 #include "led.h"
 #include "conncomp.h"
@@ -319,6 +320,7 @@ void handleButton()
 	btPrev = bt;
 }
 
+#if 0
 #define QMEMSIZE   0x800
 uint32_t g_qmem[QMEMSIZE];
 uint32_t g_numRls = 0;
@@ -542,6 +544,7 @@ void blobProcess(void)
 	} 		
 }
 #endif
+#endif
 
 #define SERVO_SCALE 100
 void servoMove(uint8_t axis0, int32_t start0, int32_t end0, int32_t speed0, uint8_t axis1, int32_t start1, int32_t end1)
@@ -591,11 +594,47 @@ uint32_t transmitCallback(uint16_t *data, uint32_t len)
 } 	
 
 
+extern "C" 
+{
+// this is called if we allocate memory (new) and don't catch exception
+// it may be called for other reasons too... 
+void __default_signal_handler(int signal, int type)
+{										   
+	int i;
+	char *message = "received signal: %d %d\n";
+
+	while(1)
+	{
+		// flash signal number
+		for (i=0; i<signal; i++)
+		{
+			led_setRGB(0xff, 0, 0);
+			delayus(150000);
+			led_setRGB(0, 0, 0);
+			delayus(150000);
+		}
+		delayus(500000);
+		// print message
+		printf(message, signal, type);
+		cprintf(message, signal, type);
+	}
+}
+}
+
+
 int main(void) 
- {	
+ {
  	pixyInit(SRAM3_LOC, &LR0[0], sizeof(LR0));
 	cc_init(g_chirpUsb);
 	exec_init(g_chirpUsb);
+ #if 0
+	while(1)		
+	{
+		//uint8_t *buf = new (std::nothrow) uint8_t[0x1000];
+		uint8_t *buf = new uint8_t[0x1000];
+	}
+
+#endif	
 #if 0
 	uint32_t *memory = (uint32_t *)RLS_MEMORY;
 	int result;

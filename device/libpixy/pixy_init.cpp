@@ -109,6 +109,7 @@ void timerInit(void)
 	LPC_TIMER2->PR = CLKFREQ_US-1;
 }
 
+
 void commonInit(void)
 {
 	platformInit();
