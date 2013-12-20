@@ -1,6 +1,8 @@
 #ifndef _EXEC_H
 #define _EXEC_H
 
+#include "chirp.hpp"
+
 #define EXEC_MAX_PROGS   7
 
 typedef int (*ProgFunc)();
@@ -16,6 +18,9 @@ struct Program
 void exec_loop();
 int exec_init(Chirp *chirp);
 int exec_addProg(Program *prog);
+
+int exec_runM0(uint8_t prog);
+int exec_stopM0();
 
 uint32_t exec_running();
 int32_t exec_stop();

@@ -2,8 +2,6 @@
 #include "pixy_init.h"
 #include "misc.h"
 #include "exec.h"
-#include "camera.h"
-#include "qqueue.h"
 
 static const ProcModule g_module[] =
 {
@@ -55,8 +53,6 @@ static ChirpProc g_runningM0 = -1;
 static ChirpProc g_stopM0 = -1;
 static Program *g_progTable[EXEC_MAX_PROGS];
 
-extern Program g_progVideo;
-extern Program g_progBlobs;
 
 int exec_init(Chirp *chirp)
 {
@@ -66,8 +62,6 @@ int exec_init(Chirp *chirp)
 	g_runningM0 = g_chirpM0->getProc("running", NULL);
 	g_stopM0 = g_chirpM0->getProc("stop", NULL);	
 		
-	exec_addProg(&g_progVideo);
-	exec_addProg(&g_progBlobs);
 	exec_runprog(0);
 
 	return 0;	
@@ -124,65 +118,26 @@ int32_t exec_list()
  	return 0;
 }
 
-int videoSetup();
-int videoLoop();
-
-Program g_progVideo =
-{
-	"video",
-	"continuous stream of raw camera frames",
-	videoSetup, 
-	videoLoop
-};
-
-int videoSetup()
-{
-	return 0;
-}
-
-int videoLoop()
-{
-	static int i = 0;
-	cprintf("hello %d\n", i++);
-	cam_getFrameChirp(0x21, 0, 0, 320, 200, g_chirpUsb);
-
-	return 0;
-}
-
-int blobsSetup();
-int blobsLoop();
-
-Program g_progBlobs =
-{
-	"blobs",
-	"detect of colored object and return them as blobs",
-	blobsSetup, 
-	blobsLoop
-};
-
-extern Qqueue *g_qqueue;
-
-int blobsSetup()
+int exec_runM0(uint8_t prog)
 {
 	int responseInt;
 
-	cam_setMode(CAM_MODE1);
-
-	g_chirpM0->callSync(g_runM0, UINT8(0), END_OUT_ARGS,
+	g_chirpM0->callSync(g_runM0, UINT8(prog), END_OUT_ARGS,
 		&responseInt, END_IN_ARGS);
+
+	return responseInt;
 }
 
-int blobsLoop()
+int exec_stopM0()
 {
-	static int i=0;
-	Qval qval;
+	int responseInt;
 
-	while(g_qqueue->dequeue(&qval))
-	{
-		if (qval==0xffffffff)
-			cprintf("%d\n", i++);	
-	}
+	g_chirpM0->callSync(g_stopM0, END_OUT_ARGS,
+		&responseInt, END_IN_ARGS);
+
+	return responseInt;
 }
+
 
 void exec_loop()
 {
@@ -214,7 +169,6 @@ void exec_loop()
 		g_run = false;
 		g_running = false;
 		// stop M0
-		g_chirpM0->callSync(g_stopM0, END_OUT_ARGS,
-			&responseInt, END_IN_ARGS);
+		exec_stopM0();
 	}
 }

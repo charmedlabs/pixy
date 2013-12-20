@@ -499,7 +499,7 @@ begin:
             clearProgram();
         }
         prompt();
-        // check to see if we're running after this command-- it so, go back
+        // check to see if we're running after this command-- if so, go back
         m_remoteProgramRunning = checkRemoteProgram(); // get state
         if (m_remoteProgramRunning)
             goto begin; // I know......

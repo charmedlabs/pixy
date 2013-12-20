@@ -14,6 +14,8 @@
 #include "spifi_rom_api.h"
 #include "lpc43xx_scu.h"
 #include "camera.h"
+#include "progvideo.h"
+#include "progblobs.h"
 
 
 
@@ -689,6 +691,8 @@ int main(void)
 	LPC_DAC->CR = 1000 << 6;
 #endif
 #if 1
+	exec_addProg(&g_progVideo);
+	exec_addProg(&g_progBlobs);
 	exec_loop();
 #endif
 #if 0
