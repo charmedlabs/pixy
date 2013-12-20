@@ -416,6 +416,11 @@
               <FileType>8</FileType>
               <FilePath>..\libpixy\qqueue.cpp</FilePath>
             </File>
+            <File>
+              <FileName>blobs.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>.\blobs.cpp</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>
@@ -829,6 +834,11 @@
               <FileName>qqueue.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>..\libpixy\qqueue.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>blobs.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>.\blobs.cpp</FilePath>
             </File>
           </Files>
         </Group>

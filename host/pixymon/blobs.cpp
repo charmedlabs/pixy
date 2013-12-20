@@ -38,6 +38,8 @@ Blobs::Blobs()
     m_qmem = new uint32_t[QMEM_SIZE];
     m_lut = new uint8_t[LUT_SIZE];
 
+    m_boxes = new uint16_t[MAX_BLOBS*5];
+
     for (i=0; i<LUT_SIZE; i++)
         m_lut[i] = 0;
 
@@ -49,6 +51,8 @@ Blobs::Blobs()
 Blobs::~Blobs()
 {
     delete [] m_qmem;
+    delete [] m_lut;
+    delete [] m_boxes;
 }
 
 void Blobs::process(uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame, uint16_t *numBlobs, uint16_t **blobs, uint32_t *numQVals, uint32_t **qVals)

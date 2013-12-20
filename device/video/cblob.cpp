@@ -1,6 +1,18 @@
-#include "cblob.h"
 #include <new>
-//#include "global.h"
+#include "cblob.h"
+
+#ifdef DEBUG
+
+#ifndef HOST
+#include <textdisp.h>
+#else 
+#include <stdio.h>
+#endif
+
+#define DBG(x) x
+#else
+#define DBG(x) 
+#endif
 
 bool CBlob::recordSegments= false;
 // Set to true for testing code only.  Very slow!
@@ -9,6 +21,7 @@ bool CBlob::testMoments= false;
 bool SMoments::computeAxes= false;
 int CBlob::leakcheck=0;
 
+#ifdef INCLUDE_STATS
 void SMoments::GetStats(SMomentStats &stats) const {
   stats.area= area;
   stats.centroidX = (float)sumX / (float)area;
@@ -72,11 +85,13 @@ void SSegment::GetMomentsTest(SMoments &moments) const {
     }
   }
 }
+#endif
 
 ///////////////////////////////////////////////////////////////////////////
 // CBlob
 CBlob::CBlob() 
 {
+  DBG(leakcheck++);
   // Setup pointers
   firstSegment= NULL;
   lastSegmentPtr= &firstSegment;
@@ -87,6 +102,7 @@ CBlob::CBlob()
 
 CBlob::~CBlob() 
 {
+  DBG(leakcheck--);
   // Free segments, if any
   Reset();
 }
@@ -103,20 +119,12 @@ CBlob::Reset()
   lastBottom.row = lastBottom.invalid_row;
   nextBottom.row = nextBottom.invalid_row;
 
-  Clean();
-}
-
-// Added by Scott
-void
-CBlob::Clean()
-{
-	// Delete segments if any
+  // Delete segments if any
   SLinkedSegment *tmp;
   while(firstSegment!=NULL) {
     tmp = firstSegment;
     firstSegment = tmp->next;
     delete tmp;
-		//g_mem -= sizeof(SLinkedSegment);
   }
   lastSegmentPtr= &firstSegment;
 }
@@ -150,14 +158,17 @@ CBlob::Add(const SSegment &segment)
   moments.Add(segmentMoments);
 
   if (testMoments) {
+#ifdef INCLUDE_STATS
     SMoments test;
     segment.GetMomentsTest(test);
     assert(test == segmentMoments);
+#endif
   }
   if (recordSegments) {
     // Add segment to the _end_ of the linked list
-    *lastSegmentPtr= new SLinkedSegment(segment);
-		//g_mem += sizeof(SLinkedSegment);
+    *lastSegmentPtr= new (std::nothrow) SLinkedSegment(segment);
+      if (*lastSegmentPtr==NULL)
+          return;
     lastSegmentPtr= &((*lastSegmentPtr)->next);
   }
 }
@@ -215,7 +226,6 @@ CBlobAssembler::CBlobAssembler()
   previousBlobPtr= &activeBlobs;
   currentRow=-1;
   maxRowDelta=1;
-	minArea = 0;
 }
 
 CBlobAssembler::~CBlobAssembler() 
@@ -224,11 +234,6 @@ CBlobAssembler::~CBlobAssembler()
   EndFrame();
   // Free any finished blobs
   Reset();
-}
-
-void CBlobAssembler::SetMinBlobSize(int area)
-{
-	minArea = area;
 }
 
 // Call once for each segment in the color channel
@@ -282,29 +287,23 @@ int CBlobAssembler::Add(const SSegment &segment) {
 
           // Delete it
           delete futileResister;
-					//g_mem -= sizeof(CBlob);
 
           BlobNewRow(&currentBlob->next);
         }
-        return 1;
+        return 0;
       }
     }
   }
     
   // Could not attach to previous blob, insert new one before currentBlob
-  //CBlob *newBlob= new CBlob();
-	//CBlob* mem = (CBlob*) ::operator new (sizeof(CBlob));
-	CBlob* newBlob = (CBlob*) malloc(sizeof(CBlob));
-	if (newBlob == NULL)
-		return 0;
-	new (newBlob) CBlob;
-	//g_mem += sizeof(CBlob);
-	
+  CBlob *newBlob= new (std::nothrow) CBlob();
+  if (newBlob==NULL)
+      return -1;
   newBlob->next= currentBlob;
   *previousBlobPtr= newBlob;
   previousBlobPtr= &newBlob->next;
   newBlob->Add(segment);
-	return 1;
+  return 0;
 }
 
 // Call at end of frame
@@ -317,36 +316,6 @@ void CBlobAssembler::EndFrame() {
     finishedBlobs= activeBlobs;
     activeBlobs= tmp;
   }
-	
-	// Added by Scott
-	Clean();
-	
-	// Enforce minimum area
-	/*if (minArea > 0)
-	{
-		CBlob* curr = finishedBlobs;
-		CBlob* prev = finishedBlobs;
-		while (curr != NULL)
-		{
-			short top, right, bottom, left, width, height;
-			curr->getBBox(left, top, right, bottom);
-			width = right - left;
-			height = bottom - top;
-			
-			if ((width*height) < minArea)
-			{
-				prev->next = curr->next;
-				CBlob* tmp = curr->next;
-				delete curr;
-				curr = tmp;
-			}
-			else
-			{
-				prev = curr;
-				curr = curr->next;
-			}
-		}
-	}*/
 }
 
 int CBlobAssembler::ListLength(const CBlob *b) {
@@ -408,6 +377,13 @@ void CBlobAssembler::MergeLists(CBlob *&old1, CBlob *&old2,
   }
 }
 
+#ifdef DEBUG
+void len_error() {
+  printf("len error, wedging!\n");
+  while(1);
+}
+#endif
+
 // Sorts finishedBlobs in order of descending area using an in-place
 // merge sort (time n log n)
 void CBlobAssembler::SortFinished() {
@@ -418,6 +394,9 @@ void CBlobAssembler::SortFinished() {
     return;
   }
 
+  DBG(int initial_len= ListLength(finishedBlobs));
+  DBG(printf("BSort: Start 0x%x, len=%d\n", finishedBlobs, 
+	     initial_len));
   SplitList(finishedBlobs, old1, old2);
 
   // First merge lists of length 1 into sorted lists of length 2
@@ -428,6 +407,10 @@ void CBlobAssembler::SortFinished() {
   for (int blocksize= 1; old2; blocksize <<= 1) {
     CBlob *new1=NULL, *new2=NULL, **newptr1= &new1, **newptr2= &new2;
     while (old1 || old2) {
+      DBG(printf("BSort: o1 0x%x, o2 0x%x, bs=%d\n", 
+		 old1, old2, blocksize));
+      DBG(printf("       n1 0x%x, n2 0x%x\n", 
+		 new1, new2));
       MergeLists(old1, old2, newptr1, blocksize);
       MergeLists(old1, old2, newptr2, blocksize);
     }
@@ -436,6 +419,11 @@ void CBlobAssembler::SortFinished() {
     old2= new2;
   }
   finishedBlobs= old1;
+  DBG(AssertFinishedSorted());
+  DBG(int final_len= ListLength(finishedBlobs));
+  DBG(printf("BSort: DONE  0x%x, len=%d\n", finishedBlobs, 
+	     ListLength(finishedBlobs)));
+  DBG(if (final_len != initial_len) len_error());
 }
 
 // Assert that finishedBlobs is in fact sorted.  For testing only.
@@ -457,18 +445,9 @@ void CBlobAssembler::Reset() {
   while (finishedBlobs) {
     CBlob *tmp= finishedBlobs->next;
     delete finishedBlobs;
-		//g_mem -= sizeof(CBlob);
     finishedBlobs= tmp;
   }
-}
-
-// Added by Scott
-void CBlobAssembler::Clean() {
-	CBlob* tmp = finishedBlobs;
-	while (tmp) {
-		tmp->Clean();
-    tmp = tmp->next;
-  }
+  DBG(printf("after CBlobAssember::Reset, leakcheck=%d\n", CBlob::leakcheck));
 }
 
 // Manage currentBlob

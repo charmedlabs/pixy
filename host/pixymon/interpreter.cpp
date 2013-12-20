@@ -402,7 +402,7 @@ int Interpreter::sendRun()
     int res, response;
     QMutexLocker locker(&m_chirp->m_mutex);
 
-    res = m_chirp->callSync(m_exec_run, STRING(""), END_OUT_ARGS, &response, END_IN_ARGS);
+    res = m_chirp->callSync(m_exec_run, END_OUT_ARGS, &response, END_IN_ARGS);
     if (res<0)
         return res;
     return response;
@@ -423,6 +423,7 @@ void Interpreter::run()
 {
     int res;
 
+begin:
     if (m_init)
     {
         try
@@ -498,6 +499,10 @@ void Interpreter::run()
             clearProgram();
         }
         prompt();
+        // check to see if we're running after this command-- it so, go back
+        m_remoteProgramRunning = checkRemoteProgram(); // get state
+        if (m_remoteProgramRunning)
+            goto begin; // I know......
     }
 }
 
