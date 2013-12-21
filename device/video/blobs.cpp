@@ -1,8 +1,11 @@
+#include "pixy_init.h"
 #include "blobs.h"
+#include "qqueue.h"
 
 
-Blobs::Blobs()
+Blobs::Blobs(Qqueue *qq)
 {
+	m_qq = qq;
     m_boxes = new uint16_t[MAX_BLOBS*5];
     m_minArea = MIN_AREA;
     m_mergeDist = MAX_MERGE_DIST;
@@ -18,12 +21,12 @@ void Blobs::blobify()
 {
     SSegment s;
     int32_t row;
-    uint32_t qval, i, j;
+    Qval qval;
+	uint32_t i, j;
     CBlob *blob;
     uint16_t *boxesStart;
     uint16_t numBoxesStart, invalid, invalid2;
     uint16_t left, top, right, bottom;
-
 
     // q val:
     // | 4 bits    | 7 bits      | 9 bits | 9 bits    | 3 bits |
@@ -33,10 +36,15 @@ void Blobs::blobify()
     for (i=0; i<NUM_MODELS; i++)
         m_assembler[i].Reset();
 
-    for (i=0, row=-1; i<m_qindex; i++)
+   	row = -1;
+	i = 0;
+	while(1)
     {
-        qval = m_qmem[i];
-        if (qval==0)
+		while (m_qq->dequeue(&qval)==0);
+		if (qval==0xffffffff)
+			break;
+		i++;
+	    if (qval==0)
         {
             row++;
             continue;
@@ -53,6 +61,7 @@ void Blobs::blobify()
                 break;
         }
     }
+	cprintf("rows %d %d\n", row, i);
 
 
     for (i=0, m_numBoxes=0; i<NUM_MODELS; i++)
@@ -76,6 +85,7 @@ void Blobs::blobify()
             j += 5;
 
         }
+#if 0
         invalid = combine(boxesStart, m_numBoxes-numBoxesStart);
         if (1)
         {
@@ -87,6 +97,7 @@ void Blobs::blobify()
             invalid2 = compress(boxesStart, m_numBoxes-numBoxesStart);
             m_numBoxes -= invalid2;
         }
+#endif
     }
 }
 

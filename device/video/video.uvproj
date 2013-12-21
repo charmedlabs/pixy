@@ -421,6 +421,16 @@
               <FileType>8</FileType>
               <FilePath>.\blobs.cpp</FilePath>
             </File>
+            <File>
+              <FileName>progblobs.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>.\progblobs.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>progvideo.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>.\progvideo.cpp</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>
@@ -763,7 +773,7 @@
             <uThumb>0</uThumb>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>CORE_M4 IPC_MASTER DEBUG</Define>
+              <Define>CORE_M4 IPC_MASTER</Define>
               <Undefine></Undefine>
               <IncludePath>., ..\libpixy</IncludePath>
             </VariousControls>
@@ -839,6 +849,16 @@
               <FileName>blobs.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>.\blobs.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>progblobs.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>.\progblobs.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>progvideo.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>.\progvideo.cpp</FilePath>
             </File>
           </Files>
         </Group>

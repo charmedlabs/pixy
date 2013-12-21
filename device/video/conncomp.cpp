@@ -4,10 +4,12 @@
 #include "camera.h"
 #include "cameravals.h"
 #include "conncomp.h"
+#include "blobs.h"
 #include "qqueue.h"
 
 
 Qqueue *g_qqueue;
+Blobs *g_blobs;
 
 int g_loop = 0;
 
@@ -65,6 +67,7 @@ int cc_init(Chirp *chirp)
 	uint32_t i;
 
 	g_qqueue = new Qqueue;
+	g_blobs = new Blobs(g_qqueue);
 
 	chirp->registerModule(g_module);	
 
@@ -174,7 +177,6 @@ int32_t cc_setMemory(const uint32_t &location, const uint32_t &len, const uint8_
 	return len;
 }
 
-#define MAX_BLOBS 15
 int32_t cc_getRLSCCChirp(Chirp *chirp)
 {
 	
@@ -275,8 +277,6 @@ int32_t cc_getRLSCCChirp(Chirp *chirp)
 
 	return result;
 }
-
-#define MIN_AREA 2
 
 int32_t cc_getMaxBlob(uint32_t *qvals, uint32_t numRls, int16_t *bdata)
 {

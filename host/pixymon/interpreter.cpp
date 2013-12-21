@@ -368,6 +368,7 @@ int Interpreter::stopRemoteProgram()
 {
     int i, res;
 
+    qDebug() << "stopremoteprogram";
     res = sendStop();
     if (res<0)
         return -1;
@@ -379,9 +380,15 @@ int Interpreter::stopRemoteProgram()
         if (res<0)
             return -1;
         if (res==false)
+        {
+            emit runState(false);
+            emit enableConsole(true);
+            qDebug() << "success";
             return 0;
+        }
         msleep(50);
     }
+    qDebug() << "error";
     return -1;
 }
 
@@ -466,12 +473,16 @@ begin:
         if (!getRunning()) // if we're not running, we should start
             sendRun();
 
+        emit runState(true);
+        emit enableConsole(false);
+
         while(m_remoteProgramRunning)
         {
             m_chirp->m_mutex.lock();
             m_chirp->service(false);
             m_chirp->m_mutex.unlock();
         }
+        qDebug() << "stopping...";
         if (!m_exit)  // if we're being destructed we shouldn't stop the remote program or print the prompt
         {
             stopRemoteProgram();
@@ -482,6 +493,10 @@ begin:
     {
 
         res = execute();
+
+        emit runState(false);
+        emit enableConsole(true);
+
         // check for cable disconnect
         if (res) //==LIBUSB_ERROR_PIPE)
         {
@@ -543,8 +558,6 @@ int Interpreter::runProgram()
     start();
 
     m_console->emptyLine(); // don't want to start printing on line with prompt
-    emit runState(true);
-    emit enableConsole(false);
 
     return 0;
 }
@@ -557,8 +570,6 @@ int Interpreter::runRemoteProgram()
     start();
 
     m_console->emptyLine(); // don't want to start printing on line with prompt
-    emit runState(true);
-    emit enableConsole(false);
 
     return 0;
 }
@@ -571,9 +582,6 @@ int Interpreter::stopProgram()
         return -1;
     m_programRunning = false;
     m_remoteProgramRunning = false;
-
-    emit runState(false);
-    emit enableConsole(true);
 
     return 0;
 }

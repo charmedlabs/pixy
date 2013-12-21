@@ -7,15 +7,16 @@
 #define MAX_MERGE_DIST  5
 #define MIN_AREA        20
 
+class Qqueue;
 
 class Blobs
 {
 public:
-    Blobs();
+    Blobs(Qqueue *qq);
     ~Blobs();
+    void blobify();
 
 private:
-    void blobify();
     uint16_t combine(uint16_t *boxes, uint16_t numBoxes);
     uint16_t combine2(uint16_t *boxes, uint16_t numBoxes);
     uint16_t compress(uint16_t *boxes, uint16_t numBoxes);
@@ -26,10 +27,7 @@ private:
 
 
     CBlobAssembler m_assembler[NUM_MODELS];
-    //SSegment *m_qmem;
-    uint32_t *m_qmem;
-    uint8_t *m_lut;
-    uint32_t m_qindex;
+	Qqueue *m_qq;
     uint16_t *m_boxes;
     uint16_t m_maxBoxes;
     uint16_t m_numBoxes;

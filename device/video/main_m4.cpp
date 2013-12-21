@@ -598,6 +598,8 @@ uint32_t transmitCallback(uint16_t *data, uint32_t len)
 
 extern "C" 
 {
+// For some strange reason, putting this routine in libpixy messes with the debugger
+// or the execution--- not sure which. 
 // this is called if we allocate memory (new) and don't catch exception
 // it may be called for other reasons too... 
 void __default_signal_handler(int signal, int type)

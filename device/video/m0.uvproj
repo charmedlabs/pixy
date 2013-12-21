@@ -406,6 +406,21 @@
               <FileType>1</FileType>
               <FilePath>..\libpixy\qqueue.c</FilePath>
             </File>
+            <File>
+              <FileName>exec_m0.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\libpixy\exec_m0.c</FilePath>
+            </File>
+            <File>
+              <FileName>frame_m0.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\libpixy\frame_m0.c</FilePath>
+            </File>
+            <File>
+              <FileName>rls_m0.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\libpixy\rls_m0.c</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>

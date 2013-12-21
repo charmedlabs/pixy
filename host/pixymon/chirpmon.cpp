@@ -31,7 +31,6 @@ int ChirpMon::serviceChirp()
         if ((res=recvChirp(&type, &recvProc, args, true))<0)
             return res;
         handleChirp(type, recvProc, args);
-
         if (type&CRP_RESPONSE)
             break;
     }

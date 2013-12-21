@@ -94,6 +94,7 @@ int Chirp::assemble(uint8_t type, ...)
     int res;
     va_list args;
     bool save = m_call;
+	uint32_t saveLen = m_len;
 
     if (type==CRP_XDATA)
         m_call = false;
@@ -103,7 +104,10 @@ int Chirp::assemble(uint8_t type, ...)
     va_end(args);
 
     if (type==CRP_XDATA || (!m_call && res==CRP_RES_OK)) // if we're not a call, we're extra data, so we need to send
+	{
         res = sendChirpRetry(CRP_XDATA, 0);
+		m_len = saveLen;
+	}
 
     m_call = save;
 
