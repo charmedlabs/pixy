@@ -566,11 +566,7 @@ int32_t getRLSFrame(uint32_t *m0Mem, uint32_t *lut)
 	for (line=0, totalQvals=1; line<CAM_RES2_HEIGHT; line++)  // start totalQvals at 1 because of start of frame value
 	{
 		if (qq_free()<MAX_QVALS_PER_LINE)
-		{
-			if (0)
-				CRP_RETURN(UINT32(totalQvals), END);
 			return -1; 
-		}
 		// mark beginning of this row (column 0 = 0)
 		// column 1 is the first real column of pixels
 		qq_enqueue(0); 
@@ -583,8 +579,6 @@ int32_t getRLSFrame(uint32_t *m0Mem, uint32_t *lut)
 		g_qqueue->produced += numQvals;
 		totalQvals += numQvals+1; // +1 because of beginning of line 
 	}
-	if (0)
-		CRP_RETURN(UINT32(totalQvals), END);
 	return 0;
 }
 

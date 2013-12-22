@@ -127,21 +127,22 @@ int32_t cc_getRLSFrameChirp(Chirp *chirp)
 	int32_t result;
 	uint32_t len, numRls;
 
+	g_qqueue->flush();
+
 	// figure out prebuf length (we need the prebuf length and the number of runlength segments, but there's a chicken and egg problem...)
 	len = Chirp::serialize(chirp, RLS_MEMORY, RLS_MEMORY_SIZE,  HTYPE(0), UINT16(0), UINT16(0), UINTS32_NO_COPY(0), END);
 
-	result = cc_getRLSFrame((uint32_t *)(RLS_MEMORY+len), LUT_MEMORY, &numRls);
-	// send frame, use in-place buffer
-	Chirp::serialize(chirp, RLS_MEMORY, RLS_MEMORY_SIZE,  HTYPE(FOURCC('C','C','Q','1')), UINT16(CAM_RES2_WIDTH), UINT16(CAM_RES2_HEIGHT), UINTS32_NO_COPY(numRls), END);
+	result = cc_getRLSFrame((uint32_t *)(RLS_MEMORY+len), LUT_MEMORY);
 	// copy from IPC memory to RLS_MEMORY
-	if (g_qqueue->readAll((Qval *)(RLS_MEMORY+len), (RLS_MEMORY_SIZE-len)/sizeof(Qval))!=numRls)
-		return -1;
+	numRls = g_qqueue->readAll((Qval *)(RLS_MEMORY+len), (RLS_MEMORY_SIZE-len));
+	Chirp::serialize(chirp, RLS_MEMORY, RLS_MEMORY_SIZE,  HTYPE(FOURCC('C','C','Q','1')), UINT16(CAM_RES2_WIDTH), UINT16(CAM_RES2_HEIGHT), UINTS32_NO_COPY(numRls), END);
+	// send frame, use in-place buffer
 	chirp->useBuffer(RLS_MEMORY, len+numRls*4);
 
 	return result;
 }
 
-int32_t cc_getRLSFrame(uint32_t *memory, uint8_t *lut, uint32_t *numRls, bool sync)
+int32_t cc_getRLSFrame(uint32_t *memory, uint8_t *lut, bool sync)
 {
 	int32_t res;
 	int32_t responseInt = -1;
@@ -155,7 +156,7 @@ int32_t cc_getRLSFrame(uint32_t *memory, uint8_t *lut, uint32_t *numRls, bool sy
 	{
 		g_chirpM0->callSync(g_getRLSFrameM0, 
 			UINT32((uint32_t)memory), UINT32((uint32_t)lut), END_OUT_ARGS,
-			&responseInt, numRls, END_IN_ARGS);
+			&responseInt, END_IN_ARGS);
 		return responseInt;
 	}
 	else

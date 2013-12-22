@@ -48,3 +48,14 @@ uint32_t Qqueue::readAll(Qval *mem, uint32_t size)
 	return len;					
 }
 
+void Qqueue::flush()
+{
+    uint16_t len = m_fields->produced - m_fields->consumed;
+
+	m_fields->consumed += len;
+	m_fields->readIndex += len;
+	if (m_fields->readIndex>=QQ_SIZE)
+		m_fields->readIndex -= QQ_SIZE;	
+}
+
+

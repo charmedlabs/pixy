@@ -20,6 +20,7 @@ Blobs::~Blobs()
 void Blobs::blobify()
 {
     SSegment s;
+	bool memfull;
     int32_t row;
     Qval qval;
 	uint32_t i, j;
@@ -37,6 +38,7 @@ void Blobs::blobify()
         m_assembler[i].Reset();
 
    	row = -1;
+	memfull = false;
 	i = 0;
 	while(1)
     {
@@ -50,7 +52,7 @@ void Blobs::blobify()
             continue;
         }
         s.model = qval&0x07;
-        if (s.model>0)
+        if (s.model>0 && !memfull)
         {
             s.row = row;
             qval >>= 3;
@@ -58,7 +60,10 @@ void Blobs::blobify()
             qval >>= 9;
             s.endCol = (qval&0x1ff) + s.startCol;
             if (m_assembler[s.model-1].Add(s)<0)
-                break;
+			{
+                memfull = true;
+			 	cprintf("heap full %d\n", i);
+			}
         }
     }
 	cprintf("rows %d %d\n", row, i);

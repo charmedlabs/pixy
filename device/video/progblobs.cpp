@@ -20,6 +20,7 @@ int blobsSetup()
 {
 	cam_setMode(CAM_MODE1);
  	
+	g_qqueue->flush();
 	exec_runM0(0);
 
 	return 0;

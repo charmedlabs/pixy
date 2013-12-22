@@ -30,6 +30,7 @@ public:
 
     uint32_t dequeue(Qval *val);
 	uint32_t readAll(Qval *mem, uint32_t size);
+	void flush();
 
 private:
     QqueueFields *m_fields;

@@ -491,6 +491,8 @@ begin:
     }
     else if (m_programRunning)
     {
+        emit runState(true);
+        emit enableConsole(false);
 
         res = execute();
 
@@ -515,9 +517,12 @@ begin:
         }
         prompt();
         // check to see if we're running after this command-- if so, go back
-        m_remoteProgramRunning = checkRemoteProgram(); // get state
-        if (m_remoteProgramRunning)
-            goto begin; // I know......
+        if (!m_programming)
+        {
+            m_remoteProgramRunning = checkRemoteProgram(); // get state
+            if (m_remoteProgramRunning)
+                goto begin; // I know......
+        }
     }
 }
 
@@ -638,7 +643,6 @@ void Interpreter::prompt()
 void Interpreter::command(const QString &command)
 {
     int res;
-
     if (m_programRunning)
         return;
 
