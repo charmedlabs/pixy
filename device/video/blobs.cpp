@@ -106,10 +106,16 @@ void Blobs::blobify()
             m_numBlobs -= invalid2;
         }
 #endif
-	cprintf("blobs %d %d %d %d %d\n", m_numBlobs, m_blobs[1], m_blobs[2], m_blobs[3], m_blobs[4]);
 
     }
+	static int frame = 0;
+	if (m_numBlobs>0)
+		cprintf("%d: blobs %d %d %d %d %d\n", frame, m_numBlobs, m_blobs[1], m_blobs[2], m_blobs[3], m_blobs[4]);
+	else
+		cprintf("%d: blobs 0\n", frame);
+	frame++;
 
+	// copy them out of scratchpad memory into streaming memory
 	copyBlobs();
 }
 
@@ -124,7 +130,7 @@ uint16_t Blobs::getBlock(uint16_t *buf)
 
 	m_mutex = true;
 
-	if (m_blobReadIndex==m_numBlobs)
+	if (m_blobReadIndex>=m_numBlobs)
 	{
 		m_mutex = false;
 		return 0;

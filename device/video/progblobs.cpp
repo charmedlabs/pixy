@@ -62,7 +62,7 @@ int blobsLoop()
 	{
 		if (recvBuf[0]!=0xa5a5) // if received data isn't correct, we're out of sync
 			spi_sync();
-		cprintf("%x\n", recvBuf[0]); 
+		//cprintf("%x\n", recvBuf[0]); 
 	}
 #endif
 	
