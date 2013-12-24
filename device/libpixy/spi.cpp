@@ -87,6 +87,10 @@ void SSP1_IRQHandler(void)
 		len = (*g_transmit.m_callback)(g_transmit.m_buf, SPI_TRANSMITBUF_SIZE);
 		g_transmit.m_len = len;
 		g_transmit.m_read = 0;
+
+		// if no more data, send zeros
+		if (len==0)
+			LPC_SSP1->DR = 0;
 	}
 #if 1
 	while((LPC_SSP1->SR&SSP_SR_TNF) && g_transmit.m_len)

@@ -336,6 +336,8 @@ protected:
   void BlobNewRow(CBlob **ptr);
   void RewindCurrent();  
   void AdvanceCurrent();
+
+  int m_blobCount;
 };
 
 #endif // _BLOB_H

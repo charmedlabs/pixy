@@ -1,4 +1,5 @@
 #include <new>
+#include "pixy_init.h"
 #include "cblob.h"
 
 #ifdef DEBUG
@@ -226,6 +227,7 @@ CBlobAssembler::CBlobAssembler()
   previousBlobPtr= &activeBlobs;
   currentRow=-1;
   maxRowDelta=1;
+  m_blobCount=0;
 }
 
 CBlobAssembler::~CBlobAssembler() 
@@ -298,7 +300,11 @@ int CBlobAssembler::Add(const SSegment &segment) {
   // Could not attach to previous blob, insert new one before currentBlob
   CBlob *newBlob= new (std::nothrow) CBlob();
   if (newBlob==NULL)
+  {
+  	cprintf("blobs %d\n", m_blobCount);
       return -1;
+  }
+  m_blobCount++;
   newBlob->next= currentBlob;
   *previousBlobPtr= newBlob;
   previousBlobPtr= &newBlob->next;
@@ -442,6 +448,7 @@ void CBlobAssembler::Reset() {
   assert(!activeBlobs);
   currentBlob= NULL;
   currentRow=-1;
+  m_blobCount=0;
   while (finishedBlobs) {
     CBlob *tmp= finishedBlobs->next;
     delete finishedBlobs;

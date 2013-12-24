@@ -565,6 +565,7 @@ int32_t getRLSFrame(uint32_t *m0Mem, uint32_t *lut)
 	skipLines(0);
 	for (line=0, totalQvals=1; line<CAM_RES2_HEIGHT; line++)  // start totalQvals at 1 because of start of frame value
 	{
+		// not enough space--- return error
 		if (qq_free()<MAX_QVALS_PER_LINE)
 			return -1; 
 		// mark beginning of this row (column 0 = 0)

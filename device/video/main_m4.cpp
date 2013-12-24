@@ -631,6 +631,7 @@ int main(void)
  	pixyInit(SRAM3_LOC, &LR0[0], sizeof(LR0));
 	cc_init(g_chirpUsb);
 	exec_init(g_chirpUsb);
+
  #if 0
 	while(1)		
 	{
