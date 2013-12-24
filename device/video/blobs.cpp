@@ -126,7 +126,12 @@ uint16_t Blobs::getBlock(uint16_t *buf)
 	int i = m_blobReadIndex*5;
 
 	if (m_mutex) // we're copying, so no blocks for now....
-		return 0;
+	{	// return a couple null words to give us time to copy
+		// (otherwise we may spend too much time in the ISR)
+		buf[0] = 0;
+		buf[1] = 0; 
+		return 2;
+	}
 
 	m_mutex = true;
 
@@ -157,7 +162,7 @@ uint16_t Blobs::getBlock(uint16_t *buf)
 	// x center
 	temp = m_blobs[i+1] + width/2;
 	checksum += temp;
-	buf[3] = temp;
+	buf[3] = temp;							  
 
 	// y center
 	temp = m_blobs[i+3] + height/2;

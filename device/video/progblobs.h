@@ -5,6 +5,8 @@
 
 extern Program g_progBlobs;
 
+uint32_t spiCallback(uint16_t *data, uint32_t len);
+
 int blobsSetup();
 int blobsLoop();
 

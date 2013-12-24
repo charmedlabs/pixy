@@ -16,6 +16,7 @@
 #include "camera.h"
 #include "progvideo.h"
 #include "progblobs.h"
+#include "progpt.h"
 
 
 
@@ -632,7 +633,29 @@ int main(void)
 	cc_init(g_chirpUsb);
 	exec_init(g_chirpUsb);
 
- #if 0
+#if 0
+	#define DELAY 1000000
+	rcs_setFreq(100);
+	rcs_setLimits(0, -200, 200);
+	rcs_setLimits(1, -200, 200);
+	while(1)
+	{
+		rcs_setPos(0, 0);
+		delayus(DELAY);
+		rcs_setPos(0, 500);
+		delayus(DELAY);
+		rcs_setPos(0, 1000);
+		delayus(DELAY);
+		rcs_setPos(1, 0);
+		delayus(DELAY);
+		rcs_setPos(1, 500);
+		delayus(DELAY);
+		rcs_setPos(1, 1000);
+		delayus(DELAY);
+	}
+
+#endif
+#if 0
 	while(1)		
 	{
 		//uint8_t *buf = new (std::nothrow) uint8_t[0x1000];
@@ -696,6 +719,7 @@ int main(void)
 #if 1
 	exec_addProg(&g_progVideo);
 	exec_addProg(&g_progBlobs);
+	exec_addProg(&g_progPt);
 	exec_loop();
 #endif
 #if 0

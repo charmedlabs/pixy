@@ -431,6 +431,11 @@
               <FileType>8</FileType>
               <FilePath>.\progvideo.cpp</FilePath>
             </File>
+            <File>
+              <FileName>progpt.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>.\progpt.cpp</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>
@@ -859,6 +864,11 @@
               <FileName>progvideo.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>.\progvideo.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>progpt.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>.\progpt.cpp</FilePath>
             </File>
           </Files>
         </Group>

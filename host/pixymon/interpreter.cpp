@@ -1213,7 +1213,7 @@ int Interpreter::call(const QStringList &argv, bool interactive)
                 }
             }
         }
-
+#if 0
         // print helpful chirp argument string
         if (interactive && argv.size()>1)
         {
@@ -1227,6 +1227,7 @@ int Interpreter::call(const QStringList &argv, bool interactive)
             }
             emit textOut(callString + "\n");
         }
+#endif
 
         // make chirp call
         res = m_chirp->callAsync(proc, args[0], args[1], args[2], args[3], args[4], args[5], args[6],
