@@ -7,7 +7,9 @@ Blobs::Blobs(Qqueue *qq)
 {
 	m_qq = qq;
     m_blobs = new uint16_t[MAX_BLOBS*5];
+	m_numBlobs = 0;
     m_blobsCopy = new uint16_t[MAX_BLOBS*5];
+	m_numBlobsCopy = 0;
 	m_mutex = false;
     m_minArea = MIN_AREA;
     m_mergeDist = MAX_MERGE_DIST;
@@ -19,6 +21,13 @@ Blobs::~Blobs()
     delete [] m_blobs;
     delete [] m_blobsCopy;
 }
+
+// Blob format:
+// 0: model
+// 1: left X edge
+// 2: right X edge
+// 3: top Y edge
+// 4: bottom Y edge
 
 void Blobs::blobify()
 {
@@ -135,7 +144,7 @@ uint16_t Blobs::getBlock(uint16_t *buf)
 
 	m_mutex = true;
 
-	if (m_blobReadIndex>=m_numBlobs)
+	if (m_blobReadIndex>=m_numBlobsCopy)
 	{
 		m_mutex = false;
 		return 0;
@@ -198,9 +207,23 @@ void Blobs::copyBlobs()
 		m_blobsCopy[j+3] = m_blobs[j+3];	
 		m_blobsCopy[j+4] = m_blobs[j+4];
 	}
-	
+	m_numBlobsCopy = m_numBlobs;
+
 	m_mutex = false;	
 }
+
+uint16_t *Blobs::getMaxBlob(uint16_t signature)
+{
+	int i, j;
+
+	for (i=0, j=0; i<m_numBlobsCopy; i++, j+=5)
+	{
+		if (m_blobsCopy[j+0]==signature)
+			return m_blobsCopy+j;
+	}
+	
+	return NULL;		
+} 
 
 uint16_t Blobs::compress(uint16_t *blobs, uint16_t numBlobs)
 {

@@ -61,10 +61,9 @@ void rcs_init()
 
 	for (i=0; i<RCS_NUM_AXES; i++)
 	{
-		rcs_setPos(i, RCS_MAX_POS/2);
 		g_rcsMinPwm[i] = RCS_MIN_PWM;
 		g_rcsPwmGain[i] = 1<<RCS_GAIN_SCALE;
-		rcs_setPos(i, RCS_MAX_POS/2);
+		rcs_setPos(i, RCS_CENTER_POS);
 	}
 		
 	g_chirpUsb->registerModule(g_module);

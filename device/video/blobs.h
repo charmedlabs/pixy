@@ -16,6 +16,7 @@ public:
     ~Blobs();
     void blobify();
 	uint16_t getBlock(uint16_t *buf);
+	uint16_t *getMaxBlob(uint16_t signature); 
 
 private:
     uint16_t combine(uint16_t *blobs, uint16_t numBlobs);
@@ -29,11 +30,15 @@ private:
 
     CBlobAssembler m_assembler[NUM_MODELS];
 	Qqueue *m_qq;
+
     uint16_t *m_blobs;
+    uint16_t m_numBlobs;
+
     uint16_t *m_blobsCopy;
+    uint16_t m_numBlobsCopy;
+
 	bool m_mutex;
     uint16_t m_maxBlobs;
-    uint16_t m_numBlobs;
 
 	uint16_t m_blobReadIndex;
 

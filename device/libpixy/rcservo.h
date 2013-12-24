@@ -1,11 +1,15 @@
 #ifndef _RCSERVO_H
 #define _RC_SERVO_H
 
-#define RCS_CLOCK_FREQ	1000000
+#define RCS_MIN_POS     0
 #define RCS_MAX_POS     1000
+#define RCS_CENTER_POS	((RCS_MAX_POS-RCS_MIN_POS)/2)
+
 #define RCS_MIN_PWM     1000
 #define RCS_MAX_PWM     2000
 #define RCS_PWM_RANGE   (RCS_MAX_PWM-RCS_MIN_PWM)
+
+#define RCS_CLOCK_FREQ	1000000
 
 #define RCS_GAIN_SCALE  10
 #define RCS_NUM_AXES    2

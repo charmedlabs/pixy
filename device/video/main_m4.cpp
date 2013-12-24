@@ -40,6 +40,7 @@ extern int g_loop;
 #define SERVO_MAX    1000
 #define SERVO_MIN    0
 
+#if 0
 class ServoLoop
 {
 public:
@@ -111,6 +112,7 @@ void servo(uint32_t x, uint32_t y)
 
 	lastLoop = g_loop;
 }
+#endif
 
 class MotorLoop
 {
