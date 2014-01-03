@@ -12,7 +12,9 @@
 
 #define QMEM_SIZE       0x4000
 #define LUT_SIZE        0x10000
+
 class Renderer;
+class ColorLUT;
 
 typedef std::pair<uint32_t, QString> LabelPair;
 
@@ -38,6 +40,7 @@ public:
     int generateLUT(uint8_t model, uint16_t x0, uint16_t y0, uint16_t width, uint16_t height, uint8_t *frame);
 
     friend class Renderer;
+
 private:
     void rls(uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame);
     void blobify();
@@ -54,6 +57,7 @@ private:
     //SSegment *m_qmem;
     uint32_t *m_qmem;
     uint8_t *m_lut;
+    ColorLUT *m_clut;
     uint32_t m_qindex;
     uint16_t *m_boxes;
     uint16_t m_maxBoxes;

@@ -27,7 +27,8 @@ SOURCES += main.cpp\
     flash.cpp \
     reader.cpp \
     disconnectevent.cpp \
-    ../../device/libpixy/chirp.cpp
+    ../../device/libpixy/chirp.cpp \
+    colorlut.cpp
 
 HEADERS  += mainwindow.h \
     link.h \
@@ -50,9 +51,12 @@ HEADERS  += mainwindow.h \
     flash.h \
     reader.h \
     disconnectevent.h \
-    ../../device/libpixy/chirp.hpp
+    ../../device/libpixy/chirp.hpp \
+    colorlut.h
 
 INCLUDEPATH += ../libpixy
+
+QMAKE_CXXFLAGS_DEBUG += -O0
 
 FORMS    += mainwindow.ui
 
@@ -60,6 +64,8 @@ LIBS += ./libusb-1.0.dll.a
 
 RESOURCES += \
     resources.qrc
+
+
 
 
 

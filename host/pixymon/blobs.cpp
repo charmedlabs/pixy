@@ -2,6 +2,7 @@
 #include <math.h>
 #include "blobs.h"
 #include "clut.h"
+#include "colorlut.h"
 
 QString code2string(uint16_t code)
 {
@@ -37,9 +38,9 @@ Blobs::Blobs()
     //m_qmem = new SSegment[QMEM_SIZE];
     m_qmem = new uint32_t[QMEM_SIZE];
     m_lut = new uint8_t[LUT_SIZE];
+    m_clut = new ColorLUT(m_lut);
 
     m_boxes = new uint16_t[MAX_BLOBS*5];
-
     for (i=0; i<LUT_SIZE; i++)
         m_lut[i] = 0;
 
@@ -564,6 +565,7 @@ void Blobs::processCoded()
 
 int Blobs::generateLUT(uint8_t model, uint16_t x0, uint16_t y0, uint16_t width, uint16_t height, uint8_t *frame)
 {
+#if 0
     uint8_t tempLut[LUT_SIZE];
     uint32_t pixels[0x10000];
 
@@ -592,7 +594,12 @@ int Blobs::generateLUT(uint8_t model, uint16_t x0, uint16_t y0, uint16_t width, 
         if (tempLut[i] && m_lut[i]<model)
             m_lut[i] = model;
     }
+#else
+    ColorModel cmodel;
 
+    m_clut->generate(&cmodel, frame, x0, y0, width, height, WIDTH);
+    m_clut->add(&cmodel, 1);
+#endif
     return 0;
 }
 
