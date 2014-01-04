@@ -33,6 +33,11 @@ struct HuePixel
 
 struct Fpoint
 {
+    Fpoint()
+    {
+        m_x = m_y = 0.0;
+    }
+
     Fpoint(float x, float y)
     {
         m_x = x;
@@ -81,7 +86,7 @@ public:
 
 private:
     void map(const uint8_t *bayerPixels, uint16_t xOffset, uint16_t yOffset, uint16_t width, uint16_t height, uint16_t pitch);
-    void mean(HuePixel *meanVal);
+    void mean(Fpoint *meanVal);
     float iterate(Line line, float step);
     void tweakMean(float *mean);
     uint32_t boundTest(const Line *line, float dir);

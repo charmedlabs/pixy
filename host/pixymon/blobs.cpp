@@ -1,7 +1,6 @@
 #include <QDebug>
 #include <math.h>
 #include "blobs.h"
-#include "clut.h"
 #include "colorlut.h"
 
 QString code2string(uint16_t code)
@@ -565,41 +564,13 @@ void Blobs::processCoded()
 
 int Blobs::generateLUT(uint8_t model, uint16_t x0, uint16_t y0, uint16_t width, uint16_t height, uint8_t *frame)
 {
-#if 0
-    uint8_t tempLut[LUT_SIZE];
-    uint32_t pixels[0x10000];
-
-    int i, j, k;
-    uint r, g, b;
-
-    x0 |= 0x01;
-    y0 |= 0x01;
-
-    for (k=0, i=y0; i<y0+height; i+=2)
-    {
-        for (j=x0; j<x0+width; j+=2, k+=3)
-        {
-            r = frame[i*WIDTH + j];
-            g = frame[i*WIDTH - WIDTH + j];
-            b = frame[i*WIDTH - WIDTH + j - 1];
-            pixels[k] = r;
-            pixels[k+1] = g;
-            pixels[k+2] = b;
-        }
-    }
-    CLUT::generateFromImgSample(pixels, k, tempLut);
-
-    for (i=0; i<LUT_SIZE; i++)
-    {
-        if (tempLut[i] && m_lut[i]<model)
-            m_lut[i] = model;
-    }
-#else
     ColorModel cmodel;
+    if (model>NUM_MODELS)
+        return -1;
 
     m_clut->generate(&cmodel, frame, x0, y0, width, height, WIDTH);
-    m_clut->add(&cmodel, 1);
-#endif
+    m_clut->add(&cmodel, model);
+
     return 0;
 }
 

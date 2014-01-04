@@ -8,7 +8,6 @@
 #include <vector>
 #include <utility>
 #include "chirpmon.h"
-#include "clut.h"
 #include "connectevent.h"
 #include "disconnectevent.h"
 #include "usblink.h"

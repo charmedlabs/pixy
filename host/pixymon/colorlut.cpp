@@ -30,6 +30,7 @@ ColorLUT::ColorLUT(const void *lutMem)
     m_outlierRatio = CL_DEFAULT_OUTLIER_RATIO;
 
     clear();
+
 }
 
 ColorLUT::~ColorLUT()
@@ -39,7 +40,7 @@ ColorLUT::~ColorLUT()
 
 int ColorLUT::generate(ColorModel *model, const uint8_t *bayerPixels, uint16_t xOffset, uint16_t yOffset, uint16_t width, uint16_t height, uint16_t pitch)
 {
-    HuePixel meanVal;
+    Fpoint meanVal;
     float angle, pangle, pslope;
     float yi, istep, s, xsat, sat;
 
@@ -49,14 +50,14 @@ int ColorLUT::generate(ColorModel *model, const uint8_t *bayerPixels, uint16_t x
 
     map(bayerPixels, xOffset, yOffset, width, height, pitch);
     mean(&meanVal);
-    angle = atan2(meanVal.m_v, meanVal.m_u);
+    angle = atan2(meanVal.m_y, meanVal.m_x);
     Fpoint uvec(cos(angle), sin(angle));
 
     Line hueLine(tan(angle), 0.0);
 
     pangle = angle + PI/2; // perpendicular angle
     pslope = tan(pangle); // perpendicular slope
-    Line pLine(pslope, meanVal.m_v - pslope*meanVal.m_u); // perpendicular line through mean
+    Line pLine(pslope, meanVal.m_y - pslope*meanVal.m_x); // perpendicular line through mean
 
     // upper hue line
     istep = fabs(m_iterateStep/uvec.m_x);
@@ -94,6 +95,12 @@ int ColorLUT::generate(ColorModel *model, const uint8_t *bayerPixels, uint16_t x
     model->m_sat[1].m_yi = yi;
     model->m_sat[1].m_slope = pslope;
 
+    if (model->m_sat[1].m_yi>model->m_sat[0].m_yi)
+    {
+        Line tmp = model->m_sat[0];
+        model->m_sat[0] = model->m_sat[1];
+        model->m_sat[1] = tmp;
+    }
     matlabOut(model);
 
     free(m_hpixels);
@@ -134,14 +141,14 @@ void ColorLUT::tweakMean(float *mean)
 {
     if (abs(*mean)<CL_MIN_MEAN)
     {
-        if (*mean>0)
+        if (*mean>0.0)
             *mean = CL_MIN_MEAN;
         else
             *mean = -CL_MIN_MEAN;
     }
 }
 
-void ColorLUT::mean(HuePixel *mean)
+void ColorLUT::mean(Fpoint *mean)
 {
     uint32_t i;
     float usum, vsum;
@@ -157,8 +164,8 @@ void ColorLUT::mean(HuePixel *mean)
     tweakMean(&usum);
     tweakMean(&vsum);
 
-    mean->m_u = usum;
-    mean->m_v = vsum;
+    mean->m_x = usum;
+    mean->m_y = vsum;
 }
 
 uint32_t ColorLUT::boundTest(const Line *line, float dir)
@@ -213,7 +220,6 @@ void ColorLUT::add(const ColorModel *model, uint8_t modelIndex)
     uint32_t i;
     HuePixel p;
 
-
     for (i=0; i<0x10000; i++)
     {
         p.m_v = (int8_t)(i&0xff);
@@ -230,19 +236,19 @@ bool ColorLUT::checkBounds(const ColorModel *model, const HuePixel *pixel)
     float v;
 
     v = model->m_hue[0].m_slope*pixel->m_u + model->m_hue[0].m_yi;
-    if (v<pixel->m_v)
+    if (v<(float)pixel->m_v)
         return false;
 
     v = model->m_hue[1].m_slope*pixel->m_u + model->m_hue[1].m_yi;
-    if (v>pixel->m_v)
+    if (v>(float)pixel->m_v)
         return false;
 
     v = model->m_sat[0].m_slope*pixel->m_u + model->m_sat[0].m_yi;
-    if (v<pixel->m_v)
+    if (v<(float)pixel->m_v)
         return false;
 
     v = model->m_sat[1].m_slope*pixel->m_u + model->m_sat[1].m_yi;
-    if (v>pixel->m_v)
+    if (v>(float)pixel->m_v)
         return false;
 
     return true;
