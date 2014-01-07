@@ -261,7 +261,6 @@ int Renderer::renderBA81(uint16_t width, uint16_t height, uint32_t frameLen, uin
             renderCCB1(width, height, numBlobs, blobs);
 #endif
     }
-    emitFlushImage();
 
     return 0;
 }

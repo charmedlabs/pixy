@@ -19,6 +19,9 @@ public:
     int render(uint32_t type, void *args[]);
     uint8_t *m_frameData;
 
+    int renderBA81(uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame);
+    int renderCCB1(uint16_t width, uint16_t height, uint16_t numBlobs, uint16_t *blobs);
+    void emitFlushImage();
     // experimental
     void setFilter(int16_t hmin, int16_t hmed, int16_t hmax, uint8_t smin, uint8_t smax, uint8_t vmin, uint8_t vmax, uint8_t cmin, uint8_t cmax);
     void setMode(uint32_t mode)
@@ -35,13 +38,10 @@ signals:
 private:
     inline void interpolateBayer(unsigned int width, unsigned int x, unsigned int y, unsigned char *pixel, unsigned int &r, unsigned int &g, unsigned int &b);
 
-    int renderBA81(uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame);	
     int renderCCQ1(uint16_t width, uint16_t height, uint32_t numVals, uint32_t *qVals);
-    int renderCCB1(uint16_t width, uint16_t height, uint16_t numBlobs, uint16_t *blobs);
     int renderVISU(uint32_t cc_num, int16_t* c_components);
 
     void emitImage(const QImage &image);
-    void emitFlushImage();
 
     int renderBA81Filter(uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame);
 

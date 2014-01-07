@@ -463,7 +463,12 @@ begin:
         m_waitSelection.wait(&m_mutexSelection);
         m_mutexSelection.unlock();
         //m_renderer->m_blobs.generateLUT(m_setModel, m_selection.x(), m_selection.y(), m_selection.width(), m_selection.height(), m_renderer->m_frameData);
-        m_renderer->m_blobs.generateLUT(m_setModel, Frame8(m_renderer->m_frameData, 320, 200), Point16(m_selection.x(), m_selection.y()));
+        RectA region;
+        m_renderer->m_blobs.generateLUT(m_setModel, Frame8(m_renderer->m_frameData, 320, 200), Point16(m_selection.x(), m_selection.y()), &region);
+        uint16_t blobs[] = {1, region.m_xOffset, region.m_xOffset+region.m_width, region.m_yOffset, region.m_yOffset+region.m_height};
+        m_renderer->renderBA81(320, 200, 320*200, m_renderer->m_frameData);
+        m_renderer->renderCCB1(320, 200, 1, blobs);
+        m_renderer->emitFlushImage();
         //uploadLut();
         textOut("done!\n");
         emit videoInput(false);
