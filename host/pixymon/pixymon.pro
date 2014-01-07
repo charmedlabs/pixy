@@ -50,7 +50,8 @@ HEADERS  += mainwindow.h \
     reader.h \
     disconnectevent.h \
     ../../device/libpixy/chirp.hpp \
-    colorlut.h
+    colorlut.h \
+    pixytypes.h
 
 INCLUDEPATH += ../libpixy
 
@@ -62,6 +63,7 @@ LIBS += ./libusb-1.0.dll.a
 
 RESOURCES += \
     resources.qrc
+
 
 
 

@@ -7,15 +7,12 @@
 #include "calc.h"
 #include <math.h>
 
-uint32_t num_comps;
-int16_t* comps = NULL;
-void VISUcallback(QImage* image);
-
 Renderer::Renderer(VideoWidget *video)
 {
     m_video = video;
 
-    m_frameData = new uint8_t[0x20000];
+    m_rawFrame.m_pixels = new uint8_t[0x10000];
+
     m_backgroundFrame = true;
 
     m_hmin = 0x00;
@@ -37,7 +34,7 @@ Renderer::Renderer(VideoWidget *video)
 
 Renderer::~Renderer()
 {
-    free(comps);
+    delete[] m_rawFrame.m_pixels;
 }
 
 
@@ -221,7 +218,9 @@ int Renderer::renderBA81(uint16_t width, uint16_t height, uint32_t frameLen, uin
 
 
     frame0 = frame;
-    memcpy(m_frameData, frame, width*height);
+    memcpy(m_rawFrame.m_pixels, frame, width*height);
+    m_rawFrame.m_width = width;
+    m_rawFrame.m_height = height;
 
     // skip first line
     frame += width;
@@ -356,110 +355,21 @@ int Renderer::renderCCB1(uint16_t width, uint16_t height, uint16_t numBlobs, uin
     return 0;
 }
 
-int Renderer::renderVISU(uint32_t cc_num, int16_t* c_components)
+int Renderer::renderRect(uint16_t width, uint16_t height, const RectA &rect)
 {
-#if 0
-    unsigned int x, y;
-    unsigned int *line;
-    unsigned int r, g, b;
-    frame += width;
+    float scale = (float)m_video->activeWidth()/width;
+    QImage img(width*scale, height*scale, QImage::Format_ARGB32);
+    QPainter p;
 
-    // don't render top and bottom rows, and left and rightmost columns because of color
-    // interpolation
-    QImage img(width-2, height-2, QImage::Format_RGB32);
+    img.fill(0x00000000);
+    p.begin(&img);
+    p.setBrush(QBrush(QColor(0xff, 0xff, 0xff, 0x20)));
+    p.drawRect(rect.m_xOffset, rect.m_yOffset, rect.m_width, rect.m_height);
+    p.end();
 
-    for (y=1; y<height-1; y++)
-    {
-        line = (unsigned int *)img.scanLine(y-1);
-        frame++;
-        for (x=1; x<width-1; x++, frame++)
-        {
-            interpolateBayer(width, x, y, frame, r, g, b);
-            *line++ = (0xff<<24) | (r<<16) | (g<<8) | (b<<0);
-        }
-        frame++;
-    }
-#endif
-
-
-    // Save the arguments for later
-    num_comps = cc_num;
-    comps = (int16_t*)realloc(comps, sizeof(int16_t)*cc_num);
-    memcpy(comps, c_components, sizeof(int16_t)*cc_num);
-	
-	// DEBUG
-    int height = 200;
-    int width = 320;
-    double yscale = (double)100 / (double)height;
-    double xscale = (double)160 / (double)width;
-    int t, r, b, l;
-    int m_area = 0;
-
-    for (unsigned int i = 0; i < (num_comps/4); i++)
-    {
-        int16_t top = 0, right = 0, bottom = 0, left = 0;
-        top = int(double(comps[(i*4)+0]) * yscale);
-        right = int(double(comps[(i*4)+1]) * xscale);
-        bottom = int(double(comps[(i*4)+2]) * yscale);
-        left = int(double(comps[(i*4)+3]) * xscale);
-
-        int area = (bottom - top)*(right - left);
-        if (area > m_area)
-        {
-            m_area = area;
-            t = top, r = right, b = bottom, l = left;
-        }
-    }
-    //qDebug() << "t: " << t << "\tr: " << r << "\tb: " << b << "\tl: " << l;
-
+    emitImage(img);
 
     return 0;
-}
-
-void VISUcallback(QImage* image)
-{
-    // TEMP
-    int height = 200;
-    int width = 320;
-
-    double yscale = (double)image->height() / (double)height;
-    double xscale = (double)image->width() / (double)width;
-
-    // Start painting video widget
-    QPainter p;
-    p.begin(image);
-    p.setPen(QPen(QColor(Qt::color0)));
-    p.setBrush(QBrush(QColor(Qt::color0), Qt::NoBrush));
-    for (unsigned int i = 0; i < (num_comps/4); i++)
-    {
-        int16_t top = 0, right = 0, bottom = 0, left = 0;
-        top = int(double(comps[(i*4)+0]) * yscale);
-        right = int(double(comps[(i*4)+1]) * xscale);
-        bottom = int(double(comps[(i*4)+2]) * yscale);
-        left = int(double(comps[(i*4)+3]) * xscale);
-
-        unsigned int addr = (unsigned int)comps;
-        unsigned int paddr = (unsigned int)&comps;
-
-        int k = 0, l = 0;
-        k += addr;
-        l += paddr;
-
-        // Since we aren't rendering the first and last rows/columns, adjust bounding
-        // box accordingly
-        if (top < 0) top = 0;
-        else if (top > (height-3)) top = (height-3);
-        if (bottom < 0) bottom = 0;
-        else if (bottom > (height-3)) bottom = (height-3);
-        if (right < 0) right = 0;
-        else if (right > (width-3)) right = (width-3);
-        if (left < 0) left = 0;
-        else if (left > (width-3)) left = (width-3);
-
-        p.drawRect(QRect(left, top, right-left, bottom-top));
-
-    }
-    p.end();
 }
 
 void Renderer::handleRL(QImage *image, uint color, int row, int startCol, int len)
@@ -538,8 +448,6 @@ int Renderer::render(uint32_t type, void *args[])
     // choose fourcc for representing formats fourcc.org
     if (type==FOURCC('B','A','8','1'))
         res = renderBA81(*(uint16_t *)args[0], *(uint16_t *)args[1], *(uint32_t *)args[2], (uint8_t *)args[3]);
-    else if (type==FOURCC('V', 'I', 'S', 'U'))    // contains visualization data
-        res = renderVISU(*(uint32_t *)args[0], (int16_t *)args[1]);
     else if (type==FOURCC('C','C','Q','1'))
         res = renderCCQ1(*(uint16_t *)args[0], *(uint16_t *)args[1], *(uint32_t *)args[2], (uint32_t *)args[3]);
     else // format not recognized

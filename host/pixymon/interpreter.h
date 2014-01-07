@@ -8,13 +8,13 @@
 #include <vector>
 #include <utility>
 #include "chirpmon.h"
+#include "videowidget.h"
 #include "connectevent.h"
 #include "disconnectevent.h"
 #include "usblink.h"
 
 #define PROMPT  ">"
 
-class VideoWidget;
 class ConsoleWidget;
 class Renderer;
 class MainWindow;
@@ -59,7 +59,7 @@ signals:
     void textOut(QString text, QColor color=Qt::black);
     void error(QString text);
     void prompt(QString text);
-    void videoInput(bool state);
+    void videoInput(VideoWidget::InputMode mode);
     void enableConsole(bool enable);
     void connected(Device device, bool state);
 

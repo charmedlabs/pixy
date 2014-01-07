@@ -2,9 +2,9 @@
 #define RENDERER_H
 #include <QObject>
 #include <QImage>
+#include "pixytypes.h"
 #include "blobs.h"
 
-#define LINE_COLOR 0xFF00FF2F   // bright green
 
 class VideoWidget;
 
@@ -17,7 +17,9 @@ public:
     ~Renderer();
 
     int render(uint32_t type, void *args[]);
-    uint8_t *m_frameData;
+    Frame8 m_rawFrame;
+
+    int renderRect(uint16_t width, uint16_t height, const RectA &rect);
 
     int renderBA81(uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame);
     int renderCCB1(uint16_t width, uint16_t height, uint16_t numBlobs, uint16_t *blobs);

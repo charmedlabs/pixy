@@ -24,6 +24,11 @@ public:
     int activeWidth();
     int activeHeight();
 
+    enum InputMode
+    {
+        NONE, POINT, REGION
+    };
+
 protected:
     void paintEvent(QPaintEvent *event);
     virtual int heightForWidth(int w) const;
@@ -39,7 +44,7 @@ signals:
 public slots:
     void handleImage(QImage image);
     void handleFlush();
-    void acceptInput(bool state);
+    void acceptInput(VideoWidget::InputMode mode); // need the VideoWidget qualifier, otherwise it won't recognize the metatype!
 
 private slots:
 
@@ -61,8 +66,9 @@ private:
     int m_sbHeight;
     float m_scale;
     bool m_drag;
-    bool m_acceptInput;
+    InputMode m_inputMode;
     bool m_selection;
 };
+
 
 #endif // VIDEOWIDGET_H

@@ -292,7 +292,7 @@ int ColorLUT::growRegion(RectA *result, const Frame8 &frame, const Point16 &seed
     RectA newRegion, region;
     uint8_t done;
 
-    m_hpixels = (HuePixel *)malloc(sizeof(HuePixel)*(GROW_REGION_MAX_SIZE+1)*(GROW_REGION_MAX_SIZE+1)/4);
+    m_hpixels = (HuePixel *)malloc(sizeof(HuePixel)*(320+1)*(200+1)/4);
     if (m_hpixels==NULL)
         return -1; // not enough memory
 
@@ -346,7 +346,7 @@ int ColorLUT::growRegion(RectA *result, const Frame8 &frame, const Point16 &seed
             {
                 if (region.m_xOffset+region.m_width+GROW_INC>frame.m_width)
                 {
-                    newRegion.m_width = frame.m_width-region.m_xOffset;
+                    newRegion.m_width = frame.m_width-region.m_xOffset-region.m_width;
                     done |= 1<<dir;
                 }
                 else
@@ -359,7 +359,7 @@ int ColorLUT::growRegion(RectA *result, const Frame8 &frame, const Point16 &seed
             {
                 if (region.m_yOffset+region.m_height+GROW_INC>frame.m_height)
                 {
-                    newRegion.m_height = frame.m_height-region.m_yOffset;
+                    newRegion.m_height = frame.m_height-region.m_yOffset-region.m_height;
                     done |= 1<<dir;
                 }
                 else

@@ -2,6 +2,7 @@
 #include <QMessageBox>
 #include <QFile>
 #include <QDebug>
+
 #include "interpreter.h"
 #include "disconnectevent.h"
 #include "videowidget.h"
@@ -64,7 +65,7 @@ Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, MainWindow 
     connect(this, SIGNAL(error(QString)), m_console, SLOT(error(QString)));
     connect(this, SIGNAL(enableConsole(bool)), m_console, SLOT(acceptInput(bool)));
     connect(this, SIGNAL(prompt(QString)), m_console, SLOT(prompt(QString)));
-    connect(this, SIGNAL(videoInput(bool)), m_video, SLOT(acceptInput(bool)));
+    connect(this, SIGNAL(videoInput(VideoWidget::InputMode)), m_video, SLOT(acceptInput(VideoWidget::InputMode)));
     connect(m_video, SIGNAL(selection(int,int,int,int)), this, SLOT(handleSelection(int,int,int,int)));
     // we necessarily want to execute in the gui thread, so queue
     connect(this, SIGNAL(connected(Device,bool)), m_main, SLOT(handleConnected(Device,bool)), Qt::QueuedConnection);
@@ -79,6 +80,9 @@ Interpreter::~Interpreter()
     m_console->m_mutexPrint.lock();
     m_console->m_waitPrint.wakeAll();
     m_console->m_mutexPrint.unlock();
+    m_waitInput.wakeAll();
+    m_waitSelection.wakeAll();
+
     wait();
     clearProgram();
     if (m_disconnect)
@@ -458,20 +462,22 @@ begin:
     if (m_setModel)
     {
         textOut("Please select a region with your mouse.\n");
-        emit videoInput(true);
+        emit videoInput(VideoWidget::POINT);
         m_mutexSelection.lock();
         m_waitSelection.wait(&m_mutexSelection);
         m_mutexSelection.unlock();
         //m_renderer->m_blobs.generateLUT(m_setModel, m_selection.x(), m_selection.y(), m_selection.width(), m_selection.height(), m_renderer->m_frameData);
         RectA region;
-        m_renderer->m_blobs.generateLUT(m_setModel, Frame8(m_renderer->m_frameData, 320, 200), Point16(m_selection.x(), m_selection.y()), &region);
+        m_renderer->m_blobs.generateLUT(m_setModel, m_renderer->m_rawFrame, Point16(m_selection.x(), m_selection.y()), &region);
         uint16_t blobs[] = {1, region.m_xOffset, region.m_xOffset+region.m_width, region.m_yOffset, region.m_yOffset+region.m_height};
-        m_renderer->renderBA81(320, 200, 320*200, m_renderer->m_frameData);
+        // rerender frame.. this is sort of lame---
+        // if we do this elsewhere (we don't for now) we need to find a better method
+        m_renderer->renderBA81(m_renderer->m_rawFrame.m_width, m_renderer->m_rawFrame.m_height,
+                               m_renderer->m_rawFrame.m_width*m_renderer->m_rawFrame.m_height,  m_renderer->m_rawFrame.m_pixels);
         m_renderer->renderCCB1(320, 200, 1, blobs);
         m_renderer->emitFlushImage();
         //uploadLut();
         textOut("done!\n");
-        emit videoInput(false);
         prompt();
         m_setModel = 0;
     }
@@ -883,7 +889,7 @@ void Interpreter::writeFrame()
     int i, j, k;
      uint r, g, b;
 
-    uint8_t *frame = m_renderer->m_frameData;
+    uint8_t *frame = m_renderer->m_rawFrame.m_pixels;
 
     for (k=0, i=1; i<HEIGHT; i+=2)
     {
@@ -1155,7 +1161,7 @@ int Interpreter::call(const QStringList &argv, bool interactive)
                         if (n>i+4)
                         {
                             pstring += "(select region)";
-                            emit videoInput(true);
+                            emit videoInput(VideoWidget::REGION);
                             emit enableConsole(false);
                         }
 

@@ -3,21 +3,24 @@
 #include <QDebug>
 #include <QMouseEvent>
 #include <QMutexLocker>
+#include <QMetaType>
 #include "mainwindow.h"
 #include "videowidget.h"
 #include "console.h"
 // experimental
-#include "interpreter.h"
+//#include "interpreter.h"
 #include "renderer.h"
 
 VideoWidget::VideoWidget(MainWindow *main) : QWidget((QWidget *)main), m_mutex(QMutex::Recursive)
 {
+    qRegisterMetaType<VideoWidget::InputMode>("VideoWidget::InputMode");
+
     m_main = main;
     m_xOffset=0;
     m_yOffset=0;
     m_scale = 1.0;
     m_drag = false;
-    m_acceptInput = false;
+    m_inputMode = NONE;
     m_selection = false;
 
     // set size policy--- preferred aspect ratio
@@ -156,7 +159,7 @@ void VideoWidget::mouseMoveEvent(QMouseEvent *event)
         m_drag = false;
     }
 
-    if (m_drag && m_acceptInput)
+    if (m_drag && m_inputMode==REGION)
     {
         m_sbWidth = x-m_x0;
         m_sbHeight = y-m_y0;
@@ -189,12 +192,14 @@ void VideoWidget::mousePressEvent(QMouseEvent *event)
 
 void VideoWidget::mouseReleaseEvent(QMouseEvent *event)
 {
+    int x, y, width, height;
+
     if (m_selection)
     {
-        int x, y, width, height;
 
         x = (m_x0-m_xOffset)/m_scale+.5;
         y = (m_y0-m_yOffset)/m_scale+.5;
+
         width = m_sbWidth/m_scale+.5;
         height = m_sbHeight/m_scale+.5;
 
@@ -210,8 +215,16 @@ void VideoWidget::mouseReleaseEvent(QMouseEvent *event)
             height = -height;
         }
         emit selection(x, y, width, height);
+        m_inputMode = NONE;
         //qDebug() << x << " " << y << " " << width << " " << height;
         m_selection = false;
+    }
+    else if (m_inputMode==POINT)
+    {
+        x = (event->x()-m_xOffset)/m_scale+.5;
+        y = (event->y()-m_yOffset)/m_scale+.5;
+        emit selection(x, y, 0, 0);
+        m_inputMode = NONE;
     }
     QWidget::mouseReleaseEvent(event);
 }
@@ -222,10 +235,10 @@ void VideoWidget::resizeEvent(QResizeEvent *event)
     QWidget::resizeEvent(event);
 }
 
-void VideoWidget::acceptInput(bool state)
+void VideoWidget::acceptInput(VideoWidget::InputMode mode)
 {
-    m_acceptInput = state;
-    if (state)
+    m_inputMode = mode;
+    if (mode==REGION || mode==POINT)
         setCursor(Qt::CrossCursor);
     else
     {

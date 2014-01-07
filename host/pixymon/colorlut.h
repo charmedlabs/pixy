@@ -2,6 +2,7 @@
 #define COLORLUT_H
 
 #include <inttypes.h>
+#include "pixytypes.h"
 
 #undef PI
 #define PI 3.1415926
@@ -14,107 +15,6 @@
 #define CL_DEFAULT_OUTLIER_RATIO        0.90
 #define CL_MIN_MEAN                     0.001
 
-struct Point16
-{
-    Point16()
-    {
-        m_x = m_y = 0;
-    }
-
-    Point16(uint16_t x, uint16_t y)
-    {
-        m_x = x;
-        m_y = y;
-    }
-
-    uint16_t m_x;
-    uint16_t m_y;
-};
-
-struct Frame8
-{
-    Frame8(uint8_t *pixels, uint16_t width, uint16_t height)
-    {
-        m_pixels = pixels;
-        m_width = width;
-        m_height = height;
-    }
-
-    uint8_t *m_pixels;
-    int16_t m_width;
-    int16_t m_height;
-};
-
-struct RectA
-{
-    RectA()
-    {
-        m_xOffset = m_yOffset = m_width = m_height = 0;
-    }
-
-    RectA(uint16_t xOffset, uint16_t yOffset, uint16_t width, uint16_t height)
-    {
-        m_xOffset = xOffset;
-        m_yOffset = yOffset;
-        m_width = width;
-        m_height = height;
-    }
-
-    uint16_t m_xOffset;
-    uint16_t m_yOffset;
-    uint16_t m_width;
-    uint16_t m_height;
-};
-
-struct HuePixel
-{
-    HuePixel()
-    {
-        m_u = m_v = 0;
-    }
-
-    HuePixel(int8_t u, int8_t v)
-    {
-        m_u = u;
-        m_v = v;
-    }
-
-    int8_t m_u;
-    int8_t m_v;
-};
-
-struct Fpoint
-{
-    Fpoint()
-    {
-        m_x = m_y = 0.0;
-    }
-
-    Fpoint(float x, float y)
-    {
-        m_x = x;
-        m_y = y;
-    }
-
-    float m_x;
-    float m_y;
-};
-
-struct Line
-{
-    Line()
-    {
-        m_slope = m_yi = 0.0;
-    }
-    Line(float slope, float yi)
-    {
-        m_slope = slope;
-        m_yi = yi;
-    }
-
-    float m_slope;
-    float m_yi;
-};
 
 struct ColorModel
 {
