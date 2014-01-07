@@ -1,7 +1,6 @@
 #include <QDebug>
 #include <math.h>
 #include "blobs.h"
-#include "colorlut.h"
 
 QString code2string(uint16_t code)
 {
@@ -571,6 +570,13 @@ int Blobs::generateLUT(uint8_t model, uint16_t x0, uint16_t y0, uint16_t width, 
     m_clut->generate(&cmodel, frame, x0, y0, width, height, WIDTH);
     m_clut->add(&cmodel, model);
 
+    return 0;
+}
+
+int Blobs::generateLUT(uint8_t model, const Frame8 &frame, const Point16 &seed)
+{
+    RectA region;
+    m_clut->growRegion(&region, frame, seed);
     return 0;
 }
 

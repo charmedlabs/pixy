@@ -462,8 +462,9 @@ begin:
         m_mutexSelection.lock();
         m_waitSelection.wait(&m_mutexSelection);
         m_mutexSelection.unlock();
-        m_renderer->m_blobs.generateLUT(m_setModel, m_selection.x(), m_selection.y(), m_selection.width(), m_selection.height(), m_renderer->m_frameData);
-        uploadLut();
+        //m_renderer->m_blobs.generateLUT(m_setModel, m_selection.x(), m_selection.y(), m_selection.width(), m_selection.height(), m_renderer->m_frameData);
+        m_renderer->m_blobs.generateLUT(m_setModel, Frame8(m_renderer->m_frameData, 320, 200), Point16(m_selection.x(), m_selection.y()));
+        //uploadLut();
         textOut("done!\n");
         emit videoInput(false);
         prompt();

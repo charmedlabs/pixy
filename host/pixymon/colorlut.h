@@ -14,6 +14,58 @@
 #define CL_DEFAULT_OUTLIER_RATIO        0.90
 #define CL_MIN_MEAN                     0.001
 
+struct Point16
+{
+    Point16()
+    {
+        m_x = m_y = 0;
+    }
+
+    Point16(uint16_t x, uint16_t y)
+    {
+        m_x = x;
+        m_y = y;
+    }
+
+    uint16_t m_x;
+    uint16_t m_y;
+};
+
+struct Frame8
+{
+    Frame8(uint8_t *pixels, uint16_t width, uint16_t height)
+    {
+        m_pixels = pixels;
+        m_width = width;
+        m_height = height;
+    }
+
+    uint8_t *m_pixels;
+    int16_t m_width;
+    int16_t m_height;
+};
+
+struct RectA
+{
+    RectA()
+    {
+        m_xOffset = m_yOffset = m_width = m_height = 0;
+    }
+
+    RectA(uint16_t xOffset, uint16_t yOffset, uint16_t width, uint16_t height)
+    {
+        m_xOffset = xOffset;
+        m_yOffset = yOffset;
+        m_width = width;
+        m_height = height;
+    }
+
+    uint16_t m_xOffset;
+    uint16_t m_yOffset;
+    uint16_t m_width;
+    uint16_t m_height;
+};
+
 struct HuePixel
 {
     HuePixel()
@@ -81,6 +133,7 @@ public:
     int setOther(float maxSatRatio, float outlierRatio);
 
     int generate(ColorModel *model, const uint8_t *bayerPixels, uint16_t xOffset, uint16_t yOffset, uint16_t width, uint16_t height, uint16_t pitch);
+    int growRegion(RectA *result, const Frame8 &frame, const Point16 &seed);
     void add(const ColorModel *model, uint8_t modelIndex);
     void clear(uint8_t modelIndex=0); // 0 = all models
 

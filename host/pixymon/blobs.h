@@ -4,6 +4,7 @@
 #include <vector>
 #include <utility>
 #include "blob.h"
+#include "colorlut.h"
 
 #define NUM_MODELS      7
 #define MAX_BLOBS       256
@@ -14,7 +15,6 @@
 #define LUT_SIZE        0x10000
 
 class Renderer;
-class ColorLUT;
 
 typedef std::pair<uint32_t, QString> LabelPair;
 
@@ -38,6 +38,7 @@ public:
     int setLabel(const QString &model, const QString &label);
     QString *getLabel(uint32_t model);
     int generateLUT(uint8_t model, uint16_t x0, uint16_t y0, uint16_t width, uint16_t height, uint8_t *frame);
+    int generateLUT(uint8_t model, const Frame8 &frame, const Point16 &seed);
 
     friend class Renderer;
 

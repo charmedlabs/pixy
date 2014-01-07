@@ -19,6 +19,17 @@ float dot(Fpoint a, Fpoint b)
     return a.m_x*b.m_x + a.m_y*b.m_y;
 }
 
+float distance(Fpoint a, Fpoint b)
+{
+    float diffx, diffy;
+
+    diffx = a.m_x-b.m_x;
+    diffy = a.m_y-b.m_y;
+
+    return sqrt(diffx*diffx + diffy*diffy);
+}
+
+
 ColorLUT::ColorLUT(const void *lutMem)
 {
     m_lut = (uint8_t *)lutMem;
@@ -72,15 +83,15 @@ int ColorLUT::generate(ColorModel *model, const uint8_t *bayerPixels, uint16_t x
     model->m_hue[1].m_yi = yi;
     model->m_hue[1].m_slope = hueLine.m_slope;
 
-    // lower sat line
+    // inner sat line
     s = sign(uvec.m_y);
     istep = s*fabs(m_iterateStep/cos(pangle));
     yi = iterate(pLine, -istep);
     yi -= s*fabs(m_satTol*(yi-pLine.m_yi)); // extend
-    xsat = yi/(hueLine.m_slope-pslope);
-    Fpoint minsatVec(xsat, xsat*hueLine.m_slope);
-    sat = dot(uvec, minsatVec);
-    if (sat < m_minSat)
+    xsat = yi/(hueLine.m_slope-pslope); // x value where inner sat line crosses hue line
+    Fpoint minsatVec(xsat, xsat*hueLine.m_slope); // vector going to inner sat line
+    sat = dot(uvec, minsatVec); // length of line
+    if (sat < m_minSat) // if it's too short, we need to extend
     {
         minsatVec.m_x = uvec.m_x*m_minSat;
         minsatVec.m_y = uvec.m_y*m_minSat;
@@ -89,18 +100,21 @@ int ColorLUT::generate(ColorModel *model, const uint8_t *bayerPixels, uint16_t x
     model->m_sat[0].m_yi = yi;
     model->m_sat[0].m_slope = pslope;
 
-    // upper sat line
+    // outer sat line
     yi = iterate(pLine, istep);
     yi += s*fabs(m_maxSatRatio*m_satTol*(yi-pLine.m_yi)); // extend
     model->m_sat[1].m_yi = yi;
     model->m_sat[1].m_slope = pslope;
 
+    // swap if outer sat line is greater than inner sat line
+    // Arbitrary convention, but we need it to be consistent to test membership (checkBounds)
     if (model->m_sat[1].m_yi>model->m_sat[0].m_yi)
     {
         Line tmp = model->m_sat[0];
         model->m_sat[0] = model->m_sat[1];
         model->m_sat[1] = tmp;
     }
+
     matlabOut(model);
 
     free(m_hpixels);
@@ -161,6 +175,7 @@ void ColorLUT::mean(Fpoint *mean)
     usum /= m_hpixelLen;
     vsum /= m_hpixelLen;
 
+    // if mean is too close to 0, the slope of the hue or sat lines will explode
     tweakMean(&usum);
     tweakMean(&vsum);
 
@@ -262,6 +277,133 @@ void ColorLUT::clear(uint8_t modelIndex)
     {
         if (modelIndex==0 || (m_lut[i]&0x07)==modelIndex)
             m_lut[i] = 0;
+    }
+}
+
+#define GROW_INC                  4
+#define GROW_MAX_DISTANCE         12.5
+#define GROW_REGION_MAX_SIZE      100
+
+int ColorLUT::growRegion(RectA *result, const Frame8 &frame, const Point16 &seed)
+{
+    uint8_t dir;
+    Fpoint mean0, newMean;
+    float dist;
+    RectA newRegion, region;
+    uint8_t done;
+
+    m_hpixels = (HuePixel *)malloc(sizeof(HuePixel)*(GROW_REGION_MAX_SIZE+1)*(GROW_REGION_MAX_SIZE+1)/4);
+    if (m_hpixels==NULL)
+        return -1; // not enough memory
+
+    // create seed 2*GROW_INCx2*GROW_INC region from seed position, make sure it's within the frame
+    region.m_xOffset = seed.m_x>GROW_INC ? seed.m_x-GROW_INC : 0;
+    region.m_yOffset = seed.m_y>GROW_INC ? seed.m_y-GROW_INC : 0;
+    region.m_width = 2*GROW_INC;
+    if (region.m_xOffset+region.m_width>frame.m_width)
+        region.m_width = frame.m_width-region.m_xOffset;
+    region.m_height = 2*GROW_INC;
+    if (region.m_yOffset+region.m_height>frame.m_height)
+        region.m_height = frame.m_height-region.m_yOffset;
+
+    map(frame.m_pixels, region.m_xOffset, region.m_yOffset, region.m_width, region.m_height, frame.m_width);
+    mean(&mean0);
+    done = 0x00;
+
+    while (1)
+    {
+        for (dir=0; dir<4; dir++)
+        {
+            if (done&(1<<dir))
+                continue;
+            else if (dir==0) // add to left
+            {
+                if (region.m_xOffset>GROW_INC)
+                    newRegion.m_xOffset = region.m_xOffset-GROW_INC;
+                else
+                {
+                    newRegion.m_xOffset = 0;
+                    done |= 1<<dir;
+                }
+                newRegion.m_yOffset = region.m_yOffset;
+                newRegion.m_width = GROW_INC;
+                newRegion.m_height = region.m_height;
+            }
+            else if (dir==1) // add to top
+            {
+                if (region.m_yOffset>GROW_INC)
+                    newRegion.m_yOffset = region.m_yOffset-GROW_INC;
+                else
+                {
+                    newRegion.m_yOffset = 0;
+                    done |= 1<<dir;
+                }
+                newRegion.m_xOffset = region.m_xOffset;
+                newRegion.m_width = region.m_width;
+                newRegion.m_height = GROW_INC;
+            }
+            else if (dir==2) // add to right
+            {
+                if (region.m_xOffset+region.m_width+GROW_INC>frame.m_width)
+                {
+                    newRegion.m_width = frame.m_width-region.m_xOffset;
+                    done |= 1<<dir;
+                }
+                else
+                    newRegion.m_width = GROW_INC;
+                newRegion.m_xOffset = region.m_xOffset+region.m_width;
+                newRegion.m_yOffset = region.m_yOffset;
+                newRegion.m_height = region.m_height;
+            }
+            else // dir==3, add to bottom
+            {
+                if (region.m_yOffset+region.m_height+GROW_INC>frame.m_height)
+                {
+                    newRegion.m_height = frame.m_height-region.m_yOffset;
+                    done |= 1<<dir;
+                }
+                else
+                    newRegion.m_height = GROW_INC;
+                newRegion.m_xOffset = region.m_xOffset;
+                newRegion.m_yOffset = region.m_yOffset+region.m_height;
+                newRegion.m_width = region.m_width;
+            }
+
+            // calculate new region mean
+            map(frame.m_pixels, newRegion.m_xOffset, newRegion.m_yOffset, newRegion.m_width, newRegion.m_height, frame.m_width);
+            mean(&newMean);
+
+            // test new region
+            dist = distance(mean0, newMean);
+            qDebug() << dir << " "<< dist;
+
+            if (dist>GROW_MAX_DISTANCE || m_hpixelLen==0)
+                done |= 1<<dir;
+            else // new region passes, so add new region
+            {
+                if (newRegion.m_xOffset<region.m_xOffset)
+                {
+                    region.m_xOffset = newRegion.m_xOffset;
+                    region.m_width += newRegion.m_width;
+
+                }
+                else if (newRegion.m_yOffset<region.m_yOffset)
+                {
+                    region.m_yOffset = newRegion.m_yOffset;
+                    region.m_height += newRegion.m_height;
+
+                }
+                else if (newRegion.m_xOffset+newRegion.m_width>region.m_xOffset+region.m_width)
+                    region.m_width += newRegion.m_width;
+                else if (newRegion.m_yOffset+newRegion.m_height>region.m_yOffset+region.m_height)
+                    region.m_height += newRegion.m_height;
+            }
+            if (done==0x0f) // finished!
+            {
+                *result = region;
+                return 0;
+            }
+        }
     }
 }
 
