@@ -1,6 +1,7 @@
 #include "pixy_init.h"
 #include "blobs.h"
 #include "qqueue.h"
+#include "colorlut.h"
 
 
 Blobs::Blobs(Qqueue *qq)
@@ -9,6 +10,9 @@ Blobs::Blobs(Qqueue *qq)
     m_blobs = new uint16_t[MAX_BLOBS*5];
 	m_numBlobs = 0;
     m_blobsCopy = new uint16_t[MAX_BLOBS*5];
+
+	m_clut = new ColorLUT((void *)LUT_MEMORY);
+
 	m_numBlobsCopy = 0;
 	m_mutex = false;
     m_minArea = MIN_AREA;

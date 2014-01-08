@@ -20,10 +20,6 @@
 
 
 
-#define RLS_MEMORY_SIZE     0x8000 // bytes
-#define RLS_MEMORY          ((uint8_t *)SRAM0_LOC)
-#define LUT_MEMORY_SIZE		0x10000 // bytes
-#define LUT_MEMORY			((uint8_t *)SRAM0_LOC + SRAM0_SIZE-LUT_MEMORY_SIZE)  // +0x100 make room for prebuf and palette
 
 #define SERVO
 
@@ -202,128 +198,6 @@ void motor(uint32_t x, uint32_t y)
 
 
  							
-void interpolateBayer(uint32_t width, uint32_t x, uint32_t y, uint8_t *pixel, uint32_t &r, uint32_t &g, uint32_t &b)
-{
-    if (y&1)
-    {
-        if (x&1)
-        {
-            r = *pixel;
-            g = *(pixel-1);
-            b = *(pixel-width-1);
-        }
-        else
-        {
-            r = *(pixel-1);
-            g = *pixel;
-            b = *(pixel-width);
-        }
-    }
-    else
-    {
-        if (x&1)
-        {
-            r = *(pixel-width);
-            g = *pixel;
-            b = *(pixel-1);
-        }
-        else
-        {
-            r = *(pixel-width-1);
-            g = *(pixel-1);
-            b = *pixel;
-        }
-    }
-}
-void getColor(uint8_t *r, uint8_t *g, uint8_t *b)
-{
-	uint32_t x, y, R, G, B, rsum=0, gsum=0, bsum=0;
-	uint8_t *frame = (uint8_t *)SRAM0_LOC;
-
-	for (y=94; y<104; y++)
-	{
-		for (x=154; x<164; x++)
-		{
-			interpolateBayer(320, x, y, frame+320*y+x, R, G, B);
-		 	rsum += R;
-			gsum += G;
-			bsum += B;
-		}
-	}
-	*r = rsum/100;
-	*g = gsum/100;
-	*b = bsum/100;	 	
-}
-
-void saturate(uint8_t *r, uint8_t *g, uint8_t *b)
-{
-	uint8_t max, min, bias;
-	float m, fr, fg, fb;
-
-   	// find min
-	if (*r<*b)
-		min = *r;
-	else
-		min = *b;
-	if (*g<min)
-		min = *g;
-
-	// find reasonable bias to subtract out
-	bias = min*3/4;
-	*r -= bias;
-	*g -= bias;
-	*b -= bias;
-
-	// find max
-	if (*r>*b)
-		max = *r;
-	else
-		max = *b;
-	if (*g>max)
-		max = *g;
-
-	// saturate
-	m = 255.0/max;
-	fr = m**r;
-	fg = m**g;
-	fb = m**b;
-
-	*r = (uint8_t)fr;
-	*g = (uint8_t)fg;				  
-	*b = (uint8_t)fb;
-}
-	
-			
-void handleButton()
-{
-	static uint32_t btPrev = 0;
-	uint32_t bt; 
-	static uint8_t r, g, b;
-
-	bt = button();
-
-	if (bt)
-	{
-		cam_getFrame((uint8_t *)SRAM0_LOC, SRAM0_SIZE, 0x21, 0, 0, 320, 200);
-		getColor(&r, &g, &b);
-		saturate(&r, &g, &b);
-		led_setRGB(r, g, b);	 	
-	}
-	else if (btPrev)
-	{
-		led_setRGB(0, 0, 0);
-		delayus(50000);
-		led_setRGB(r, g, b);	 	
-		delayus(50000);
-		led_setRGB(0, 0, 0);
-		delayus(50000);
-		led_setRGB(r, g, b);	 	
-		delayus(50000);
-		led_setRGB(0, 0, 0);		
-	}
-
-	btPrev = bt;
-}
 
 #if 0
 #define QMEMSIZE   0x800
@@ -834,7 +708,7 @@ int main(void)
 
 	}
 #endif   	
-#if 1
+#if 0
 	while(1)
 	{
 		g_chirpUsb->service();

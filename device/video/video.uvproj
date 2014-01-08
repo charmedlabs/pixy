@@ -293,8 +293,8 @@
               </OCR_RVCT3>
               <OCR_RVCT4>
                 <Type>1</Type>
-                <StartAddress>0x10080000</StartAddress>
-                <Size>0x12000</Size>
+                <StartAddress>0x10000000</StartAddress>
+                <Size>0x20000</Size>
               </OCR_RVCT4>
               <OCR_RVCT5>
                 <Type>1</Type>
@@ -344,7 +344,7 @@
             <uThumb>0</uThumb>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>CORE_M4 IPC_MASTER DEBUG</Define>
+              <Define>CORE_M4 IPC_MASTER</Define>
               <Undefine></Undefine>
               <IncludePath>., ..\libpixy</IncludePath>
             </VariousControls>
@@ -435,6 +435,16 @@
               <FileName>progpt.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>.\progpt.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>colorlut.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\libpixy\colorlut.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>button.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>.\button.cpp</FilePath>
             </File>
           </Files>
         </Group>
@@ -727,8 +737,8 @@
               </OCR_RVCT3>
               <OCR_RVCT4>
                 <Type>1</Type>
-                <StartAddress>0x10080000</StartAddress>
-                <Size>0x12000</Size>
+                <StartAddress>0x10000000</StartAddress>
+                <Size>0x20000</Size>
               </OCR_RVCT4>
               <OCR_RVCT5>
                 <Type>1</Type>
@@ -869,6 +879,16 @@
               <FileName>progpt.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>.\progpt.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>colorlut.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\libpixy\colorlut.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>button.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>.\button.cpp</FilePath>
             </File>
           </Files>
         </Group>

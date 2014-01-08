@@ -7,7 +7,11 @@
 #define MAX_MERGE_DIST  5
 #define MIN_AREA        20
 
+#define LUT_MEMORY_SIZE		0x10000 // bytes
+#define LUT_MEMORY			((uint8_t *)SRAM1_LOC + SRAM1_SIZE-LUT_MEMORY_SIZE)  // +0x100 make room for prebuf and palette
+
 class Qqueue;
+class ColorLUT;
 
 class Blobs
 {
@@ -33,6 +37,7 @@ private:
 
     uint16_t *m_blobs;
     uint16_t m_numBlobs;
+	ColorLUT *m_clut;
 
     uint16_t *m_blobsCopy;
     uint16_t m_numBlobsCopy;

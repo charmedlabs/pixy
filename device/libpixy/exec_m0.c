@@ -41,8 +41,8 @@ void setup0()
 {
 }
 
-uint32_t g_m0mem = SRAM0_LOC;
-uint32_t g_lut = SRAM0_LOC + SRAM0_SIZE-LUT_MEMORY_SIZE;
+uint32_t g_m0mem = SRAM1_LOC;
+uint32_t g_lut = SRAM1_LOC + SRAM1_SIZE-LUT_MEMORY_SIZE;
 
 void loop0()
 {

@@ -3,7 +3,6 @@
 #include "cblob.h"
 
 #ifdef DEBUG
-
 #ifndef HOST
 #include <textdisp.h>
 #else 

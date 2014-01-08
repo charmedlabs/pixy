@@ -11,8 +11,8 @@ int main(void)
 {
 	//CTIMER_DECLARE();
 #if 0
-	uint32_t memory = SRAM0_LOC;
-	uint32_t lut = SRAM0_LOC;
+	uint32_t memory = SRAM1_LOC;
+	uint32_t lut = SRAM1_LOC;
 
 	//while(1);
 	memset((void *)QQ_LOC, 0x01, 0x3000);
@@ -46,9 +46,9 @@ int main(void)
 #if 0
 {
 	uint32_t i;
-	uint8_t *lut = (uint8_t *)SRAM0_LOC + 0x10000;
-	uint32_t memory = SRAM0_LOC;
-	uint32_t size = SRAM0_SIZE/2;
+	uint8_t *lut = (uint8_t *)SRAM1_LOC + 0x10000;
+	uint32_t memory = SRAM1_LOC;
+	uint32_t size = SRAM1_SIZE/2;
 	for (i=0; i<0x10000; i++)
 		lut[i] = 0;
 	lut[0xb400] = 0;
