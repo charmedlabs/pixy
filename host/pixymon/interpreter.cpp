@@ -439,6 +439,10 @@ void Interpreter::setModel()
     else
         textOut("Please select a point with your mouse.\n");
 
+    // clear any overlays (rerender background)
+    m_renderer->renderBackground();
+    m_renderer->emitFlushImage();
+
     emit videoInput(m_setModelMode);
 
     // wait for response

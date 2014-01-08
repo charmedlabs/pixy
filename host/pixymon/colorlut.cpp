@@ -55,9 +55,11 @@ int ColorLUT::generate(ColorModel *model, const Frame8 &frame, const RectA &regi
     float angle, pangle, pslope;
     float yi, istep, s, xsat, sat;
 
-    m_hpixels = (HuePixel *)malloc(sizeof(HuePixel)*(frame.m_width+1)*(frame.m_height+1)/4);
+    m_hpixels = (HuePixel *)malloc(sizeof(HuePixel)*CL_HPIXEL_MAX_SIZE);
     if (m_hpixels==NULL)
         return -1; // not enough memory
+
+    m_hpixelSize = CL_HPIXEL_MAX_SIZE;
 
     map(frame, region);
     mean(&meanVal);
@@ -129,9 +131,9 @@ void ColorLUT::map(const Frame8 &frame, const RectA &region)
     uint8_t *pixels;
 
     pixels = frame.m_pixels + (region.m_yOffset | 1)*frame.m_width + (region.m_xOffset | 1);
-    for (y=0, count=0; y<region.m_height; y+=2, pixels+=frame.m_width*2)
+    for (y=0, count=0; y<region.m_height && count<m_hpixelSize; y+=2, pixels+=frame.m_width*2)
     {
-        for (x=0; x<region.m_width; x+=2, count++)
+        for (x=0; x<region.m_width && count<m_hpixelSize; x+=2, count++)
         {
             r = pixels[x];
             g1 = pixels[x - 1];
@@ -290,9 +292,11 @@ int ColorLUT::growRegion(RectA *result, const Frame8 &frame, const Point16 &seed
     RectA newRegion, region;
     uint8_t done;
 
-    m_hpixels = (HuePixel *)malloc(sizeof(HuePixel)*(320+1)*(200+1)/4);
+    m_hpixels = (HuePixel *)malloc(sizeof(HuePixel)*CL_HPIXEL_MAX_SIZE);
     if (m_hpixels==NULL)
         return -1; // not enough memory
+
+    m_hpixelSize = CL_HPIXEL_MAX_SIZE;
 
     // create seed 2*GROW_INCx2*GROW_INC region from seed position, make sure it's within the frame
     region.m_xOffset = seed.m_x>GROW_INC ? seed.m_x-GROW_INC : 0;
@@ -399,6 +403,7 @@ int ColorLUT::growRegion(RectA *result, const Frame8 &frame, const Point16 &seed
             if (done==0x0f) // finished!
             {
                 *result = region;
+                free(m_hpixels);
                 return 0;
             }
         }

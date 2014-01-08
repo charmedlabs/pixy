@@ -219,7 +219,7 @@ void VideoWidget::mouseReleaseEvent(QMouseEvent *event)
             height = -height;
         }
         emit selection(x, y, width, height);
-        m_inputMode = NONE;
+        acceptInput(NONE);
         //qDebug() << x << " " << y << " " << width << " " << height;
         m_selection = false;
     }
@@ -228,7 +228,7 @@ void VideoWidget::mouseReleaseEvent(QMouseEvent *event)
         x = (event->x()-m_xOffset)/m_scale+.5;
         y = (event->y()-m_yOffset)/m_scale+.5;
         emit selection(x, y, 0, 0);
-        m_inputMode = NONE;
+        acceptInput(NONE);
     }
     QWidget::mouseReleaseEvent(event);
 }

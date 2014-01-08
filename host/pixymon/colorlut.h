@@ -14,7 +14,7 @@
 #define CL_DEFAULT_MAXSAT_RATIO         2.0
 #define CL_DEFAULT_OUTLIER_RATIO        0.90
 #define CL_MIN_MEAN                     0.001
-
+#define CL_HPIXEL_MAX_SIZE              10000
 
 struct ColorModel
 {
@@ -51,7 +51,8 @@ private:
 
     uint8_t *m_lut;
     HuePixel *m_hpixels;
-    uint32_t m_hpixelLen;
+    uint32_t m_hpixelLen;  // number of pixels
+    uint32_t m_hpixelSize; // size of m_hpixels memory in HuePixels
 
     float m_iterateStep;
     float m_hueTol;
