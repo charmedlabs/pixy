@@ -31,6 +31,6 @@ end
 plot(X, Y, 'b.');
 
 
-plot(0, 0, 'r.');
 plot(Pixels(1:end, 1), Pixels(1:end, 2), 'g.');
+plot(0, 0, 'r.');
 hold off;

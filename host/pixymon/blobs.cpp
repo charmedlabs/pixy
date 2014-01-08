@@ -576,11 +576,17 @@ int Blobs::generateLUT(uint8_t model, uint16_t x0, uint16_t y0, uint16_t width, 
 int Blobs::generateLUT(uint8_t model, const Frame8 &frame, const Point16 &seed, RectA *region)
 {
     RectA cregion;
+    ColorModel cmodel;
 
-    if (region==NULL)
-        region = &cregion;
+    m_clut->growRegion(&cregion, frame, seed);
 
-    m_clut->growRegion(region, frame, seed);
+    m_clut->generate(&cmodel, frame.m_pixels,
+                     cregion.m_xOffset, cregion.m_yOffset, cregion.m_width, cregion.m_height, frame.m_width);
+    m_clut->add(&cmodel, model);
+
+    if (region)
+        *region = cregion;
+
     return 0;
 }
 

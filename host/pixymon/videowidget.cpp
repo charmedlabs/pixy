@@ -132,7 +132,11 @@ void VideoWidget::paintEvent(QPaintEvent *event)
 
     // draw selection rectangle
     if (m_selection)
+    {
+        p.setBrush(QBrush(QColor(0xff, 0xff, 0xff, 0x20)));
+        p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
         p.drawRect(m_x0, m_y0, m_sbWidth, m_sbHeight);
+    }
 
     QWidget::paintEvent(event);
 }

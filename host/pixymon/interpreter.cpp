@@ -20,6 +20,7 @@ Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, MainWindow 
     m_main = main;
     m_pc = 0;
     m_setModel = 0;
+    m_setModelMode = VideoWidget::NONE;
     m_programming = false;
     m_programRunning = false;
     m_remoteProgramRunning = false;
@@ -430,6 +431,40 @@ int Interpreter::sendStop()
     return response;
 }
 
+void Interpreter::setModel()
+{
+
+    if (m_setModelMode==VideoWidget::REGION)
+        textOut("Please select a region with your mouse.\n");
+    else
+        textOut("Please select a point with your mouse.\n");
+
+    emit videoInput(m_setModelMode);
+
+    // wait for response
+    m_mutexSelection.lock();
+    m_waitSelection.wait(&m_mutexSelection);
+    m_mutexSelection.unlock();
+
+    if (m_setModelMode==VideoWidget::REGION)
+        m_renderer->m_blobs.generateLUT(m_setModel, m_selection.x(), m_selection.y(), m_selection.width(), m_selection.height(), m_renderer->m_rawFrame.m_pixels);
+    else
+    {
+        RectA region;
+        m_renderer->m_blobs.generateLUT(m_setModel, m_renderer->m_rawFrame, Point16(m_selection.x(), m_selection.y()), &region);
+        // rerender frame
+        m_renderer->renderBackground();
+        // render region that we grew around the point (seed)
+        m_renderer->renderRect(m_renderer->m_rawFrame.m_width, m_renderer->m_rawFrame.m_height, region);
+        m_renderer->emitFlushImage();
+    }
+    uploadLut();
+    textOut("done!\n");
+    prompt();
+    m_setModel = 0;
+}
+
+
 void Interpreter::run()
 {
     int res;
@@ -460,27 +495,7 @@ begin:
     }
 
     if (m_setModel)
-    {
-        textOut("Please select a region with your mouse.\n");
-        emit videoInput(VideoWidget::POINT);
-        m_mutexSelection.lock();
-        m_waitSelection.wait(&m_mutexSelection);
-        m_mutexSelection.unlock();
-        //m_renderer->m_blobs.generateLUT(m_setModel, m_selection.x(), m_selection.y(), m_selection.width(), m_selection.height(), m_renderer->m_frameData);
-        RectA region;
-        m_renderer->m_blobs.generateLUT(m_setModel, m_renderer->m_rawFrame, Point16(m_selection.x(), m_selection.y()), &region);
-        uint16_t blobs[] = {1, region.m_xOffset, region.m_xOffset+region.m_width, region.m_yOffset, region.m_yOffset+region.m_height};
-        // rerender frame.. this is sort of lame---
-        // if we do this elsewhere (we don't for now) we need to find a better method
-        m_renderer->renderBA81(m_renderer->m_rawFrame.m_width, m_renderer->m_rawFrame.m_height,
-                               m_renderer->m_rawFrame.m_width*m_renderer->m_rawFrame.m_height,  m_renderer->m_rawFrame.m_pixels);
-        m_renderer->renderCCB1(320, 200, 1, blobs);
-        m_renderer->emitFlushImage();
-        //uploadLut();
-        textOut("done!\n");
-        prompt();
-        m_setModel = 0;
-    }
+        setModel();
     else if (m_remoteProgramRunning)
     {
         if (!getRunning()) // if we're not running, we should start
@@ -705,13 +720,16 @@ void Interpreter::command(const QString &command)
         if (res<0)
             emit error("There was an error (bad model number of filename.)\n");
     }
-    else if(words[0]=="signature")
+    else if(words[0]=="region" || words[0]=="point")
     {
         if (words.size()==1)
             m_setModel = 1;
         else
             m_setModel = words[1].toInt();
-
+        if (words[0]=="region")
+            m_setModelMode = VideoWidget::REGION;
+        else
+            m_setModelMode = VideoWidget::POINT;
         start();
         return;
     }

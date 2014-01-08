@@ -85,6 +85,7 @@ private:
     int execute();
     bool checkRemoteProgram();
     int stopRemoteProgram();
+    void setModel();
 
     int getRunning();
     int sendRun();
@@ -124,6 +125,7 @@ private:
     QWaitCondition m_waitSelection;
     QRect m_selection;
     int m_setModel;
+    VideoWidget::InputMode m_setModelMode;
 
     unsigned int m_pc;
     ChirpProc m_exec_run;

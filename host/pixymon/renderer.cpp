@@ -7,23 +7,13 @@
 #include "calc.h"
 #include <math.h>
 
-Renderer::Renderer(VideoWidget *video)
+Renderer::Renderer(VideoWidget *video) : m_background(0, 0)
 {
     m_video = video;
 
     m_rawFrame.m_pixels = new uint8_t[0x10000];
 
     m_backgroundFrame = true;
-
-    m_hmin = 0x00;
-    m_hmax = 0xff;
-    m_smin = 0x00;
-    m_smax = 0xff;
-    m_vmin = 0x00;
-    m_vmax = 0xff;
-    m_cmin = 0x00;
-    m_cmax = 0xff;
-    m_lut = NULL;
 
     m_mode = 3;
 
@@ -171,43 +161,6 @@ inline void Renderer::interpolateBayer(unsigned int width, unsigned int x, unsig
 }
 
 
-#define MAX(a, b)  (a>b ? a : b)
-#define MIN(a, b)  (a<b ? a : b)
-
-void RGBtoHSV(uint8_t r, uint8_t g, uint8_t b, uint8_t *h, uint8_t *s, uint8_t *v, uint8_t *c)
-{
-    uint8_t min, max, delta;
-    int hue;
-    min = MIN(r, g);
-    min = MIN(min, b);
-    max = MAX(r, g);
-    max = MAX(max, b);
-
-    *v = max;
-    delta = max - min;
-    if (max!=0)
-        *s = ((int)delta<<8)/max;
-    if (max==0 || delta==0)
-    {
-        *s = 0;
-        *h = 0;
-        *c = 0;
-        return;
-    }
-    if (r==max)
-        hue = (((int)g - (int)b)<<8)/delta;         // between yellow & magenta
-    else if (g==max)
-        hue = (2<<8) + (((int)b - (int)r)<<8)/delta;     // between cyan & yellow
-    else
-        hue = (4<<8) + (((int)r - (int)g)<<8)/delta;     // between magenta & cyan
-    if(hue < 0)
-        hue += 6<<8;
-    hue /= 6;
-    *h = hue;
-    *c = delta;
-}
-
-
 
 int Renderer::renderBA81(uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame)
 {
@@ -244,6 +197,8 @@ int Renderer::renderBA81(uint16_t width, uint16_t height, uint32_t frameLen, uin
     // send image to ourselves across threads
     // from chirp thread to gui thread
     emitImage(img);
+
+    m_background = img;
 
     if (m_mode&0x01)
     {
@@ -364,7 +319,8 @@ int Renderer::renderRect(uint16_t width, uint16_t height, const RectA &rect)
     img.fill(0x00000000);
     p.begin(&img);
     p.setBrush(QBrush(QColor(0xff, 0xff, 0xff, 0x20)));
-    p.drawRect(rect.m_xOffset, rect.m_yOffset, rect.m_width, rect.m_height);
+    p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
+    p.drawRect(scale*rect.m_xOffset, scale*rect.m_yOffset, scale*rect.m_width, scale*rect.m_height);
     p.end();
 
     emitImage(img);
@@ -457,3 +413,10 @@ int Renderer::render(uint32_t type, void *args[])
     return res;
 }
 
+int Renderer::renderBackground()
+{
+    if (m_background.width()!=0)
+        emit image(m_background);
+
+    return 0;
+}
