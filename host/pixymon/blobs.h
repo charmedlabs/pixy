@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <vector>
 #include <utility>
+#include "pixytypes.h"
 #include "blob.h"
 #include "colorlut.h"
 
@@ -37,7 +38,7 @@ public:
     int setLabel(uint32_t model, const QString &label);
     int setLabel(const QString &model, const QString &label);
     QString *getLabel(uint32_t model);
-    int generateLUT(uint8_t model, uint16_t x0, uint16_t y0, uint16_t width, uint16_t height, uint8_t *frame);
+    int generateLUT(uint8_t model, const Frame8 &frame, const RectA &region);
     int generateLUT(uint8_t model, const Frame8 &frame, const Point16 &seed, RectA *region=NULL);
 
     friend class Renderer;

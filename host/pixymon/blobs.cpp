@@ -561,13 +561,13 @@ void Blobs::processCoded()
 #define WIDTH 320
 #define HEIGHT 200
 
-int Blobs::generateLUT(uint8_t model, uint16_t x0, uint16_t y0, uint16_t width, uint16_t height, uint8_t *frame)
+int Blobs::generateLUT(uint8_t model, const Frame8 &frame, const RectA &region)
 {
     ColorModel cmodel;
     if (model>NUM_MODELS)
         return -1;
 
-    m_clut->generate(&cmodel, frame, x0, y0, width, height, WIDTH);
+    m_clut->generate(&cmodel, frame, region);
     m_clut->add(&cmodel, model);
 
     return 0;
@@ -580,8 +580,7 @@ int Blobs::generateLUT(uint8_t model, const Frame8 &frame, const Point16 &seed, 
 
     m_clut->growRegion(&cregion, frame, seed);
 
-    m_clut->generate(&cmodel, frame.m_pixels,
-                     cregion.m_xOffset, cregion.m_yOffset, cregion.m_width, cregion.m_height, frame.m_width);
+    m_clut->generate(&cmodel, frame, cregion);
     m_clut->add(&cmodel, model);
 
     if (region)

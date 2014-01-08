@@ -49,17 +49,17 @@ ColorLUT::~ColorLUT()
 }
 
 
-int ColorLUT::generate(ColorModel *model, const uint8_t *bayerPixels, uint16_t xOffset, uint16_t yOffset, uint16_t width, uint16_t height, uint16_t pitch)
+int ColorLUT::generate(ColorModel *model, const Frame8 &frame, const RectA &region)
 {
     Fpoint meanVal;
     float angle, pangle, pslope;
     float yi, istep, s, xsat, sat;
 
-    m_hpixels = (HuePixel *)malloc(sizeof(HuePixel)*(width+1)*(height+1)/4);
+    m_hpixels = (HuePixel *)malloc(sizeof(HuePixel)*(frame.m_width+1)*(frame.m_height+1)/4);
     if (m_hpixels==NULL)
         return -1; // not enough memory
 
-    map(bayerPixels, xOffset, yOffset, width, height, pitch);
+    map(frame, region);
     mean(&meanVal);
     angle = atan2(meanVal.m_y, meanVal.m_x);
     Fpoint uvec(cos(angle), sin(angle));
@@ -122,23 +122,21 @@ int ColorLUT::generate(ColorModel *model, const uint8_t *bayerPixels, uint16_t x
     return 0;
 }
 
-void ColorLUT::map(const uint8_t *bayerPixels, uint16_t xOffset, uint16_t yOffset, uint16_t width, uint16_t height, uint16_t pitch)
+void ColorLUT::map(const Frame8 &frame, const RectA &region)
 {
     uint32_t x, y, r, g1, g2, b, count;
     int32_t u, v;
+    uint8_t *pixels;
 
-    xOffset |= 1;
-    yOffset |= 1;
-
-    bayerPixels += yOffset*pitch + xOffset;
-    for (y=0, count=0; y<height; y+=2, bayerPixels+=pitch*2)
+    pixels = frame.m_pixels + (region.m_yOffset | 1)*frame.m_width + (region.m_xOffset | 1);
+    for (y=0, count=0; y<region.m_height; y+=2, pixels+=frame.m_width*2)
     {
-        for (x=0; x<width; x+=2, count++)
+        for (x=0; x<region.m_width; x+=2, count++)
         {
-            r = bayerPixels[x];
-            g1 = bayerPixels[x - 1];
-            g2 = bayerPixels[-pitch + x];
-            b = bayerPixels[-pitch + x - 1];
+            r = pixels[x];
+            g1 = pixels[x - 1];
+            g2 = pixels[-frame.m_width + x];
+            b = pixels[-frame.m_width + x - 1];
             u = r-g1;
             v = b-g2;
             u >>= 1;
@@ -306,7 +304,7 @@ int ColorLUT::growRegion(RectA *result, const Frame8 &frame, const Point16 &seed
     if (region.m_yOffset+region.m_height>frame.m_height)
         region.m_height = frame.m_height-region.m_yOffset;
 
-    map(frame.m_pixels, region.m_xOffset, region.m_yOffset, region.m_width, region.m_height, frame.m_width);
+    map(frame, region);
     mean(&mean0);
     done = 0x00;
 
@@ -370,7 +368,7 @@ int ColorLUT::growRegion(RectA *result, const Frame8 &frame, const Point16 &seed
             }
 
             // calculate new region mean
-            map(frame.m_pixels, newRegion.m_xOffset, newRegion.m_yOffset, newRegion.m_width, newRegion.m_height, frame.m_width);
+            map(frame, newRegion);
             mean(&newMean);
 
             // test new region

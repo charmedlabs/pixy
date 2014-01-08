@@ -447,7 +447,7 @@ void Interpreter::setModel()
     m_mutexSelection.unlock();
 
     if (m_setModelMode==VideoWidget::REGION)
-        m_renderer->m_blobs.generateLUT(m_setModel, m_selection.x(), m_selection.y(), m_selection.width(), m_selection.height(), m_renderer->m_rawFrame.m_pixels);
+        m_renderer->m_blobs.generateLUT(m_setModel, m_renderer->m_rawFrame, RectA(m_selection.x(), m_selection.y(), m_selection.width(), m_selection.height()));
     else
     {
         RectA region;

@@ -32,13 +32,13 @@ public:
     int setBounds(float minSat, float hueTol, float satTol);
     int setOther(float maxSatRatio, float outlierRatio);
 
-    int generate(ColorModel *model, const uint8_t *bayerPixels, uint16_t xOffset, uint16_t yOffset, uint16_t width, uint16_t height, uint16_t pitch);
+    int generate(ColorModel *model, const Frame8 &frame, const RectA &region);
     int growRegion(RectA *result, const Frame8 &frame, const Point16 &seed);
     void add(const ColorModel *model, uint8_t modelIndex);
     void clear(uint8_t modelIndex=0); // 0 = all models
 
 private:
-    void map(const uint8_t *bayerPixels, uint16_t xOffset, uint16_t yOffset, uint16_t width, uint16_t height, uint16_t pitch);
+    void map(const Frame8 &frame, const RectA &region);
     void mean(Fpoint *meanVal);
     float iterate(Line line, float step);
     void tweakMean(float *mean);
