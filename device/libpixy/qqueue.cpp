@@ -30,22 +30,20 @@ uint32_t Qqueue::readAll(Qval *mem, uint32_t size)
 {
     uint16_t len = m_fields->produced - m_fields->consumed;
 	uint16_t i, j;
-
-	if (len>size)
-		return 0;
-
-	for (i=0, j=m_fields->readIndex; i<len; i++)
+	
+	for (i=0, j=m_fields->readIndex; i<len && i<size; i++)
 	{
 		mem[i] = m_fields->data[j++];
 		if (j==QQ_SIZE)
 			j = 0;
 	}
+	// flush the rest
 	m_fields->consumed += len;
 	m_fields->readIndex += len;
 	if (m_fields->readIndex>=QQ_SIZE)
 		m_fields->readIndex -= QQ_SIZE;
 
-	return len;					
+	return i;					
 }
 
 void Qqueue::flush()

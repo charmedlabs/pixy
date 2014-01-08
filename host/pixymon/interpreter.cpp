@@ -837,7 +837,7 @@ int Interpreter::uploadLut()
     qDebug() << sum;
     ChirpProc setmem = m_chirp->getProc("cc_setMemory");
     for (i=0; i<LUT_SIZE; i+=0x100)
-        m_chirp->callSync(setmem, UINT32(0x10008000+i), UINTS8(0x100, m_lut+i), END_OUT_ARGS, &responseInt, END_IN_ARGS);
+        m_chirp->callSync(setmem, UINT32(0x10082000+i), UINTS8(0x100, m_lut+i), END_OUT_ARGS, &responseInt, END_IN_ARGS);
 
     return 0;
 }
