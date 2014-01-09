@@ -507,3 +507,34 @@ void Blobs::processCoded()
     }
 }
 
+int Blobs::generateLUT(uint8_t model, const Frame8 &frame, const RectA &region)
+{
+    ColorModel cmodel;
+    if (model>NUM_MODELS)
+        return -1;
+
+    m_clut->generate(&cmodel, frame, region);
+	m_clut->clear(); // remove later...
+    m_clut->add(&cmodel, model);
+
+	return 0;
+}
+
+int Blobs::generateLUT(uint8_t model, const Frame8 &frame, const Point16 &seed, RectA *region)
+{
+    RectA cregion;
+    ColorModel cmodel;
+
+    m_clut->growRegion(&cregion, frame, seed);
+
+    m_clut->generate(&cmodel, frame, cregion);
+	m_clut->clear(); // remove later...
+    m_clut->add(&cmodel, model);
+
+    if (region)
+        *region = cregion;
+
+	return 0;
+}
+
+

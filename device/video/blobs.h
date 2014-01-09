@@ -1,14 +1,15 @@
 #ifndef BLOBS_H
 #include <stdint.h>
 #include "cblob.h"
+#include "colorlut.h"
+#include "pixytypes.h"
 
 #define NUM_MODELS      7
 #define MAX_BLOBS       200
 #define MAX_MERGE_DIST  5
 #define MIN_AREA        20
 
-#define LUT_MEMORY_SIZE		0x10000 // bytes
-#define LUT_MEMORY			((uint8_t *)SRAM1_LOC + SRAM1_SIZE-LUT_MEMORY_SIZE)  // +0x100 make room for prebuf and palette
+#define LUT_MEMORY			((uint8_t *)SRAM1_LOC + SRAM1_SIZE-CL_LUT_SIZE)  // +0x100 make room for prebuf and palette
 
 class Qqueue;
 class ColorLUT;
@@ -21,6 +22,8 @@ public:
     void blobify();
 	uint16_t getBlock(uint16_t *buf);
 	uint16_t *getMaxBlob(uint16_t signature); 
+	int generateLUT(uint8_t model, const Frame8 &frame, const RectA &region);
+	int generateLUT(uint8_t model, const Frame8 &frame, const Point16 &seed, RectA *region);
 
 private:
     uint16_t combine(uint16_t *blobs, uint16_t numBlobs);

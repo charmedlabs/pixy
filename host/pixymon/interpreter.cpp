@@ -463,6 +463,7 @@ void Interpreter::setModel()
         m_renderer->emitFlushImage();
     }
     uploadLut();
+
     textOut("done!\n");
     prompt();
     m_setModel = 0;
@@ -1130,19 +1131,10 @@ void Interpreter::fileOutDebug(uint8_t *data)
 
 void Interpreter::handleSelection(int x0, int y0, int width, int height)
 {
-#if 0
-    m_command = QString::number(x0) + " " + QString::number(y0) +  " " + QString::number(width) +  " " + QString::number(height);
-    m_waitInput.wakeAll();
-#endif
-#if 0
-    uint8_t lut[0x8000];
-    int i;
-    for (i=0; i<0x8000; i++)
-        lut[i] = i;
-    uploadLut(lut);
-#endif
 
     m_selection.setRect(x0, y0, width, height);
+    m_command = QString::number(x0) + " " + QString::number(y0) +  " " + QString::number(width) +  " " + QString::number(height);
+    m_waitInput.wakeAll();
     m_waitSelection.wakeAll();
 }
 
@@ -1153,6 +1145,7 @@ int Interpreter::call(const QStringList &argv, bool interactive)
     int args[20];
     int i, j, n, base, res;
     bool ok;
+    uint type;
     ArgList list;
     QMutexLocker locker(&m_chirp->m_mutex);
 
@@ -1175,21 +1168,31 @@ int Interpreter::call(const QStringList &argv, bool interactive)
             if (interactive && argv.size()>0)
             {
                 QStringList cargv = argv;
-                QString pstring;
+                QString pstring, pstring2;
                 for (i=cargv.size()-1; i<(int)list.size(); i++)
                 {
                     if (info.argTypes[i]==CRP_TYPE_HINT)
                     {
                         if (n>i+4)
                         {
-                            pstring += "(select region)";
-                            emit videoInput(VideoWidget::REGION);
+                            type = *(uint *)&info.argTypes[i+1];
+                            if (type==FOURCC('R','E','G','1'))
+                            {
+                                emit videoInput(VideoWidget::REGION);
+                                pstring2 = "(select region with mouse)";
+                            }
+                            if (type==FOURCC('P','N','T','1'))
+                            {
+                                emit videoInput(VideoWidget::POINT);
+                                pstring2 = "(select point with mouse)";
+                            }
+
                             emit enableConsole(false);
                         }
 
                     }
                     pstring = printArgType(&info.argTypes[i], i) + " " + list[i].first +
-                            (list[i].second=="" ? "?" : " (" + list[i].second + ")?");
+                            (list[i].second=="" ? "?" : " (" + list[i].second + ")?") + " " + pstring2;
 
                     emit prompt(pstring);
                     m_mutexInput.lock();
@@ -1200,7 +1203,7 @@ int Interpreter::call(const QStringList &argv, bool interactive)
 
                     if (m_key==Qt::Key_Escape)
                         return -1;
-                    cargv << m_command.split(QRegExp("\\s+"))[0];
+                    cargv << m_command.split(QRegExp("\\s+"));
                 }
                 // call ourselves again, now that we have all the args
                 return call(cargv, true);
@@ -1312,8 +1315,11 @@ void Interpreter::augmentProcInfo(ProcInfo *info)
                     m_argTypes[i++] = CRP_UINT16;
                     m_argTypes[i++] = CRP_UINT16;
                 }
-                //else if (type==FOURCC('F','O','O','1'))
-
+                else if (type==FOURCC('P','N','T','1'))
+                {
+                    m_argTypes[i++] = CRP_UINT16;
+                    m_argTypes[i++] = CRP_UINT16;
+                }
                 memcpy(&m_argTypes[i], types, strlen((char *)types)+1);
                 i += strlen((char *)types);
             }

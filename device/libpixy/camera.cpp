@@ -134,6 +134,8 @@ static const ProcModule g_module[] =
 };
 
 CSccb *g_sccb = NULL;
+Frame8 g_rawFrame;
+
 static uint8_t g_mode = (uint8_t)-1;
 static uint8_t g_awb = 1;
 static uint8_t g_aec = 1;
@@ -481,6 +483,13 @@ int32_t cam_getFrame(uint8_t *memory, uint32_t memSize, uint8_t type, uint16_t x
 		UINT8(type), UINT32((uint32_t)memory), UINT16(xOffset), UINT16(yOffset), UINT16(xWidth), UINT16(yWidth), END_OUT_ARGS,
 		&responseInt, END_IN_ARGS);
 
+	if (responseInt==0)
+	{
+		g_rawFrame.m_pixels = memory;
+		g_rawFrame.m_width = xWidth;
+		g_rawFrame.m_height = yWidth;
+	}
+
 	return responseInt;
 }
 
@@ -496,6 +505,7 @@ int32_t cam_getFrameChirp(const uint8_t &type, const uint16_t &xOffset, const ui
 
 	// tell chirp to use this buffer
 	chirp->useBuffer(frame, len+xWidth*yWidth); 
+
 	return result;
 }
 

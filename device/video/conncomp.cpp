@@ -30,12 +30,21 @@ static const ProcModule g_module[] =
 	"@r CCQ1 formated data, including 8-palette"
 	},
 	{
-	"cc_setModel",
-	(ProcPtr)cc_setModel, 
+	"cc_setSigRegion",
+	(ProcPtr)cc_setSigRegion, 
 	{CRP_UINT8, CRP_HTYPE(FOURCC('R','E','G','1')), END}, 
-	"Set model by selecting box in image"
-	"@p model numerical index of model, can be 0-5"
-	"@p pixels user-selected pixels"
+	"Set model by selecting region in image"
+	"@p model numerical index of model, can be 1-7"
+	"@p region user-selected region"
+	"@r 0 if success, negative if error"
+	},
+	{
+	"cc_setSigPoint",
+	(ProcPtr)cc_setSigPoint, 
+	{CRP_UINT8, CRP_HTYPE(FOURCC('P','N','T','1')), END}, 
+	"Set model by selecting point in image"
+	"@p model numerical index of model, can be 1-7"
+	"@p point user-selected point"
 	"@r 0 if success, negative if error"
 	},
 	{
@@ -66,9 +75,27 @@ int cc_init(Chirp *chirp)
 }
 
 // this routine assumes it can grab valid pixels in video memory described by the box
-int32_t cc_setModel(const uint8_t &model, const uint16_t &xoffset, const uint16_t &yoffset, const uint16_t &width, const uint16_t &height, Chirp *chirp)
+int32_t cc_setSigRegion(const uint8_t &model, const uint16_t &xoffset, const uint16_t &yoffset, const uint16_t &width, const uint16_t &height)
 {
-	return 0;
+	if (model<1 || model>7)
+		return -1;
+
+	return g_blobs->generateLUT(model, g_rawFrame, RectA(xoffset, yoffset, width, height));
+}
+
+int32_t cc_setSigPoint(const uint8_t &model, const uint16_t &x, const uint16_t &y)
+{
+	RectA region;
+	int result; 
+
+	if (model<1 || model>7)
+		return -1;
+
+	result = g_blobs->generateLUT(model, g_rawFrame, Point16(x, y), &region);
+
+	cprintf("%d %d %d %d\n", region.m_xOffset, region.m_yOffset, region.m_width, region.m_height);
+
+	return result;
 }
 
 int32_t cc_getRLSFrameChirp(Chirp *chirp)
