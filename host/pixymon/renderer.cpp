@@ -229,9 +229,13 @@ int Renderer::renderCCB1(uint8_t renderFlags, uint16_t width, uint16_t height, u
     QString str;
     QString *label;
 
+    numBlobs /= sizeof(BlobA)/sizeof(uint16_t);
 
-    //qDebug() << "numblobs " << numBlobs;
-    img.fill(0x00000000);
+    qDebug() << "numblobs " << numBlobs;
+    if (m_backgroundFrame)
+        img.fill(0xff000000);
+    else
+        img.fill(0x00000000);
     p.begin(&img);
     p.setBrush(QBrush(QColor(0xff, 0xff, 0xff, 0x20)));
     p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));

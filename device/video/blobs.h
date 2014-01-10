@@ -9,7 +9,10 @@
 #define MAX_MERGE_DIST  5
 #define MIN_AREA        20
 
-#define LUT_MEMORY			((uint8_t *)SRAM1_LOC + SRAM1_SIZE-CL_LUT_SIZE)  // +0x100 make room for prebuf and palette
+#define LUT_MEMORY		((uint8_t *)SRAM1_LOC + SRAM1_SIZE-CL_LUT_SIZE)  // +0x100 make room for prebuf and palette
+
+#define BL_BEGIN_MARKER	0xaa55
+#define BL_END_MARKER	0xccaa
 
 class Qqueue;
 class ColorLUT;
@@ -22,6 +25,8 @@ public:
     void blobify();
 	uint16_t getBlock(uint16_t *buf);
 	uint16_t *getMaxBlob(uint16_t signature); 
+	void getBlobs(BlobA **blobs, uint32_t *len);
+
 	int generateLUT(uint8_t model, const Frame8 &frame, const RectA &region);
 	int generateLUT(uint8_t model, const Frame8 &frame, const Point16 &seed, RectA *region);
 
@@ -41,9 +46,6 @@ private:
     uint16_t *m_blobs;
     uint16_t m_numBlobs;
 	ColorLUT *m_clut;
-
-    uint16_t *m_blobsCopy;
-    uint16_t m_numBlobsCopy;
 
 	bool m_mutex;
     uint16_t m_maxBlobs;

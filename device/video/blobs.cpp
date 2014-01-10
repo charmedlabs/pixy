@@ -9,11 +9,10 @@ Blobs::Blobs(Qqueue *qq)
 	m_qq = qq;
     m_blobs = new uint16_t[MAX_BLOBS*5];
 	m_numBlobs = 0;
-    m_blobsCopy = new uint16_t[MAX_BLOBS*5];
+	m_blobReadIndex = 0;
 
 	m_clut = new ColorLUT((void *)LUT_MEMORY);
 
-	m_numBlobsCopy = 0;
 	m_mutex = false;
     m_minArea = MIN_AREA;
     m_mergeDist = MAX_MERGE_DIST;
@@ -23,7 +22,6 @@ Blobs::Blobs(Qqueue *qq)
 Blobs::~Blobs()
 {
     delete [] m_blobs;
-    delete [] m_blobsCopy;
 }
 
 // Blob format:
@@ -89,19 +87,22 @@ void Blobs::blobify()
     {
         m_assembler[i].EndFrame();
         m_assembler[i].SortFinished();
+	}
 
+	m_mutex = true;
+    for (i=0, m_numBlobs=0; i<NUM_MODELS; i++)
+	{
         for (j=m_numBlobs*5, blobsStart=m_blobs+j, numBlobsStart=m_numBlobs, blob=m_assembler[i].finishedBlobs;
              blob && m_numBlobs<MAX_BLOBS; blob=blob->next)
         {
             if (blob->GetArea()<(int)m_minArea)
                 continue;
             blob->getBBox((short &)left, (short &)top, (short &)right, (short &)bottom);
-            // shift by 4 because we need to double the parameters (we're processing at 1/4 resolution)
             m_blobs[j + 0] = i+1;
-            m_blobs[j + 1] = left<<1;
-            m_blobs[j + 2] = right<<1;
-            m_blobs[j + 3] = top<<1;
-            m_blobs[j + 4] = bottom<<1;
+            m_blobs[j + 1] = left;
+            m_blobs[j + 2] = right;
+            m_blobs[j + 3] = top;
+            m_blobs[j + 4] = bottom;
             m_numBlobs++;
             j += 5;
 
@@ -121,6 +122,9 @@ void Blobs::blobify()
 #endif
 
     }
+	m_blobReadIndex = 0;
+	m_mutex = false;
+
 	static int frame = 0;
 	if (m_numBlobs>0)
 		cprintf("%d: blobs %d %d %d %d %d\n", frame, m_numBlobs, m_blobs[1], m_blobs[2], m_blobs[3], m_blobs[4]);
@@ -128,14 +132,13 @@ void Blobs::blobify()
 		cprintf("%d: blobs 0\n", frame);
 	frame++;
 
-	// copy them out of scratchpad memory into streaming memory
-	copyBlobs();
 }
 
 uint16_t Blobs::getBlock(uint16_t *buf)
 {
 	uint16_t temp, width, height;
 	uint16_t checksum;
+	uint16_t len = 8;  // default
 	int i = m_blobReadIndex*5;
 
 	if (m_mutex) // we're copying, so no blocks for now....
@@ -146,16 +149,22 @@ uint16_t Blobs::getBlock(uint16_t *buf)
 		return 2;
 	}
 
-	m_mutex = true;
-
-	if (m_blobReadIndex>=m_numBlobsCopy)
+	if (m_blobReadIndex>=m_numBlobs)
 	{
 		m_mutex = false;
 		return 0;
 	}
 
+	if (m_blobReadIndex==0)	// beginning of frame, mark it with empty block
+	{
+		buf[0] = BL_BEGIN_MARKER;
+		buf[1] = BL_END_MARKER;
+		len += 2;
+		buf += 2;
+	}
+
 	// beginning of block
-	buf[0] = 0xaa55;
+	buf[0] = BL_BEGIN_MARKER;
 
 	// model
 	temp = m_blobs[i];
@@ -185,49 +194,35 @@ uint16_t Blobs::getBlock(uint16_t *buf)
 	buf[1] = checksum;
 
 	// end of block
-	buf[7] = 0xccaa;
+	buf[7] = BL_END_MARKER;
 
 	// next blob	 
 	m_blobReadIndex++;
 
-	m_mutex = false;
-	return 8; // eight words
+ 	return len;
 }
 
-
-void Blobs::copyBlobs()
-{
-	int i, j;
-
- 	m_mutex = true;
-
-	m_blobReadIndex = 0;
-
-	for (i=0, j=0; i<m_numBlobs; i++, j+=5)
-	{
-		m_blobsCopy[j+0] = m_blobs[j+0];	
-		m_blobsCopy[j+1] = m_blobs[j+1];	
-		m_blobsCopy[j+2] = m_blobs[j+2];	
-		m_blobsCopy[j+3] = m_blobs[j+3];	
-		m_blobsCopy[j+4] = m_blobs[j+4];
-	}
-	m_numBlobsCopy = m_numBlobs;
-
-	m_mutex = false;	
-}
 
 uint16_t *Blobs::getMaxBlob(uint16_t signature)
 {
 	int i, j;
 
-	for (i=0, j=0; i<m_numBlobsCopy; i++, j+=5)
+	for (i=0, j=0; i<m_numBlobs; i++, j+=5)
 	{
-		if (m_blobsCopy[j+0]==signature)
-			return m_blobsCopy+j;
+		if (m_blobs[j+0]==signature)
+			return m_blobs+j;
 	}
 	
 	return NULL;		
 } 
+
+void Blobs::getBlobs(BlobA **blobs, uint32_t *len)
+{
+	*blobs = (BlobA *)m_blobs;
+	*len = m_numBlobs;
+}
+
+
 
 uint16_t Blobs::compress(uint16_t *blobs, uint16_t numBlobs)
 {

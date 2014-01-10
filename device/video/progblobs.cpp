@@ -4,6 +4,7 @@
 #include "qqueue.h"
 #include "blobs.h"
 #include "spi.h"
+#include "conncomp.h"
 
 extern Qqueue *g_qqueue;
 extern Blobs *g_blobs;
@@ -53,9 +54,15 @@ int blobsLoop()
 	}
 #else
 	uint16_t recvBuf[1];
+	BlobA *blobs;
+	uint32_t numBlobs;
 
 	// create blobs
 	g_blobs->blobify();
+
+	// send blobs
+	g_blobs->getBlobs(&blobs, &numBlobs);
+	cc_sendBlobs(g_chirpUsb, blobs, numBlobs);
 
 	// just grab a word-- don't worry about looking at data except to see if we're synchronized.
 	if (spi_receive(recvBuf, 1))
