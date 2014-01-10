@@ -8,3 +8,4 @@ This directory contains
 /host - this directory contains code that runs on the host computer.
 (Windows PC, Linux PC, Mac)
 
+/arduino - this directory contains the Arduino library for communicating with Pixy.
