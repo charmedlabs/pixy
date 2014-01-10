@@ -231,11 +231,16 @@ int Renderer::renderCCB1(uint8_t renderFlags, uint16_t width, uint16_t height, u
 
     numBlobs /= sizeof(BlobA)/sizeof(uint16_t);
 
-    qDebug() << "numblobs " << numBlobs;
-    if (m_backgroundFrame)
+    // qDebug() << "numblobs " << numBlobs;
+
+    // render background so we can blend ontop of it
+    if (renderFlags&RENDER_FLAG_BLEND_BG)
+        renderBackground();
+
+    if (m_backgroundFrame) // if we're the background, we should be opaque
         img.fill(0xff000000);
     else
-        img.fill(0x00000000);
+        img.fill(0x00000000); // otherwise, we're transparent
     p.begin(&img);
     p.setBrush(QBrush(QColor(0xff, 0xff, 0xff, 0x20)));
     p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
@@ -309,8 +314,6 @@ int Renderer::renderCCB1(uint8_t renderFlags, uint16_t width, uint16_t height, u
 #endif
     p.end();
 
-    if (renderFlags&RENDER_FLAG_BLEND_BG)
-        renderBackground();
     emitImage(img);
     if (renderFlags&RENDER_FLAG_FLUSH)
         emitFlushImage();
@@ -426,7 +429,7 @@ int Renderer::render(uint32_t type, void *args[])
 int Renderer::renderBackground()
 {
     if (m_background.width()!=0)
-        emit image(m_background);
+        emitImage(m_background);
 
     return 0;
 }

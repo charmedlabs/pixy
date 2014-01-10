@@ -1,4 +1,5 @@
 #include <string.h>
+#include <new>
 #include "chirp.hpp"
 
 // todo yield, sleep() while waiting for sync response
@@ -33,7 +34,7 @@ Chirp::Chirp(bool hinterested, bool client, Link *link)
     m_client = client;
 
     m_procTableSize = CRP_PROCTABLE_LEN;
-    m_procTable = new ProcTableEntry[m_procTableSize];
+    m_procTable = new (std::nothrow) ProcTableEntry[m_procTableSize];
     memset(m_procTable, 0, sizeof(ProcTableEntry)*m_procTableSize);
 
     if (link)
@@ -78,7 +79,7 @@ int Chirp::setLink(Link *link)
     else
     {
         m_bufSize = CRP_BUFSIZE;
-        m_buf = new uint8_t[m_bufSize];
+        m_buf = new (std::nothrow) uint8_t[m_bufSize];
     }
 
     // link is set up, need to call init
@@ -599,7 +600,9 @@ int Chirp::reallocTable()
 
     // allocate new table, zero
     newProcTableSize = m_procTableSize+CRP_PROCTABLE_LEN;
-    newProcTable = new ProcTableEntry[newProcTableSize];
+    newProcTable = new (std::nothrow) ProcTableEntry[newProcTableSize];
+	if (newProcTable==NULL)
+		return CRP_RES_ERROR_MEMORY;
     memset(newProcTable, 0, sizeof(ProcTableEntry)*newProcTableSize);
     // copy to new table
     memcpy(newProcTable, m_procTable, sizeof(ProcTableEntry)*m_procTableSize);
@@ -793,7 +796,9 @@ int Chirp::realloc(uint32_t min)
         min = m_bufSize+CRP_BUFSIZE;
     else
         min += CRP_BUFSIZE;
-    uint8_t *newbuf = new uint8_t[min];
+    uint8_t *newbuf = new (std::nothrow) uint8_t[min];
+	if (newbuf==NULL)
+		return CRP_RES_ERROR_MEMORY;
     memcpy(newbuf, m_buf, m_bufSize);
     delete[] m_buf;
     m_buf = newbuf;

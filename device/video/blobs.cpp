@@ -6,6 +6,8 @@
 
 Blobs::Blobs(Qqueue *qq)
 {
+	int i;
+
 	m_qq = qq;
     m_blobs = new uint16_t[MAX_BLOBS*5];
 	m_numBlobs = 0;
@@ -16,6 +18,10 @@ Blobs::Blobs(Qqueue *qq)
 	m_mutex = false;
     m_minArea = MIN_AREA;
     m_mergeDist = MAX_MERGE_DIST;
+
+    // reset blob assemblers
+    for (i=0; i<NUM_MODELS; i++)
+        m_assembler[i].Reset();
 }
 
 
@@ -47,9 +53,6 @@ void Blobs::blobify()
     // | 4 bits    | 7 bits      | 9 bits | 9 bits    | 3 bits |
     // | shift val | shifted sum | length | begin col | model  |
 
-    // start frame
-    for (i=0; i<NUM_MODELS; i++)
-        m_assembler[i].Reset();
 
    	row = -1;
 	memfull = false;
@@ -82,13 +85,15 @@ void Blobs::blobify()
     }
 	//cprintf("rows %d %d\n", row, i);
 
-
+	// finish frame
     for (i=0, m_numBlobs=0; i<NUM_MODELS; i++)
     {
         m_assembler[i].EndFrame();
         m_assembler[i].SortFinished();
 	}
 
+	// copy blobs into memory
+	// mutex keeps interrupt routine from stepping on us
 	m_mutex = true;
     for (i=0, m_numBlobs=0; i<NUM_MODELS; i++)
 	{
@@ -122,16 +127,22 @@ void Blobs::blobify()
 #endif
 
     }
+	// reset read index-- new frame
 	m_blobReadIndex = 0;
 	m_mutex = false;
 
+    // free memory
+    for (i=0; i<NUM_MODELS; i++)
+        m_assembler[i].Reset();
+
+#if 0
 	static int frame = 0;
 	if (m_numBlobs>0)
 		cprintf("%d: blobs %d %d %d %d %d\n", frame, m_numBlobs, m_blobs[1], m_blobs[2], m_blobs[3], m_blobs[4]);
 	else
 		cprintf("%d: blobs 0\n", frame);
 	frame++;
-
+#endif
 }
 
 uint16_t Blobs::getBlock(uint16_t *buf)
