@@ -83,7 +83,7 @@ int32_t cc_setSigRegion(const uint8_t &model, const uint16_t &xoffset, const uin
 	return g_blobs->generateLUT(model, g_rawFrame, RectA(xoffset, yoffset, width, height));
 }
 
-int32_t cc_setSigPoint(const uint8_t &model, const uint16_t &x, const uint16_t &y)
+int32_t cc_setSigPoint(const uint8_t &model, const uint16_t &x, const uint16_t &y, Chirp *chirp)
 {
 	RectA region;
 	int result; 
@@ -93,7 +93,11 @@ int32_t cc_setSigPoint(const uint8_t &model, const uint16_t &x, const uint16_t &
 
 	result = g_blobs->generateLUT(model, g_rawFrame, Point16(x, y), &region);
 
-	cprintf("%d %d %d %d\n", region.m_xOffset, region.m_yOffset, region.m_width, region.m_height);
+	if (chirp)
+	{
+		BlobA blob(model, region.m_xOffset, region.m_xOffset+region.m_width, region.m_yOffset, region.m_yOffset+region.m_height);
+		cc_sendBlobs(chirp, &blob, 1, RENDER_FLAG_FLUSH | RENDER_FLAG_BLEND_BG);
+	}
 
 	return result;
 }
@@ -152,5 +156,11 @@ int32_t cc_setMemory(const uint32_t &location, const uint32_t &len, const uint8_
 		dest[i] = data[i];
 
 	return len;
+}
+
+int cc_sendBlobs(Chirp *chirp, const BlobA *blobs, uint32_t len, uint8_t renderFlags)
+{
+	CRP_RETURN(chirp, HTYPE(FOURCC('C','C','B','1')), HINT8(renderFlags), HINT16(CAM_RES2_WIDTH), HINT16(CAM_RES2_HEIGHT), UINTS16(len*sizeof(BlobA)/sizeof(uint16_t), blobs), END);
+	return 0;
 }
 

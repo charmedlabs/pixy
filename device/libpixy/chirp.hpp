@@ -71,6 +71,9 @@
 #define CRP_UINTS32                     CRP_INTS32
 #define CRP_FLTS32                      (CRP_FLT32 | CRP_ARRAY)
 #define CRP_FLTS64                      (CRP_FLT64 | CRP_ARRAY)
+#define CRP_HINT8                       (CRP_INT8 | CRP_HINT)
+#define CRP_HINT16                      (CRP_INT16 | CRP_HINT)
+#define CRP_HINT32                      (CRP_INT32 | CRP_HINT)
 #define CRP_HINTS8                      (CRP_INT8 | CRP_ARRAY | CRP_HINT)
 #define CRP_HINTS16                     (CRP_INT16 | CRP_ARRAY | CRP_HINT)
 #define CRP_HINTS32                     (CRP_INT32 | CRP_ARRAY | CRP_HINT)

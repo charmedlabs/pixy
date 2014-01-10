@@ -509,6 +509,7 @@ int32_t cam_getFrameChirp(const uint8_t &type, const uint16_t &xOffset, const ui
 	return result;
 }
 
+
 void cam_setRegs(const uint8_t *rPairs, int len)
 {
 	int i;

@@ -40,7 +40,7 @@ private:
 
     int renderCCQ1(uint16_t width, uint16_t height, uint32_t numVals, uint32_t *qVals);
     int renderBA81(uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame);
-    int renderCCB1(uint16_t width, uint16_t height, uint16_t numBlobs, uint16_t *blobs);
+    int renderCCB1(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t numBlobs, uint16_t *blobs);
 
     void emitImage(const QImage &image);
 

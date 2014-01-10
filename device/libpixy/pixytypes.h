@@ -3,7 +3,7 @@
 
 #define RENDER_FLAG_FLUSH      0x01
 #define RENDER_FLAG_BLEND_BG   0x02
-
+ 
 struct Point16
 {
     Point16()
@@ -92,14 +92,14 @@ struct BlobA
 
     BlobA(uint16_t model, uint16_t left, uint16_t right, uint16_t top, uint16_t bottom)
     {
-                m_model = model;
+		m_model = model;
         m_left = left;
         m_right = right;
         m_top = top;
         m_bottom = bottom;
     }
 
-        uint16_t m_model;
+	uint16_t m_model;
     uint16_t m_left;
     uint16_t m_right;
     uint16_t m_top;

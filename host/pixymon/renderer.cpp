@@ -212,14 +212,14 @@ int Renderer::renderBA81(uint16_t width, uint16_t height, uint32_t frameLen, uin
         if (m_mode&0x04)
             renderCCQ1(width/2, height/2, numQVals, qVals);
         if (m_mode&0x02)
-            renderCCB1(width, height, numBlobs, blobs);
+            renderCCB1(0, width, height, numBlobs, blobs);
 #endif
     }
 
     return 0;
 }
 
-int Renderer::renderCCB1(uint16_t width, uint16_t height, uint16_t numBlobs, uint16_t *blobs)
+int Renderer::renderCCB1(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t numBlobs, uint16_t *blobs)
 {
     uint16_t i, left, right, top, bottom;
     float scale = (float)m_video->activeWidth()/width;
@@ -240,24 +240,24 @@ int Renderer::renderCCB1(uint16_t width, uint16_t height, uint16_t numBlobs, uin
     for (i=0; i<numBlobs; i++)
     {
         model = blobs[i*5+0];
-        if (model==0)
-            break;
         left = scale*blobs[i*5+1];
         right = scale*blobs[i*5+2];
         top = scale*blobs[i*5+3];
         bottom = scale*blobs[i*5+4];
         //qDebug() << left << " " << right << " " << top << " " << bottom;
         p.drawRect(left, top, right-left, bottom-top);
-        label = m_blobs.getLabel(model);
-        if (label)
-            str = *label;
-        else
-            str = str.sprintf("m=%d", model);
-
-        p.setPen(QPen(QColor(0, 0, 0, 0xff)));
-        p.drawText(left+1, top+1, str);
-        p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
-        p.drawText(left, top, str);
+        if (model)
+        {
+            label = m_blobs.getLabel(model);
+            if (label)
+                str = *label;
+            else
+                str = str.sprintf("s=%d", model);
+            p.setPen(QPen(QColor(0, 0, 0, 0xff)));
+            p.drawText(left+1, top+1, str);
+            p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
+            p.drawText(left, top, str);
+        }
     }
 #if 0
     //deal with coded blobs
@@ -305,7 +305,11 @@ int Renderer::renderCCB1(uint16_t width, uint16_t height, uint16_t numBlobs, uin
 #endif
     p.end();
 
+    if (renderFlags&RENDER_FLAG_BLEND_BG)
+        renderBackground();
     emitImage(img);
+    if (renderFlags&RENDER_FLAG_FLUSH)
+        emitFlushImage();
 
     return 0;
 }
@@ -406,6 +410,8 @@ int Renderer::render(uint32_t type, void *args[])
         res = renderBA81(*(uint16_t *)args[0], *(uint16_t *)args[1], *(uint32_t *)args[2], (uint8_t *)args[3]);
     else if (type==FOURCC('C','C','Q','1'))
         res = renderCCQ1(*(uint16_t *)args[0], *(uint16_t *)args[1], *(uint32_t *)args[2], (uint32_t *)args[3]);
+    else if (type==FOURCC('C', 'C', 'B', '1'))
+        res = renderCCB1(*(uint8_t *)args[0], *(uint16_t *)args[1], *(uint32_t *)args[2], *(uint32_t *)args[3], (uint16_t *)args[4]);
     else // format not recognized
         return -1;
 
