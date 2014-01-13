@@ -15,7 +15,6 @@
 #define BL_END_MARKER	0xccaa
 
 class Qqueue;
-class ColorLUT;
 
 class Blobs
 {
@@ -27,8 +26,10 @@ public:
 	uint16_t *getMaxBlob(uint16_t signature); 
 	void getBlobs(BlobA **blobs, uint32_t *len);
 
-	int generateLUT(uint8_t model, const Frame8 &frame, const RectA &region);
-	int generateLUT(uint8_t model, const Frame8 &frame, const Point16 &seed, RectA *region);
+	int generateLUT(uint8_t model, const Frame8 &frame, const RectA &region, ColorModel *pcmodel=NULL);
+	int generateLUT(uint8_t model, const Frame8 &frame, const Point16 &seed, ColorModel *pcmodel=NULL, RectA *region=NULL);
+
+	ColorLUT *m_clut;
 
 private:
     uint16_t combine(uint16_t *blobs, uint16_t numBlobs);
@@ -45,7 +46,6 @@ private:
 
     uint16_t *m_blobs;
     uint16_t m_numBlobs;
-	ColorLUT *m_clut;
 
 	bool m_mutex;
     uint16_t m_maxBlobs;

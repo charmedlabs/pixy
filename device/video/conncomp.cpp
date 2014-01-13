@@ -1,8 +1,10 @@
+#include <stdio.h>
 #include <debug.h>
 #include <string.h>
 #include "pixy_init.h"
 #include "camera.h"
 #include "cameravals.h"
+#include "param.h"
 #include "conncomp.h"
 #include "blobs.h"
 #include "qqueue.h"
@@ -58,6 +60,42 @@ static const ProcModule g_module[] =
 
 static ChirpProc g_getRLSFrameM0 = -1;
 
+int cc_loadLut(void)
+{
+	int i, res;
+	uint32_t len;
+	char id[32];
+	ColorModel *pmodel;
+
+	// clear lut
+	g_blobs->m_clut->clear();
+
+	for (i=1; i<=NUM_MODELS; i++)
+	{
+		sprintf(id, "signature%d", i);
+		// get signature and add to color lut
+		res = prm_get(id, &len, &pmodel, END);
+		if (res<0)
+			return res;
+		g_blobs->m_clut->add(pmodel, i);
+	}
+	return 0;
+}
+
+void cc_setupSignatures(void)
+{
+	int i;
+	ColorModel model;
+	char id[32], desc[32];
+
+	for (i=1; i<=NUM_MODELS; i++)
+	{
+		sprintf(id, "signature%d", i);
+		sprintf(desc, "Color signature %d", i);
+		// add if it doesn't exist yet
+		prm_add(id, desc, INTS8(sizeof(ColorModel), &model), END);
+	}
+}
 
 int cc_init(Chirp *chirp)
 {
@@ -68,8 +106,11 @@ int cc_init(Chirp *chirp)
 
 	g_getRLSFrameM0 = g_chirpM0->getProc("getRLSFrame", NULL);
 
-	if (g_getRLSFrameM0>0)
+	if (g_getRLSFrameM0<0)
 		return -1;
+
+	cc_setupSignatures(); // setup default vals (if necessary)
+	cc_loadLut(); // load lut from flash
 
 	return 0;
 }
@@ -77,27 +118,48 @@ int cc_init(Chirp *chirp)
 // this routine assumes it can grab valid pixels in video memory described by the box
 int32_t cc_setSigRegion(const uint8_t &model, const uint16_t &xoffset, const uint16_t &yoffset, const uint16_t &width, const uint16_t &height)
 {
-	if (model<1 || model>7)
+	int result;
+	char id[32];
+	ColorModel cmodel;
+
+	if (model<1 || model>NUM_MODELS)
 		return -1;
 
-	return g_blobs->generateLUT(model, g_rawFrame, RectA(xoffset, yoffset, width, height));
+	// create lut
+	result = g_blobs->generateLUT(model, g_rawFrame, RectA(xoffset, yoffset, width, height), &cmodel);
+	if (result<0)
+		return result;
+
+	// save to flash
+	sprintf(id, "signature%d", model);
+	prm_set(id, INTS8(sizeof(ColorModel), &cmodel), END);
+
+	return result;
 }
 
 int32_t cc_setSigPoint(const uint8_t &model, const uint16_t &x, const uint16_t &y, Chirp *chirp)
 {
 	RectA region;
 	int result; 
+	char id[32];
+	ColorModel cmodel;
 
-	if (model<1 || model>7)
+	if (model<1 || model>NUM_MODELS)
 		return -1;
 
-	result = g_blobs->generateLUT(model, g_rawFrame, Point16(x, y), &region);
+	result = g_blobs->generateLUT(model, g_rawFrame, Point16(x, y), &cmodel, &region);
+  	if (result<0)
+		return result;
 
 	if (chirp)
 	{
 		BlobA blob(model, region.m_xOffset, region.m_xOffset+region.m_width, region.m_yOffset, region.m_yOffset+region.m_height);
 		cc_sendBlobs(chirp, &blob, 1, RENDER_FLAG_FLUSH | RENDER_FLAG_BLEND_BG);
 	}
+
+	// save to flash
+	sprintf(id, "signature%d", model);
+	prm_set(id, INTS8(sizeof(ColorModel), &cmodel), END);
 
 	return result;
 }

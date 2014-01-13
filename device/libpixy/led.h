@@ -14,7 +14,7 @@
 
 #define LED_MAX_PWM               0xffff
 #define ADC_MAX                   0x3ff
-#define ADC_VOLTAGE               3.3
+#define ADC_VOLTAGE               3.3f
 
 // the 2 values below might be correlated unintentionally
 // The larger the default scale, the more attenuation of the brightness on the low end

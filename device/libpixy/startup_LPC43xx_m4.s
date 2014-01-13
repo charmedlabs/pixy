@@ -137,8 +137,18 @@ CRP_Key         DCD     0xFFFFFFFF
 
 Reset_Handler   PROC
                 EXPORT  Reset_Handler             [WEAK]
+				; setup FPU (important to do it here, before everything else)
+				LDR.W R0, =0xE000ED88
+				; Read CPACR
+				LDR R1, [R0]
+				; Set bits 20-23 to enable CP10 and CP11 coprocessors
+				ORR R1, R1, #(0xF << 20)
+				; Write back the modified value to the CPACR
+				STR R1, [R0]
+
+				; now do everything else
                 IMPORT  __main
-                LDR     R0, =__main
+				LDR     R0, =__main
                 BX      R0
                 ENDP
 

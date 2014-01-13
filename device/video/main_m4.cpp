@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <debug.h>
 #include <pixy_init.h>
 #include <pixyvals.h>
@@ -17,7 +18,7 @@
 #include "progvideo.h"
 #include "progblobs.h"
 #include "progpt.h"
-
+#include "param.h"
 
 
 
@@ -29,7 +30,7 @@ const // so m0 program goes into RO memory
 
 extern int g_loop;
 
-#define XCENTER 160
+#define XCENTER 160			   
 #define YCENTER 100
 #define YTRACK  160
 #define SERVO_CENTER 500
@@ -503,12 +504,61 @@ void __default_signal_handler(int signal, int type)
 }
 
 
+
 int main(void) 
  {
  	pixyInit(SRAM3_LOC, &LR0[0], sizeof(LR0));
 	cc_init(g_chirpUsb);
 	exec_init(g_chirpUsb);
 
+#if 1
+	exec_addProg(&g_progVideo);
+	exec_addProg(&g_progBlobs);
+	exec_addProg(&g_progPt);
+	exec_loop();
+#endif  
+#if 0
+
+	//prm_format();
+	ColorModel model, *model2;
+	uint32_t len;
+	model.m_hue[0].m_slope = 1.0;
+	model.m_hue[0].m_yi = 2.0;
+	model.m_hue[1].m_slope = 3.0;
+	model.m_hue[1].m_yi = 4.0;
+	model.m_sat[0].m_slope = 5.0;
+	model.m_sat[0].m_yi = 6.0;
+	model.m_sat[1].m_slope = 7.0;
+	model.m_sat[1].m_yi = 8.0;
+	prm_add("signature1", "Color signature 1", INTS8(sizeof(ColorModel), &model), END);
+	prm_set("signature1", INTS8(sizeof(ColorModel), &model), END);
+	model.m_hue[0].m_slope = 9.0;
+	model.m_hue[0].m_yi = 10.0;
+	model.m_hue[1].m_slope = 11.0;
+	model.m_hue[1].m_yi = 12.0;
+	model.m_sat[0].m_slope = 13.0;
+	model.m_sat[0].m_yi = 14.0;
+	model.m_sat[1].m_slope = 15.0;
+	model.m_sat[1].m_yi = 16.0;
+	prm_add("signature2", "Color signature 2", INTS8(sizeof(ColorModel), &model), END);
+	prm_set("signature2", INTS8(sizeof(ColorModel), &model), END);
+	prm_get("signature1", &len, &model2, END);
+	model.m_hue[0].m_slope = 17.0;
+	model.m_hue[0].m_yi = 18.0;
+	model.m_hue[1].m_slope = 19.0;
+	model.m_hue[1].m_yi = 20.0;
+	model.m_sat[0].m_slope = 21.0;
+	model.m_sat[0].m_yi = 22.0;
+	model.m_sat[1].m_slope = 23.0;
+	model.m_sat[1].m_yi = 24.0;
+	prm_get("signature1", &len, &model2, END);
+
+	prm_set("signature1", INTS8(sizeof(ColorModel), &model), END);
+	prm_get("signature1", &len, &model2, END);
+	prm_get("signature2", &len, &model2, END);
+	 
+
+#endif
 #if 0
 	#define DELAY 1000000
 	rcs_setFreq(100);
@@ -591,12 +641,6 @@ int main(void)
 	LPC_DAC->CR = 800 << 6;
 	LPC_DAC->CR = 900 << 6;
 	LPC_DAC->CR = 1000 << 6;
-#endif
-#if 1
-	exec_addProg(&g_progVideo);
-	exec_addProg(&g_progBlobs);
-	exec_addProg(&g_progPt);
-	exec_loop();
 #endif
 #if 0
    	while(1)

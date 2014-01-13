@@ -38,6 +38,8 @@ int blobsSetup()
 	g_qqueue->flush();
 	exec_runM0(0);
 
+	cc_loadLut();
+
 	return 0;
 }
 
