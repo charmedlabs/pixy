@@ -1,6 +1,8 @@
 #ifndef _LED_H
 #define _LED_H
 
+#include "chirp.hpp"
+
 #define LED_RED                   0
 #define LED_GREEN                 1
 #define LED_BLUE                  2	 

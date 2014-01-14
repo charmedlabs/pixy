@@ -116,8 +116,13 @@ void Blobs::blobify()
 		invalid = 0;
         if (true)
         {
-            while ((invalid2=combine2(blobsStart, m_numBlobs-numBlobsStart)))
+            while(1)
+			{
+				invalid2 = combine2(blobsStart, m_numBlobs-numBlobsStart);
+				if (invalid2==0)
+					break;
                 invalid += invalid2;
+			}
         }
         invalid += combine(blobsStart, m_numBlobs-numBlobsStart);
         if (invalid)
@@ -304,7 +309,7 @@ uint16_t Blobs::combine(uint16_t *blobs, uint16_t numBlobs)
 uint16_t Blobs::combine2(uint16_t *blobs, uint16_t numBlobs)
 {
     uint16_t i, j, ii, jj, left0, right0, top0, bottom0;
-    uint16_t left, right, top, bottom, height, width;
+    uint16_t left, right, top, bottom;
     uint16_t invalid;
 
     // delete blobs that are fully enclosed by larger blobs
@@ -325,9 +330,6 @@ uint16_t Blobs::combine2(uint16_t *blobs, uint16_t numBlobs)
             right = blobs[jj+2];
             top = blobs[jj+3];
             bottom = blobs[jj+4];
-
-            width = (right-left)/2;
-            height = (bottom-top)/2;
 
 #if 1 // if corners touch....
             if (left<=left0 && left0-right<=m_mergeDist &&

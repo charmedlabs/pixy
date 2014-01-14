@@ -212,7 +212,7 @@ int Renderer::renderBA81(uint16_t width, uint16_t height, uint32_t frameLen, uin
         if (m_mode&0x04)
             renderCCQ1(width/2, height/2, numQVals, qVals);
         if (m_mode&0x02)
-            renderCCB1(0, width, height, numBlobs, blobs);
+            renderCCB1(0, width, height, numBlobs*sizeof(BlobA)/sizeof(uint16_t), blobs);
 #endif
     }
 

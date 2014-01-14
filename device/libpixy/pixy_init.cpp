@@ -7,6 +7,7 @@
 #include "led.h"	  
 #include "power.h"
 #include "spi.h"
+#include "misc.h"
 
 Chirp *g_chirpUsb = NULL;
 Chirp *g_chirpM0 = NULL;
@@ -113,12 +114,42 @@ void timerInit(void)
 void commonInit(void)
 {
 	platformInit();
-	GPIOInit();
 	timerInit();
+	GPIOInit();
 	USB_UserInit();
 
   	debug_frmwrk_init_clk(CLKFREQ);
 	lpc_printf("M4 start\n");
+}
+
+#define AWB_TIMEOUT   3000*1000  // 3 seconds
+
+void handleAWB()
+{
+	static uint32_t timer;
+	static uint8_t state = 0;
+	
+	if (state==2)
+		return;
+	else if (state==0)
+	{
+		setTimer(&timer);
+		state = 1;
+	}
+	else if (state==1)
+	{
+		if (getTimer(timer)>AWB_TIMEOUT)
+		{
+			cam_setAWB(0);
+		 	state = 2;
+		}
+	}
+}
+
+void periodic()
+{
+	while(g_chirpUsb->service());
+	handleAWB();
 }
 
 void pixyInit(uint32_t slaveRomStart, const unsigned char slaveImage[], uint32_t imageSize)
@@ -145,12 +176,13 @@ void pixyInit(uint32_t slaveRomStart, const unsigned char slaveImage[], uint32_t
   	g_chirpM0 = new Chirp(false, true, smLink);
 
 	// initialize devices/modules
-	prm_init(g_chirpUsb);
+	led_init();
+	if (prm_init(g_chirpUsb)<0) // error, let user know (don't just continue like nothing's happened)
+		showError(1, 0x0000ff, "Flash is corrupt, parameters have been lost\n");
 	pwr_init();
 	spi_init();
 	cam_init();
 	rcs_init();
-	led_init();
 	//cc_init();
 }
 

@@ -17,6 +17,7 @@ void pixyInit(uint32_t slaveRomStart, const unsigned char slaveImage[], uint32_t
 void pixySimpleInit(void);
 
 void cprintf(const char *format, ...);
+void periodic();
 
 extern Chirp *g_chirpUsb;
 extern Chirp *g_chirpM0;

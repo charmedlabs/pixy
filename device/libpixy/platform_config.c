@@ -5,7 +5,6 @@
 #include "lpc43xx_cgu.h"
 #include "lpc_types.h"
 #include "spifi_rom_api.h"
-#include "misc.h"
 
 SPIFIobj g_spifi;
 
@@ -136,12 +135,15 @@ void vIOInit(void)
  *----------------------------------------------------------------------------*/
 
 
-void waitMS(uint32_t ms)
-{
-	delayus(ms * 1000);
-}
-
 #define __CRYSTAL        (12000000UL)    /* Crystal Oscillator frequency */
+
+static void delayus(uint32_t us)
+{
+	volatile uint32_t i, j;	
+	
+	for (i=0; i<us; i++)
+		for (j=0; j<38; j++);
+}
 
 void clockInit(void)
 {
@@ -184,13 +186,13 @@ void clockInit(void)
 	/* Run base M3 clock from PL160M, no division */
 	CGU_EntityConnect(CGU_CLKSRC_PLL1, CGU_BASE_M3);
 
-	waitMS(10);
+	delayus(10000);
 
 	/* Change the clock to 204 MHz */
 	/* Set PL160M @ 12*15=180 MHz */
 	CGU_SetPLL1(17);
 
-	waitMS(10);
+	delayus(10000);
 
 	CGU_UpdateClock();
 

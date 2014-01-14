@@ -148,7 +148,7 @@ void exec_loop()
 		// wait for program to start
 		while(!g_run)
 		{
-			g_chirpUsb->service();
+			periodic();
 			if (!g_chirpUsb->connected() || !USB_Configuration)
 				exec_run();
 		}
@@ -162,7 +162,7 @@ void exec_loop()
 		{
 			if ((*g_progTable[g_program]->loop)()<0)
 				break; // loop failed!	
-			while(g_chirpUsb->service());
+			periodic();
 		}
 
 		// set variable to indicate we've stopped

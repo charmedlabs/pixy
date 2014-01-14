@@ -60,6 +60,14 @@ struct ParamRecord
 
 int prm_init(Chirp *chirp)
 {
+	// check integrity
+	if (!prm_verifyAll())
+	{
+		// if we're corrupt, format, start over
+		prm_format();
+		return -1;
+	} 
+
 	chirp->registerModule(g_module);
 		
 	return 0;	
@@ -132,6 +140,9 @@ int prm_format()
 uint16_t prm_crc(const ParamRecord *rec)
 {
 	uint16_t crc;
+
+	if (rec->len>PRM_MAX_LEN)
+		return 0;
 
 	crc = Chirp::calcCrc((uint8_t *)rec+2, rec->len+prm_getDataOffset(rec)-2); // +2, -2 because we don't include crc 
 

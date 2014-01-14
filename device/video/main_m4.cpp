@@ -482,24 +482,10 @@ extern "C"
 // it may be called for other reasons too... 
 void __default_signal_handler(int signal, int type)
 {										   
-	int i;
-	char *message = "received signal: %d %d\n";
+	char message[48];
 
-	while(1)
-	{
-		// flash signal number
-		for (i=0; i<signal; i++)
-		{
-			led_setRGB(0xff, 0, 0);
-			delayus(150000);
-			led_setRGB(0, 0, 0);
-			delayus(150000);
-		}
-		delayus(500000);
-		// print message
-		printf(message, signal, type);
-		cprintf(message, signal, type);
-	}
+	sprintf(message, "received signal: %d %d\n", signal, type);
+	showError(signal, 0xff0000, message);
 }
 }
 
@@ -510,7 +496,7 @@ int main(void)
  	pixyInit(SRAM3_LOC, &LR0[0], sizeof(LR0));
 	cc_init(g_chirpUsb);
 	exec_init(g_chirpUsb);
-
+		
 #if 1
 	exec_addProg(&g_progVideo);
 	exec_addProg(&g_progBlobs);

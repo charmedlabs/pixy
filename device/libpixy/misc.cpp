@@ -1,14 +1,30 @@
 #include "misc.h"
 #include "lpc43xx_adc.h"
+#include "pixy_init.h"
+#include "debug.h"
+#include "led.h"
 
 // can be called before timer is set up
 void delayus(uint32_t us)
 {
-	volatile uint32_t i, j;	
+	uint32_t timer;
 	
-	for (i=0; i<us; i++)
-		for (j=0; j<38; j++);
+	setTimer(&timer);
+	
+	while(getTimer(timer)<us);
 }
+
+void delayms(uint32_t ms)
+{
+	uint32_t timer;
+	
+	setTimer(&timer);
+
+	ms *= 1000;
+	
+	while(getTimer(timer)<ms);
+}
+
 
 uint32_t button(void)
 {
@@ -54,3 +70,24 @@ uint32_t getTimer(uint32_t timer)
 
 	return result;
 }
+
+void showError(uint8_t num, uint32_t color, const char *message)
+{
+	int i;
+
+	while(1)
+	{
+		// flash signal number
+		for (i=0; i<num; i++)
+		{
+			led_setRGB((color>>16)&0xff, (color>>8)&0xff, color&0xff);
+			delayus(150000);
+			led_setRGB(0, 0, 0);
+			delayus(150000);
+		}
+		delayus(500000);
+		// print message
+		if (message)
+			lpc_printf(message);
+	}
+ }
