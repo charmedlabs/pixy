@@ -21,7 +21,6 @@
 #include "param.h"
 
 
-
 #define SERVO
 
 // M0 code 
@@ -490,12 +489,11 @@ void __default_signal_handler(int signal, int type)
 }
 
 
-
 int main(void) 
  {
  	pixyInit(SRAM3_LOC, &LR0[0], sizeof(LR0));
-	cc_init(g_chirpUsb);
 	exec_init(g_chirpUsb);
+	cc_init(g_chirpUsb);
 		
 #if 1
 	exec_addProg(&g_progVideo);

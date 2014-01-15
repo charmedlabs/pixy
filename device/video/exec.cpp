@@ -2,6 +2,7 @@
 #include "pixy_init.h"
 #include "misc.h"
 #include "exec.h"
+#include "button.h"
 
 static const ProcModule g_module[] =
 {
@@ -53,10 +54,14 @@ static ChirpProc g_runningM0 = -1;
 static ChirpProc g_stopM0 = -1;
 static Program *g_progTable[EXEC_MAX_PROGS];
 
+ButtonMachine *g_bMachine = NULL;
+
 
 int exec_init(Chirp *chirp)
 {
 	chirp->registerModule(g_module);
+
+	g_bMachine = new ButtonMachine;
 
 	g_runM0 = g_chirpM0->getProc("run", NULL);
 	g_runningM0 = g_chirpM0->getProc("running", NULL);
@@ -138,17 +143,20 @@ int exec_stopM0()
 	return responseInt;
 }
 
+void exec_periodic()
+{
+	periodic();
+	g_bMachine->handleSignature();
+}
 
 void exec_loop()
 {
-	int responseInt;
-
 	while(1)
 	{
 		// wait for program to start
 		while(!g_run)
 		{
-			periodic();
+			exec_periodic();
 			if (!g_chirpUsb->connected() || !USB_Configuration)
 				exec_run();
 		}
@@ -162,7 +170,7 @@ void exec_loop()
 		{
 			if ((*g_progTable[g_program]->loop)()<0)
 				break; // loop failed!	
-			periodic();
+			exec_periodic();
 		}
 
 		// set variable to indicate we've stopped
