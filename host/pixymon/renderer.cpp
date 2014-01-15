@@ -162,7 +162,7 @@ inline void Renderer::interpolateBayer(unsigned int width, unsigned int x, unsig
 
 
 
-int Renderer::renderBA81(uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame)
+int Renderer::renderBA81(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame)
 {
     uint16_t x, y;
     uint32_t *line;
@@ -210,11 +210,14 @@ int Renderer::renderBA81(uint16_t width, uint16_t height, uint32_t frameLen, uin
         m_blobs.process(width, height, frameLen, frame0, &numBlobs, &blobs, &numQVals, &qVals);
 #if 1
         if (m_mode&0x04)
-            renderCCQ1(width/2, height/2, numQVals, qVals);
+            renderCCQ1(0, width/2, height/2, numQVals, qVals);
         if (m_mode&0x02)
             renderCCB1(0, width, height, numBlobs*sizeof(BlobA)/sizeof(uint16_t), blobs);
 #endif
     }
+
+    if (renderFlags&RENDER_FLAG_FLUSH)
+        emitFlushImage();
 
     return 0;
 }
@@ -349,7 +352,7 @@ void Renderer::handleRL(QImage *image, uint color, int row, int startCol, int le
         line[col] = color;
 }
 
-int Renderer::renderCCQ1(uint16_t width, uint16_t height, uint32_t numVals, uint32_t *qVals)
+int Renderer::renderCCQ1(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t numVals, uint32_t *qVals)
 {
     int32_t row;
     uint32_t i, startCol, length;
@@ -390,6 +393,8 @@ int Renderer::renderCCQ1(uint16_t width, uint16_t height, uint32_t numVals, uint
         handleRL(&img, palette[model], row, startCol, length);
     }
     emitImage(img);
+    if (renderFlags&RENDER_FLAG_FLUSH)
+        emitFlushImage();
 
     return 0;
 }
@@ -414,15 +419,14 @@ int Renderer::render(uint32_t type, void *args[])
 
     // choose fourcc for representing formats fourcc.org
     if (type==FOURCC('B','A','8','1'))
-        res = renderBA81(*(uint16_t *)args[0], *(uint16_t *)args[1], *(uint32_t *)args[2], (uint8_t *)args[3]);
+        res = renderBA81(*(uint8_t *)args[0], *(uint16_t *)args[1], *(uint16_t *)args[2], *(uint32_t *)args[3], (uint8_t *)args[4]);
     else if (type==FOURCC('C','C','Q','1'))
-        res = renderCCQ1(*(uint16_t *)args[0], *(uint16_t *)args[1], *(uint32_t *)args[2], (uint32_t *)args[3]);
+        res = renderCCQ1(*(uint8_t *)args[0], *(uint16_t *)args[1], *(uint16_t *)args[2], *(uint32_t *)args[3], (uint32_t *)args[4]);
     else if (type==FOURCC('C', 'C', 'B', '1'))
         res = renderCCB1(*(uint8_t *)args[0], *(uint16_t *)args[1], *(uint32_t *)args[2], *(uint32_t *)args[3], (uint16_t *)args[4]);
     else // format not recognized
         return -1;
 
-    emitFlushImage();
     return res;
 }
 

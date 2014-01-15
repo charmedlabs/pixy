@@ -24,4 +24,3 @@ int32_t rcs_setFreq(const uint16_t &freq);
 
 #endif
 
-												   

@@ -13,6 +13,14 @@ static uint8_t g_ledVal[3];
 static const ProcModule g_module[] =
 {
 	{
+	"led_set",
+	(ProcPtr)(int32_t (*)(const uint32_t &))led_set, 
+	{CRP_INT32, END}, 
+	"Set RGB LED values"
+	"@p color 24-bit value with red=bits 16-23, green=bits 8-15, blue=bits 0-7"
+	"@r 0 if success, negative if error"
+	},
+	{
 	"led_setRGB",
 	(ProcPtr)led_setRGB, 
 	{CRP_INT8, CRP_INT8, CRP_INT8, END}, 
@@ -57,6 +65,10 @@ void led_init()
 	g_ledOnCurrent[LED_GREEN] = (float)adc_get(LED_GREEN_ADCCHAN)/ADC_MAX*ADC_VOLTAGE/LED_GREEN_RESISTOR;
 	g_ledOnCurrent[LED_BLUE] = (float)adc_get(LED_BLUE_ADCCHAN)/ADC_MAX*ADC_VOLTAGE/LED_BLUE_RESISTOR;	
 
+	g_ledVal[LED_RED] = 0xff;
+	g_ledVal[LED_GREEN] = 0xff;
+	g_ledVal[LED_BLUE] = 0xff;
+
 	// turn off LEDs
 	led_setRGB(0, 0, 0);
 		
@@ -98,13 +110,16 @@ void led_setPWM(uint8_t led, uint16_t pwm)
 	}	
 }
 
-void led_set(uint8_t led, uint8_t val)
+void led_set(uint8_t led, uint8_t val, bool override)
 {
 	float brightness, current, pwm;
 
 	if (led>2)
 		return;
-		
+
+	if (!override && g_ledVal[led]==val)
+		return;
+				
 	brightness = val/255.0*g_ledMaxBrightness;
 
 	// invert brightness to get current
@@ -125,7 +140,7 @@ void led_set(uint8_t led, uint8_t val)
 }
 
 
-int32_t led_setRGB(const uint8_t &r, const uint8_t &g, const uint8_t &b, Chirp *chirp)
+int32_t led_setRGB(const uint8_t &r, const uint8_t &g, const uint8_t &b)
 {
 	led_set(LED_RED, r);
 	led_set(LED_GREEN, g);
@@ -134,8 +149,22 @@ int32_t led_setRGB(const uint8_t &r, const uint8_t &g, const uint8_t &b, Chirp *
 	return 0;
 }
 
+int32_t led_set(const uint32_t &color)
+{
+	uint8_t r, g, b;
 
-int32_t led_setMaxCurrent(const uint32_t &uamps, Chirp *chirp)
+	r = (color>>16)&0xff;
+	g = (color>>8)&0xff;
+	b = color&0xff;
+	led_set(LED_RED, r);
+	led_set(LED_GREEN, g);
+	led_set(LED_BLUE, b);
+
+	return 0;
+}
+
+
+int32_t led_setMaxCurrent(const uint32_t &uamps)
 {
 	int i;
 	float pwm;
@@ -162,14 +191,14 @@ int32_t led_setMaxCurrent(const uint32_t &uamps, Chirp *chirp)
 			g_ledMaxPWM[i] = (uint16_t)pwm;
 
 		// restore vals (with new max current)
-	   led_set(i, g_ledVal[i]);
+	   led_set(i, g_ledVal[i], true);
 	}
 
 	return 0;
 }
 
 
-uint32_t led_getMaxCurrent(Chirp *chirp)
+uint32_t led_getMaxCurrent()
 {
 	return g_ledMaxCurrent*1000000;
 }

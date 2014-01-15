@@ -166,6 +166,11 @@ int32_t cc_setSigPoint(const uint8_t &model, const uint16_t &x, const uint16_t &
 
 int32_t cc_getRLSFrameChirp(Chirp *chirp)
 {
+	return cc_getRLSFrameChirpFlags(chirp);
+}
+
+int32_t cc_getRLSFrameChirpFlags(Chirp *chirp, uint8_t renderFlags)
+{
 	int32_t result;
 	uint32_t len, numRls;
 
@@ -177,7 +182,7 @@ int32_t cc_getRLSFrameChirp(Chirp *chirp)
 	result = cc_getRLSFrame((uint32_t *)(RLS_MEMORY+len), LUT_MEMORY);
 	// copy from IPC memory to RLS_MEMORY
 	numRls = g_qqueue->readAll((Qval *)(RLS_MEMORY+len), (RLS_MEMORY_SIZE-len)/sizeof(Qval));
-	Chirp::serialize(chirp, RLS_MEMORY, RLS_MEMORY_SIZE,  HTYPE(FOURCC('C','C','Q','1')), UINT16(CAM_RES2_WIDTH), UINT16(CAM_RES2_HEIGHT), UINTS32_NO_COPY(numRls), END);
+	Chirp::serialize(chirp, RLS_MEMORY, RLS_MEMORY_SIZE,  HTYPE(FOURCC('C','C','Q','1')), HINT8(renderFlags), UINT16(CAM_RES2_WIDTH), UINT16(CAM_RES2_HEIGHT), UINTS32_NO_COPY(numRls), END);
 	// send frame, use in-place buffer
 	chirp->useBuffer(RLS_MEMORY, len+numRls*4);
 

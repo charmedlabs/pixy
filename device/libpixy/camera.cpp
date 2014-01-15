@@ -495,11 +495,16 @@ int32_t cam_getFrame(uint8_t *memory, uint32_t memSize, uint8_t type, uint16_t x
 
 int32_t cam_getFrameChirp(const uint8_t &type, const uint16_t &xOffset, const uint16_t &yOffset, const uint16_t &xWidth, const uint16_t &yWidth, Chirp *chirp)
 {
+	return cam_getFrameChirpFlags(type, xOffset, yOffset, xWidth, yWidth, chirp);
+}
+
+int32_t cam_getFrameChirpFlags(const uint8_t &type, const uint16_t &xOffset, const uint16_t &yOffset, const uint16_t &xWidth, const uint16_t &yWidth, Chirp *chirp, uint8_t renderFlags)
+{
 	int32_t result, len;
 	uint8_t *frame = (uint8_t *)SRAM1_LOC;
 
 	// fill buffer contents manually for return data 
-	len = Chirp::serialize(chirp, frame, SRAM1_SIZE, HTYPE(FOURCC('B','A','8','1')), UINT16(xWidth), UINT16(yWidth), UINTS8_NO_COPY(xWidth*yWidth), END);
+	len = Chirp::serialize(chirp, frame, SRAM1_SIZE, HTYPE(FOURCC('B','A','8','1')), HINT8(renderFlags), UINT16(xWidth), UINT16(yWidth), UINTS8_NO_COPY(xWidth*yWidth), END);
 	// write frame after chirp args
 	result = cam_getFrame(frame+len, SRAM1_SIZE-len, type, xOffset, yOffset, xWidth, yWidth);
 

@@ -143,14 +143,19 @@ int exec_stopM0()
 	return responseInt;
 }
 
-void exec_periodic()
+bool exec_periodic()
 {
 	periodic();
-	g_bMachine->handleSignature();
+	if (g_run) 
+		return g_bMachine->handleSignature();
+	else // don't handle signature unless we're running
+		return false;
 }
 
 void exec_loop()
 {
+	bool override, prevOverride;
+
 	while(1)
 	{
 		// wait for program to start
@@ -161,16 +166,21 @@ void exec_loop()
 				exec_run();
 		}
 
-		// setup
-		if ((*g_progTable[g_program]->setup)()<0)
-			g_run = false; // setup failed!
+		prevOverride = true; // force setup
 
 		// loop
 		while(g_run)
 		{
-			if ((*g_progTable[g_program]->loop)()<0)
-				break; // loop failed!	
-			exec_periodic();
+			override = exec_periodic();
+			if (!override) // if we're not being overriden, run loop 
+			{
+				// if we came here from outside this while statement or we're resuming, run setup
+				if (prevOverride && (*g_progTable[g_program]->setup)()<0)
+					break;	
+				if ((*g_progTable[g_program]->loop)()<0)
+					break; // loop failed!	
+			}
+			prevOverride = override;
 		}
 
 		// set variable to indicate we've stopped

@@ -22,4 +22,3 @@ void showError(uint8_t num, uint32_t color, const char *message);
 #endif
 
 #endif
-   

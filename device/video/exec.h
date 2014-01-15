@@ -21,7 +21,7 @@ int exec_addProg(Program *prog);
 
 int exec_runM0(uint8_t prog);
 int exec_stopM0();
-void exec_periodic();
+bool exec_periodic();
 
 uint32_t exec_running();
 int32_t exec_stop();

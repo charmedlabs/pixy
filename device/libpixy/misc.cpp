@@ -80,7 +80,7 @@ void showError(uint8_t num, uint32_t color, const char *message)
 		// flash signal number
 		for (i=0; i<num; i++)
 		{
-			led_setRGB((color>>16)&0xff, (color>>8)&0xff, color&0xff);
+			led_set(color);
 			delayus(150000);
 			led_setRGB(0, 0, 0);
 			delayus(150000);

@@ -18,9 +18,7 @@ int videoSetup()
 
 int videoLoop()
 {
-	static int i = 0;
-	cprintf("hello %d\n", i++);
-	cam_getFrameChirp(0x21, 0, 0, 320, 200, g_chirpUsb);
+	cam_getFrameChirp(CAM_GRAB_M1R2, 0, 0, CAM_RES2_WIDTH, CAM_RES2_HEIGHT, g_chirpUsb);
 
 	return 0;
 }

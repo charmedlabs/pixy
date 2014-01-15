@@ -26,10 +26,11 @@
 
 void led_init();
 void led_setPWM(uint8_t led, uint16_t pwm);
-void led_set(uint8_t led, uint8_t val);
-int32_t led_setRGB(const uint8_t &r, const uint8_t &g, const uint8_t &b, Chirp *chirp=NULL);
-int32_t led_setMaxCurrent(const uint32_t &uamps, Chirp *chirp=NULL);
-uint32_t led_getMaxCurrent(Chirp *chirp=NULL);
+void led_set(uint8_t led, uint8_t val, bool override=false);
+int32_t led_set(const uint32_t &color);
+int32_t led_setRGB(const uint8_t &r, const uint8_t &g, const uint8_t &b);
+int32_t led_setMaxCurrent(const uint32_t &uamps);
+uint32_t led_getMaxCurrent();
 
 
 #endif

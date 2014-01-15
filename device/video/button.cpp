@@ -5,25 +5,64 @@
 #include "led.h"
 #include "misc.h"
 #include "colorlut.h"
+#include "conncomp.h"
+
+#define BT_CENTER_SIZE   6
+
+void interpolateBayer(uint32_t width, uint32_t x, uint32_t y, uint8_t *pixel, uint32_t &r, uint32_t &g, uint32_t &b)
+{
+    if (y&1)
+    {
+        if (x&1)
+        {
+            r = *pixel;
+            g = *(pixel-1);
+            b = *(pixel-width-1);
+        }
+        else
+        {
+            r = *(pixel-1);
+            g = *pixel;
+            b = *(pixel-width);
+        }
+    }
+    else
+    {
+        if (x&1)
+        {
+            r = *(pixel-width);
+            g = *pixel;
+            b = *(pixel-1);
+        }
+        else
+        {
+            r = *(pixel-width-1);
+            g = *(pixel-1);
+            b = *pixel;
+        }
+    }
+}
 
 void getColor(uint8_t *r, uint8_t *g, uint8_t *b)
 {
-	uint32_t x, y, R, G, B, rsum=0, gsum=0, bsum=0;
-	uint8_t *frame = (uint8_t *)SRAM1_LOC;
+	uint32_t x, y, R, G, B, rsum, gsum, bsum, count;
+	uint8_t *frame = g_rawFrame.m_pixels;  // use the correct pointer
 
-	for (y=94; y<104; y++)
+	for (rsum=0, gsum=0, bsum=0, count=0, y=(CAM_RES2_HEIGHT-BT_CENTER_SIZE)/2; y<(CAM_RES2_HEIGHT+BT_CENTER_SIZE)/2; y++)
 	{
-		for (x=154; x<164; x++)
+		for (x=(CAM_RES2_WIDTH-BT_CENTER_SIZE)/2; x<(CAM_RES2_WIDTH+BT_CENTER_SIZE)/2; x++, count++)
 		{
+			interpolateBayer(CAM_RES2_WIDTH, x, y, frame+CAM_RES2_WIDTH*y+x, R, G, B);
 		 	rsum += R;
 			gsum += G;
 			bsum += B;
 		}
 	}
-	*r = rsum/100;
-	*g = gsum/100;
-	*b = bsum/100;	 	
+	*r = rsum/count;
+	*g = gsum/count;
+	*b = bsum/count;	 	
 }
+
 
 void saturate(uint8_t *r, uint8_t *g, uint8_t *b)
 {
@@ -88,16 +127,29 @@ ButtonMachine::~ButtonMachine()
 #define TIMEOUT1    1250*1000
 #define TIMEOUT2    1000*1000
 #define TIMEOUT3    15000*1000
-#define TIMEOUT_FLASH 75*1000
+#define TIMEOUT_FLASH 60*1000
 
-int ButtonMachine::handleSignature()
+void ButtonMachine::ledPipe()
+{
+	uint8_t r, g, b;
+
+	cam_getFrameChirpFlags(CAM_GRAB_M1R2, 0, 0, CAM_RES2_WIDTH, CAM_RES2_HEIGHT, g_chirpUsb, 0);
+	BlobA blob(m_index, (CAM_RES2_WIDTH-BT_CENTER_SIZE)/2, (CAM_RES2_WIDTH+BT_CENTER_SIZE)/2, (CAM_RES2_HEIGHT-BT_CENTER_SIZE)/2, (CAM_RES2_HEIGHT+BT_CENTER_SIZE)/2);
+	cc_sendBlobs(g_chirpUsb, &blob, 1);
+
+	getColor(&r, &g, &b);
+	saturate(&r, &g, &b);
+	led_setRGB(r, g, b);	 	
+}
+
+bool ButtonMachine::handleSignature()
 {
 	uint32_t bt; 
 
 	bt = button();
 
    	if (m_ledPipe)
-		led_set(0xff);
+		ledPipe();
 
 	switch(m_goto)
 	{
@@ -164,12 +216,18 @@ int ButtonMachine::handleSignature()
 			else
 			{
 				// grow region, create model, save
+				cc_setSigPoint(m_index, CAM_RES2_WIDTH/2, CAM_RES2_HEIGHT/2, g_chirpUsb);
 				flashLED(4); // todo: flash according to saturation
 			}
 			reset(); // done	
 		}
 		else if (getTimer(m_timer)>TIMEOUT1)
+		{
+ 			if (m_index==0)
+				cam_setAWB(0);
+
 			reset();
+		}
 	 	break;
 
 	default:
@@ -222,34 +280,3 @@ void ButtonMachine::setLED()
 }
 
 			
-void handleButton()
-{
-	static uint32_t btPrev = 0;
-	uint32_t bt; 
-	static uint8_t r, g, b;
-
-	bt = button();
-
-	if (bt)
-	{
-		cam_getFrame((uint8_t *)SRAM0_LOC, SRAM0_SIZE, 0x21, 0, 0, 320, 200);
-		getColor(&r, &g, &b);
-		saturate(&r, &g, &b);
-		led_setRGB(r, g, b);	 	
-	}
-	else if (btPrev)
-	{
-		led_setRGB(0, 0, 0);
-		delayus(50000);
-		led_setRGB(r, g, b);	 	
-		delayus(50000);
-		led_setRGB(0, 0, 0);
-		delayus(50000);
-		led_setRGB(r, g, b);	 	
-		delayus(50000);
-		led_setRGB(0, 0, 0);		
-	}
-
-	btPrev = bt;
-}
-
