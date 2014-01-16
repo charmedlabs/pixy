@@ -2,6 +2,7 @@
 #include "blobs.h"
 #include "qqueue.h"
 #include "colorlut.h"
+#include "misc.h"
 
 
 Blobs::Blobs(Qqueue *qq)
@@ -48,6 +49,7 @@ void Blobs::blobify()
     uint16_t *blobsStart;
     uint16_t numBlobsStart, invalid, invalid2;
     uint16_t left, top, right, bottom;
+	//uint32_t timer, timer2=0;
 
     // q val:
     // | 4 bits    | 7 bits      | 9 bits | 9 bits    | 3 bits |
@@ -57,6 +59,8 @@ void Blobs::blobify()
    	row = -1;
 	memfull = false;
 	i = 0;
+	invalid = 0;
+
 	while(1)
     {
 		while (m_qq->dequeue(&qval)==0);
@@ -113,7 +117,7 @@ void Blobs::blobify()
 
         }
 #if 1
-		invalid = 0;
+		//setTimer(&timer);
         if (true)
         {
             while(1)
@@ -124,15 +128,21 @@ void Blobs::blobify()
                 invalid += invalid2;
 			}
         }
-        invalid += combine(blobsStart, m_numBlobs-numBlobsStart);
-        if (invalid)
-        {
-            invalid2 = compress(blobsStart, m_numBlobs-numBlobsStart);
-            m_numBlobs -= invalid2;
-        }
+		//timer2 += getTimer(timer);
 #endif
-
     }
+	//setTimer(&timer);
+    invalid += combine(m_blobs, m_numBlobs);
+	if (invalid)
+	{
+    	invalid2 = compress(m_blobs, m_numBlobs);
+    	m_numBlobs -= invalid2;
+		if (invalid2!=invalid)
+			cprintf("**** %d %d\n", invalid2, invalid);
+	}
+	//timer2 += getTimer(timer);
+ 	//cprintf("time=%d\n", timer2); // never seen this greater than 200us.  or 1% of frame period
+
 	// reset read index-- new frame
 	m_blobReadIndex = 0;
 	m_mutex = false;
@@ -294,12 +304,17 @@ uint16_t Blobs::combine(uint16_t *blobs, uint16_t numBlobs)
             top = blobs[jj+3];
             bottom = blobs[jj+4];
 
-            if (left0<=left && right0>=right &&
-                    top0<=top && bottom0>=bottom)
+            if (left0<=left && right0>=right && top0<=top && bottom0>=bottom)
             {
                 blobs[jj+0] = 0; // invalidate
                 invalid++;
             }
+			else if (left<=left0 && right>=right0 && top<=top0 && bottom>=bottom0)
+			{
+                blobs[ii+0] = 0; // invalidate
+                invalid++;				
+			}
+
         }
     }
 
@@ -518,28 +533,35 @@ void Blobs::processCoded()
 
 int Blobs::generateLUT(uint8_t model, const Frame8 &frame, const RectA &region, ColorModel *pcmodel)
 {
+	int goodness;
     ColorModel cmodel;
     if (model>NUM_MODELS)
         return -1;
 
-    m_clut->generate(&cmodel, frame, region);
+    goodness = m_clut->generate(&cmodel, frame, region);
+	if (goodness==0)
+		return -1; // this model sucks!
 	m_clut->clear(model);
     m_clut->add(&cmodel, model);
 
 	if (pcmodel)
 		*pcmodel = cmodel;
 
-	return 0;										 
+	return goodness;										 
 }
 
 int Blobs::generateLUT(uint8_t model, const Frame8 &frame, const Point16 &seed, ColorModel *pcmodel, RectA *region)
 {
-    RectA cregion;
+    int goodness;
+	RectA cregion;
     ColorModel cmodel;
 
     m_clut->growRegion(&cregion, frame, seed);
 
-    m_clut->generate(&cmodel, frame, cregion);
+    goodness = m_clut->generate(&cmodel, frame, cregion);
+	if (goodness==0)
+		return -1; // this model sucks!
+
 	m_clut->clear(model); 
     m_clut->add(&cmodel, model);
 
@@ -549,7 +571,7 @@ int Blobs::generateLUT(uint8_t model, const Frame8 &frame, const Point16 &seed, 
 	if (pcmodel)
 		*pcmodel = cmodel;
 
-	return 0;
+	return goodness;
 }
 
 

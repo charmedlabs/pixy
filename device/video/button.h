@@ -16,6 +16,7 @@ private:
 	void flashLED(uint8_t flashes);
 	void setLED();
 	void ledPipe();
+	void setSignature();
 	void wait(uint32_t us);
 
 	uint8_t m_goto;

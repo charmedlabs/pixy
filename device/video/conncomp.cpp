@@ -38,7 +38,7 @@ static const ProcModule g_module[] =
 	"Set model by selecting region in image"
 	"@p model numerical index of model, can be 1-7"
 	"@p region user-selected region"
-	"@r 0 if success, negative if error"
+	"@r 0 to 100 if success where 100=good, 0=poor, negative if error"
 	},
 	{
 	"cc_setSigPoint",
@@ -47,7 +47,7 @@ static const ProcModule g_module[] =
 	"Set model by selecting point in image"
 	"@p model numerical index of model, can be 1-7"
 	"@p point user-selected point"
-	"@r 0 if success, negative if error"
+	"@r 0 to 100 if success where 100=good, 0=poor, negative if error"
 	},
 	{
 	"cc_setMemory",
@@ -67,6 +67,9 @@ int cc_loadLut(void)
 	char id[32];
 	ColorModel *pmodel;
 
+
+	// indicate that raw frame has been overwritten
+	g_rawFrame.m_pixels = NULL;
 	// clear lut
 	g_blobs->m_clut->clear();
 
@@ -173,6 +176,9 @@ int32_t cc_getRLSFrameChirpFlags(Chirp *chirp, uint8_t renderFlags)
 {
 	int32_t result;
 	uint32_t len, numRls;
+
+	if (g_rawFrame.m_pixels)
+		cc_loadLut();
 
 	g_qqueue->flush();
 

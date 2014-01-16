@@ -126,7 +126,7 @@ ButtonMachine::~ButtonMachine()
 
 #define TIMEOUT1    1250*1000
 #define TIMEOUT2    1000*1000
-#define TIMEOUT3    15000*1000
+#define TIMEOUT3    60000*1000
 #define TIMEOUT_FLASH 60*1000
 
 void ButtonMachine::ledPipe()
@@ -142,9 +142,27 @@ void ButtonMachine::ledPipe()
 	led_setRGB(r, g, b);	 	
 }
 
+void ButtonMachine::setSignature()
+{
+	uint32_t current, saveCurrent; 
+	int goodness;
+
+	// grow region, create model, save
+	goodness = cc_setSigPoint(m_index, CAM_RES2_WIDTH/2, CAM_RES2_HEIGHT/2, g_chirpUsb);
+	if (goodness>0)
+	{
+		cprintf("goodness=%d\n", goodness);
+		saveCurrent = led_getMaxCurrent(); // save off value
+		current = (float)LED_MAX_CURRENT/100.0f*goodness;
+		led_setMaxCurrent(current);
+		flashLED(4); 
+		led_setMaxCurrent(saveCurrent);
+	}
+}
+
 bool ButtonMachine::handleSignature()
 {
-	uint32_t bt; 
+	uint32_t bt;
 
 	bt = button();
 
@@ -214,11 +232,7 @@ bool ButtonMachine::handleSignature()
 				flashLED(4); // todo: flash according to saturation
 			}
 			else
-			{
-				// grow region, create model, save
-				cc_setSigPoint(m_index, CAM_RES2_WIDTH/2, CAM_RES2_HEIGHT/2, g_chirpUsb);
-				flashLED(4); // todo: flash according to saturation
-			}
+				setSignature();
 			reset(); // done	
 		}
 		else if (getTimer(m_timer)>TIMEOUT1)

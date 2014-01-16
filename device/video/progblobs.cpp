@@ -38,7 +38,9 @@ int blobsSetup()
 	g_qqueue->flush();
 	exec_runM0(0);
 
-	cc_loadLut();
+	// load lut if we've grabbed any frames lately
+	if (g_rawFrame.m_pixels)
+		cc_loadLut();
 
 	return 0;
 }
