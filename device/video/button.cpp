@@ -234,7 +234,7 @@ bool ButtonMachine::handleSignature()
 		reset();
 	}	
 
-	return m_ledPipe;
+	return m_goto!=0;
 }
 
 void ButtonMachine::wait(uint32_t us)

@@ -5,8 +5,8 @@
 
 #define PAN_AXIS    0
 #define TILT_AXIS   1
-#define X_CENTER    (CAM_RES1_WIDTH/2)
-#define Y_CENTER    (CAM_RES1_HEIGHT/2)
+#define X_CENTER    (CAM_RES2_WIDTH/2)
+#define Y_CENTER    (CAM_RES2_HEIGHT/2)
 
 extern Program g_progPt;
 

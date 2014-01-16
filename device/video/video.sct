@@ -7,7 +7,7 @@ LOAD_SPIFI 0x14000000 0x00100000
     system_lpc43xx.o (+RO)
     * (InRoot$$Sections)
   }
-  RW_IRAM0 0x10080000 0x00012000  
+  RW_IRAM0 0x10000000 0x00020000  
   {
     .ANY (+RO)
   }

@@ -6,6 +6,7 @@
 #include "spi.h"
 #include "rcservo.h"
 #include "cameravals.h"
+#include "conncomp.h"
 
 extern Qqueue *g_qqueue;
 extern Blobs *g_blobs;
@@ -18,8 +19,8 @@ Program g_progPt =
 	ptLoop
 };
 
-static ServoLoop g_panLoop(PAN_AXIS, 250, 400);
-static ServoLoop g_tiltLoop(TILT_AXIS, 350, 450);
+static ServoLoop g_panLoop(PAN_AXIS, 500, 800);
+static ServoLoop g_tiltLoop(TILT_AXIS, 700, 900);
 
 
 ServoLoop::ServoLoop(uint8_t axis, uint32_t pgain, uint32_t dgain)
@@ -79,6 +80,8 @@ int ptSetup()
 	g_qqueue->flush();
 	exec_runM0(0);
 
+	cc_loadLut();
+
 	return 0;
 }
 
@@ -86,6 +89,7 @@ int ptLoop()
 {
 	int32_t panError, tiltError;
 	uint16_t *blob, x, y;
+	static int i = 0;
 
 	// create blobs
 	g_blobs->blobify();
@@ -101,8 +105,11 @@ int ptLoop()
 
 		g_panLoop.update(panError);
 		g_tiltLoop.update(tiltError);
-   		//cprintf("%d %d\n", x, y);
+   		cprintf("%d: x=%d y=%d\n", i, x, y);
 	}
-		
+	else
+	   	cprintf("%d\n", i);
+	
+	i++;
 	return 0;
 }
