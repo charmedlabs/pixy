@@ -3,7 +3,7 @@
 
 #include "chirp.hpp"
 
-#define EXEC_MAX_PROGS   7
+#define EXEC_MAX_PROGS   8
 
 typedef int (*ProgFunc)();
 
@@ -17,6 +17,7 @@ struct Program
 
 void exec_loop();
 int exec_init(Chirp *chirp);
+void exec_select();
 int exec_addProg(Program *prog);
 
 int exec_runM0(uint8_t prog);

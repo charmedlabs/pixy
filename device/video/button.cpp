@@ -228,7 +228,7 @@ bool ButtonMachine::handleSignature()
 			if (m_index==0)
 			{
 				cam_setAWB(0);
-				flashLED(4); // todo: flash according to saturation
+				flashLED(4); 
 			}
 			else
 				setSignature();
@@ -255,6 +255,71 @@ bool ButtonMachine::handleSignature()
 
 	return m_goto!=0;
 }
+
+int ButtonMachine::selectProgram(int progs)
+{
+	int result;
+
+	uint32_t bt; 
+
+	if (progs<=1)
+		return 0;
+
+	while(1)
+	{
+		bt = button();
+		periodic();
+
+		switch(m_goto)
+		{
+		case 0:  // wait for nothing
+			setTimer(&m_timer);
+			m_goto = 1;
+			setLED();
+			break;
+
+		case 1:	// wait for button down
+			if (bt)
+			{
+				setTimer(&m_timer);
+				m_index=1;
+				setLED();
+				m_goto = 2;
+			}
+			else if (getTimer(m_timer)>BT_PROG_TIMEOUT)
+			{
+				flashLED(4); 
+				reset();
+				return 0;
+			}
+			break;
+
+		case 2: // cycle through choices, wait for button up
+			if (!bt)
+			{
+				result = m_index;
+				flashLED(4); 
+				reset();
+				return result;
+			}
+			else if (getTimer(m_timer)>BT_INDEX_CYCLE_TIMEOUT)
+			{
+				setTimer(&m_timer);
+				m_index++;
+				if (m_index==progs)
+					m_index = 0;
+
+				setLED();
+			}							   
+			break;
+
+		default:
+			reset();
+		}
+	}
+}
+
+
 
 void ButtonMachine::wait(uint32_t us)
 {

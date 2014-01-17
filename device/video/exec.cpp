@@ -59,18 +59,18 @@ ButtonMachine *g_bMachine = NULL;
 
 int exec_init(Chirp *chirp)
 {
-	chirp->registerModule(g_module);
-
 	g_bMachine = new ButtonMachine;
+
+	chirp->registerModule(g_module);
 
 	g_runM0 = g_chirpM0->getProc("run", NULL);
 	g_runningM0 = g_chirpM0->getProc("running", NULL);
 	g_stopM0 = g_chirpM0->getProc("stop", NULL);	
 		
-	exec_runprog(0);
-
 	return 0;	
 }
+
+
 
 int exec_addProg(Program *prog)
 {
@@ -152,11 +152,27 @@ bool exec_periodic()
 		return false;
 }
 
+void exec_select()
+{
+	uint8_t prog, progs;
+
+	// count number of progs
+	for (progs=0; g_progTable[progs]; progs++);
+
+	// select using button state machine
+	prog = g_bMachine->selectProgram(progs);
+
+	// set it up to run
+	exec_runprog(prog);
+}
+
 void exec_loop()
 {
 	bool override, prevOverride;
 	uint8_t state = 0;
 	uint32_t bt;
+
+	exec_select();
 
 	while(1)
 	{
