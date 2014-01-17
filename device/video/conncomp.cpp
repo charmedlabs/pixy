@@ -67,7 +67,6 @@ int cc_loadLut(void)
 	char id[32];
 	ColorModel *pmodel;
 
-
 	// indicate that raw frame has been overwritten
 	g_rawFrame.m_pixels = NULL;
 	// clear lut
@@ -82,6 +81,10 @@ int cc_loadLut(void)
 			return res;
 		g_blobs->m_clut->add(pmodel, i);
 	}
+
+	// go ahead and flush since we've changed things
+	g_qqueue->flush();
+
 	return 0;
 }
 

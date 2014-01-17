@@ -150,7 +150,9 @@ int Chirp::useBuffer(uint8_t *buf, uint32_t len)
     m_len = len-m_headerLen;
     if (!m_call) // if we're not a call, we're extra data, so we need to send
     {
-        if ((res=sendChirpRetry(CRP_XDATA, 0))!=CRP_RES_OK) // convert call into response
+        res = sendChirpRetry(CRP_XDATA, 0);
+        restoreBuffer(); // restore buffer immediately!
+        if (res!=CRP_RES_OK) // convert call into response
             return res;
     }
     return CRP_RES_OK;
@@ -586,7 +588,9 @@ int Chirp::handleChirp(uint8_t type, ChirpProc proc, void *args[])
         // write responseInt
         *(uint32_t *)(m_buf+m_headerLen) = responseInt;
         // send response
-        if ((res=sendChirpRetry(CRP_RESPONSE | (type&~CRP_CALL), m_procTable[proc].chirpProc))!=CRP_RES_OK) // convert call into response
+        res = sendChirpRetry(CRP_RESPONSE | (type&~CRP_CALL), m_procTable[proc].chirpProc);
+        restoreBuffer(); // restore buffer immediately!
+        if (res!=CRP_RES_OK) // convert call into response
             return res;
     }
 

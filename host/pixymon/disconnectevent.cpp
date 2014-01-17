@@ -16,6 +16,14 @@ DisconnectEvent::~DisconnectEvent()
 
 // this thread simply "pings" pixy periodically checking for an error
 // It's simple, detects hangs on Pixy and is portable between OS's
+
+// it's probably best to just have a single thread deal with chirp.
+// just poll getRunning every n chrip services.
+// this simplifies things....
+// we can get rid of this class, and make the run/stop sensing more robust.
+// And we can make the button initiate the run state when setting signatures (which we can't do right now).
+// And it's sort of weird that when we're stopped, we are rendering xdata through this thread, sort of
+// inadvertently.... to be tackled later
 void DisconnectEvent::run()
 {
     int res;

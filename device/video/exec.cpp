@@ -155,6 +155,8 @@ bool exec_periodic()
 void exec_loop()
 {
 	bool override, prevOverride;
+	uint8_t state = 0;
+	uint32_t bt;
 
 	while(1)
 	{
@@ -164,6 +166,14 @@ void exec_loop()
 			exec_periodic();
 			if (!g_chirpUsb->connected() || !USB_Configuration)
 				exec_run();
+			bt = button();
+			if (bt && state==0)
+			{
+				cprintf("Must be in run state to set signature (sorry!)\n");
+				state = 1;
+			}
+			else if (!bt)
+				state = 0;
 		}
 
 		prevOverride = true; // force setup
@@ -180,6 +190,13 @@ void exec_loop()
 				if ((*g_progTable[g_program]->loop)()<0)
 					break; // loop failed!	
 			}
+			else
+				// need to stop M0 because it's using the same memory and can possibly interfere.
+				// For example if we try to grab a raw frame while M0 is running (gathering RLS values)
+				// M0 could overwrite the frame memory with RLS scratch data.  This was 
+				// a bitch to track down!  
+				exec_stopM0(); 
+
 			prevOverride = override;
 		}
 

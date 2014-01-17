@@ -300,23 +300,24 @@ void Interpreter::handleResponse(void *args[])
 
 void Interpreter::handleData(void *args[])
 {
-    int i;
     uint8_t type;
     QColor color = CW_DEFAULT_COLOR;
 
-    for(i=0; args[i]; i++)
+    if (args[0])
     {
-        type = Chirp::getType(args[i]);
+        type = Chirp::getType(args[0]);
         if (type==CRP_TYPE_HINT)
         {
-            m_print += printType(*(uint32_t *)args[i]) + " frame data\n";
-            m_renderer->render(*(uint32_t *)args[i], &args[i+1]);
+            m_print += printType(*(uint32_t *)args[0]) + " frame data\n";
+            m_renderer->render(*(uint32_t *)args[0], args+1);
         }
         else if (type==CRP_HSTRING)
         {
-            m_print +=  (char *)args[i];
+            m_print +=  (char *)args[0];
             color = Qt::blue;
         }
+        else
+            qDebug() << "unknown type " << type;
     }
     if (m_print.right(1)!="\n")
         m_print += "\n";

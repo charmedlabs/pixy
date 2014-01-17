@@ -34,13 +34,13 @@ int blobsSetup()
 	// setup spi
 	spi_setCallback(spiCallback);
  	
-	// setup qqueue and M0
-	g_qqueue->flush();
-	exec_runM0(0);
-
 	// load lut if we've grabbed any frames lately
 	if (g_rawFrame.m_pixels)
 		cc_loadLut();
+
+	// setup qqueue and M0
+	g_qqueue->flush();
+	exec_runM0(0);
 
 	return 0;
 }

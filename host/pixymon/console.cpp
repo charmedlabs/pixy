@@ -35,6 +35,7 @@ void ConsoleWidget::handleColor(const QColor &color)
 
 void ConsoleWidget::print(QString text, QColor color)
 {
+    emptyLine();
     moveCursor(QTextCursor::End);
     handleColor(color);
     m_mutexPrint.lock();
@@ -128,6 +129,15 @@ void ConsoleWidget::keyPressEvent(QKeyEvent *event)
     }
     else if (event->matches(QKeySequence::Copy)) // break key
         emit controlKey(Qt::Key_Escape);
+    else
+    {
+        // make sure when we're typing, there's a prompt
+        QTextCursor cursor = textCursor();
+
+        line = cursor.block().text();
+        if (line.left(m_prompt.size())!=m_prompt)
+            prompt(m_prompt);
+    }
 
     QPlainTextEdit::keyPressEvent(event);
 }

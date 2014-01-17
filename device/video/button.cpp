@@ -124,16 +124,10 @@ ButtonMachine::~ButtonMachine()
 {
 }
 
-#define TIMEOUT1    1250*1000
-#define TIMEOUT2    1000*1000
-#define TIMEOUT3    60000*1000
-#define TIMEOUT_FLASH 60*1000
-
 void ButtonMachine::ledPipe()
 {
 	uint8_t r, g, b;
 
-	cam_getFrameChirpFlags(CAM_GRAB_M1R2, 0, 0, CAM_RES2_WIDTH, CAM_RES2_HEIGHT, g_chirpUsb, 0);
 	BlobA blob(m_index, (CAM_RES2_WIDTH-BT_CENTER_SIZE)/2, (CAM_RES2_WIDTH+BT_CENTER_SIZE)/2, (CAM_RES2_HEIGHT-BT_CENTER_SIZE)/2, (CAM_RES2_HEIGHT+BT_CENTER_SIZE)/2);
 	cc_sendBlobs(g_chirpUsb, &blob, 1);
 
@@ -166,8 +160,13 @@ bool ButtonMachine::handleSignature()
 
 	bt = button();
 
-   	if (m_ledPipe)
+   	if (m_ledPipe) // if ledpipe, grab frame, but don't flush 
+	{
+		cam_getFrameChirpFlags(CAM_GRAB_M1R2, 0, 0, CAM_RES2_WIDTH, CAM_RES2_HEIGHT, g_chirpUsb, 0);
 		ledPipe();
+	}
+	else if (m_goto!=0) // else grab frame and flush
+		cam_getFrameChirpFlags(CAM_GRAB_M1R2, 0, 0, CAM_RES2_WIDTH, CAM_RES2_HEIGHT, g_chirpUsb);
 
 	switch(m_goto)
 	{
@@ -182,7 +181,7 @@ bool ButtonMachine::handleSignature()
 	case 1: // wait for button timeout
 		if (!bt)
 			m_goto = 0;
-		else if (getTimer(m_timer)>TIMEOUT1)
+		else if (getTimer(m_timer)>BT_INITIAL_BUTTON_TIMEOUT)
 		{
 			m_index = 0;
 			setTimer(&m_timer);
@@ -202,7 +201,7 @@ bool ButtonMachine::handleSignature()
 				m_ledPipe = true;
 			m_goto = 3;
 		}
-		else if (getTimer(m_timer)>TIMEOUT2)
+		else if (getTimer(m_timer)>BT_INDEX_CYCLE_TIMEOUT)
 		{
 			setTimer(&m_timer);
 			m_index++;
@@ -219,7 +218,7 @@ bool ButtonMachine::handleSignature()
 			setTimer(&m_timer);
 			m_goto = 4;
 		}
-		else if (getTimer(m_timer)>TIMEOUT3) // abort
+		else if (getTimer(m_timer)>BT_LIGHTPIPE_TIMEOUT) // abort
 			reset();
 		break;
 
@@ -235,14 +234,20 @@ bool ButtonMachine::handleSignature()
 				setSignature();
 			reset(); // done	
 		}
-		else if (getTimer(m_timer)>TIMEOUT1)
+		else if (getTimer(m_timer)>BT_INITIAL_BUTTON_TIMEOUT)
 		{
  			if (m_index==0)
 				cam_setAWB(0);
 
 			reset();
+			m_goto = 5;
 		}
 	 	break;
+
+	case 5: // wait for button up only
+		if (!bt)
+			reset();
+		break;
 
 	default:
 		reset();
@@ -257,7 +262,7 @@ void ButtonMachine::wait(uint32_t us)
 
 	setTimer(&timer);
 
-	while(getTimer(timer)<us)
+	while(getTimer(timer)<us);
 		periodic();
 }
 
@@ -275,9 +280,9 @@ void ButtonMachine::flashLED(uint8_t flashes)
 	 for (i=0; i<flashes; i++)
 	 {
 		led_set(0);
-		wait(TIMEOUT_FLASH); // flash for just a little bit
+		wait(BT_FLASH_TIMEOUT); // flash for just a little bit
 		led_set(g_colors[m_index]);
-		wait(TIMEOUT_FLASH); // flash for just a little bit
+		wait(BT_FLASH_TIMEOUT); // flash for just a little bit
 	 }
 	 	
 }
@@ -289,7 +294,7 @@ void ButtonMachine::setLED()
 		return;
 
 	led_set(0);
-	wait(TIMEOUT_FLASH); // flash for just a little bit
+	wait(BT_FLASH_TIMEOUT); // flash for just a little bit
 	led_set(g_colors[m_index]);
 }
 
