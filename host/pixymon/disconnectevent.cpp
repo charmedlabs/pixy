@@ -5,7 +5,7 @@ DisconnectEvent::DisconnectEvent(Interpreter *interpreter)
 {
     m_interpreter = interpreter;
     m_run = true;
-    start();
+    //start();
 }
 
 DisconnectEvent::~DisconnectEvent()
@@ -29,7 +29,7 @@ void DisconnectEvent::run()
     int res;
     while(m_run)
     {
-        res = m_interpreter->getRunning();
+        //res = m_interpreter->getRunning();
         if (res<0)
         {
             m_interpreter->emit connected(PIXY, false);

@@ -2,6 +2,7 @@
 #include <QMessageBox>
 #include <QFile>
 #include <QDebug>
+#include <QTime>
 
 #include "interpreter.h"
 #include "disconnectevent.h"
@@ -13,7 +14,7 @@
 
 QString printType(uint32_t val, bool parens=false);
 
-Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, MainWindow *main)
+Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, MainWindow *main) : m_mutexProg(QMutex::Recursive)
 {
     m_console = console;
     m_video = video;
@@ -22,13 +23,17 @@ Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, MainWindow 
     m_setModel = 0;
     m_setModelMode = VideoWidget::NONE;
     m_programming = false;
-    m_programRunning = false;
+    m_localProgramRunning = false;
     m_remoteProgramRunning = false;
     m_rcount = 0;
+    m_waiting = false;
     m_init = true;
+    m_fastPoll = true;
     m_exit = false;
+    m_running = -1; // set to bogus value to force update
     m_chirp = NULL;
     m_disconnect = NULL;
+
 
 #if 0
     ChirpProc proc, procGet, procGetInfo, procGetAll;
@@ -71,6 +76,7 @@ Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, MainWindow 
     // we necessarily want to execute in the gui thread, so queue
     connect(this, SIGNAL(connected(Device,bool)), m_main, SLOT(handleConnected(Device,bool)), Qt::QueuedConnection);
 
+    m_run = true;
     start();
 }
 
@@ -84,6 +90,7 @@ Interpreter::~Interpreter()
     m_waitInput.wakeAll();
     m_waitSelection.wakeAll();
 
+    m_run = false;
     wait();
     clearProgram();
     if (m_disconnect)
@@ -96,21 +103,33 @@ int Interpreter::execute()
 {
     int res;
 
+    emit runState(true);
+    emit enableConsole(false);
+
+    QMutexLocker locker(&m_mutexProg);
+
     while(1)
     {
         for (; m_pc<m_program.size(); m_pc++)
         {
-            if (!m_programRunning)
+            if (!m_localProgramRunning)
             {
                 prompt();
-                return 0;
+                res = 0;
+                goto end;
             }
             res = m_chirp->execute(m_program[m_pc]);
             if (res<0)
-                return res;
+                goto end;
         }
         m_pc = 0;
     }
+end:
+    m_localProgramRunning = false;
+    emit runState(false);
+    emit enableConsole(true);
+
+    return res;
 }
 
 
@@ -324,11 +343,11 @@ void Interpreter::handleData(void *args[])
 
     // wait queue business keeps worker thread from getting too far ahead of gui thread
     // (when this happens, things can get sluggish.)
-    if (m_programRunning || m_remoteProgramRunning)
+    if (m_localProgramRunning || m_remoteProgramRunning)
         m_console->m_mutexPrint.lock();
     emit textOut(m_print, color);
     m_print = "";
-    if (m_programRunning || m_remoteProgramRunning)
+    if (m_localProgramRunning || m_remoteProgramRunning)
     {
         m_console->m_waitPrint.wait(&m_console->m_mutexPrint);
         m_console->m_mutexPrint.unlock();
@@ -353,6 +372,7 @@ int Interpreter::addProgram(const QStringList &argv)
     return 0;
 }
 
+#if 0
 bool Interpreter::checkRemoteProgram()
 {
     int res;
@@ -397,23 +417,41 @@ int Interpreter::stopRemoteProgram()
     qDebug() << "error";
     return -1;
 }
+#endif
 
-int Interpreter::getRunning()
+void Interpreter::getRunning()
 {
     int res, response;
+    bool running;
     QMutexLocker locker(&m_chirp->m_mutex);
 
     res = m_chirp->callSync(m_exec_running, END_OUT_ARGS, &response, END_IN_ARGS);
     qDebug() << "getRunning: " << res << " " << response;
     if (res<0)
-        return res;
-    return response ? true : false;
+    {
+        running = false;
+        emit connected(PIXY, false);
+    }
+    else
+        running = response ? true : false;
+    // emit state if we've changed
+    if (m_running!=running)
+    {
+        m_fastPoll = false;
+        emit runState(running);
+        emit enableConsole(!running);
+        if (!running)
+            prompt();
+    }
+    m_running = running;
 }
 
 int Interpreter::sendRun()
 {
     int res, response;
     QMutexLocker locker(&m_chirp->m_mutex);
+
+    m_fastPoll = true;
 
     res = m_chirp->callSync(m_exec_run, END_OUT_ARGS, &response, END_IN_ARGS);
     if (res<0)
@@ -425,6 +463,8 @@ int Interpreter::sendStop()
 {
     int res, response;
     QMutexLocker locker(&m_chirp->m_mutex);
+
+    m_fastPoll = true;
 
     res = m_chirp->callSync(m_exec_stop, END_OUT_ARGS, &response, END_IN_ARGS);
     if (res<0)
@@ -471,6 +511,7 @@ void Interpreter::setModel()
 }
 
 
+#if 0
 void Interpreter::run()
 {
     int res;
@@ -523,7 +564,7 @@ begin:
             prompt();
         }
     }
-    else if (m_programRunning)
+    else if (m_localProgramRunning)
     {
         emit runState(true);
         emit enableConsole(false);
@@ -559,6 +600,88 @@ begin:
         }
     }
 }
+#else
+
+#define RUN_POLL_PERIOD_SLOW   500 // msecs
+#define RUN_POLL_PERIOD_FAST   50  // msecs
+
+void Interpreter::run()
+{
+    int res;
+    QTime time;
+
+    // init
+    try
+    {
+        if (m_link.open()<0)
+            throw std::runtime_error("Unable to open USB device.");
+        m_chirp = new ChirpMon(this, &m_link);
+        m_exec_run = m_chirp->getProc("run");
+        m_exec_running = m_chirp->getProc("running");
+        m_exec_stop = m_chirp->getProc("stop");
+        if (m_exec_run<0 || m_exec_running<0 || m_exec_stop<0)
+            throw std::runtime_error("Communication error with Pixy.");
+        m_disconnect = new DisconnectEvent(this);
+    }
+    catch (std::runtime_error &exception)
+    {
+        emit error(QString(exception.what()));
+        return;
+    }
+    qDebug() << "*** init done";
+
+    time.start();
+    getRunning();
+
+    while(m_run)
+    {
+        if (!m_programming &&
+                ((m_fastPoll && time.elapsed()>RUN_POLL_PERIOD_FAST) ||
+                (!m_fastPoll && time.elapsed()>RUN_POLL_PERIOD_SLOW)))
+        {
+            getRunning();
+            time.restart();
+        }
+        if (!m_running)
+        {
+            if (m_localProgramRunning)
+                execute();
+            else
+            {
+                if (m_mutexProg.tryLock())
+                {
+                    if (m_argv.size())
+                    {
+                        res = call(m_argv, true);
+                        m_argv.clear();
+
+                        if (res<0 && m_programming)
+                        {
+                            endProgram();
+                            clearProgram();
+                        }
+                        prompt();
+                        // check to see if we're running after this command-- if so, go back
+                        if (!m_programming)
+                            getRunning();
+                    }
+                    m_mutexProg.unlock();
+                }
+                m_chirp->m_mutex.lock();
+                m_chirp->service(false);
+                m_chirp->m_mutex.unlock();
+            }
+        }
+        else
+        {
+            m_chirp->m_mutex.lock();
+            m_chirp->service(false);
+            m_chirp->m_mutex.unlock();
+        }
+    }
+}
+
+#endif
 
 int Interpreter::beginProgram()
 {
@@ -588,25 +711,30 @@ int Interpreter::runProgram()
 {
     QMutexLocker locker(&m_mutexProg);
 
-    if (m_programRunning || m_program.size()==0)
+    if (m_localProgramRunning || m_program.size()==0)
         return -1;
-
-    m_programRunning = true;
-
-    // start thread
-    start();
 
     m_console->emptyLine(); // don't want to start printing on line with prompt
 
+    m_localProgramRunning = true;
+
     return 0;
+}
+
+void Interpreter::runOrStopProgram()
+{
+    if (m_localProgramRunning)
+        m_localProgramRunning = false;
+    else if (m_running==false)
+        sendRun();
+    else if (m_running==true)
+        sendStop();
+    // no case to run local program because this is sort of an undocumented feature
 }
 
 int Interpreter::runRemoteProgram()
 {
      m_remoteProgramRunning = true;
-
-    // start thread
-    start();
 
     m_console->emptyLine(); // don't want to start printing on line with prompt
 
@@ -617,9 +745,9 @@ int Interpreter::runRemoteProgram()
 
 int Interpreter::stopProgram()
 {
-    if (!m_programRunning && !m_remoteProgramRunning)
+    if (!m_localProgramRunning && !m_remoteProgramRunning)
         return -1;
-    m_programRunning = false;
+    m_localProgramRunning = false;
     m_remoteProgramRunning = false;
 
     return 0;
@@ -630,7 +758,7 @@ int Interpreter::clearProgram()
     QMutexLocker locker(&m_mutexProg);
     unsigned int i;
 
-    for (i=0; i<m_program.size() && m_programRunning; i++)
+    for (i=0; i<m_program.size() && m_localProgramRunning; i++)
     {
         ChirpCallData data = m_program[i];
         delete [] data.m_buf;
@@ -677,10 +805,10 @@ void Interpreter::prompt()
 void Interpreter::command(const QString &command)
 {
     int res;
-    if (m_programRunning)
+    if (m_localProgramRunning)
         return;
 
-    if (isRunning())
+    if (m_waiting)
     {
         QString command2 = command;
         command2.remove(QRegExp("[(),\\t]"));
@@ -712,8 +840,8 @@ void Interpreter::command(const QString &command)
         listProgram();
     else if (words[0].left(4)=="cont")
     {
-        runProgram();
-        return;
+        if (runProgram()>=0)
+            return;
     }
     else if (words[0]=="load")
     {
@@ -736,7 +864,6 @@ void Interpreter::command(const QString &command)
             m_setModelMode = VideoWidget::REGION;
         else
             m_setModelMode = VideoWidget::POINT;
-        start();
         return;
     }
     else if (words[0]=="clear")
@@ -780,6 +907,7 @@ void Interpreter::controlKey(Qt::Key key)
     {
         m_command = "";
         m_key = key;
+        prompt();
         m_waitInput.wakeAll();
         return;
     }
@@ -824,8 +952,9 @@ int Interpreter::call(const QString &command)
 
 void Interpreter::handleCall(const QStringList &argv)
 {
+    m_mutexProg.lock();
     m_argv = argv;
-    start();
+    m_mutexProg.unlock();
 }
 
 int Interpreter::uploadLut()
@@ -1135,6 +1264,7 @@ void Interpreter::handleSelection(int x0, int y0, int width, int height)
 
     m_selection.setRect(x0, y0, width, height);
     m_command = QString::number(x0) + " " + QString::number(y0) +  " " + QString::number(width) +  " " + QString::number(height);
+    m_key = (Qt::Key)0;
     m_waitInput.wakeAll();
     m_waitSelection.wakeAll();
 }
@@ -1197,7 +1327,9 @@ int Interpreter::call(const QStringList &argv, bool interactive)
 
                     emit prompt(pstring);
                     m_mutexInput.lock();
+                    m_waiting = true;
                     m_waitInput.wait(&m_mutexInput);
+                    m_waiting = false;
                     m_mutexInput.unlock();
 
                     emit enableConsole(true);
@@ -1273,7 +1405,7 @@ int Interpreter::call(const QStringList &argv, bool interactive)
                            args[16], args[17], args[18], args[19], END_OUT_ARGS);
 
         // check for cable disconnect
-        if (res) //res==LIBUSB_ERROR_PIPE)
+        if (res<0) //res==LIBUSB_ERROR_PIPE)
         {
             emit connected(PIXY, false);
             return res;

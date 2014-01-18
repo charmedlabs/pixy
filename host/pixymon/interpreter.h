@@ -35,9 +35,10 @@ public:
     int runRemoteProgram();
     int stopProgram();
     int clearProgram();
+    void runOrStopProgram();
     bool programRunning()
     {
-        return m_programRunning || m_remoteProgramRunning;
+        return m_localProgramRunning || m_running==true;
     }
 
     int call(const QString &command);
@@ -87,7 +88,7 @@ private:
     int stopRemoteProgram();
     void setModel();
 
-    int getRunning();
+    void getRunning();
     int sendRun();
     int sendStop();
 
@@ -134,10 +135,14 @@ private:
 
     // for program
     bool m_programming;
-    bool m_programRunning;
+    bool m_localProgramRunning;
     bool m_remoteProgramRunning;
     bool m_init;
+    bool m_waiting;
     bool m_exit;
+    bool m_run;
+    bool m_fastPoll;
+    int m_running;
     std::vector<ChirpCallData> m_program;
     std::vector<QStringList> m_programText;
 

@@ -202,11 +202,7 @@ void MainWindow::handleConnected(Device device, bool state)
 
 void MainWindow::on_actionPlay_Pause_triggered()
 {
-    if (m_interpreter->programRunning())
-        m_interpreter->stopProgram();
-    else
-        m_interpreter->runRemoteProgram();
-    updateButtons();
+    m_interpreter->runOrStopProgram();
 }
 
 

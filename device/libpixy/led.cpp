@@ -70,7 +70,7 @@ void led_init()
 	g_ledVal[LED_BLUE] = 0xff;
 
 	// turn off LEDs
-	led_setRGB(0, 0, 0);
+	led_set(0);
 		
 	// set other vals...
 	g_ledScale = LED_DEFAULT_SCALE;
