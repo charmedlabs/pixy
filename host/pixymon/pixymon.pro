@@ -25,7 +25,6 @@ SOURCES += main.cpp\
     connectevent.cpp \
     flash.cpp \
     reader.cpp \
-    disconnectevent.cpp \
     ../../device/libpixy/chirp.cpp \
     colorlut.cpp
 
@@ -48,7 +47,6 @@ HEADERS  += mainwindow.h \
     libusb.h \
     flash.h \
     reader.h \
-    disconnectevent.h \
     ../../device/libpixy/chirp.hpp \
     colorlut.h \
     pixytypes.h
@@ -63,6 +61,8 @@ LIBS += ./libusb-1.0.dll.a
 
 RESOURCES += \
     resources.qrc
+
+
 
 
 

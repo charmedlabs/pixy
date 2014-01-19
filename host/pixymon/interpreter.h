@@ -14,6 +14,8 @@
 #include "usblink.h"
 
 #define PROMPT  ">"
+#define RUN_POLL_PERIOD_SLOW   500 // msecs
+#define RUN_POLL_PERIOD_FAST   50  // msecs
 
 class ConsoleWidget;
 class Renderer;
@@ -29,12 +31,14 @@ class Interpreter : public QThread
 public:
     Interpreter(ConsoleWidget *console, VideoWidget *video, MainWindow *main);
     ~Interpreter();
-    int beginProgram();
-    int endProgram();
-    int runProgram();
-    int runRemoteProgram();
-    int stopProgram();
-    int clearProgram();
+
+    // local program business
+    int beginLocalProgram();
+    int endLocalProgram();
+    int runLocalProgram();
+    int clearLocalProgram();
+
+    // "remote" program business
     void runOrStopProgram();
     bool programRunning()
     {
@@ -53,7 +57,6 @@ public:
     MainWindow *m_main;
 
     friend class ChirpMon;
-    friend class DisconnectEvent;
 
 signals:
     void runState(bool state);
@@ -75,7 +78,7 @@ protected:
     virtual void run();
 
 private:
-    void handleHelp(const QStringList &argv);
+    void handleHelp();
     void handleCall(const QStringList &argv);
     void listProgram();
     int call(const QStringList &argv, bool interactive=false);
@@ -84,13 +87,11 @@ private:
     int addProgram(ChirpCallData data);
     int addProgram(const QStringList &argv);
     int execute();
-    bool checkRemoteProgram();
-    int stopRemoteProgram();
-    void setModel();
 
     void getRunning();
     int sendRun();
     int sendStop();
+    void handlePendingCommand();
 
     void prompt();
     QStringList getSections(const QString &id, const QString &string);
@@ -99,34 +100,13 @@ private:
     QString printArgType(uint8_t *type, int &index);
     void augmentProcInfo(ProcInfo *info);
 
-    // experimental
-    int uploadLut();
-    int loadLut(const QString &filename, int model);
-
-    void getStats(int x0, int y0, int width, int height);
-    void writeFrame();
-    void fileOut(const QString &name, int *data, unsigned int len, unsigned int pitch=1, int p1=0, int p2=0);
-
-    // DEBUG
-#if 0
-    void fileOutDebug(uint8_t *data);
-#endif
-
-    unsigned int fileIn(const QString &name, char *data, unsigned int size);
-
     USBLink m_link;
-
-    uint8_t *m_lut;
 
     // for thread
     QMutex m_mutexProg;
     QMutex m_mutexInput;
     QWaitCondition m_waitInput;
-    QMutex m_mutexSelection;
-    QWaitCondition m_waitSelection;
-    QRect m_selection;
-    int m_setModel;
-    VideoWidget::InputMode m_setModelMode;
+    enum {NONE, STOP, RUN} m_pendingCommand;
 
     unsigned int m_pc;
     ChirpProc m_exec_run;
@@ -136,17 +116,14 @@ private:
     // for program
     bool m_programming;
     bool m_localProgramRunning;
-    bool m_remoteProgramRunning;
-    bool m_init;
     bool m_waiting;
-    bool m_exit;
     bool m_run;
     bool m_fastPoll;
     int m_running;
+
     std::vector<ChirpCallData> m_program;
     std::vector<QStringList> m_programText;
 
-    DisconnectEvent *m_disconnect;
     QString m_command;
     QString m_print;
     Qt::Key m_key;

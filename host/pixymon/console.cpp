@@ -93,50 +93,53 @@ void ConsoleWidget::keyPressEvent(QKeyEvent *event)
 {
     QString line;
 
-    moveCursor(QTextCursor::End);
-
-    if (event->key()==Qt::Key_Return)
+    if (!isReadOnly())
     {
-        QTextCursor cursor = textCursor();
-        line = cursor.block().text();
+        moveCursor(QTextCursor::End);
 
-        line.remove(0, m_prompt.size()); // get rid of prompt (assume it's just the first character)
-        // propagate newline before we send text
-        QPlainTextEdit::keyPressEvent(event);
-        // send text
-        emit textLine(line);
-        return;
+        if (event->key()==Qt::Key_Return)
+        {
+            QTextCursor cursor = textCursor();
+            line = cursor.block().text();
 
-    }
-    else if (event->key()==Qt::Key_Up)
-    {
-        emit controlKey(Qt::Key_Up);
-        return;
-    }
-    else if (event->key()==Qt::Key_Down)
-    {
-        emit controlKey(Qt::Key_Down);
-        return;
-    }
-    else if (event->key()==Qt::Key_Backspace)
-    {
-        QTextCursor cursor = textCursor();
-
-        line = cursor.block().text();
-        // don't propagate backspace if it means we're going to delete the prompt
-        if (line.size()<=m_prompt.size())
+            line.remove(0, m_prompt.size()); // get rid of prompt (assume it's just the first character)
+            // propagate newline before we send text
+            QPlainTextEdit::keyPressEvent(event);
+            // send text
+            emit textLine(line);
             return;
-    }
-    else if (event->matches(QKeySequence::Copy)) // break key
-        emit controlKey(Qt::Key_Escape);
-    else
-    {
-        // make sure when we're typing, there's a prompt
-        QTextCursor cursor = textCursor();
 
-        line = cursor.block().text();
-        if (line.left(m_prompt.size())!=m_prompt)
-            prompt(m_prompt);
+        }
+        else if (event->key()==Qt::Key_Up)
+        {
+            emit controlKey(Qt::Key_Up);
+            return;
+        }
+        else if (event->key()==Qt::Key_Down)
+        {
+            emit controlKey(Qt::Key_Down);
+            return;
+        }
+        else if (event->key()==Qt::Key_Backspace)
+        {
+            QTextCursor cursor = textCursor();
+
+            line = cursor.block().text();
+            // don't propagate backspace if it means we're going to delete the prompt
+            if (line.size()<=m_prompt.size())
+                return;
+        }
+        else if (event->matches(QKeySequence::Copy)) // break key
+            emit controlKey(Qt::Key_Escape);
+        else
+        {
+            // make sure when we're typing, there's a prompt
+            QTextCursor cursor = textCursor();
+
+            line = cursor.block().text();
+            if (line.left(m_prompt.size())!=m_prompt)
+                prompt(m_prompt);
+        }
     }
 
     QPlainTextEdit::keyPressEvent(event);

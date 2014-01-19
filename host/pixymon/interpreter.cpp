@@ -20,19 +20,14 @@ Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, MainWindow 
     m_video = video;
     m_main = main;
     m_pc = 0;
-    m_setModel = 0;
-    m_setModelMode = VideoWidget::NONE;
     m_programming = false;
     m_localProgramRunning = false;
-    m_remoteProgramRunning = false;
     m_rcount = 0;
     m_waiting = false;
-    m_init = true;
     m_fastPoll = true;
-    m_exit = false;
+    m_pendingCommand = NONE;
     m_running = -1; // set to bogus value to force update
     m_chirp = NULL;
-    m_disconnect = NULL;
 
 
 #if 0
@@ -63,7 +58,6 @@ Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, MainWindow 
 #endif
 
     m_renderer = new Renderer(m_video);
-    m_lut = m_renderer->m_blobs.getLut();
 
     connect(m_console, SIGNAL(textLine(QString)), this, SLOT(command(QString)));
     connect(m_console, SIGNAL(controlKey(Qt::Key)), this, SLOT(controlKey(Qt::Key)));
@@ -82,19 +76,15 @@ Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, MainWindow 
 
 Interpreter::~Interpreter()
 {
-    m_exit = true; // this flag indicates that we're not just exiting the thread
-    stopProgram();
+    m_localProgramRunning = false;
     m_console->m_mutexPrint.lock();
     m_console->m_waitPrint.wakeAll();
     m_console->m_mutexPrint.unlock();
     m_waitInput.wakeAll();
-    m_waitSelection.wakeAll();
 
     m_run = false;
     wait();
-    clearProgram();
-    if (m_disconnect)
-        delete m_disconnect;
+    clearLocalProgram();
     if (m_chirp)
         delete m_chirp;
 }
@@ -202,7 +192,6 @@ QString Interpreter::printProc(const ProcInfo *info, int level)
 void Interpreter::printHelp()
 {
     ProcInfo info;
-    QMutexLocker locker(&m_chirp->m_mutex);
     ChirpProc p;
 
     for (p=0; true; p++)
@@ -343,11 +332,11 @@ void Interpreter::handleData(void *args[])
 
     // wait queue business keeps worker thread from getting too far ahead of gui thread
     // (when this happens, things can get sluggish.)
-    if (m_localProgramRunning || m_remoteProgramRunning)
+    if (m_localProgramRunning || m_running)
         m_console->m_mutexPrint.lock();
     emit textOut(m_print, color);
     m_print = "";
-    if (m_localProgramRunning || m_remoteProgramRunning)
+    if (m_localProgramRunning || m_running)
     {
         m_console->m_waitPrint.wait(&m_console->m_mutexPrint);
         m_console->m_mutexPrint.unlock();
@@ -423,7 +412,6 @@ void Interpreter::getRunning()
 {
     int res, response;
     bool running;
-    QMutexLocker locker(&m_chirp->m_mutex);
 
     res = m_chirp->callSync(m_exec_running, END_OUT_ARGS, &response, END_IN_ARGS);
     qDebug() << "getRunning: " << res << " " << response;
@@ -449,7 +437,6 @@ void Interpreter::getRunning()
 int Interpreter::sendRun()
 {
     int res, response;
-    QMutexLocker locker(&m_chirp->m_mutex);
 
     m_fastPoll = true;
 
@@ -462,7 +449,6 @@ int Interpreter::sendRun()
 int Interpreter::sendStop()
 {
     int res, response;
-    QMutexLocker locker(&m_chirp->m_mutex);
 
     m_fastPoll = true;
 
@@ -470,44 +456,6 @@ int Interpreter::sendStop()
     if (res<0)
         return res;
     return response;
-}
-
-void Interpreter::setModel()
-{
-
-    if (m_setModelMode==VideoWidget::REGION)
-        textOut("Please select a region with your mouse.\n");
-    else
-        textOut("Please select a point with your mouse.\n");
-
-    // clear any overlays (rerender background)
-    m_renderer->renderBackground();
-    m_renderer->emitFlushImage();
-
-    emit videoInput(m_setModelMode);
-
-    // wait for response
-    m_mutexSelection.lock();
-    m_waitSelection.wait(&m_mutexSelection);
-    m_mutexSelection.unlock();
-
-    if (m_setModelMode==VideoWidget::REGION)
-        m_renderer->m_blobs.generateLUT(m_setModel, m_renderer->m_rawFrame, RectA(m_selection.x(), m_selection.y(), m_selection.width(), m_selection.height()));
-    else
-    {
-        RectA region;
-        m_renderer->m_blobs.generateLUT(m_setModel, m_renderer->m_rawFrame, Point16(m_selection.x(), m_selection.y()), &region);
-        // rerender frame
-        m_renderer->renderBackground();
-        // render region that we grew around the point (seed)
-        m_renderer->renderRect(m_renderer->m_rawFrame.m_width, m_renderer->m_rawFrame.m_height, region);
-        m_renderer->emitFlushImage();
-    }
-    uploadLut();
-
-    textOut("done!\n");
-    prompt();
-    m_setModel = 0;
 }
 
 
@@ -587,8 +535,8 @@ begin:
 
         if (res<0 && m_programming)
         {
-            endProgram();
-            clearProgram();
+            endLocalProgram();
+            clearLocalProgram();
         }
         prompt();
         // check to see if we're running after this command-- if so, go back
@@ -602,8 +550,23 @@ begin:
 }
 #else
 
-#define RUN_POLL_PERIOD_SLOW   500 // msecs
-#define RUN_POLL_PERIOD_FAST   50  // msecs
+void Interpreter::handlePendingCommand()
+{
+    switch (m_pendingCommand)
+    {
+    case NONE:
+        break;
+
+    case STOP:
+        sendStop();
+        break;
+
+    case RUN:
+        sendRun();
+        break;
+    }
+    m_pendingCommand = NONE;
+}
 
 void Interpreter::run()
 {
@@ -621,7 +584,6 @@ void Interpreter::run()
         m_exec_stop = m_chirp->getProc("stop");
         if (m_exec_run<0 || m_exec_running<0 || m_exec_stop<0)
             throw std::runtime_error("Communication error with Pixy.");
-        m_disconnect = new DisconnectEvent(this);
     }
     catch (std::runtime_error &exception)
     {
@@ -642,6 +604,7 @@ void Interpreter::run()
             getRunning();
             time.restart();
         }
+        handlePendingCommand();
         if (!m_running)
         {
             if (m_localProgramRunning)
@@ -652,62 +615,53 @@ void Interpreter::run()
                 {
                     if (m_argv.size())
                     {
-                        res = call(m_argv, true);
-                        m_argv.clear();
-
-                        if (res<0 && m_programming)
+                        if (m_argv[0]=="help")
+                            handleHelp();
+                        else
                         {
-                            endProgram();
-                            clearProgram();
+                            res = call(m_argv, true);
+                            if (res<0 && m_programming)
+                            {
+                                endLocalProgram();
+                                clearLocalProgram();
+                            }
                         }
+                        m_argv.clear();
                         prompt();
-                        // check to see if we're running after this command-- if so, go back
+                        // check quickly to see if we're running after this command
                         if (!m_programming)
                             getRunning();
                     }
                     m_mutexProg.unlock();
                 }
-                m_chirp->m_mutex.lock();
                 m_chirp->service(false);
-                m_chirp->m_mutex.unlock();
             }
         }
         else
-        {
-            m_chirp->m_mutex.lock();
             m_chirp->service(false);
-            m_chirp->m_mutex.unlock();
-        }
     }
 }
 
 #endif
 
-int Interpreter::beginProgram()
+int Interpreter::beginLocalProgram()
 {
     if (m_programming)
         return -1;
-    if (m_disconnect)
-    {
-        delete m_disconnect;
-        m_disconnect = NULL;
-    }
     m_programming = true;
     return 0;
 }
 
-int Interpreter::endProgram()
+int Interpreter::endLocalProgram()
 {
     if (!m_programming)
         return -1;
     m_pc = 0;
     m_programming = false;
-    if (m_disconnect==NULL)
-        m_disconnect = new DisconnectEvent(this);
     return 0;
 }
 
-int Interpreter::runProgram()
+int Interpreter::runLocalProgram()
 {
     QMutexLocker locker(&m_mutexProg);
 
@@ -726,34 +680,14 @@ void Interpreter::runOrStopProgram()
     if (m_localProgramRunning)
         m_localProgramRunning = false;
     else if (m_running==false)
-        sendRun();
+        m_pendingCommand = RUN;
     else if (m_running==true)
-        sendStop();
+        m_pendingCommand = STOP;
     // no case to run local program because this is sort of an undocumented feature
 }
 
-int Interpreter::runRemoteProgram()
-{
-     m_remoteProgramRunning = true;
 
-    m_console->emptyLine(); // don't want to start printing on line with prompt
-
-    return 0;
-}
-
-
-
-int Interpreter::stopProgram()
-{
-    if (!m_localProgramRunning && !m_remoteProgramRunning)
-        return -1;
-    m_localProgramRunning = false;
-    m_remoteProgramRunning = false;
-
-    return 0;
-}
-
-int Interpreter::clearProgram()
+int Interpreter::clearLocalProgram()
 {
     QMutexLocker locker(&m_mutexProg);
     unsigned int i;
@@ -804,7 +738,6 @@ void Interpreter::prompt()
 
 void Interpreter::command(const QString &command)
 {
-    int res;
     if (m_localProgramRunning)
         return;
 
@@ -823,59 +756,24 @@ void Interpreter::command(const QString &command)
     if (words.size()==0)
         goto end;
 
-    if (words[0]=="help")
-        handleHelp(words);
-    else if (words[0]=="do")
+    if (words[0]=="do")
     {
-        clearProgram();
-        beginProgram();
+        clearLocalProgram();
+        beginLocalProgram();
     }
     else if (words[0]=="done")
     {
-        endProgram();
-        runProgram();
+        endLocalProgram();
+        runLocalProgram();
         return;
     }
     else if (words[0]=="list")
         listProgram();
     else if (words[0].left(4)=="cont")
     {
-        if (runProgram()>=0)
+        if (runLocalProgram()>=0)
             return;
     }
-    else if (words[0]=="load")
-    {
-        if (words.size()==1)
-            res = loadLut("lut", 1);
-        else if (words.size()==2)
-            res = loadLut(words[1], 1);
-        else if (words.size()==3)
-            res = loadLut(words[1], words[2].toInt());
-        if (res<0)
-            emit error("There was an error (bad model number of filename.)\n");
-    }
-    else if(words[0]=="region" || words[0]=="point")
-    {
-        if (words.size()==1)
-            m_setModel = 1;
-        else
-            m_setModel = words[1].toInt();
-        if (words[0]=="region")
-            m_setModelMode = VideoWidget::REGION;
-        else
-            m_setModelMode = VideoWidget::POINT;
-        return;
-    }
-    else if (words[0]=="clear")
-    {
-        int i;
-        for (i=0; i<LUT_SIZE; i++)
-            m_lut[i] = 0;
-    }
-    else if (words[0]=="save")
-        writeFrame();
-    else if (words[0]=="upload")
-        uploadLut();
     else if (words[0]=="rendermode")
     {
         if (words.size()>1)
@@ -897,40 +795,40 @@ void Interpreter::command(const QString &command)
         return; // don't print prompt
     }
 
-    end:
+end:
     prompt();
 }
 
 void Interpreter::controlKey(Qt::Key key)
 {
-    if (isRunning())
-    {
-        m_command = "";
-        m_key = key;
-        prompt();
-        m_waitInput.wakeAll();
-        return;
-    }
+    m_command = "";
+    m_key = key;
+    m_waitInput.wakeAll();
+    if (m_programming)
+        endLocalProgram();
+    prompt();
+
 }
 
 
-void Interpreter::handleHelp(const QStringList &argv)
+void Interpreter::handleHelp()
 {
     ChirpProc proc;
     ProcInfo info;
-    QMutexLocker locker(&m_chirp->m_mutex);
 
-    if (argv.size()==1)
+    if (m_argv.size()==1)
         printHelp();
-    else if (argv.size()>1)
+    else if (m_argv.size()>1)
     {
-        if ((proc=m_chirp->getProc(argv[1].toLocal8Bit()))>=0 && m_chirp->getProcInfo(proc, &info)>=0)
+        if ((proc=m_chirp->getProc(m_argv[1].toLocal8Bit()))>=0 && m_chirp->getProcInfo(proc, &info)>=0)
             emit textOut(printProc(&info, 1));
         else
             emit error("can't find procedure.\n");
     }
 }
 
+
+#if 0
 int Interpreter::call(const QString &command)
 {
     int res;
@@ -943,12 +841,14 @@ int Interpreter::call(const QString &command)
 
     if (res<0 && m_programming)
     {
-        endProgram();
-        clearProgram();
+        endLocalProgram();
+        clearLocalProgram();
     }
 
     return res;
 }
+
+#endif
 
 void Interpreter::handleCall(const QStringList &argv)
 {
@@ -957,11 +857,11 @@ void Interpreter::handleCall(const QStringList &argv)
     m_mutexProg.unlock();
 }
 
+#if 0
 int Interpreter::uploadLut()
 {
     uint32_t i, sum;
     uint32_t responseInt;
-    QMutexLocker locker(&m_chirp->m_mutex);
 
     for (i=0, sum=0; i<LUT_SIZE; i++)
         sum += m_lut[i];
@@ -972,301 +872,13 @@ int Interpreter::uploadLut()
 
     return 0;
 }
-
-int Interpreter::loadLut(const QString &filename, int model)
-{
-#if 0
-    int i;
-    int model0;
-
-    if (model<1 || model>7)
-        return -2;
-
-    // DEBUG
-#if 0
-    uint8_t testLut[LUT_SIZE];
-    if (fileIn("lut.bin", (char *)testLut, LUT_SIZE)==0)
-        return -1;
-    for (int i = 0; i < LUT_SIZE; i++) {
-        if (testLut[i] != m_tempLut[i])
-            printf("Nope...\n");
-    }
-#endif
-
-    for (i=0; i<LUT_SIZE; i++)
-    {
-#if 0
-        model0 = m_lut[i]&0x07;
-        if (model0==0)
-            model0 = 8;
-        if (m_tempLut[i] && model<=model0)
-            m_lut[i] = (m_tempLut[i]&~0x07) | model;
-#endif
-        if (m_tempLut[i])
-        {
-            m_lut[i] = model;
-        }
-    }
-#endif
-    return 0;
-}
-
-int compareUnsigned(const void *a, const void *b)
-{
-  return ( *(uint8_t *)a - *(uint8_t *)b );
-}
-
-int compareSigned(const void *a, const void *b)
-{
-  return ( *(int8_t *)a - *(int8_t *)b );
-}
-
-
-void minmax(int &min, int &max, int x)
-{
-    if (x<min)
-        min = x;
-    if (x>max)
-        max = x;
-}
-
-#define WIDTH 320
-#define HEIGHT 200
-#define SATMAX8(v, a)   v > 0xff - a ? 0xff : v + a
-#define SATMIN8(v, a)   v < a ? 0 : v - a
-
-void Interpreter::writeFrame()
-{
-    uint32_t pixels[0x10000];
-
-    int i, j, k;
-     uint r, g, b;
-
-    uint8_t *frame = m_renderer->m_rawFrame.m_pixels;
-
-    for (k=0, i=1; i<HEIGHT; i+=2)
-    {
-        for (j=1; j<WIDTH; j+=2, k+=3)
-        {
-            r = frame[i*WIDTH + j];
-            g = frame[i*WIDTH - WIDTH + j];
-            b = frame[i*WIDTH - WIDTH + j - 1];
-            pixels[k] = r;
-            pixels[k+1] = g;
-            pixels[k+2] = b;
-        }
-    }
-
-    fileOut("frame", (int *)pixels, k, 3, WIDTH/2, HEIGHT/2);
-
-}
-
-
-#if 0
-void Interpreter::getStats(int x0, int y0, int width, int height)
-{
-    uint8_t list[0x10000];
-    uint32_t pixels[0x10000];
-
-    int i, j, k;
-    int havg;
-    uint r, g, b;
-    uint8_t h, s, v, c;
-    uint8_t hmin, hmax, median, hlb, hub;
-    int smin = 0xff, smax = 0, vmin = 0xff, vmax = 0, cmin = 0xff, cmax = 0;
-    int8_t hmin2, hmax2;
-    int16_t hmin16, hmax16;
-    int diff, diff2;
-
-    uint8_t *frame = m_renderer->m_frameData;
-
-    x0 |= 0x01;
-    y0 |= 0x01;
-
-    hmin = 0xff;
-    hmin2 = 0x7f;
-    hmax = 0x00;
-    hmax2 = 0x00;
-
-    for (k=0, i=y0; i<y0+height; i+=2)
-    {
-        for (j=x0; j<x0+width; j+=2, k+=3)
-        {
-            r = frame[i*WIDTH + j];
-            g = frame[i*WIDTH - WIDTH + j];
-            b = frame[i*WIDTH - WIDTH + j - 1];
-            pixels[k] = r;
-            pixels[k+1] = g;
-            pixels[k+2] = b;
-        }
-    }
-
-    // DEBUG
-#if 0
-    fileOut("pixels", (int *)pixels, k, 3);
-#endif
-
-    CLUT::generateFromImgSample(pixels, k, m_tempLut);
-
-    // DEBUG
-#if 0
-    fileOutDebug(m_tempLut);
-#endif
-
-    k = 0;
-    havg = 0;
-
-    for (i=y0; i<y0+height; i+=2)
-    {
-        for (j=x0; j<x0+width; j+=2)
-        {
-            r = frame[i*WIDTH + j];
-            g = frame[i*WIDTH - WIDTH + j];
-            b = frame[i*WIDTH - WIDTH + j - 1];
-            qDebug() << r << " " << g << " " << b;
-            r >>= 3; r <<= 3; g >>= 3; g <<= 3; b >>= 3; b <<= 3;
-
-            hsvc(r, g, b, &h, &s, &v, &c);
-            if (s<80 || v<80)
-                continue;
-            list[k++] = h;
-            havg += h;
-
-            if (h<hmin)
-                hmin = h;
-            if ((int8_t)h<hmin2)
-                hmin2 = (int8_t)h;
-            if (h>hmax)
-                hmax = h;
-            if ((int8_t)h>hmax2)
-                hmax2 = (int8_t)h;
-
-            minmax(smin, smax, s);
-            minmax(vmin, vmax, v);
-            minmax(cmin, cmax, c);
-            //qDebug() << r << " " << g << " " << b;
-        }
-    }
-    diff = hmax - hmin;
-    diff2 = hmax2 - hmin2;
-
-    if (diff<=diff2)
-    {
-        qsort(list, k, sizeof(uint8_t), compareUnsigned);
-        hmin16 = hmin;
-        hmax16 = hmax;
-    }
-    else
-    {
-        diff = diff2;
-        hmin16 = hmin2;
-        hmax16 = hmax2;
-        qsort(list, k, sizeof(uint8_t), compareSigned);
-    }
-    if (k)
-        havg /= k;
-    median = list[k/2];
-    hlb = list[k/20];
-    hub = list[k - k/20 - 1];
-    diff = diff < diff2 ? diff : diff2;
-
-    qDebug() << hmin16 << " " << hmax16;
-    cmax = 0xff;
-    cmin = 0;
-#if 0
-    smax = 0xff; //SATMAX8(smax, 20);
-    vmax = 0xff; //SATMAX8(vmax , 20);
-    cmax = 0xff; //SATMAX8(cmax, 20);
-    smin = SATMIN8(smin, 10);
-    vmin = SATMIN8(vmin, 20);
-    m_renderer->setFilter(hlb, (hlb+hub)/2, hub, smin, smax, vmin, vmax, cmin, cmax);
-#endif
-#if 1
-    smax = SATMAX8(smax, 5);
-    vmax = SATMAX8(vmax , 5);
-    smin = SATMIN8(smin, 5);
-    vmin = SATMIN8(vmin, 5);
-
-    //m_renderer->setFilter(hmin16, (hmin16+hmax16)/2, hmax16, smin, smax, vmin, vmax, cmin, cmax);
-
-#endif
-
-
-    //qDebug() << diff << " " << hmin << " " << hmin2 << " " << hmax << " " << hmax2;
-    //qDebug() << "median: " << median << "hlb: " << hlb << "hub: " << hub;
-}
-#endif
-
-unsigned int Interpreter::fileIn(const QString &name, char *data, unsigned int size)
-{
-    QFile file("matlab\\" + name);
-    if (!file.open(QIODevice::ReadOnly))
-        return 0;
-
-    return file.read(data, size);
-}
-
-void Interpreter::fileOut(const QString &name, int *data, unsigned int len, unsigned int pitch, int p1, int p2)
-{
-    unsigned int i, j;
-    static int index = 1;
-    QString str, namex;
-    namex = QString("%1%2").arg(name).arg(index, 2, 10, QLatin1Char('0'));
-    QFile file("matlab\\" + namex + ".m");
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
-        return;
-
-    QTextStream out(&file);
-
-    out << "function [A, b, c]=" << namex << "()\n\n";
-    out << "A=[";
-    for (i=0; i<len;)
-    {
-        if (i>0)
-            out << ",\n";
-        for (j=0; j<pitch; j++)
-        {
-            if (j>0)
-                out << ", ";
-            out << str.sprintf("%d", data[i++]);
-        }
-    }
-    out << "];\n";
-    out << "b=" << QString::number(p1) << ";\n";
-    out << "c=" << QString::number(p2) << ";\n";
-
-    index++;
-}
-
-// DEBUG
-#if 0
-void Interpreter::fileOutDebug(uint8_t *data)
-{
-    QFile file("pixi.txt");
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
-        return;
-
-    QTextStream out(&file);
-
-    for (int i = 0; i < 256; i++)
-    {
-        for (int j = 0; j < 256; j++)
-        {
-            out << data[(i*256)+j];
-        }
-        //out << "\n";
-    }
-}
 #endif
 
 void Interpreter::handleSelection(int x0, int y0, int width, int height)
 {
-
-    m_selection.setRect(x0, y0, width, height);
     m_command = QString::number(x0) + " " + QString::number(y0) +  " " + QString::number(width) +  " " + QString::number(height);
     m_key = (Qt::Key)0;
     m_waitInput.wakeAll();
-    m_waitSelection.wakeAll();
 }
 
 int Interpreter::call(const QStringList &argv, bool interactive)
@@ -1278,7 +890,6 @@ int Interpreter::call(const QStringList &argv, bool interactive)
     bool ok;
     uint type;
     ArgList list;
-    QMutexLocker locker(&m_chirp->m_mutex);
 
     // not allowed
     if (argv.size()<1)
