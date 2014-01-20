@@ -410,28 +410,24 @@ int Interpreter::stopRemoteProgram()
 
 void Interpreter::getRunning()
 {
-    int res, response;
-    bool running;
+    int res, running;
 
-    res = m_chirp->callSync(m_exec_running, END_OUT_ARGS, &response, END_IN_ARGS);
-    qDebug() << "getRunning: " << res << " " << response;
+    res = m_chirp->callSync(m_exec_running, END_OUT_ARGS, &running, END_IN_ARGS);
     if (res<0)
     {
         running = false;
         emit connected(PIXY, false);
     }
-    else
-        running = response ? true : false;
     // emit state if we've changed
     if (m_running!=running)
     {
         m_fastPoll = false;
+        m_running = running;
         emit runState(running);
         emit enableConsole(!running);
         if (!running)
             prompt();
     }
-    m_running = running;
 }
 
 int Interpreter::sendRun()
@@ -604,6 +600,9 @@ void Interpreter::run()
             getRunning();
             time.restart();
         }
+        else
+            m_chirp->service(false);
+
         handlePendingCommand();
         if (!m_running)
         {
@@ -634,11 +633,8 @@ void Interpreter::run()
                     }
                     m_mutexProg.unlock();
                 }
-                m_chirp->service(false);
             }
         }
-        else
-            m_chirp->service(false);
     }
 }
 
@@ -684,6 +680,15 @@ void Interpreter::runOrStopProgram()
     else if (m_running==true)
         m_pendingCommand = STOP;
     // no case to run local program because this is sort of an undocumented feature
+}
+
+uint Interpreter::programRunning()
+{
+    if (m_localProgramRunning)
+        return m_localProgramRunning;
+    if (m_running>0)
+        return m_running;
+    return false;
 }
 
 

@@ -58,7 +58,9 @@ MainWindow::~MainWindow()
 
 void MainWindow::updateButtons()
 {
-    if (m_interpreter && m_interpreter->programRunning())
+    uint runstate = 0;
+
+    if (m_interpreter && (runstate=m_interpreter->programRunning()))
     {
         m_ui->actionPlay_Pause->setIcon(QIcon(":/icons/icons/stop.png"));
     }
@@ -67,7 +69,7 @@ void MainWindow::updateButtons()
         m_ui->actionPlay_Pause->setIcon(QIcon(":/icons/icons/play.png"));
     }
 
-    if (m_pixyDFUConnected && m_pixyConnected) // we're in programming mode
+    if ((m_pixyDFUConnected && m_pixyConnected) || runstate==2) // we're in programming mode or we're in forced runstate
     {
         m_ui->actionPlay_Pause->setEnabled(false);
     }
@@ -91,7 +93,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
     close();
 }
 
-void MainWindow::handleRunState(bool state)
+void MainWindow::handleRunState(uint state)
 {
     updateButtons();
 }
@@ -157,7 +159,7 @@ void MainWindow::connectPixy(bool state)
                 m_interpreter->endProgram();
                 m_interpreter->runProgram();
 #endif
-                connect(m_interpreter, SIGNAL(runState(bool)), this, SLOT(handleRunState(bool)));
+                connect(m_interpreter, SIGNAL(runState(uint)), this, SLOT(handleRunState(uint)));
                 m_console->acceptInput(true);
             }
             m_pixyConnected = true;

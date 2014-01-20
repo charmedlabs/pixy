@@ -11,7 +11,7 @@ static const ProcModule g_module[] =
 	(ProcPtr)exec_running, 
 	{END}, 
 	"Is a program running?"
-	"@r 1 if a program is running, 0 if not"
+	"@r 1 if a program is running, 2 if running in \"forced\" state, 0 if not"
 	},
 	{
 	"stop",
@@ -48,6 +48,7 @@ static const ProcModule g_module[] =
 uint8_t g_running = false;
 uint8_t g_run = false;
 uint8_t g_program = 0;
+uint8_t g_override;
 
 static ChirpProc g_runM0 = -1;
 static ChirpProc g_runningM0 = -1;
@@ -87,7 +88,11 @@ int exec_addProg(Program *prog)
 
 uint32_t exec_running()
 {
-	return (uint32_t)g_running;
+ 	if (g_running)
+		return g_running;
+	if (g_override)
+		return 2; // we're not running and we're pressing the button
+	return 0;
 }
 
 int32_t exec_stop()
@@ -143,13 +148,10 @@ int exec_stopM0()
 	return responseInt;
 }
 
-bool exec_periodic()
+void exec_periodic()
 {
 	periodic();
-	if (g_run) 
-		return g_bMachine->handleSignature();
-	else // don't handle signature unless we're running
-		return false;
+	g_override = g_bMachine->handleSignature();
 }
 
 void exec_select()
@@ -166,11 +168,10 @@ void exec_select()
 	exec_runprog(prog);
 }
 
+
 void exec_loop()
 {
-	bool override, prevOverride;
-	uint8_t state = 0;
-	uint32_t bt;
+	bool prevOverride;
 
 	exec_select();
 
@@ -182,14 +183,6 @@ void exec_loop()
 			exec_periodic();
 			if (!g_chirpUsb->connected() || !USB_Configuration)
 				exec_run();
-			bt = button();
-			if (bt && state==0)
-			{
-				cprintf("Must be in run state to set signature (sorry!)\n");
-				state = 1;
-			}
-			else if (!bt)
-				state = 0;
 		}
 
 		prevOverride = true; // force setup
@@ -197,8 +190,8 @@ void exec_loop()
 		// loop
 		while(g_run)
 		{
-			override = exec_periodic();
-			if (!override) // if we're not being overriden, run loop 
+			exec_periodic();
+			if (!g_override) // if we're not being overriden, run loop 
 			{
 				// if we came here from outside this while statement or we're resuming, run setup
 				if (prevOverride && (*g_progTable[g_program]->setup)()<0)
@@ -209,11 +202,10 @@ void exec_loop()
 			else
 				// need to stop M0 because it's using the same memory and can possibly interfere.
 				// For example if we try to grab a raw frame while M0 is running (gathering RLS values)
-				// M0 could overwrite the frame memory with RLS scratch data.  This was 
-				// a bitch to track down!  
+				// M0 could overwrite the frame memory with RLS scratch data.
 				exec_stopM0(); 
 
-			prevOverride = override;
+			prevOverride = g_override;
 		}
 
 		// set variable to indicate we've stopped

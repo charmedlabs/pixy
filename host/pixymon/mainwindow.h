@@ -30,7 +30,7 @@ public:
     friend class ConsoleWidget;
 
 private slots:
-    void handleRunState(bool state);
+    void handleRunState(uint state);
     void handleConnected(Device device, bool state);
     void on_actionPlay_Pause_triggered();
     void on_actionExit_triggered();

@@ -40,10 +40,7 @@ public:
 
     // "remote" program business
     void runOrStopProgram();
-    bool programRunning()
-    {
-        return m_localProgramRunning || m_running==true;
-    }
+    uint programRunning();
 
     int call(const QString &command);
     void printHelp();
@@ -59,7 +56,7 @@ public:
     friend class ChirpMon;
 
 signals:
-    void runState(bool state);
+    void runState(uint state);
     void textOut(QString text, QColor color=Qt::black);
     void error(QString text);
     void prompt(QString text);
