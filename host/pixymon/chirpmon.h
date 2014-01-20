@@ -2,7 +2,7 @@
 #define CHIRPTHREAD_H
 
 #include <QMutex>
-#include "../../device/libpixy/chirp.hpp"
+#include <chirp.hpp>
 
 class Interpreter;
 class USBLink;

@@ -679,7 +679,7 @@ void Interpreter::runOrStopProgram()
         m_pendingCommand = RUN;
     else if (m_running==true)
         m_pendingCommand = STOP;
-    // no case to run local program because this is sort of an undocumented feature
+    // no case to run local program because this is sort of an undocumented feature for now
 }
 
 uint Interpreter::programRunning()
@@ -832,28 +832,6 @@ void Interpreter::handleHelp()
     }
 }
 
-
-#if 0
-int Interpreter::call(const QString &command)
-{
-    int res;
-    QStringList argv = command.split(QRegExp("[\\s(),\\t]"), QString::SkipEmptyParts);
-
-    if (argv.size()==0)
-        res = -1;
-    else
-        res = call(argv);
-
-    if (res<0 && m_programming)
-    {
-        endLocalProgram();
-        clearLocalProgram();
-    }
-
-    return res;
-}
-
-#endif
 
 void Interpreter::handleCall(const QStringList &argv)
 {

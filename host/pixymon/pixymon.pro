@@ -25,8 +25,8 @@ SOURCES += main.cpp\
     connectevent.cpp \
     flash.cpp \
     reader.cpp \
-    ../../device/libpixy/chirp.cpp \
-    colorlut.cpp
+    colorlut.cpp \
+    ../../common/chirp.cpp
 
 HEADERS  += mainwindow.h \
     link.h \
@@ -47,11 +47,11 @@ HEADERS  += mainwindow.h \
     libusb.h \
     flash.h \
     reader.h \
-    ../../device/libpixy/chirp.hpp \
     colorlut.h \
-    pixytypes.h
+    ../../common/pixytypes.h \
+    ../../common/chirp.hpp
 
-INCLUDEPATH += ../libpixy
+INCLUDEPATH += ../../common
 
 QMAKE_CXXFLAGS_DEBUG += -O0
 
@@ -61,6 +61,11 @@ LIBS += ./libusb-1.0.dll.a
 
 RESOURCES += \
     resources.qrc
+
+
+
+
+
 
 
 

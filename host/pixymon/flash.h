@@ -3,7 +3,7 @@
 
 #include <QString>
 #include "usblink.h"
-#include "../../device/libpixy/chirp.hpp"
+#include <chirp.hpp>
 
 class Flash
 {

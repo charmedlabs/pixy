@@ -790,7 +790,7 @@
               <MiscControls></MiscControls>
               <Define>CORE_M4 IPC_MASTER</Define>
               <Undefine></Undefine>
-              <IncludePath>., ..\libpixy</IncludePath>
+              <IncludePath>., ..\libpixy, ..\..\common</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>

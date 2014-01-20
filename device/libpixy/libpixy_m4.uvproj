@@ -346,7 +346,7 @@
               <MiscControls></MiscControls>
               <Define>CORE_M4 IPC_MASTER</Define>
               <Undefine></Undefine>
-              <IncludePath>.</IncludePath>
+              <IncludePath>., ..\..\common</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -447,11 +447,6 @@
               <FilePath>.\usbuser.c</FilePath>
             </File>
             <File>
-              <FileName>chirp.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>.\chirp.cpp</FilePath>
-            </File>
-            <File>
               <FileName>sccb.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>.\sccb.cpp</FilePath>
@@ -535,6 +530,11 @@
               <FileName>flash.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>.\flash.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>chirp.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\common\chirp.cpp</FilePath>
             </File>
           </Files>
         </Group>

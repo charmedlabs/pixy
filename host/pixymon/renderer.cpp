@@ -3,7 +3,7 @@
 #include <QDebug>
 #include "renderer.h"
 #include "videowidget.h"
-#include "../../device/libpixy/chirp.hpp"
+#include <chirp.hpp>
 #include "calc.h"
 #include <math.h>
 
