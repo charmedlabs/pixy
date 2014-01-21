@@ -52,7 +52,7 @@ void sendCMV1(uint8_t renderFlags=RENDER_FLAG_FLUSH)
 		loadColorModels(cmodels);
 
 	// fill buffer contents manually for return data 
-	len = Chirp::serialize(g_chirpUsb, frame, SRAM1_SIZE, HTYPE(FOURCC('C','M','V','1')), HINT8(renderFlags), UINTS8(g_loadModels ? sizeof(ColorModel)*NUM_MODELS : 0, cmodels), UINT16(CAM_RES2_WIDTH), UINT16(CAM_RES2_HEIGHT), UINTS8_NO_COPY(CAM_RES2_WIDTH*CAM_RES2_HEIGHT), END);
+	len = Chirp::serialize(g_chirpUsb, frame, SRAM1_SIZE, HTYPE(FOURCC('C','M','V','1')), HINT8(renderFlags), FLTS32(g_loadModels ? sizeof(ColorModel)*NUM_MODELS/sizeof(float) : 0, cmodels), UINT16(CAM_RES2_WIDTH), UINT16(CAM_RES2_HEIGHT), UINTS8_NO_COPY(CAM_RES2_WIDTH*CAM_RES2_HEIGHT), END);
 	// write frame after chirp args
 	cam_getFrame(frame+len, SRAM1_SIZE-len, CAM_GRAB_M1R2, 0, 0, CAM_RES2_WIDTH, CAM_RES2_HEIGHT);
 

@@ -22,20 +22,20 @@ public:
     Blobs(Qqueue *qq);
     ~Blobs();
     void blobify();
-	uint16_t getBlock(uint16_t *buf);
-	uint16_t *getMaxBlob(uint16_t signature); 
-	void getBlobs(BlobA **blobs, uint32_t *len);
+    uint16_t getBlock(uint16_t *buf);
+    uint16_t *getMaxBlob(uint16_t signature);
+    void getBlobs(BlobA **blobs, uint32_t *len);
 
-	int generateLUT(uint8_t model, const Frame8 &frame, const RectA &region, ColorModel *pcmodel=NULL);
-	int generateLUT(uint8_t model, const Frame8 &frame, const Point16 &seed, ColorModel *pcmodel=NULL, RectA *region=NULL);
+    int generateLUT(uint8_t model, const Frame8 &frame, const RectA &region, ColorModel *pcmodel=NULL);
+    int generateLUT(uint8_t model, const Frame8 &frame, const Point16 &seed, ColorModel *pcmodel=NULL, RectA *region=NULL);
 
-	ColorLUT *m_clut;
+    ColorLUT *m_clut;
 #ifndef PIXY
     uint8_t *m_lut;
 #endif
 
 private:
-        void unpack();
+    void unpack();
     uint16_t combine(uint16_t *blobs, uint16_t numBlobs);
     uint16_t combine2(uint16_t *blobs, uint16_t numBlobs);
     uint16_t compress(uint16_t *blobs, uint16_t numBlobs);
@@ -43,19 +43,19 @@ private:
     bool closeby(int a, int b, int dist);
     void addCoded(int a, int b);
     void processCoded();
-	void copyBlobs();
+    void copyBlobs();
 
     CBlobAssembler m_assembler[NUM_MODELS];
-        Qqueue *m_qq;
+    Qqueue *m_qq;
 
 
     uint16_t *m_blobs;
     uint16_t m_numBlobs;
 
-	bool m_mutex;
+    bool m_mutex;
     uint16_t m_maxBlobs;
 
-	uint16_t m_blobReadIndex;
+    uint16_t m_blobReadIndex;
 
     uint16_t m_numCodedBlobs;
     uint32_t m_minArea;

@@ -46,9 +46,10 @@ private:
     uint32_t boundTest(const Line *line, float dir);
     bool checkBounds(const ColorModel *model, const HuePixel *pixel);
 
+#ifndef PIXY
     void matlabOut(const ColorModel *model);
     void matlabOut();
-
+#endif
 
     uint8_t *m_lut;
     HuePixel *m_hpixels;

@@ -1,3 +1,8 @@
+#ifndef PIXY
+#include <QString>
+#include <QFile>
+#include <QTextStream>
+#endif
 #include <stdlib.h>
 #include <math.h>
 #include "colorlut.h"
@@ -18,22 +23,22 @@ float dot(Fpoint a, Fpoint b)
 
 void *maxMalloc(uint32_t initSize, uint32_t *allocSize)
 {
-	void *mem;
-	int32_t size = (int32_t)initSize;
+    void *mem;
+    int32_t size = (int32_t)initSize;
 
-	while(size>=0)
-	{
-		mem = malloc(size);
-		if (mem)
-		{
-			*allocSize = (uint32_t)size;
-			return mem;
-		}
-		else
-			size -= 0x100;		
-	}
-	*allocSize = 0;
-	return NULL;
+    while(size>=0)
+    {
+        mem = malloc(size);
+        if (mem)
+        {
+            *allocSize = (uint32_t)size;
+            return mem;
+        }
+        else
+            size -= 0x100;
+    }
+    *allocSize = 0;
+    return NULL;
 }
 
 float distance(Fpoint a, Fpoint b)
@@ -70,7 +75,7 @@ int ColorLUT::generate(ColorModel *model, const Frame8 &frame, const RectA &regi
     Fpoint meanVal;
     float angle, pangle, pslope, meanSat;
     float yi, istep, s, xsat, sat;
-	int result;
+    int result;
 
     m_hpixels = (HuePixel *)maxMalloc(sizeof(HuePixel)*CL_HPIXEL_MAX_SIZE, &m_hpixelSize);
     if (m_hpixels==NULL)
@@ -110,7 +115,7 @@ int ColorLUT::generate(ColorModel *model, const Frame8 &frame, const RectA &regi
     xsat = yi/(hueLine.m_slope-pslope); // x value where inner sat line crosses hue line
     Fpoint minsatVec(xsat, xsat*hueLine.m_slope); // vector going to inner sat line
     sat = dot(uvec, minsatVec); // length of line
-	meanSat = dot(uvec, meanVal);
+    meanSat = dot(uvec, meanVal);
     if (sat < m_minSat) // if it's too short, we need to extend
     {
         minsatVec.m_x = uvec.m_x*m_minSat;
@@ -137,13 +142,13 @@ int ColorLUT::generate(ColorModel *model, const Frame8 &frame, const RectA &regi
 
     free(m_hpixels);
 
-	// calculate goodness
-	result = (meanSat-m_minSat)*100/64; // 64 because it's half of our range
-	if (result<0) 
-		result = 0;
-	if (result>100)
-		result = 100;
-		 
+    // calculate goodness
+    result = (meanSat-m_minSat)*100/64; // 64 because it's half of our range
+    if (result<0)
+        result = 0;
+    if (result>100)
+        result = 100;
+
     return result;
 }
 
@@ -257,16 +262,16 @@ void ColorLUT::add(const ColorModel *model, uint8_t modelIndex)
     uint32_t i;
     HuePixel p;
 
-	if (model->m_hue[0].m_slope==0.0f)
-		return;
+    if (model->m_hue[0].m_slope==0.0f)
+        return;
 
     for (i=0; i<CL_LUT_SIZE; i++)
     {
         p.m_v = (int8_t)(i&0xff);
         p.m_u = (int8_t)(i>>8);
         if (((m_lut[i]&0x07)==0 || (m_lut[i]&0x07)>=modelIndex) &&
-                    checkBounds(model, &p))
-             m_lut[i] = modelIndex;
+                checkBounds(model, &p))
+            m_lut[i] = modelIndex;
     }
 }
 
@@ -432,4 +437,52 @@ int ColorLUT::growRegion(RectA *result, const Frame8 &frame, const Point16 &seed
         }
     }
 }
+
+#ifndef PIXY
+void ColorLUT::matlabOut(const ColorModel *model)
+{
+    unsigned int i;
+    QString str, name = "lutinfo";
+    QFile file(name + ".m");
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+        return;
+
+    QTextStream out(&file);
+
+    out << "function [HuePixels, Lines]=" << name << "()\n\n";
+    out << "HuePixels=[\n";
+    for (i=0; i<m_hpixelLen; i++)
+        out << str.sprintf("%d %d\n", m_hpixels[i].m_u, m_hpixels[i].m_v);
+
+    out << "];\n\n";
+    out << "Lines=[\n";
+    out << str.sprintf("%f %f\n",  model->m_hue[0].m_slope,  model->m_hue[0].m_yi);
+    out << str.sprintf("%f %f\n",  model->m_hue[1].m_slope,  model->m_hue[1].m_yi);
+    out << str.sprintf("%f %f\n",  model->m_sat[0].m_slope,  model->m_sat[0].m_yi);
+    out << str.sprintf("%f %f\n",  model->m_sat[1].m_slope,  model->m_sat[1].m_yi);
+    out << "];\n";
+
+    file.close();
+}
+
+void ColorLUT::matlabOut()
+{
+    unsigned int i;
+    QString str, name = "lut";
+    QFile file(name + ".m");
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+        return;
+
+    QTextStream out(&file);
+
+    out << "function [LUT]=" << name << "()\n\n";
+    out << "LUT=[\n";
+    for (i=0; i<0x10000; i++)
+        out << str.sprintf("%d\n", m_lut[i]);
+
+    out << "];\n";
+
+    file.close();
+}
+#endif
 

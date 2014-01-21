@@ -2,8 +2,7 @@
 #include "pixy_init.h"
 #include "misc.h"
 #else
-#include <QDebug>
-#define cprintf qDebug
+#include "pixymon.h"
 #endif
 #include "blobs.h"
 #include "colorlut.h"
@@ -11,21 +10,21 @@
 
 Blobs::Blobs(Qqueue *qq)
 {
-	int i;
+    int i;
 
-	m_qq = qq;
+    m_qq = qq;
     m_blobs = new uint16_t[MAX_BLOBS*5];
-	m_numBlobs = 0;
-	m_blobReadIndex = 0;
+    m_numBlobs = 0;
+    m_blobReadIndex = 0;
 
 #ifdef PIXY
-        m_clut = new ColorLUT((void *)LUT_MEMORY);
+    m_clut = new ColorLUT((void *)LUT_MEMORY);
 #else
-        m_lut = new uint8_t[CL_LUT_SIZE];
-        m_clut = new ColorLUT(m_lut);
+    m_lut = new uint8_t[CL_LUT_SIZE];
+    m_clut = new ColorLUT(m_lut);
 #endif
 
-	m_mutex = false;
+    m_mutex = false;
     m_minArea = MIN_AREA;
     m_mergeDist = MAX_MERGE_DIST;
 
@@ -53,21 +52,21 @@ Blobs::~Blobs()
 
 void Blobs::blobify()
 {
-        uint32_t i, j;
+    uint32_t i, j;
     CBlob *blob;
     uint16_t *blobsStart;
     uint16_t numBlobsStart, invalid, invalid2;
     uint16_t left, top, right, bottom;
-        //uint32_t timer, timer2=0;
+    //uint32_t timer, timer2=0;
 
-        unpack();
+    unpack();
 
-	// copy blobs into memory
-	invalid = 0;
-	// mutex keeps interrupt routine from stepping on us
-	m_mutex = true;
+    // copy blobs into memory
+    invalid = 0;
+    // mutex keeps interrupt routine from stepping on us
+    m_mutex = true;
     for (i=0, m_numBlobs=0; i<NUM_MODELS; i++)
-	{
+    {
         for (j=m_numBlobs*5, blobsStart=m_blobs+j, numBlobsStart=m_numBlobs, blob=m_assembler[i].finishedBlobs;
              blob && m_numBlobs<MAX_BLOBS; blob=blob->next)
         {
@@ -84,48 +83,48 @@ void Blobs::blobify()
 
         }
 #if 1
-		//setTimer(&timer);
+        //setTimer(&timer);
         if (true)
         {
             while(1)
-			{
-				invalid2 = combine2(blobsStart, m_numBlobs-numBlobsStart);
-				if (invalid2==0)
-					break;
+            {
+                invalid2 = combine2(blobsStart, m_numBlobs-numBlobsStart);
+                if (invalid2==0)
+                    break;
                 invalid += invalid2;
-			}
+            }
         }
-		//timer2 += getTimer(timer);
+        //timer2 += getTimer(timer);
 #endif
     }
-	//setTimer(&timer);
+    //setTimer(&timer);
     invalid += combine(m_blobs, m_numBlobs);
-	if (invalid)
-	{
-    	invalid2 = compress(m_blobs, m_numBlobs);
-    	m_numBlobs -= invalid2;
-		if (invalid2!=invalid)
-			cprintf("**** %d %d\n", invalid2, invalid);
+    if (invalid)
+    {
+        invalid2 = compress(m_blobs, m_numBlobs);
+        m_numBlobs -= invalid2;
+        if (invalid2!=invalid)
+            cprintf("**** %d %d\n", invalid2, invalid);
 
-	}
-	//timer2 += getTimer(timer);
- 	//cprintf("time=%d\n", timer2); // never seen this greater than 200us.  or 1% of frame period
+    }
+    //timer2 += getTimer(timer);
+    //cprintf("time=%d\n", timer2); // never seen this greater than 200us.  or 1% of frame period
 
-	// reset read index-- new frame
-	m_blobReadIndex = 0;
-	m_mutex = false;
+    // reset read index-- new frame
+    m_blobReadIndex = 0;
+    m_mutex = false;
 
     // free memory
     for (i=0; i<NUM_MODELS; i++)
         m_assembler[i].Reset();
 
 #if 0
-	static int frame = 0;
-	if (m_numBlobs>0)
-		cprintf("%d: blobs %d %d %d %d %d\n", frame, m_numBlobs, m_blobs[1], m_blobs[2], m_blobs[3], m_blobs[4]);
-	else
-		cprintf("%d: blobs 0\n", frame);
-	frame++;
+    static int frame = 0;
+    if (m_numBlobs>0)
+        cprintf("%d: blobs %d %d %d %d %d\n", frame, m_numBlobs, m_blobs[1], m_blobs[2], m_blobs[3], m_blobs[4]);
+    else
+        cprintf("%d: blobs 0\n", frame);
+    frame++;
 #endif
 }
 
@@ -133,25 +132,25 @@ void Blobs::unpack()
 {
     SSegment s;
     int32_t row;
-        bool memfull;
-        uint32_t i;
+    bool memfull;
+    uint32_t i;
     Qval qval;
 
     // q val:
     // | 4 bits    | 7 bits      | 9 bits | 9 bits    | 3 bits |
     // | shift val | shifted sum | length | begin col | model  |
 
-        row = -1;
-        memfull = false;
-        i = 0;
+    row = -1;
+    memfull = false;
+    i = 0;
 
-        while(1)
+    while(1)
     {
-                while (m_qq->dequeue(&qval)==0);
-                if (qval==0xffffffff)
-                        break;
-                i++;
-            if (qval==0)
+        while (m_qq->dequeue(&qval)==0);
+        if (qval==0xffffffff)
+            break;
+        i++;
+        if (qval==0)
         {
             row++;
             continue;
@@ -165,107 +164,107 @@ void Blobs::unpack()
             qval >>= 9;
             s.endCol = (qval&0x1ff) + s.startCol;
             if (m_assembler[s.model-1].Add(s)<0)
-                        {
+            {
                 memfull = true;
-                                cprintf("heap full %d\n", i);
-                        }
+                cprintf("heap full %d\n", i);
+            }
         }
     }
-        //cprintf("rows %d %d\n", row, i);
-        // finish frame
+    //cprintf("rows %d %d\n", row, i);
+    // finish frame
     for (i=0, m_numBlobs=0; i<NUM_MODELS; i++)
     {
         m_assembler[i].EndFrame();
         m_assembler[i].SortFinished();
-        }
+    }
 }
 
 uint16_t Blobs::getBlock(uint16_t *buf)
 {
-	uint16_t temp, width, height;
-	uint16_t checksum;
-	uint16_t len = 8;  // default
-	int i = m_blobReadIndex*5;
+    uint16_t temp, width, height;
+    uint16_t checksum;
+    uint16_t len = 8;  // default
+    int i = m_blobReadIndex*5;
 
-	if (m_mutex) // we're copying, so no blocks for now....
-	{	// return a couple null words to give us time to copy
-		// (otherwise we may spend too much time in the ISR)
-		buf[0] = 0;
-		buf[1] = 0; 
-		return 2;
-	}
+    if (m_mutex) // we're copying, so no blocks for now....
+    {	// return a couple null words to give us time to copy
+        // (otherwise we may spend too much time in the ISR)
+        buf[0] = 0;
+        buf[1] = 0;
+        return 2;
+    }
 
-	if (m_blobReadIndex>=m_numBlobs)
-	{
-		m_mutex = false;
-		return 0;
-	}
+    if (m_blobReadIndex>=m_numBlobs)
+    {
+        m_mutex = false;
+        return 0;
+    }
 
-	if (m_blobReadIndex==0)	// beginning of frame, mark it with empty block
-	{
-		buf[0] = BL_BEGIN_MARKER;
-		buf[1] = BL_END_MARKER;
-		len += 2;
-		buf += 2;
-	}
+    if (m_blobReadIndex==0)	// beginning of frame, mark it with empty block
+    {
+        buf[0] = BL_BEGIN_MARKER;
+        buf[1] = BL_END_MARKER;
+        len += 2;
+        buf += 2;
+    }
 
-	// beginning of block
-	buf[0] = BL_BEGIN_MARKER;
+    // beginning of block
+    buf[0] = BL_BEGIN_MARKER;
 
-	// model
-	temp = m_blobs[i];
-	checksum = temp;
-	buf[2] = temp;
-							   
-	// width
-	width = m_blobs[i+2] - m_blobs[i+1];
-	checksum += width;
-	buf[5] = width;
+    // model
+    temp = m_blobs[i];
+    checksum = temp;
+    buf[2] = temp;
 
-	// height 
-	height = m_blobs[i+4] - m_blobs[i+3];
-	checksum += height;
-	buf[6] = height;
+    // width
+    width = m_blobs[i+2] - m_blobs[i+1];
+    checksum += width;
+    buf[5] = width;
 
-	// x center
-	temp = m_blobs[i+1] + width/2;
-	checksum += temp;
-	buf[3] = temp;							  
+    // height
+    height = m_blobs[i+4] - m_blobs[i+3];
+    checksum += height;
+    buf[6] = height;
 
-	// y center
-	temp = m_blobs[i+3] + height/2;
-	checksum += temp;
-	buf[4] = temp;
+    // x center
+    temp = m_blobs[i+1] + width/2;
+    checksum += temp;
+    buf[3] = temp;
 
-	buf[1] = checksum;
+    // y center
+    temp = m_blobs[i+3] + height/2;
+    checksum += temp;
+    buf[4] = temp;
 
-	// end of block
-	buf[7] = BL_END_MARKER;
+    buf[1] = checksum;
 
-	// next blob	 
-	m_blobReadIndex++;
+    // end of block
+    buf[7] = BL_END_MARKER;
 
- 	return len;
+    // next blob
+    m_blobReadIndex++;
+
+    return len;
 }
 
 
 uint16_t *Blobs::getMaxBlob(uint16_t signature)
 {
-	int i, j;
+    int i, j;
 
-	for (i=0, j=0; i<m_numBlobs; i++, j+=5)
-	{
-		if (m_blobs[j+0]==signature)
-			return m_blobs+j;
-	}
-	
-	return NULL;		
+    for (i=0, j=0; i<m_numBlobs; i++, j+=5)
+    {
+        if (m_blobs[j+0]==signature)
+            return m_blobs+j;
+    }
+
+    return NULL;
 } 
 
 void Blobs::getBlobs(BlobA **blobs, uint32_t *len)
 {
-	*blobs = (BlobA *)m_blobs;
-	*len = m_numBlobs;
+    *blobs = (BlobA *)m_blobs;
+    *len = m_numBlobs;
 }
 
 
@@ -328,11 +327,11 @@ uint16_t Blobs::combine(uint16_t *blobs, uint16_t numBlobs)
                 blobs[jj+0] = 0; // invalidate
                 invalid++;
             }
-			else if (left<=left0 && right>=right0 && top<=top0 && bottom>=bottom0)
-			{
+            else if (left<=left0 && right>=right0 && top<=top0 && bottom>=bottom0)
+            {
                 blobs[ii+0] = 0; // invalidate
-                invalid++;				
-			}
+                invalid++;
+            }
 
         }
     }
@@ -374,21 +373,21 @@ uint16_t Blobs::combine2(uint16_t *blobs, uint16_t numBlobs)
                 invalid++;
             }
             else if (right>=right0 && left-right0<=m_mergeDist &&
-                    ((top0<=top && top<=bottom0) || (top0<=bottom && bottom<=bottom0)))
+                     ((top0<=top && top<=bottom0) || (top0<=bottom && bottom<=bottom0)))
             {
                 blobs[ii+2] = right;
                 blobs[jj+0] = 0; // invalidate
                 invalid++;
             }
             else if (top<=top0 && top0-bottom<=m_mergeDist &&
-                    ((left0<=left && left<=right0) || (left0<=right && right<=right0)))
+                     ((left0<=left && left<=right0) || (left0<=right && right<=right0)))
             {
                 blobs[ii+3] = top;
                 blobs[jj+0] = 0; // invalidate
                 invalid++;
             }
             else if (bottom>=bottom0 && top-bottom0<=m_mergeDist &&
-                    ((left0<=left && left<=right0) || (left0<=right && right<=right0)))
+                     ((left0<=left && left<=right0) || (left0<=right && right<=right0)))
             {
                 blobs[ii+4] = bottom;
                 blobs[jj+0] = 0; // invalidate
@@ -552,45 +551,45 @@ void Blobs::processCoded()
 
 int Blobs::generateLUT(uint8_t model, const Frame8 &frame, const RectA &region, ColorModel *pcmodel)
 {
-	int goodness;
+    int goodness;
     ColorModel cmodel;
     if (model>NUM_MODELS)
         return -1;
 
     goodness = m_clut->generate(&cmodel, frame, region);
-	if (goodness==0)
-		return -1; // this model sucks!
-	m_clut->clear(model);
+    if (goodness==0)
+        return -1; // this model sucks!
+    m_clut->clear(model);
     m_clut->add(&cmodel, model);
 
-	if (pcmodel)
-		*pcmodel = cmodel;
+    if (pcmodel)
+        *pcmodel = cmodel;
 
-	return goodness;										 
+    return goodness;
 }
 
 int Blobs::generateLUT(uint8_t model, const Frame8 &frame, const Point16 &seed, ColorModel *pcmodel, RectA *region)
 {
     int goodness;
-	RectA cregion;
+    RectA cregion;
     ColorModel cmodel;
 
     m_clut->growRegion(&cregion, frame, seed);
 
     goodness = m_clut->generate(&cmodel, frame, cregion);
-	if (goodness==0)
-		return -1; // this model sucks!
+    if (goodness==0)
+        return -1; // this model sucks!
 
-	m_clut->clear(model); 
+    m_clut->clear(model);
     m_clut->add(&cmodel, model);
 
     if (region)
         *region = cregion;
 
-	if (pcmodel)
-		*pcmodel = cmodel;
+    if (pcmodel)
+        *pcmodel = cmodel;
 
-	return goodness;
+    return goodness;
 }
 
 

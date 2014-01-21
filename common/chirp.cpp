@@ -95,7 +95,7 @@ int Chirp::assemble(uint8_t type, ...)
     int res;
     va_list args;
     bool save = m_call;
-	uint32_t saveLen = m_len;
+    uint32_t saveLen = m_len;
 
     if (type==CRP_XDATA)
         m_call = false;
@@ -105,10 +105,10 @@ int Chirp::assemble(uint8_t type, ...)
     va_end(args);
 
     if (type==CRP_XDATA || (!m_call && res==CRP_RES_OK)) // if we're not a call, we're extra data, so we need to send
-	{
+    {
         res = sendChirpRetry(CRP_XDATA, 0);
-		m_len = saveLen;
-	}
+        m_len = saveLen;
+    }
 
     m_call = save;
 
@@ -605,8 +605,8 @@ int Chirp::reallocTable()
     // allocate new table, zero
     newProcTableSize = m_procTableSize+CRP_PROCTABLE_LEN;
     newProcTable = new (std::nothrow) ProcTableEntry[newProcTableSize];
-	if (newProcTable==NULL)
-		return CRP_RES_ERROR_MEMORY;
+    if (newProcTable==NULL)
+        return CRP_RES_ERROR_MEMORY;
     memset(newProcTable, 0, sizeof(ProcTableEntry)*newProcTableSize);
     // copy to new table
     memcpy(newProcTable, m_procTable, sizeof(ProcTableEntry)*m_procTableSize);
@@ -801,8 +801,8 @@ int Chirp::realloc(uint32_t min)
     else
         min += CRP_BUFSIZE;
     uint8_t *newbuf = new (std::nothrow) uint8_t[min];
-	if (newbuf==NULL)
-		return CRP_RES_ERROR_MEMORY;
+    if (newbuf==NULL)
+        return CRP_RES_ERROR_MEMORY;
     memcpy(newbuf, m_buf, m_bufSize);
     delete[] m_buf;
     m_buf = newbuf;

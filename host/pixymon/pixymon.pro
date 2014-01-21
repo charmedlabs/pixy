@@ -54,7 +54,8 @@ HEADERS  += mainwindow.h \
     ../../common/blob.h \
     ../../common/blobs.h \
     processblobs.h \
-    ../../common/qqueue.h
+    ../../common/qqueue.h \
+    pixymon.h
 
 INCLUDEPATH += ../../common
 
@@ -66,6 +67,7 @@ LIBS += ./libusb-1.0.dll.a
 
 RESOURCES += \
     resources.qrc
+
 
 
 

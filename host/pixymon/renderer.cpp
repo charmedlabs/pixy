@@ -384,7 +384,7 @@ int Renderer::renderCCQ1(uint8_t renderFlags, uint16_t width, uint16_t height, u
     return 0;
 }
 
-int Renderer::renderCMV1(uint8_t renderFlags, uint32_t cmodelsLen, uint8_t *cmodels, uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame)
+int Renderer::renderCMV1(uint8_t renderFlags, uint32_t cmodelsLen, float *cmodels, uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame)
 {
     int i;
     uint32_t numBlobs;
@@ -392,12 +392,10 @@ int Renderer::renderCMV1(uint8_t renderFlags, uint32_t cmodelsLen, uint8_t *cmod
     uint32_t numQvals;
     uint32_t *qVals;
 
-    qDebug("CMV1 %d %d %d %d", cmodelsLen, width, height, frameLen);
-
-    if (cmodelsLen) // create lookup table
+    if (cmodelsLen>=sizeof(ColorModel)*NUM_MODELS/sizeof(float)) // create lookup table
     {
         m_blobs.m_blobs->m_clut->clear();
-        for (i=0; i<NUM_MODELS; i++, cmodels+=sizeof(ColorModel))
+        for (i=0; i<NUM_MODELS; i++, cmodels+=sizeof(ColorModel)/sizeof(float))
             m_blobs.m_blobs->m_clut->add((ColorModel *)cmodels, i+1);
     }
 
@@ -436,7 +434,7 @@ int Renderer::render(uint32_t type, void *args[])
     else if (type==FOURCC('C', 'C', 'B', '1'))
         res = renderCCB1(*(uint8_t *)args[0], *(uint16_t *)args[1], *(uint32_t *)args[2], *(uint32_t *)args[3], (uint16_t *)args[4]);
     else if (type==FOURCC('C', 'M', 'V', '1'))
-        res = renderCMV1(*(uint8_t *)args[0], *(uint32_t *)args[1], (uint8_t *)args[2], *(uint16_t *)args[3], *(uint32_t *)args[4], *(uint32_t *)args[5], (uint8_t *)args[6]);
+        res = renderCMV1(*(uint8_t *)args[0], *(uint32_t *)args[1], (float *)args[2], *(uint16_t *)args[3], *(uint32_t *)args[4], *(uint32_t *)args[5], (uint8_t *)args[6]);
     else // format not recognized
         return -1;
 

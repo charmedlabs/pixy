@@ -17,8 +17,8 @@ struct QqueueFields
     uint16_t produced;
     uint16_t consumed;
 
-	// (array size below doesn't matter-- we're just going to cast a pointer to this struct)
-    Qval data[1]; // data 
+    // (array size below doesn't matter-- we're just going to cast a pointer to this struct)
+    Qval data[1]; // data
 };
 
 #ifdef __cplusplus  // M4 is C++ and the "consumer" of data
@@ -34,8 +34,8 @@ public:
     int enqueue(Qval val);
 #endif
 
-	uint32_t readAll(Qval *mem, uint32_t size);
-	void flush();
+    uint32_t readAll(Qval *mem, uint32_t size);
+    void flush();
 
 private:
     QqueueFields *m_fields;
