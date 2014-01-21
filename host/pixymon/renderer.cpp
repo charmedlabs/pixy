@@ -200,22 +200,6 @@ int Renderer::renderBA81(uint8_t renderFlags, uint16_t width, uint16_t height, u
 
     m_background = img;
 
-    if (m_mode&0x01)
-    {
-        uint16_t numBlobs;
-        uint16_t *blobs;
-        uint32_t numQVals;
-        uint32_t *qVals;
-
-        m_blobs.process(width, height, frameLen, frame0, &numBlobs, &blobs, &numQVals, &qVals);
-#if 1
-        if (m_mode&0x04)
-            renderCCQ1(0, width/2, height/2, numQVals, qVals);
-        if (m_mode&0x02)
-            renderCCB1(0, width, height, numBlobs*sizeof(BlobA)/sizeof(uint16_t), blobs);
-#endif
-    }
-
     if (renderFlags&RENDER_FLAG_FLUSH)
         emitFlushImage();
 
@@ -230,7 +214,6 @@ int Renderer::renderCCB1(uint8_t renderFlags, uint16_t width, uint16_t height, u
     QPainter p;
     uint16_t model;
     QString str;
-    QString *label;
 
     numBlobs /= sizeof(BlobA)/sizeof(uint16_t);
 
@@ -260,11 +243,13 @@ int Renderer::renderCCB1(uint8_t renderFlags, uint16_t width, uint16_t height, u
         p.drawRect(left, top, right-left, bottom-top);
         if (model)
         {
+#if 0
             label = m_blobs.getLabel(model);
             if (label)
                 str = *label;
             else
-                str = str.sprintf("s=%d", model);
+#endif
+            str = str.sprintf("s=%d", model);
             p.setPen(QPen(QColor(0, 0, 0, 0xff)));
             p.drawText(left+1, top+1, str);
             p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
@@ -342,11 +327,13 @@ int Renderer::renderRect(uint16_t width, uint16_t height, const RectA &rect)
     return 0;
 }
 
-void Renderer::handleRL(QImage *image, uint color, int row, int startCol, int len)
+void Renderer::handleRL(QImage *image, uint color, uint row, uint startCol, uint len)
 {
-    unsigned int *line;
-    int col;
+    uint *line;
+    uint col;
 
+    if (row>=(uint)image->height() || startCol>=(uint)image->width() || startCol+len>=(uint)image->width())
+        return;
     line = (unsigned int *)image->scanLine(row);
     for (col=startCol; col<startCol+len; col++)
         line[col] = color;
@@ -360,10 +347,6 @@ int Renderer::renderCCQ1(uint8_t renderFlags, uint16_t width, uint16_t height, u
     QImage img(width, height, QImage::Format_ARGB32);
     unsigned int palette[] = {0x00000000, 0x80ff0000, 0x8000ff00, 0x800000ff, 0x80ffff00, 0x8000ffff, 0x80ff00ff};
 
-    if (qVals[0]!=0xffffffff)
-        qDebug() << "error!";
-    qVals++; // skip beginning of frame marker
-    numVals--;
     // if we're a background frame, set alpha to 1.0
     if (m_backgroundFrame)
     {
@@ -380,6 +363,8 @@ int Renderer::renderCCQ1(uint8_t renderFlags, uint16_t width, uint16_t height, u
     img.fill(palette[0]);
     for (i=0, row=-1; i<numVals; i++)
     {
+        if (qVals[i]==0xffffffff)
+            continue;
         if (qVals[i]==0)
         {
             row++;
@@ -395,6 +380,32 @@ int Renderer::renderCCQ1(uint8_t renderFlags, uint16_t width, uint16_t height, u
     emitImage(img);
     if (renderFlags&RENDER_FLAG_FLUSH)
         emitFlushImage();
+
+    return 0;
+}
+
+int Renderer::renderCMV1(uint8_t renderFlags, uint32_t cmodelsLen, uint8_t *cmodels, uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame)
+{
+    int i;
+    uint32_t numBlobs;
+    BlobA *blobs;
+    uint32_t numQvals;
+    uint32_t *qVals;
+
+    qDebug("CMV1 %d %d %d %d", cmodelsLen, width, height, frameLen);
+
+    if (cmodelsLen) // create lookup table
+    {
+        m_blobs.m_blobs->m_clut->clear();
+        for (i=0; i<NUM_MODELS; i++, cmodels+=sizeof(ColorModel))
+            m_blobs.m_blobs->m_clut->add((ColorModel *)cmodels, i+1);
+    }
+
+    m_blobs.process(Frame8(frame, width, height), &numBlobs, &blobs, &numQvals, &qVals);
+
+    renderBA81(0, width, height, frameLen, frame);
+    renderCCQ1(0, width/2, height/2, numQvals, qVals);
+    renderCCB1(RENDER_FLAG_FLUSH, width/2, height/2, numBlobs*sizeof(BlobA)/sizeof(uint16_t), (uint16_t *)blobs);
 
     return 0;
 }
@@ -424,6 +435,8 @@ int Renderer::render(uint32_t type, void *args[])
         res = renderCCQ1(*(uint8_t *)args[0], *(uint16_t *)args[1], *(uint16_t *)args[2], *(uint32_t *)args[3], (uint32_t *)args[4]);
     else if (type==FOURCC('C', 'C', 'B', '1'))
         res = renderCCB1(*(uint8_t *)args[0], *(uint16_t *)args[1], *(uint32_t *)args[2], *(uint32_t *)args[3], (uint16_t *)args[4]);
+    else if (type==FOURCC('C', 'M', 'V', '1'))
+        res = renderCMV1(*(uint8_t *)args[0], *(uint32_t *)args[1], (uint8_t *)args[2], *(uint16_t *)args[3], *(uint32_t *)args[4], *(uint32_t *)args[5], (uint8_t *)args[6]);
     else // format not recognized
         return -1;
 

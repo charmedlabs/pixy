@@ -1,6 +1,6 @@
 #ifndef BLOBS_H
 #include <stdint.h>
-#include "cblob.h"
+#include <blob.h>
 #include "colorlut.h"
 #include "pixytypes.h"
 
@@ -32,6 +32,7 @@ public:
 	ColorLUT *m_clut;
 
 private:
+	void unpack();
     uint16_t combine(uint16_t *blobs, uint16_t numBlobs);
     uint16_t combine2(uint16_t *blobs, uint16_t numBlobs);
     uint16_t compress(uint16_t *blobs, uint16_t numBlobs);

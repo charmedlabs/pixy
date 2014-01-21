@@ -28,6 +28,8 @@ uint32_t exec_running();
 int32_t exec_stop();
 int32_t exec_run();
 int32_t exec_runprog(const uint8_t &progNum);
+int32_t exec_runprogArg(const uint8_t &progNum, const int32_t &arg);
 int32_t exec_list();
- 
+
+extern int32_t g_execArg; 
 #endif

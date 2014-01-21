@@ -19,14 +19,16 @@ SOURCES += main.cpp\
     renderer.cpp \
     chirpmon.cpp \
     calc.cpp \
-    blob.cpp \
-    blobs.cpp \
     dfu.cpp \
     connectevent.cpp \
     flash.cpp \
     reader.cpp \
-    colorlut.cpp \
-    ../../common/chirp.cpp
+    ../../common/chirp.cpp \
+    ../../common/colorlut.cpp \
+    ../../common/blob.cpp \
+    ../../common/blobs.cpp \
+    processblobs.cpp \
+    ../../common/qqueue.cpp
 
 HEADERS  += mainwindow.h \
     link.h \
@@ -37,8 +39,6 @@ HEADERS  += mainwindow.h \
     renderer.h \
     chirpmon.h \
     calc.h \
-    blobs.h \
-    blob.h \
     dfu.h \
     usb_dfu.h \
     dfu_info.h \
@@ -47,9 +47,14 @@ HEADERS  += mainwindow.h \
     libusb.h \
     flash.h \
     reader.h \
-    colorlut.h \
     ../../common/pixytypes.h \
-    ../../common/chirp.hpp
+    ../../common/chirp.hpp \
+    ../../common/colorlut.h \
+    ../../common/blobs.h \
+    ../../common/blob.h \
+    ../../common/blobs.h \
+    processblobs.h \
+    ../../common/qqueue.h
 
 INCLUDEPATH += ../../common
 
@@ -61,6 +66,20 @@ LIBS += ./libusb-1.0.dll.a
 
 RESOURCES += \
     resources.qrc
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

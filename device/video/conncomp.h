@@ -1,12 +1,12 @@
 #ifndef _CONNCOMP_H
 #define _CONNCOMP_H
 #include "chirp.hpp"
-#include "cblob.h"
+#include <blob.h>
 #include "blobs.h"
 
 
 #define RLS_MEMORY          ((uint8_t *)SRAM1_LOC)
-#define RLS_MEMORY_SIZE     (SRAM1_SIZE-CL_LUT_SIZE) // bytes
+#define RLS_MEMORY_SIZE     SRAM1_SIZE // bytes
 
 int cc_init(Chirp *chirp);
 

@@ -40,10 +40,6 @@ Blobs::~Blobs()
 
 void Blobs::blobify()
 {
-    SSegment s;
-	bool memfull;
-    int32_t row;
-    Qval qval;
 	uint32_t i, j;
     CBlob *blob;
     uint16_t *blobsStart;
@@ -51,52 +47,10 @@ void Blobs::blobify()
     uint16_t left, top, right, bottom;
 	//uint32_t timer, timer2=0;
 
-    // q val:
-    // | 4 bits    | 7 bits      | 9 bits | 9 bits    | 3 bits |
-    // | shift val | shifted sum | length | begin col | model  |
-
-
-   	row = -1;
-	memfull = false;
-	i = 0;
-	invalid = 0;
-
-	while(1)
-    {
-		while (m_qq->dequeue(&qval)==0);
-		if (qval==0xffffffff)
-			break;
-		i++;
-	    if (qval==0)
-        {
-            row++;
-            continue;
-        }
-        s.model = qval&0x07;
-        if (s.model>0 && !memfull)
-        {
-            s.row = row;
-            qval >>= 3;
-            s.startCol = qval&0x1ff;
-            qval >>= 9;
-            s.endCol = (qval&0x1ff) + s.startCol;
-            if (m_assembler[s.model-1].Add(s)<0)
-			{
-                memfull = true;
-			 	cprintf("heap full %d\n", i);
-			}
-        }
-    }
-	//cprintf("rows %d %d\n", row, i);
-
-	// finish frame
-    for (i=0, m_numBlobs=0; i<NUM_MODELS; i++)
-    {
-        m_assembler[i].EndFrame();
-        m_assembler[i].SortFinished();
-	}
+	unpack();
 
 	// copy blobs into memory
+	invalid = 0;
 	// mutex keeps interrupt routine from stepping on us
 	m_mutex = true;
     for (i=0, m_numBlobs=0; i<NUM_MODELS; i++)
@@ -159,6 +113,59 @@ void Blobs::blobify()
 		cprintf("%d: blobs 0\n", frame);
 	frame++;
 #endif
+}
+
+void Blobs::unpack()
+{
+    SSegment s;
+    int32_t row;
+	bool memfull;
+	uint32_t i;
+    Qval qval;
+
+    // q val:
+    // | 4 bits    | 7 bits      | 9 bits | 9 bits    | 3 bits |
+    // | shift val | shifted sum | length | begin col | model  |
+
+
+   	row = -1;
+	memfull = false;
+	i = 0;
+
+	while(1)
+    {
+		while (m_qq->dequeue(&qval)==0);
+		if (qval==0xffffffff)
+			break;
+		i++;
+	    if (qval==0)
+        {
+            row++;
+            continue;
+        }
+        s.model = qval&0x07;
+        if (s.model>0 && !memfull)
+        {
+            s.row = row;
+            qval >>= 3;
+            s.startCol = qval&0x1ff;
+            qval >>= 9;
+            s.endCol = (qval&0x1ff) + s.startCol;
+            if (m_assembler[s.model-1].Add(s)<0)
+			{
+                memfull = true;
+			 	cprintf("heap full %d\n", i);
+			}
+        }
+    }
+	//cprintf("rows %d %d\n", row, i);
+
+	// finish frame
+    for (i=0, m_numBlobs=0; i<NUM_MODELS; i++)
+    {
+        m_assembler[i].EndFrame();
+        m_assembler[i].SortFinished();
+	}
 }
 
 uint16_t Blobs::getBlock(uint16_t *buf)

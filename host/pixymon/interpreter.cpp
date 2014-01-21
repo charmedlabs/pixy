@@ -786,6 +786,7 @@ void Interpreter::command(const QString &command)
         else
             emit textOut("Missing mode parameter.\n");
     }
+#if 0
     else if (words[0]=="set")
     {
         if (words.size()==3)
@@ -794,6 +795,7 @@ void Interpreter::command(const QString &command)
             m_renderer->m_blobs.setLabel(words[1], words[2]);
         }
     }
+#endif
     else
     {
         handleCall(words);

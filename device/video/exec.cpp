@@ -36,6 +36,15 @@ static const ProcModule g_module[] =
 	"@r returns 0 if successful, -1 otherwise"
 	},
 	{
+	"runprogArg",
+	(ProcPtr)exec_runprogArg, 
+	{CRP_UINT8, CRP_UINT32, END}, 
+	"Run the specified program with an argument"
+	"@p program number"
+	"@p argument to be passed to program"
+	"@r returns 0 if successful, -1 otherwise"
+	},
+	{
 	"progs",
 	(ProcPtr)exec_list, 
 	{END}, 
@@ -48,7 +57,8 @@ static const ProcModule g_module[] =
 uint8_t g_running = false;
 uint8_t g_run = false;
 uint8_t g_program = 0;
-uint8_t g_override;
+uint8_t g_override = 0;
+int32_t g_execArg = 0;  // this arg mechanism is lame... should introduce an argv type mechanism 
 
 static ChirpProc g_runM0 = -1;
 static ChirpProc g_runningM0 = -1;
@@ -114,8 +124,18 @@ int32_t exec_runprog(const uint8_t &progNum)
 	if (progNum>=EXEC_MAX_PROGS || g_progTable[progNum]==NULL)
 		return -1;
 
+	g_execArg = 0;
 	g_program = progNum;
-	exec_run();
+	return exec_run();
+}
+
+int32_t exec_runprogArg(const uint8_t &progNum, const int32_t &arg)
+{
+	int32_t res = exec_runprog(progNum);
+	if (res<0)
+		return res;
+
+	g_execArg = arg;
 	return 0;
 }
 

@@ -3,7 +3,7 @@
 #include <QObject>
 #include <QImage>
 #include "pixytypes.h"
-#include "blobs.h"
+#include "processBlobs.h"
 
 class Interpreter;
 
@@ -28,7 +28,7 @@ public:
     }
 
     Frame8 m_rawFrame;
-    Blobs m_blobs;
+    ProcessBlobs m_blobs;
 
 
 signals:
@@ -41,12 +41,12 @@ private:
     int renderCCQ1(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t numVals, uint32_t *qVals);
     int renderBA81(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame);
     int renderCCB1(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t numBlobs, uint16_t *blobs);
-
+    int renderCMV1(uint8_t renderFlags, uint32_t cmodelsLen, uint8_t *cmodels, uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame);
     void emitImage(const QImage &image);
 
     int renderBA81Filter(uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame);
 
-    void handleRL(QImage *image, uint color, int row, int startCol, int len);
+    void handleRL(QImage *image, uint color, uint row, uint startCol, uint len);
 
     VideoWidget *m_video;
     bool m_backgroundFrame; // our own copy because we're in a different thread (not gui thread)

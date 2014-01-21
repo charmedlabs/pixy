@@ -3,7 +3,9 @@
 
 #define RENDER_FLAG_FLUSH      0x01
 #define RENDER_FLAG_BLEND_BG   0x02
- 
+
+typedef uint32_t Qval;
+
 struct Point16
 {
     Point16()
