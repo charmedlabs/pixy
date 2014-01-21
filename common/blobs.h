@@ -1,8 +1,9 @@
 #ifndef BLOBS_H
 #include <stdint.h>
-#include <blob.h>
+#include "blob.h"
 #include "colorlut.h"
 #include "pixytypes.h"
+#include "qqueue.h"
 
 #define NUM_MODELS      7
 #define MAX_BLOBS       200
@@ -14,7 +15,6 @@
 #define BL_BEGIN_MARKER	0xaa55
 #define BL_END_MARKER	0xccaa
 
-class Qqueue;
 
 class Blobs
 {
@@ -30,9 +30,12 @@ public:
 	int generateLUT(uint8_t model, const Frame8 &frame, const Point16 &seed, ColorModel *pcmodel=NULL, RectA *region=NULL);
 
 	ColorLUT *m_clut;
+#ifndef PIXY
+    uint8_t *m_lut;
+#endif
 
 private:
-	void unpack();
+        void unpack();
     uint16_t combine(uint16_t *blobs, uint16_t numBlobs);
     uint16_t combine2(uint16_t *blobs, uint16_t numBlobs);
     uint16_t compress(uint16_t *blobs, uint16_t numBlobs);
@@ -43,7 +46,8 @@ private:
 	void copyBlobs();
 
     CBlobAssembler m_assembler[NUM_MODELS];
-	Qqueue *m_qq;
+        Qqueue *m_qq;
+
 
     uint16_t *m_blobs;
     uint16_t m_numBlobs;

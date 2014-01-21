@@ -1,6 +1,8 @@
 #include <new>
+#ifdef PIXY
 #include "pixy_init.h"
-#include "cblob.h"
+#endif
+#include <blob.h>
 
 #ifdef DEBUG
 #ifndef HOST
@@ -300,7 +302,9 @@ int CBlobAssembler::Add(const SSegment &segment) {
   CBlob *newBlob= new (std::nothrow) CBlob();
   if (newBlob==NULL)
   {
+#ifdef PIXY
   	cprintf("blobs %d\n", m_blobCount);
+#endif
       return -1;
   }
   m_blobCount++;

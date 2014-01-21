@@ -185,9 +185,6 @@ int32_t cc_getRLSFrameChirpFlags(Chirp *chirp, uint8_t renderFlags)
 
 	g_qqueue->flush();
 
-	// write bogus value so we regenerate the lut
-	g_rawFrame.m_pixels = (uint8_t *)-1;
-
 	// figure out prebuf length (we need the prebuf length and the number of runlength segments, but there's a chicken and egg problem...)
 	len = Chirp::serialize(chirp, RLS_MEMORY, RLS_MEMORY_SIZE,  HTYPE(0), UINT16(0), UINT16(0), UINTS32_NO_COPY(0), END);
 

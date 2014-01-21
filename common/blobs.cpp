@@ -1,8 +1,12 @@
+#ifdef PIXY
 #include "pixy_init.h"
-#include "blobs.h"
-#include "qqueue.h"
-#include "colorlut.h"
 #include "misc.h"
+#else
+#include <QDebug>
+#define cprintf qDebug
+#endif
+#include "blobs.h"
+#include "colorlut.h"
 
 
 Blobs::Blobs(Qqueue *qq)
@@ -14,7 +18,12 @@ Blobs::Blobs(Qqueue *qq)
 	m_numBlobs = 0;
 	m_blobReadIndex = 0;
 
-	m_clut = new ColorLUT((void *)LUT_MEMORY);
+#ifdef PIXY
+        m_clut = new ColorLUT((void *)LUT_MEMORY);
+#else
+        m_lut = new uint8_t[CL_LUT_SIZE];
+        m_clut = new ColorLUT(m_lut);
+#endif
 
 	m_mutex = false;
     m_minArea = MIN_AREA;
@@ -28,6 +37,10 @@ Blobs::Blobs(Qqueue *qq)
 
 Blobs::~Blobs()
 {
+#ifndef PIXY
+    delete [] m_lut;
+#endif
+    delete m_clut;
     delete [] m_blobs;
 }
 
@@ -40,14 +53,14 @@ Blobs::~Blobs()
 
 void Blobs::blobify()
 {
-	uint32_t i, j;
+        uint32_t i, j;
     CBlob *blob;
     uint16_t *blobsStart;
     uint16_t numBlobsStart, invalid, invalid2;
     uint16_t left, top, right, bottom;
-	//uint32_t timer, timer2=0;
+        //uint32_t timer, timer2=0;
 
-	unpack();
+        unpack();
 
 	// copy blobs into memory
 	invalid = 0;
@@ -93,6 +106,7 @@ void Blobs::blobify()
     	m_numBlobs -= invalid2;
 		if (invalid2!=invalid)
 			cprintf("**** %d %d\n", invalid2, invalid);
+
 	}
 	//timer2 += getTimer(timer);
  	//cprintf("time=%d\n", timer2); // never seen this greater than 200us.  or 1% of frame period
@@ -119,26 +133,25 @@ void Blobs::unpack()
 {
     SSegment s;
     int32_t row;
-	bool memfull;
-	uint32_t i;
+        bool memfull;
+        uint32_t i;
     Qval qval;
 
     // q val:
     // | 4 bits    | 7 bits      | 9 bits | 9 bits    | 3 bits |
     // | shift val | shifted sum | length | begin col | model  |
 
+        row = -1;
+        memfull = false;
+        i = 0;
 
-   	row = -1;
-	memfull = false;
-	i = 0;
-
-	while(1)
+        while(1)
     {
-		while (m_qq->dequeue(&qval)==0);
-		if (qval==0xffffffff)
-			break;
-		i++;
-	    if (qval==0)
+                while (m_qq->dequeue(&qval)==0);
+                if (qval==0xffffffff)
+                        break;
+                i++;
+            if (qval==0)
         {
             row++;
             continue;
@@ -152,20 +165,19 @@ void Blobs::unpack()
             qval >>= 9;
             s.endCol = (qval&0x1ff) + s.startCol;
             if (m_assembler[s.model-1].Add(s)<0)
-			{
+                        {
                 memfull = true;
-			 	cprintf("heap full %d\n", i);
-			}
+                                cprintf("heap full %d\n", i);
+                        }
         }
     }
-	//cprintf("rows %d %d\n", row, i);
-
-	// finish frame
+        //cprintf("rows %d %d\n", row, i);
+        // finish frame
     for (i=0, m_numBlobs=0; i<NUM_MODELS; i++)
     {
         m_assembler[i].EndFrame();
         m_assembler[i].SortFinished();
-	}
+        }
 }
 
 uint16_t Blobs::getBlock(uint16_t *buf)

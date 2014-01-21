@@ -5,8 +5,9 @@
 typedef uint32_t Qval;
 struct QqueueFields;
 
-#define QQ_LOC   SRAM4_LOC
-#define QQ_SIZE  ((0x3000-sizeof(struct QqueueFields)+sizeof(Qval))/sizeof(Qval))
+#define QQ_LOC        SRAM4_LOC
+#define QQ_SIZE       0x3000
+#define QQ_MEM_SIZE  ((QQ_SIZE-sizeof(struct QqueueFields)+sizeof(Qval))/sizeof(Qval))
 
 struct QqueueFields
 {
@@ -29,6 +30,10 @@ public:
     ~Qqueue();
 
     uint32_t dequeue(Qval *val);
+#ifndef PIXY
+    int enqueue(Qval val);
+#endif
+
 	uint32_t readAll(Qval *mem, uint32_t size);
 	void flush();
 

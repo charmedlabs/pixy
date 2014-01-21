@@ -6,8 +6,7 @@
 
 
 #define RLS_MEMORY          ((uint8_t *)SRAM1_LOC)
-#define RLS_MEMORY_SIZE     SRAM1_SIZE // bytes
-
+#define RLS_MEMORY_SIZE     (SRAM1_SIZE-CL_LUT_SIZE) // bytes
 int cc_init(Chirp *chirp);
 
 int32_t cc_setSigRegion(const uint8_t &model, const uint16_t &xoffset, const uint16_t &yoffset, const uint16_t &width, const uint16_t &height);
