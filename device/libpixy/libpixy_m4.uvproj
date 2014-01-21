@@ -344,7 +344,7 @@
             <uThumb>0</uThumb>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>CORE_M4 IPC_MASTER</Define>
+              <Define>CORE_M4 IPC_MASTER PIXY</Define>
               <Undefine></Undefine>
               <IncludePath>., ..\..\common</IncludePath>
             </VariousControls>
