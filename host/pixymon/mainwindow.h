@@ -15,6 +15,7 @@ class ConsoleWidget;
 class Interpreter;
 class Flash;
 class ConnectEvent;
+class ConfigDialog;
 
 enum Device {NONE, PIXY, PIXY_DFU};
 
@@ -32,7 +33,10 @@ public:
 private slots:
     void handleRunState(uint state);
     void handleConnected(Device device, bool state);
+    void configFinished();
+    void interpreterFinished();
     void on_actionPlay_Pause_triggered();
+    void on_actionConfigure_triggered();
     void on_actionExit_triggered();
     void on_actionProgram_triggered();
 
@@ -47,11 +51,13 @@ private:
 
     bool m_pixyConnected;
     bool m_pixyDFUConnected;
+    bool m_exitting;
     VideoWidget *m_video;
     ConsoleWidget *m_console;
     Interpreter *m_interpreter;
     ConnectEvent *m_connect;
     Flash *m_flash;
+    ConfigDialog *m_configDialog;
     Ui::MainWindow *m_ui;
 };
 

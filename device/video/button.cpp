@@ -107,7 +107,7 @@ static const uint32_t g_colors[] =
 {
 	0xffffff, // 0 white
 	0xff0000, // 1 red
-	0xffa000, // 2 orange
+	0xff8000, // 2 orange
 	0xffff00, // 3 yellow
 	0x00ff00, // 4 green
 	0x00ffff, // 5 cyan

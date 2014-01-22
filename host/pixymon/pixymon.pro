@@ -28,7 +28,8 @@ SOURCES += main.cpp\
     ../../common/blob.cpp \
     ../../common/blobs.cpp \
     processblobs.cpp \
-    ../../common/qqueue.cpp
+    ../../common/qqueue.cpp \
+    configdialog.cpp
 
 HEADERS  += mainwindow.h \
     link.h \
@@ -55,18 +56,23 @@ HEADERS  += mainwindow.h \
     ../../common/blobs.h \
     processblobs.h \
     ../../common/qqueue.h \
-    pixymon.h
+    pixymon.h \
+    configdialog.h
 
 INCLUDEPATH += ../../common
 
 QMAKE_CXXFLAGS_DEBUG += -O0
 
-FORMS    += mainwindow.ui
+FORMS    += mainwindow.ui \
+    configdialog.ui
 
 LIBS += ./libusb-1.0.dll.a
 
 RESOURCES += \
     resources.qrc
+
+
+
 
 
 

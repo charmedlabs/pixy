@@ -345,7 +345,16 @@ int Renderer::renderCCQ1(uint8_t renderFlags, uint16_t width, uint16_t height, u
     uint32_t i, startCol, length;
     uint8_t model;
     QImage img(width, height, QImage::Format_ARGB32);
-    unsigned int palette[] = {0x00000000, 0x80ff0000, 0x8000ff00, 0x800000ff, 0x80ffff00, 0x8000ffff, 0x80ff00ff};
+    unsigned int palette[] =
+    {0x00000000, // 0 no model (transparent)
+     0x80ff0000, // 1 red
+     0x80ff4000, // 2 orange
+     0x80ffff00, // 3 yellow
+     0x8000ff00, // 4 green
+     0x8000ffff, // 5 cyan
+     0x800000ff, // 6 blue
+     0x80ff00ff  // 7 violet
+    };
 
     // if we're a background frame, set alpha to 1.0
     if (m_backgroundFrame)

@@ -11,6 +11,7 @@
 #include "dfu.h"
 #include "flash.h"
 #include "ui_mainwindow.h"
+#include "configdialog.h"
 
 extern ChirpProc c_grabFrame;
 
@@ -27,6 +28,8 @@ MainWindow::MainWindow(QWidget *parent) :
     m_flash = NULL;
     m_pixyConnected = false;
     m_pixyDFUConnected = false;
+    m_exitting = false;
+    m_configDialog = NULL;
 
     m_console = new ConsoleWidget(this);
     m_video = new VideoWidget(this);
@@ -69,18 +72,29 @@ void MainWindow::updateButtons()
         m_ui->actionPlay_Pause->setIcon(QIcon(":/icons/icons/play.png"));
     }
 
-    if ((m_pixyDFUConnected && m_pixyConnected) || runstate==2) // we're in programming mode or we're in forced runstate
+    if (m_pixyDFUConnected && m_pixyConnected) // we're in programming mode
     {
         m_ui->actionPlay_Pause->setEnabled(false);
+        m_ui->actionConfigure->setEnabled(false);
+    }
+    else if (runstate==2) // we're in forced runstate
+    {
+        m_ui->actionPlay_Pause->setEnabled(false);
+        m_ui->actionConfigure->setEnabled(true);
     }
     else if (m_pixyConnected)
     {
         m_ui->actionPlay_Pause->setEnabled(true);
+        m_ui->actionConfigure->setEnabled(true);
     }
     else // nothing connected
     {
         m_ui->actionPlay_Pause->setEnabled(false);
+        m_ui->actionConfigure->setEnabled(false);
     }
+
+    if (m_configDialog)
+        m_ui->actionConfigure->setEnabled(false);
 }
 
 void MainWindow::close()
@@ -90,7 +104,16 @@ void MainWindow::close()
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
-    close();
+    event->ignore(); // ignore event
+    // delete interpreter
+    if (m_interpreter)
+    {
+        delete m_interpreter;
+        m_interpreter = NULL;
+    }
+    m_exitting = true;
+    QMainWindow::closeEvent(event);
+    // let gui thread run some more, wait for finished() event
 }
 
 void MainWindow::handleRunState(uint state)
@@ -152,15 +175,9 @@ void MainWindow::connectPixy(bool state)
             {
                 m_console->print("Pixy detected.\n");
                 m_interpreter = new Interpreter(m_console, m_video, this);
-#if 0
-                // start with a program (normally would be read from a config file instead of hard-coded)
-                m_interpreter->beginProgram();
-                m_interpreter->call("cam_getFrame 33, 0, 0, 320, 200");
-                m_interpreter->endProgram();
-                m_interpreter->runProgram();
-#endif
+
                 connect(m_interpreter, SIGNAL(runState(uint)), this, SLOT(handleRunState(uint)));
-                m_console->acceptInput(true);
+                connect(m_interpreter, SIGNAL(finished()), this, SLOT(interpreterFinished()));
             }
             m_pixyConnected = true;
         }
@@ -256,6 +273,28 @@ void MainWindow::on_actionProgram_triggered()
             }
         }
     }
+}
+
+void MainWindow::on_actionConfigure_triggered()
+{
+    m_configDialog = new ConfigDialog(m_interpreter);
+    connect(m_configDialog, SIGNAL(finished(int)), this, SLOT(configFinished()));
+    m_configDialog->show();
+    updateButtons();
+}
+
+
+void MainWindow::configFinished()
+{
+    delete m_configDialog;
+    m_configDialog = NULL;
+    updateButtons();
+}
+
+void MainWindow::interpreterFinished()
+{
+    if (m_exitting) // if we're exitting, shut down
+        close();
 }
 
 void MainWindow::on_actionExit_triggered()

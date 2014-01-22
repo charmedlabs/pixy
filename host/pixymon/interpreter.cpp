@@ -87,6 +87,7 @@ Interpreter::~Interpreter()
     clearLocalProgram();
     if (m_chirp)
         delete m_chirp;
+    delete m_renderer;
 }
 
 int Interpreter::execute()
@@ -361,52 +362,6 @@ int Interpreter::addProgram(const QStringList &argv)
     return 0;
 }
 
-#if 0
-bool Interpreter::checkRemoteProgram()
-{
-    int res;
-    bool result;
-
-    res = getRunning();
-    if (res<0)
-        return false;
-
-    result = (bool)res;
-
-    emit runState(result);
-    emit enableConsole(!result);
-
-    return result;
-}
-
-int Interpreter::stopRemoteProgram()
-{
-    int i, res;
-
-    qDebug() << "stopremoteprogram";
-    res = sendStop();
-    if (res<0)
-        return -1;
-
-    // poll for 500ms for program to stop
-    for (i=0; i<10; i++)
-    {
-        res = getRunning();
-        if (res<0)
-            return -1;
-        if (res==false)
-        {
-            emit runState(false);
-            emit enableConsole(true);
-            qDebug() << "success";
-            return 0;
-        }
-        msleep(50);
-    }
-    qDebug() << "error";
-    return -1;
-}
-#endif
 
 void Interpreter::getRunning()
 {
@@ -455,96 +410,6 @@ int Interpreter::sendStop()
 }
 
 
-#if 0
-void Interpreter::run()
-{
-    int res;
-
-begin:
-    if (m_init)
-    {
-        try
-        {
-            if (m_link.open()<0)
-                throw std::runtime_error("Unable to open USB device.");
-            m_chirp = new ChirpMon(this, &m_link);
-            m_exec_run = m_chirp->getProc("run");
-            m_exec_running = m_chirp->getProc("running");
-            m_exec_stop = m_chirp->getProc("stop");
-            if (m_exec_run<0 || m_exec_running<0 || m_exec_stop<0)
-                throw std::runtime_error("Communication error with Pixy.");
-            m_disconnect = new DisconnectEvent(this);
-        }
-        catch (std::runtime_error &exception)
-        {
-            emit error(QString(exception.what()));
-            return;
-        }
-        m_remoteProgramRunning = checkRemoteProgram(); // get initial state (is program running or not?)
-        m_init = false;
-        qDebug() << "*** init done";
-    }
-
-    if (m_setModel)
-        setModel();
-    else if (m_remoteProgramRunning)
-    {
-        if (!getRunning()) // if we're not running, we should start
-            sendRun();
-
-        emit runState(true);
-        emit enableConsole(false);
-
-        while(m_remoteProgramRunning)
-        {
-            m_chirp->m_mutex.lock();
-            m_chirp->service(false);
-            m_chirp->m_mutex.unlock();
-        }
-        qDebug() << "stopping...";
-        if (!m_exit)  // if we're being destructed we shouldn't stop the remote program or print the prompt
-        {
-            stopRemoteProgram();
-            prompt();
-        }
-    }
-    else if (m_localProgramRunning)
-    {
-        emit runState(true);
-        emit enableConsole(false);
-
-        res = execute();
-
-        emit runState(false);
-        emit enableConsole(true);
-
-        // check for cable disconnect
-        if (res) //==LIBUSB_ERROR_PIPE)
-        {
-            emit connected(PIXY, false);
-            return;
-        }
-    }
-    else
-    {
-        res = call(m_argv, true);
-
-        if (res<0 && m_programming)
-        {
-            endLocalProgram();
-            clearLocalProgram();
-        }
-        prompt();
-        // check to see if we're running after this command-- if so, go back
-        if (!m_programming)
-        {
-            m_remoteProgramRunning = checkRemoteProgram(); // get state
-            if (m_remoteProgramRunning)
-                goto begin; // I know......
-        }
-    }
-}
-#else
 
 void Interpreter::handlePendingCommand()
 {
@@ -602,7 +467,6 @@ void Interpreter::run()
         }
         else
             m_chirp->service(false);
-
         handlePendingCommand();
         if (!m_running)
         {
@@ -636,9 +500,9 @@ void Interpreter::run()
             }
         }
     }
+    qDebug("worker thead exiting");
 }
 
-#endif
 
 int Interpreter::beginLocalProgram()
 {
