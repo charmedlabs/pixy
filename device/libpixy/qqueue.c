@@ -9,7 +9,7 @@ uint32_t qq_enqueue(Qval val)
     {
         g_qqueue->data[g_qqueue->writeIndex++] = val;
         g_qqueue->produced++;
-		if (g_qqueue->writeIndex==QQ_SIZE)
+		if (g_qqueue->writeIndex==QQ_MEM_SIZE)
 			g_qqueue->writeIndex = 0;
         return 1;
     }
@@ -19,5 +19,5 @@ uint32_t qq_enqueue(Qval val)
 uint16_t qq_free(void)
 {
     uint16_t len = g_qqueue->produced - g_qqueue->consumed;
-	return QQ_SIZE-len;
+	return QQ_MEM_SIZE-len;
 } 

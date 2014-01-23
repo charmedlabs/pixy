@@ -588,9 +588,9 @@ int Chirp::handleChirp(uint8_t type, ChirpProc proc, void *args[])
         // write responseInt
         *(uint32_t *)(m_buf+m_headerLen) = responseInt;
         // send response
-        res = sendChirpRetry(CRP_RESPONSE | (type&~CRP_CALL), m_procTable[proc].chirpProc);
+        res = sendChirpRetry(CRP_RESPONSE | (type&~CRP_CALL), m_procTable[proc].chirpProc);	// convert call into response
         restoreBuffer(); // restore buffer immediately!
-        if (res!=CRP_RES_OK) // convert call into response
+        if (res!=CRP_RES_OK) 
             return res;
     }
 
@@ -906,6 +906,44 @@ int Chirp::vdeserialize(uint8_t *buf, uint32_t len, va_list *args)
 
     return loadArgs(args, recvArgs);
 }
+
+int Chirp::getArgList(uint8_t *buf, uint32_t len, uint8_t *argList)
+{
+    uint8_t dataType, size, a;
+    uint32_t i;
+
+    // parse remaining args
+    for(i=0, a=0; i<len; a++)
+    {
+        if (a==CRP_MAX_ARGS)
+            return CRP_RES_ERROR;
+
+        dataType = buf[i++];
+        argList[a] = dataType;
+        size = dataType&0x0f;
+        if (!(dataType&CRP_ARRAY)) // if we're a scalar
+        {
+            ALIGN(i, size);
+            i += dataType&0x0f; // extract size of scalar, add it
+        }
+        else // we're an array
+        {
+            if (dataType==CRP_STRING || dataType==CRP_HSTRING) // string is a special case
+                i += strlen((char *)(buf+i))+1; // +1 include null character
+            else
+            {
+                ALIGN(i, 4);
+                uint32_t len = *(uint32_t *)(buf+i);
+                i += 4;
+                ALIGN(i, size);
+                i += len*size;
+            }
+        }
+    }
+    argList[a] = '\0'; // terminate list
+    return CRP_RES_OK;
+}
+
 
 int Chirp::deserializeParse(uint8_t *buf, uint32_t len, void *args[])
 {

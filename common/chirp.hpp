@@ -218,6 +218,7 @@ public:
     static int deserialize(uint8_t *buf, uint32_t len, ...);
     static int vserialize(Chirp *chirp, uint8_t *buf, uint32_t bufSize, va_list *args);
     static int vdeserialize(uint8_t *buf, uint32_t len, va_list *args);
+    static int getArgList(uint8_t *buf, uint32_t len, uint8_t *argList);
     int useBuffer(uint8_t *buf, uint32_t len);
 
     static uint16_t calcCrc(uint8_t *buf, uint32_t len);

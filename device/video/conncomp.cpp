@@ -99,7 +99,7 @@ void cc_setupSignatures(void)
 		sprintf(id, "signature%d", i);
 		sprintf(desc, "Color signature %d", i);
 		// add if it doesn't exist yet
-		prm_add(id, desc, INTS8(sizeof(ColorModel), &model), END);
+		prm_add(id, PRM_FLAG_INTERNAL, desc, INTS8(sizeof(ColorModel), &model), END);
 	}
 }
 

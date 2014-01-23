@@ -344,9 +344,9 @@
             <uThumb>0</uThumb>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>CORE_M0  IPC_SLAVE</Define>
+              <Define>CORE_M0  IPC_SLAVE PIXY</Define>
               <Undefine></Undefine>
-              <IncludePath>.</IncludePath>
+              <IncludePath>., ..\..\common</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>

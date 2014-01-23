@@ -194,6 +194,7 @@ void Interpreter::printHelp()
 {
     ProcInfo info;
     ChirpProc p;
+    QMutexLocker locker(&m_chirp->m_mutex);
 
     for (p=0; true; p++)
     {
@@ -365,6 +366,7 @@ int Interpreter::addProgram(const QStringList &argv)
 
 void Interpreter::getRunning()
 {
+    QMutexLocker locker(&m_chirp->m_mutex);
     int res, running;
 
     res = m_chirp->callSync(m_exec_running, END_OUT_ARGS, &running, END_IN_ARGS);
@@ -387,6 +389,7 @@ void Interpreter::getRunning()
 
 int Interpreter::sendRun()
 {
+    QMutexLocker locker(&m_chirp->m_mutex);
     int res, response;
 
     m_fastPoll = true;
@@ -399,6 +402,7 @@ int Interpreter::sendRun()
 
 int Interpreter::sendStop()
 {
+    QMutexLocker locker(&m_chirp->m_mutex);
     int res, response;
 
     m_fastPoll = true;
@@ -466,7 +470,11 @@ void Interpreter::run()
             time.restart();
         }
         else
+        {
+            m_chirp->m_mutex.lock();
             m_chirp->service(false);
+            m_chirp->m_mutex.unlock();
+        }
         handlePendingCommand();
         if (!m_running)
         {
@@ -684,6 +692,7 @@ void Interpreter::controlKey(Qt::Key key)
 
 void Interpreter::handleHelp()
 {
+    QMutexLocker locker(&m_chirp->m_mutex);
     ChirpProc proc;
     ProcInfo info;
 
@@ -732,6 +741,7 @@ void Interpreter::handleSelection(int x0, int y0, int width, int height)
 
 int Interpreter::call(const QStringList &argv, bool interactive)
 {
+    QMutexLocker locker(&m_chirp->m_mutex);
     ChirpProc proc;
     ProcInfo info;
     int args[20];

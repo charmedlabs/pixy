@@ -77,6 +77,7 @@ int ChirpMon::sendChirp(uint8_t type, ChirpProc proc)
 
 int ChirpMon::execute(const ChirpCallData &data)
 {
+    QMutexLocker locker(&m_mutex);
     int res;
 
     // copy into chirp buffer-- remember to skip the header space

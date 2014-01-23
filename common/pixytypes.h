@@ -1,8 +1,11 @@
 #ifndef PIXYTYPES_H
 #define PIXYTYPES_H
 
-#define RENDER_FLAG_FLUSH      0x01
-#define RENDER_FLAG_BLEND_BG   0x02
+#define RENDER_FLAG_FLUSH            0x01
+#define RENDER_FLAG_BLEND_BG         0x02
+
+#define PRM_FLAG_INTERNAL            0x01
+#define PRM_FLAG_ADVANCED            0x02
 
 typedef uint32_t Qval;
 

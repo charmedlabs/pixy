@@ -572,11 +572,11 @@ int32_t getRLSFrame(uint32_t *m0Mem, uint32_t *lut)
 		// column 1 is the first real column of pixels
 		qq_enqueue(0); 
 		lineProcessedRL0A((uint32_t *)&CAM_PORT, lineStore, CAM_RES2_WIDTH); 
-		numQvals = lineProcessedRL1A((uint32_t *)&CAM_PORT, qvalStore, lut2, lineStore, CAM_RES2_WIDTH, g_logLut, g_qqueue->data, g_qqueue->writeIndex, QQ_SIZE);
+		numQvals = lineProcessedRL1A((uint32_t *)&CAM_PORT, qvalStore, lut2, lineStore, CAM_RES2_WIDTH, g_logLut, g_qqueue->data, g_qqueue->writeIndex, QQ_MEM_SIZE);
 		// modify qq to reflect added data
 		g_qqueue->writeIndex += numQvals;
-		if (g_qqueue->writeIndex>=QQ_SIZE)
-			g_qqueue->writeIndex -= QQ_SIZE;
+		if (g_qqueue->writeIndex>=QQ_MEM_SIZE)
+			g_qqueue->writeIndex -= QQ_MEM_SIZE;
 		g_qqueue->produced += numQvals;
 		totalQvals += numQvals+1; // +1 because of beginning of line 
 	}

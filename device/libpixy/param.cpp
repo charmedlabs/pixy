@@ -1,11 +1,13 @@
 #include <inttypes.h>
 #include <string.h>
 #include "param.h"
+#include "pixytypes.h"
 #include "flash.h"
 #include "debug.h"
+#include "pixy_init.h"
 
 #define PRM_MAX_LEN       			256
-#define PRM_HEADER_LEN    			4
+#define PRM_HEADER_LEN    			8
 #define PRM_DATA_LEN      			(PRM_MAX_LEN-PRM_HEADER_LEN)
 #define PRM_ALLOCATED_LEN 			(FLASH_SECTOR_SIZE*2) // 2 sectors
 #define PRM_FLASH_LOC	  			(FLASH_BEGIN + FLASH_SIZE - PRM_ALLOCATED_LEN)  // last sectors
@@ -14,6 +16,13 @@
 
 static const ProcModule g_module[] =
 {
+	{
+	"prm_erase",
+	(ProcPtr)prm_format, 
+	{END}, 
+	"Erase all parameters, set to default upon reboot"
+	"@r 0 if success, negative if error"
+	},
 	{
 	"prm_set",
 	(ProcPtr)prm_setChirp, 
@@ -55,6 +64,7 @@ struct ParamRecord
 {
 	uint16_t crc;
 	uint16_t len;
+	uint32_t flags;
 	uint8_t data[PRM_DATA_LEN];
 };
 
@@ -99,7 +109,7 @@ uint32_t prm_getDataOffset(const ParamRecord *rec)
 	return offset; 
 }
 
-int32_t  prm_getInfo(const char *id, Chirp *chirp)
+int32_t prm_getInfo(const char *id, Chirp *chirp)
 {
 	ParamRecord *rec;
 
@@ -117,14 +127,20 @@ int32_t  prm_getInfo(const char *id, Chirp *chirp)
 
 int32_t  prm_getAll(const uint16_t &index, Chirp *chirp)
 {
+	int res;
 	uint16_t i;
+	uint8_t *data, argList[CRP_MAX_ARGS];
 	ParamRecord *rec;
 
 	for (i=0, rec=(ParamRecord *)PRM_FLASH_LOC; rec->crc!=0xffff && rec<(ParamRecord *)PRM_ENDREC; i++, rec++)
 	{
 		if(i==index)
 		{
-			CRP_RETURN(chirp, STRING(prm_getId(rec)), STRING(prm_getDesc(rec)),  UINTS8(rec->len, (uint8_t *)rec+prm_getDataOffset(rec)));
+			data = (uint8_t *)rec+prm_getDataOffset(rec);
+			res = Chirp::getArgList(data, rec->len, argList);
+			if (res<0)
+				return res;
+			CRP_RETURN(chirp, UINT32(rec->flags), STRING(argList), STRING(prm_getId(rec)), STRING(prm_getDesc(rec)),  UINTS8(rec->len, data), END);
 			return 0;
 		}
 	}
@@ -134,7 +150,9 @@ int32_t  prm_getAll(const uint16_t &index, Chirp *chirp)
 
 int prm_format()
 {
-	return flash_erase(PRM_FLASH_LOC, PRM_ALLOCATED_LEN);
+	flash_erase(PRM_FLASH_LOC, PRM_ALLOCATED_LEN);
+	cprintf("Parameters erased. Please cycle power to restore default values.\n");
+	return 0;
 }
 
 uint16_t prm_crc(const ParamRecord *rec)
@@ -228,6 +246,7 @@ int32_t prm_setChirp(const char *id, const uint32_t &valLen, const uint8_t *val)
 	uint8_t *buf;
 	uint32_t offset;
 	void *sector;
+	int32_t res = 0;
 
 	buf = (uint8_t *)malloc(FLASH_SECTOR_SIZE);
 
@@ -237,7 +256,10 @@ int32_t prm_setChirp(const char *id, const uint32_t &valLen, const uint8_t *val)
 	rec = prm_find(id);
 
 	if (rec==NULL)
-		return -1;
+	{
+		res = -1;
+		goto end;
+	}
 
 	sector = (void *)FLASH_SECTOR_MASK((uint32_t)rec);
 	memcpy(buf, sector, FLASH_SECTOR_SIZE);
@@ -245,7 +267,10 @@ int32_t prm_setChirp(const char *id, const uint32_t &valLen, const uint8_t *val)
 	rec = prm_find(id, buf);
 
 	if (rec==NULL)
-		return -1;
+	{
+		res = -1;
+		goto end;
+	}
 
 	offset = prm_getDataOffset(rec);	
 	memcpy((uint8_t *)rec+offset, val, valLen);
@@ -256,8 +281,9 @@ int32_t prm_setChirp(const char *id, const uint32_t &valLen, const uint8_t *val)
 	flash_erase((uint32_t)sector, FLASH_SECTOR_SIZE); 
 	flash_program((uint32_t)sector, buf, FLASH_SECTOR_SIZE);
 
+end:
 	free(buf); 	
-	return 0;
+	return res;
 }
 
 int32_t prm_get(const char *id, ...)
@@ -291,7 +317,7 @@ int32_t prm_getChirp(const char *id, Chirp *chirp)
 }
 
 
-int prm_add(const char *id, const char *desc, ...)
+int prm_add(const char *id, uint32_t flags, const char *desc, ...)
 {
 	char buf[PRM_MAX_LEN];
 	int len;
@@ -328,6 +354,7 @@ int prm_add(const char *id, const char *desc, ...)
 	if (len<0)
 		return -3;
 
+	rec->flags = flags;
 	rec->len = len;
 	rec->crc = prm_crc(rec); 
 

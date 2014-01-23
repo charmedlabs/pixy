@@ -32,6 +32,8 @@ public:
 
     int serviceChirp();
 
+    QMutex m_mutex;
+
     friend class Interpreter;
 
 protected:
