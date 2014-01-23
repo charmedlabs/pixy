@@ -12,6 +12,7 @@
 class Interpreter;
 class ConfigDialog;
 
+// struct to store parameter values
 struct Param
 {
     Param(QString id,  QString desc, uint8_t type, uint32_t len, uint8_t *data)
@@ -34,7 +35,11 @@ struct Param
     QLabel *m_label;
 };
 
-
+// need worker thread because worker thread in Interpreter is calling chirp-- and we don't want gui thread to block,
+// which is what would happen if another thread isn't created.
+// If gui thread blocks and worker thread in Interpreter is blocking (because there's a mutex in the paint call)---
+// then we have deadlock.
+// The nice thing is that we can load and save all the parameters while streaming and rendering image data without any issues.
 class ConfigWorker : public QObject
 {
     Q_OBJECT

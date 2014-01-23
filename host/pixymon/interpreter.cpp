@@ -29,34 +29,6 @@ Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, MainWindow 
     m_running = -1; // set to bogus value to force update
     m_chirp = NULL;
 
-
-#if 0
-    ChirpProc proc, procGet, procGetInfo, procGetAll;
-    uint8_t buf[0x40];
-    proc = m_chirp->getProc("prm_set");
-    procGet = m_chirp->getProc("prm_get");
-    procGetInfo = m_chirp->getProc("prm_getInfo");
-    procGetAll = m_chirp->getProc("prm_getAll");
-
-    uint32_t dead, baad;
-    uint16_t beef;
-    uint8_t ab;
-    uint8_t *buf2;
-    char *desc;
-    char *id;
-    int response, len, res;
-    len = m_chirp->serialize(false, buf, 0x40, UINT32(0xa1b2c3d4), UINT16(0xc1ab), UINT8(0xca), UINT32(0xea12345), END);
-    res = m_chirp->callSync(proc, STRING("hello"), UINTS8(len, buf), END_OUT_ARGS, &response, END_IN_ARGS);
-    res = m_chirp->callSync(procGet, STRING("hello"), END_OUT_ARGS, &response, &len, &buf2, END_IN_ARGS);
-    res = Chirp::deserialize(buf2, len, &dead, &beef, &ab, &baad, END);
-    res = m_chirp->callSync(procGetInfo, STRING("hello"), END_OUT_ARGS, &response, &desc, END_IN_ARGS);
-    res = m_chirp->callSync(procGetAll, UINT16(0), END_OUT_ARGS, &response, &id, &desc, &len, &buf2, END_IN_ARGS);
-    res = m_chirp->callSync(procGetAll, UINT16(1), END_OUT_ARGS, &response, &id, &desc, &len, &buf2, END_IN_ARGS);
-    res = m_chirp->callSync(procGetAll, UINT16(2), END_OUT_ARGS, &response, &id, &desc, &len, &buf2, END_IN_ARGS);
-    res = m_chirp->callSync(procGetAll, UINT16(3), END_OUT_ARGS, &response, &id, &desc, &len, &buf2, END_IN_ARGS);
-
-#endif
-
     m_renderer = new Renderer(m_video);
 
     connect(m_console, SIGNAL(textLine(QString)), this, SLOT(command(QString)));
@@ -486,6 +458,11 @@ void Interpreter::run()
                 {
                     if (m_argv.size())
                     {
+                        if (m_externalCommand!="") // print command to make things explicit and all pretty
+                        {
+                            emit textOut(PROMPT " " + m_externalCommand);
+                            m_externalCommand = "";
+                        }
                         if (m_argv[0]=="help")
                             handleHelp();
                         else
@@ -713,6 +690,17 @@ void Interpreter::handleCall(const QStringList &argv)
     m_mutexProg.lock();
     m_argv = argv;
     m_mutexProg.unlock();
+}
+
+void Interpreter::execute(const QString &command)
+{
+    QStringList argv = command.split(QRegExp("[\\s(),\\t]"), QString::SkipEmptyParts);
+    m_mutexProg.lock();
+    m_argv = argv;
+    m_mutexProg.unlock();
+    if (m_running==true)
+           m_pendingCommand = STOP;
+    m_externalCommand = command;
 }
 
 #if 0

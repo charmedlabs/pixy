@@ -39,6 +39,8 @@ private slots:
     void on_actionConfigure_triggered();
     void on_actionExit_triggered();
     void on_actionProgram_triggered();
+    void on_actionRaw_video_triggered();
+    void on_actionCooked_video_triggered();
 
 protected:
      void closeEvent(QCloseEvent *event);

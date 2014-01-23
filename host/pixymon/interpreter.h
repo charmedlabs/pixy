@@ -42,7 +42,7 @@ public:
     void runOrStopProgram();
     uint programRunning();
 
-    int call(const QString &command);
+    void execute(const QString &command);
     void printHelp();
 
     ChirpMon *m_chirp;
@@ -122,6 +122,7 @@ private:
     std::vector<QStringList> m_programText;
 
     QString m_command;
+    QString m_externalCommand;
     QString m_print;
     Qt::Key m_key;
     uint32_t m_rcount;

@@ -50,6 +50,8 @@
      <string>Action</string>
     </property>
     <addaction name="actionPlay_Pause"/>
+    <addaction name="actionRaw_video"/>
+    <addaction name="actionCooked_video"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuAction"/>
@@ -81,6 +83,9 @@
    <property name="text">
     <string>Play/Pause</string>
    </property>
+   <property name="toolTip">
+    <string>Run/stop</string>
+   </property>
   </action>
   <action name="actionHelp">
    <property name="text">
@@ -96,10 +101,29 @@
    <property name="text">
     <string>Configure...</string>
    </property>
+   <property name="toolTip">
+    <string>Configure parameters</string>
+   </property>
   </action>
   <action name="actionProgram">
    <property name="text">
     <string>Program...</string>
+   </property>
+  </action>
+  <action name="actionRaw_video">
+   <property name="text">
+    <string>Raw video</string>
+   </property>
+   <property name="toolTip">
+    <string>Display raw video</string>
+   </property>
+  </action>
+  <action name="actionCooked_video">
+   <property name="text">
+    <string>Cooked video</string>
+   </property>
+   <property name="toolTip">
+    <string>Display cooked (processed) video</string>
    </property>
   </action>
  </widget>

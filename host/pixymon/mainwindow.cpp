@@ -39,6 +39,12 @@ MainWindow::MainWindow(QWidget *parent) :
 
     m_ui->toolBar->addAction(m_ui->actionPlay_Pause);
 
+    m_ui->actionRaw_video->setIcon(QIcon(":/icons/icons/raw.png"));
+    m_ui->toolBar->addAction(m_ui->actionRaw_video);
+
+    m_ui->actionCooked_video->setIcon(QIcon(":/icons/icons/cooked.png"));
+    m_ui->toolBar->addAction(m_ui->actionCooked_video);
+
     m_ui->actionConfigure->setIcon(QIcon(":/icons/icons/config.png"));
     m_ui->toolBar->addAction(m_ui->actionConfigure);
 
@@ -66,31 +72,53 @@ void MainWindow::updateButtons()
     if (m_interpreter && (runstate=m_interpreter->programRunning()))
     {
         m_ui->actionPlay_Pause->setIcon(QIcon(":/icons/icons/stop.png"));
+        m_ui->actionPlay_Pause->setToolTip("Stop program");
     }
     else
     {
         m_ui->actionPlay_Pause->setIcon(QIcon(":/icons/icons/play.png"));
+        m_ui->actionPlay_Pause->setToolTip("Run program");
     }
 
     if (m_pixyDFUConnected && m_pixyConnected) // we're in programming mode
     {
         m_ui->actionPlay_Pause->setEnabled(false);
+        m_ui->actionRaw_video->setEnabled(false);
+        m_ui->actionCooked_video->setEnabled(false);
         m_ui->actionConfigure->setEnabled(false);
+        m_ui->actionProgram->setEnabled(true);
     }
     else if (runstate==2) // we're in forced runstate
     {
         m_ui->actionPlay_Pause->setEnabled(false);
+        m_ui->actionRaw_video->setEnabled(false);
+        m_ui->actionCooked_video->setEnabled(false);
         m_ui->actionConfigure->setEnabled(true);
+        m_ui->actionProgram->setEnabled(false);
     }
-    else if (m_pixyConnected)
+    else if (runstate) // runstate==1
     {
         m_ui->actionPlay_Pause->setEnabled(true);
+        m_ui->actionRaw_video->setEnabled(true);
+        m_ui->actionCooked_video->setEnabled(true);
         m_ui->actionConfigure->setEnabled(true);
+        m_ui->actionProgram->setEnabled(false);
+    }
+    else if (m_pixyConnected) // runstate==0
+    {
+        m_ui->actionPlay_Pause->setEnabled(true);
+        m_ui->actionRaw_video->setEnabled(true);
+        m_ui->actionCooked_video->setEnabled(true);
+        m_ui->actionConfigure->setEnabled(true);
+        m_ui->actionProgram->setEnabled(true);
     }
     else // nothing connected
     {
         m_ui->actionPlay_Pause->setEnabled(false);
+        m_ui->actionRaw_video->setEnabled(false);
+        m_ui->actionCooked_video->setEnabled(false);
         m_ui->actionConfigure->setEnabled(false);
+        m_ui->actionProgram->setEnabled(false);
     }
 
     if (m_configDialog)
@@ -281,6 +309,18 @@ void MainWindow::on_actionConfigure_triggered()
     connect(m_configDialog, SIGNAL(done()), this, SLOT(configFinished()));
     m_configDialog->show();
     updateButtons();
+}
+
+void MainWindow::on_actionRaw_video_triggered()
+{
+    if (m_interpreter)
+        m_interpreter->execute("runprog 0");
+}
+
+void MainWindow::on_actionCooked_video_triggered()
+{
+    if (m_interpreter)
+        m_interpreter->execute("runprogArg 0 1");
 }
 
 

@@ -16,6 +16,23 @@ ConfigWorker::~ConfigWorker()
 {
 }
 
+QString typeString(uint8_t type)
+{
+    switch(type)
+    {
+    case CRP_INT8:
+        return "INT8";
+    case CRP_INT16:
+        return "INT16";
+    case CRP_INT32:
+        return "INT32";
+    case CRP_FLT32:
+        return "FLOAT32";
+    default:
+        return "?";
+    }
+}
+
 void ConfigWorker::load()
 {
     QMutexLocker locker(&m_dialog->m_interpreter->m_chirp->m_mutex);
@@ -42,7 +59,7 @@ void ConfigWorker::load()
             continue;
 
 
-        m_dialog->m_paramList.push_back(Param(id, desc, argList[0], len, data));
+        m_dialog->m_paramList.push_back(Param(id, "("+typeString(argList[0])+") "+desc, argList[0], len, data));
     }
 
     emit loaded();
@@ -75,7 +92,7 @@ void ConfigWorker::save()
             val = param.m_line->text().toInt(&ok, base);
             if (!ok)
             {
-                emit error(param.m_id + " needs to be a number!");
+                emit error(param.m_id + " needs to be an integer!");
                 return;
             }
             Chirp::serialize(NULL, buf, 0x100, param.m_type, val, END);
@@ -121,28 +138,6 @@ ConfigDialog::ConfigDialog(Interpreter *interpreter) : m_ui(new Ui::ConfigDialog
     m_thread.start();
 
     emit load();
-
-
-#if 0
-    QLineEdit *line = new QLineEdit();
-    line->setProperty("id", QVariant("hello"));
-    QVariant var = line->property("id");
-    qDebug(var.typeName());
-#endif
-#if 0
-    QLabel *label = new QLabel("Hello");
-    label->setAlignment(Qt::AlignRight);
-    label->setToolTip("how are you?");
-    m_ui->gridLayout->addWidget(label, 0, 0);
-    label = new QLabel("There");
-    label->setAlignment(Qt::AlignRight);
-    label->setToolTip("this is a tooltip the quick brown fox Note\nthat by default tooltips are only shown for widgets that are children\nof the active window. You can change this behavior by setting\nthe attribute Qt::WA_AlwaysShowToolTips on the window, not on the widget with the tooltip.");
-    m_ui->gridLayout->addWidget(label, 1, 0);
-    QLineEdit *line = new QLineEdit();
-    m_ui->gridLayout->addWidget(line, 0, 1);
-    line = new QLineEdit();
-    m_ui->gridLayout->addWidget(line, 1, 1);
-#endif
 }
 
 
@@ -198,7 +193,7 @@ void ConfigDialog::loaded()
         {
             float val;
             Chirp::deserialize(param.m_data, param.m_len, &val, END);
-            param.m_line->setText(QString::number(val));
+            param.m_line->setText(QString::number(val, 'f', 3));
         }
 
         m_ui->gridLayout->addWidget(param.m_label, i, 0);
