@@ -3,6 +3,7 @@
 #include "pixytypes.h"
 #include <QLabel>
 #include <QMessageBox>
+#include <QDebug>
 #include <stdexcept>
 
 
@@ -51,7 +52,7 @@ void ConfigWorker::save()
 {
     QMutexLocker locker(&m_dialog->m_interpreter->m_chirp->m_mutex);
     uint i;
-    int res;
+    int res, response;
 
     ChirpProc prm_set = m_dialog->m_interpreter->m_chirp->getProc("prm_set");
     if (prm_set<0)
@@ -59,7 +60,10 @@ void ConfigWorker::save()
 
     for (i=0; i<m_dialog->m_paramList.size(); i++)
     {
+        uint8_t buf[0x100];
         Param &param = m_dialog->m_paramList[i];
+        QByteArray str = param.m_id.toUtf8();
+        const char *id = str.constData();
         if (param.m_type==CRP_INT8 || param.m_type==CRP_INT16 || param.m_type==CRP_INT32)
         {
             int val, base;
@@ -74,8 +78,7 @@ void ConfigWorker::save()
                 emit error(param.m_id + " needs to be a number!");
                 return;
             }
-            char *id = (char *)param.m_id.data();
-            res = m_dialog->m_interpreter->m_chirp->callSync(prm_set, STRING(id), param.m_type, val, END);
+            Chirp::serialize(NULL, buf, 0x100, param.m_type, val, END);
         }
         else if (param.m_type==CRP_FLT32)
         {
@@ -87,10 +90,10 @@ void ConfigWorker::save()
                 emit error(param.m_id + " needs to be a floating point number!");
                 return;
             }
-            char *id = (char *)param.m_id.data();
-            res = m_dialog->m_interpreter->m_chirp->callSync(prm_set, STRING(id), param.m_type, val, END);
+            Chirp::serialize(NULL, buf, 0x100, param.m_type, val, END);
         }
-        if (res<0)
+        res = m_dialog->m_interpreter->m_chirp->callSync(prm_set, STRING(id), UINTS8(param.m_len, buf), END_OUT_ARGS, &response, END_IN_ARGS);
+        if (res<0 || response<0)
         {
             emit error("There was a problem setting a parameter.");
             return;
@@ -115,7 +118,6 @@ ConfigDialog::ConfigDialog(Interpreter *interpreter) : m_ui(new Ui::ConfigDialog
     connect(worker, SIGNAL(loaded()), this, SLOT(loaded()));
     connect(worker, SIGNAL(saved()), this, SLOT(saved()));
     connect(worker, SIGNAL(error(QString)), this, SLOT(error(QString)));
-    connect(&m_thread, SIGNAL(finished()), worker, SLOT(deleteLater()));
     m_thread.start();
 
     emit load();
@@ -175,13 +177,29 @@ void ConfigDialog::loaded()
         param.m_label->setAlignment(Qt::AlignRight);
 
         if (param.m_type==CRP_INT8)
-            param.m_line->setText(QString::number(*(int8_t *)param.m_data));
+        {
+            int8_t val;
+            Chirp::deserialize(param.m_data, param.m_len, &val, END);
+            param.m_line->setText(QString::number(val));
+        }
         else if (param.m_type==CRP_INT16)
-            param.m_line->setText(QString::number(*(int16_t *)param.m_data));
+        {
+            int16_t val;
+            Chirp::deserialize(param.m_data, param.m_len, &val, END);
+            param.m_line->setText(QString::number(val));
+        }
         else if (param.m_type==CRP_INT32)
-            param.m_line->setText(QString::number(*(int32_t *)param.m_data));
+        {
+            int32_t val;
+            Chirp::deserialize(param.m_data, param.m_len, &val, END);
+            param.m_line->setText(QString::number(val));
+        }
         else if (param.m_type==CRP_FLT32)
-            param.m_line->setText(QString::number(*(float *)param.m_data));
+        {
+            float val;
+            Chirp::deserialize(param.m_data, param.m_len, &val, END);
+            param.m_line->setText(QString::number(val));
+        }
 
         m_ui->gridLayout->addWidget(param.m_label, i, 0);
         m_ui->gridLayout->addWidget(param.m_line, i, 1);
@@ -190,22 +208,24 @@ void ConfigDialog::loaded()
 
 void ConfigDialog::saved()
 {
+    emit done();
+    QDialog::accept();
 }
 
 void ConfigDialog::error(QString message)
 {
-    QMessageBox::critical(0, "Error", message);
+    QMessageBox::critical(NULL, "Error", message);
 }
 
 
 void ConfigDialog::accept()
 {
     emit save();
-    QDialog::accept();
 }
 
 void ConfigDialog::reject()
 {
+    emit done();
     QDialog::reject();
 }
 

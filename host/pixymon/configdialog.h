@@ -69,13 +69,14 @@ public:
 signals:
     void load();
     void save();
+    void done();
 
 public slots:
+
+protected slots:
     void loaded();
     void saved();
     void error(QString message);
-
-protected slots:
     virtual void accept();
     virtual void reject();
 

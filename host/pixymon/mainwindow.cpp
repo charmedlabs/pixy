@@ -278,8 +278,7 @@ void MainWindow::on_actionProgram_triggered()
 void MainWindow::on_actionConfigure_triggered()
 {
     m_configDialog = new ConfigDialog(m_interpreter);
-    m_configDialog->setAttribute(Qt::WA_DeleteOnClose);
-    connect(m_configDialog, SIGNAL(finished(int)), this, SLOT(configFinished()));
+    connect(m_configDialog, SIGNAL(done()), this, SLOT(configFinished()));
     m_configDialog->show();
     updateButtons();
 }
@@ -287,8 +286,11 @@ void MainWindow::on_actionConfigure_triggered()
 
 void MainWindow::configFinished()
 {
+    qDebug("finished");
+    m_configDialog->deleteLater();
     m_configDialog = NULL;
     updateButtons();
+
 }
 
 void MainWindow::interpreterFinished()
