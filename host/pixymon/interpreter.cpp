@@ -25,6 +25,7 @@ Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, MainWindow 
     m_rcount = 0;
     m_waiting = false;
     m_fastPoll = true;
+    m_notified = false;
     m_pendingCommand = NONE;
     m_running = -1; // set to bogus value to force update
     m_chirp = NULL;
@@ -48,18 +49,25 @@ Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, MainWindow 
 
 Interpreter::~Interpreter()
 {
-    m_localProgramRunning = false;
-    m_console->m_mutexPrint.lock();
-    m_console->m_waitPrint.wakeAll();
-    m_console->m_mutexPrint.unlock();
-    m_waitInput.wakeAll();
-
-    m_run = false;
+    qDebug("destroying interpreter...");
+    close();
     wait();
     clearLocalProgram();
     if (m_chirp)
         delete m_chirp;
     delete m_renderer;
+    qDebug("done");
+}
+
+void Interpreter::close()
+{
+    m_localProgramRunning = false;
+    m_console->m_mutexPrint.lock();
+    m_console->m_waitPrint.wakeAll();
+    m_console->m_mutexPrint.unlock();
+    unwait(); // if we're waiting for input, unhang ourselves
+
+    m_run = false;
 }
 
 int Interpreter::execute()
@@ -342,9 +350,10 @@ void Interpreter::getRunning()
     int res, running;
 
     res = m_chirp->callSync(m_exec_running, END_OUT_ARGS, &running, END_IN_ARGS);
-    if (res<0)
+    if (res<0 && !m_notified)
     {
         running = false;
+        m_notified = true;
         emit connected(PIXY, false);
     }
     // emit state if we've changed
@@ -443,9 +452,11 @@ void Interpreter::run()
         }
         else
         {
-            m_chirp->m_mutex.lock();
-            m_chirp->service(false);
-            m_chirp->m_mutex.unlock();
+            if (m_chirp->m_mutex.tryLock())
+            {
+                m_chirp->service(false);
+                m_chirp->m_mutex.unlock();
+            }
         }
         handlePendingCommand();
         if (!m_running)
@@ -522,6 +533,7 @@ int Interpreter::runLocalProgram()
 
 void Interpreter::runOrStopProgram()
 {
+    unwait(); // unhang ourselves if we're waiting
     if (m_localProgramRunning)
         m_localProgramRunning = false;
     else if (m_running==false)
@@ -592,14 +604,15 @@ void Interpreter::prompt()
 
 void Interpreter::command(const QString &command)
 {
+    QMutexLocker locker(&m_mutexInput);
+
     if (m_localProgramRunning)
         return;
 
     if (m_waiting)
     {
-        QString command2 = command;
-        command2.remove(QRegExp("[(),\\t]"));
-        m_command = command2;
+        m_command = command;
+        m_command.remove(QRegExp("[(),\\t]"));
         m_key = (Qt::Key)0;
         m_waitInput.wakeAll();
         return;
@@ -695,6 +708,7 @@ void Interpreter::handleCall(const QStringList &argv)
 void Interpreter::execute(const QString &command)
 {
     QStringList argv = command.split(QRegExp("[\\s(),\\t]"), QString::SkipEmptyParts);
+    unwait(); // unhang ourselves if we're waiting for input
     m_mutexProg.lock();
     m_argv = argv;
     m_mutexProg.unlock();
@@ -722,9 +736,21 @@ int Interpreter::uploadLut()
 
 void Interpreter::handleSelection(int x0, int y0, int width, int height)
 {
+    QMutexLocker locker(&m_mutexInput);
     m_command = QString::number(x0) + " " + QString::number(y0) +  " " + QString::number(width) +  " " + QString::number(height);
     m_key = (Qt::Key)0;
     m_waitInput.wakeAll();
+}
+
+void Interpreter::unwait()
+{
+    QMutexLocker locker(&m_mutexInput);
+    if (m_waiting)
+    {
+        m_waitInput.wakeAll();
+        m_key = Qt::Key_Escape;
+        emit videoInput(VideoWidget::NONE);
+    }
 }
 
 int Interpreter::call(const QStringList &argv, bool interactive)
@@ -863,8 +889,9 @@ int Interpreter::call(const QStringList &argv, bool interactive)
                            args[16], args[17], args[18], args[19], END_OUT_ARGS);
 
         // check for cable disconnect
-        if (res<0) //res==LIBUSB_ERROR_PIPE)
+        if (res<0 && !m_notified) //res==LIBUSB_ERROR_PIPE)
         {
+            m_notified = true;
             emit connected(PIXY, false);
             return res;
         }

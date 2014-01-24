@@ -131,14 +131,25 @@ int32_t cc_setSigRegion(const uint8_t &model, const uint16_t &xoffset, const uin
 	if (model<1 || model>NUM_MODELS)
 		return -1;
 
+	if (g_rawFrame.m_pixels==NULL)
+	{
+		cprintf("No raw frame in memory!\n");
+		return -2;
+	}
+
 	// create lut
 	result = g_blobs->generateLUT(model, g_rawFrame, RectA(xoffset, yoffset, width, height), &cmodel);
 	if (result<0)
+	{
+		cprintf("Color saturation isn't high enough!\n");
 		return result;
+	}
 
 	// save to flash
 	sprintf(id, "signature%d", model);
 	prm_set(id, INTS8(sizeof(ColorModel), &cmodel), END);
+
+	cprintf("Success!\n");
 
 	return result;
 }
@@ -153,9 +164,18 @@ int32_t cc_setSigPoint(const uint8_t &model, const uint16_t &x, const uint16_t &
 	if (model<1 || model>NUM_MODELS)
 		return -1;
 
+	if (g_rawFrame.m_pixels==NULL)
+	{
+		cprintf("No raw frame in memory!\n");
+		return -2;
+	}
+
 	result = g_blobs->generateLUT(model, g_rawFrame, Point16(x, y), &cmodel, &region);
   	if (result<0)
+	{
+		cprintf("Color saturation isn't high enough!\n");
 		return result;
+	}
 
 	if (chirp)
 	{
@@ -166,6 +186,8 @@ int32_t cc_setSigPoint(const uint8_t &model, const uint16_t &x, const uint16_t &
 	// save to flash
 	sprintf(id, "signature%d", model);
 	prm_set(id, INTS8(sizeof(ColorModel), &cmodel), END);
+
+	cprintf("Success!\n");
 
 	return result;
 }

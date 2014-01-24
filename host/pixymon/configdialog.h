@@ -89,6 +89,8 @@ private:
     Ui::ConfigDialog *m_ui;
     Interpreter *m_interpreter;
     std::vector<Param> m_paramList;
+    bool m_loading;
+    bool m_rejecting;
 
     QThread m_thread;
 };

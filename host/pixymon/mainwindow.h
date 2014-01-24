@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <vector>
 
 #define PIXYMON_TITLE   "PixyMon"
 
@@ -33,6 +34,7 @@ public:
 private slots:
     void handleRunState(uint state);
     void handleConnected(Device device, bool state);
+    void handleActions();
     void configFinished();
     void interpreterFinished();
     void on_actionPlay_Pause_triggered();
@@ -49,6 +51,8 @@ private:
     void connectPixy(bool state);
     void connectPixyDFU(bool state);
     void updateButtons();
+    void addAction(const QString &label, const QString &command);
+    void setEnabledActions(bool enable);
     void close();
 
     bool m_pixyConnected;
@@ -60,6 +64,7 @@ private:
     ConnectEvent *m_connect;
     Flash *m_flash;
     ConfigDialog *m_configDialog;
+    std::vector<QAction *> m_actions;
     Ui::MainWindow *m_ui;
 };
 

@@ -54,15 +54,24 @@ MainWindow::MainWindow(QWidget *parent) :
     m_connect = new ConnectEvent(this);
     if (m_connect->getConnected()==NONE)
         m_console->error("No Pixy devices have been detected.\n");
+
+    addAction("Run default program", "runprog 1");
+    addAction("Run pan/tilt demo", "runprog 2");
+    addAction("Set signature 1", "cc_setSigRegion 1");
+    addAction("Set signature 2", "cc_setSigRegion 2");
+    addAction("Set signature 3", "cc_setSigRegion 3");
+    addAction("Set signature 4", "cc_setSigRegion 4");
+    addAction("Set signature 5", "cc_setSigRegion 5");
+    addAction("Set signature 6", "cc_setSigRegion 6");
+    addAction("Set signature 7", "cc_setSigRegion 7");
 }
 
 MainWindow::~MainWindow()
 {
-    if (m_interpreter)
-        delete m_interpreter;
     if (m_connect)
         delete m_connect;
-    delete m_ui;
+
+    // we don't delete any of the widgets because the parent deletes it's children upon deletion
 }
 
 void MainWindow::updateButtons()
@@ -87,6 +96,7 @@ void MainWindow::updateButtons()
         m_ui->actionCooked_video->setEnabled(false);
         m_ui->actionConfigure->setEnabled(false);
         m_ui->actionProgram->setEnabled(true);
+        setEnabledActions(false);
     }
     else if (runstate==2) // we're in forced runstate
     {
@@ -95,6 +105,7 @@ void MainWindow::updateButtons()
         m_ui->actionCooked_video->setEnabled(false);
         m_ui->actionConfigure->setEnabled(true);
         m_ui->actionProgram->setEnabled(false);
+        setEnabledActions(false);
     }
     else if (runstate) // runstate==1
     {
@@ -103,6 +114,7 @@ void MainWindow::updateButtons()
         m_ui->actionCooked_video->setEnabled(true);
         m_ui->actionConfigure->setEnabled(true);
         m_ui->actionProgram->setEnabled(false);
+        setEnabledActions(true);
     }
     else if (m_pixyConnected) // runstate==0
     {
@@ -111,6 +123,7 @@ void MainWindow::updateButtons()
         m_ui->actionCooked_video->setEnabled(true);
         m_ui->actionConfigure->setEnabled(true);
         m_ui->actionProgram->setEnabled(true);
+        setEnabledActions(true);
     }
     else // nothing connected
     {
@@ -119,6 +132,7 @@ void MainWindow::updateButtons()
         m_ui->actionCooked_video->setEnabled(false);
         m_ui->actionConfigure->setEnabled(false);
         m_ui->actionProgram->setEnabled(false);
+        setEnabledActions(false);
     }
 
     if (m_configDialog)
@@ -132,15 +146,21 @@ void MainWindow::close()
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
-    event->ignore(); // ignore event
     // delete interpreter
-    if (m_interpreter)
+    if (m_configDialog)
     {
-        delete m_interpreter;
-        m_interpreter = NULL;
+        m_exitting = true;
+        event->ignore(); // ignore event
+        qDebug("closing dialog");
+        m_configDialog->close();
     }
-    m_exitting = true;
-    QMainWindow::closeEvent(event);
+    else if (m_interpreter)
+    {
+        m_exitting = true;
+        event->ignore(); // ignore event
+        qDebug("closing interpreter");
+        m_interpreter->close();
+    }
     // let gui thread run some more, wait for finished() event
 }
 
@@ -220,21 +240,51 @@ void MainWindow::connectPixy(bool state)
         m_console->error("Pixy has stopped working.\n");
         if (m_interpreter)
         {
-            delete m_interpreter;
-            m_interpreter = NULL;
+            qDebug("closing interpreter");
+            m_interpreter->close();
         }
-        m_video->clear();
-        m_console->acceptInput(false);
-        // if we're disconnected, start the connect thread
-        m_connect = new ConnectEvent(this);
-        m_pixyConnected = false;
     }
 
     updateButtons();
 }
 
+void MainWindow::setEnabledActions(bool enable)
+{
+    uint i;
+
+    for (i=0; i<m_actions.size(); i++)
+        m_actions[i]->setEnabled(enable);
+}
+
+void MainWindow::addAction(const QString &label, const QString &command)
+{
+    QAction *action = new QAction(this);
+    action->setText(label);
+    action->setProperty("command", QVariant(command));
+    m_ui->menuAction->addAction(action);
+    m_actions.push_back(action);
+    connect(action, SIGNAL(triggered()), this, SLOT(handleActions()));
+}
+
+void MainWindow::handleActions()
+{
+    QAction *action = (QAction *)sender();
+    if (m_interpreter)
+    {
+        QVariant var = action->property("command");
+        m_interpreter->execute(var.toString());
+    }
+}
+
+
 void MainWindow::handleConnected(Device device, bool state)
 {
+    if (m_configDialog)
+    {
+        delete m_configDialog;
+        m_configDialog = NULL;
+    }
+
     // kill connect thread
     if (m_connect)
     {
@@ -326,15 +376,29 @@ void MainWindow::on_actionCooked_video_triggered()
 
 void MainWindow::configFinished()
 {
-    qDebug("finished");
+    qDebug("config finished");
     m_configDialog->deleteLater();
     m_configDialog = NULL;
     updateButtons();
-
+    // if we're exitting, close interpreter (handin it down the chain)
+    if (m_exitting)
+    {
+        qDebug("closing interpreter");
+        m_interpreter->close();
+    }
 }
 
 void MainWindow::interpreterFinished()
 {
+    qDebug("interpreter finished");
+    m_interpreter->deleteLater();
+    m_interpreter = NULL;
+    m_video->clear();
+    m_console->acceptInput(false);
+    // if we're disconnected, start the connect thread
+    m_connect = new ConnectEvent(this);
+    m_pixyConnected = false;
+
     if (m_exitting) // if we're exitting, shut down
         close();
 }

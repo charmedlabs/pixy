@@ -35,6 +35,7 @@ QString typeString(uint8_t type)
 
 void ConfigWorker::load()
 {
+    qDebug("loading...");
     QMutexLocker locker(&m_dialog->m_interpreter->m_chirp->m_mutex);
     uint i;
     char *id, *desc;
@@ -47,9 +48,11 @@ void ConfigWorker::load()
     if (prm_getAll<0)
         return;
 
+    int res;
     for (i=0; true; i++)
     {
-        if (m_dialog->m_interpreter->m_chirp->callSync(prm_getAll, UINT16(i), END_OUT_ARGS, &response, &flags, &argList, &id, &desc, &len, &data, END_IN_ARGS)<0)
+        res = m_dialog->m_interpreter->m_chirp->callSync(prm_getAll, UINT16(i), END_OUT_ARGS, &response, &flags, &argList, &id, &desc, &len, &data, END_IN_ARGS);
+        if (res<0)
             break;
 
         if (response<0)
@@ -62,6 +65,7 @@ void ConfigWorker::load()
         m_dialog->m_paramList.push_back(Param(id, "("+typeString(argList[0])+") "+desc, argList[0], len, data));
     }
 
+    qDebug("loaded");
     emit loaded();
 }
 
@@ -126,6 +130,7 @@ ConfigDialog::ConfigDialog(Interpreter *interpreter) : m_ui(new Ui::ConfigDialog
 
     m_ui->setupUi(this);
     m_interpreter = interpreter;
+    m_interpreter->unwait(); // unhang interpreter if it's waiting
 
     ConfigWorker *worker = new ConfigWorker(this);
 
@@ -137,25 +142,21 @@ ConfigDialog::ConfigDialog(Interpreter *interpreter) : m_ui(new Ui::ConfigDialog
     connect(worker, SIGNAL(error(QString)), this, SLOT(error(QString)));
     m_thread.start();
 
+    m_rejecting = false;
+    m_loading = true;
     emit load();
 }
 
 
 ConfigDialog::~ConfigDialog()
 {
-    uint i;
-
+    qDebug("destroying config dialog...");
     m_thread.quit();
     m_thread.wait();
 
-    for (i=0; i<m_paramList.size(); i++)
-    {
-        Param &param = m_paramList[i];
-        delete param.m_line;
-        delete param.m_label;
-    }
+    // we don't delete any of the widgets because the parent deletes its children
 
-    delete m_ui;
+    qDebug("done");
 }
 
 void ConfigDialog::loaded()
@@ -199,6 +200,13 @@ void ConfigDialog::loaded()
         m_ui->gridLayout->addWidget(param.m_label, i, 0);
         m_ui->gridLayout->addWidget(param.m_line, i, 1);
     }
+    m_loading = false;
+
+    if (m_rejecting) // resume reject
+    {
+        emit done();
+        QDialog::reject();
+    }
 }
 
 void ConfigDialog::saved()
@@ -220,8 +228,14 @@ void ConfigDialog::accept()
 
 void ConfigDialog::reject()
 {
-    emit done();
-    QDialog::reject();
+    qDebug("reject called");
+    if (!m_loading) // if we're in the middle of loading, defer rejection
+    {
+        emit done();
+        QDialog::reject();
+    }
+    else
+        m_rejecting = true; // defer reject
 }
 
 

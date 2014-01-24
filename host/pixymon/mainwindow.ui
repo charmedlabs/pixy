@@ -81,7 +81,7 @@
   </action>
   <action name="actionPlay_Pause">
    <property name="text">
-    <string>Play/Pause</string>
+    <string>Run/Stop</string>
    </property>
    <property name="toolTip">
     <string>Run/stop</string>

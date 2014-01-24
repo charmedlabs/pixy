@@ -45,6 +45,9 @@ public:
     void execute(const QString &command);
     void printHelp();
 
+    void close();
+    void unwait();
+
     ChirpMon *m_chirp;
 
     // experimental
@@ -116,6 +119,7 @@ private:
     bool m_waiting;
     bool m_run;
     bool m_fastPoll;
+    bool m_notified;
     int m_running;
 
     std::vector<ChirpCallData> m_program;
