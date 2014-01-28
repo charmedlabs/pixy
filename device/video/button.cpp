@@ -297,17 +297,17 @@ int ButtonMachine::selectProgram(int progs)
 		case 2: // cycle through choices, wait for button up
 			if (!bt)
 			{
-				result = m_index;
+				result = m_index; // save m_index
 				flashLED(4); 
-				reset();
+				reset(); // resets m_index
 				return result;
 			}
 			else if (getTimer(m_timer)>BT_INDEX_CYCLE_TIMEOUT)
 			{
 				setTimer(&m_timer);
 				m_index++;
-				if (m_index==progs)
-					m_index = 0;
+				if (m_index==progs+1)
+					m_index = 1;
 
 				setLED();
 			}							   

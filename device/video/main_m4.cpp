@@ -505,9 +505,9 @@ int main(void)
 		"Sets how inclusive the color signatures are with respect to hue. (default 1.0)", FLT32(1.0), END);
 		
 #if 1
-	exec_addProg(&g_progVideo);
 	exec_addProg(&g_progBlobs);
 	exec_addProg(&g_progPt);
+	exec_addProg(&g_progVideo, true);
 	exec_loop();
 #endif  
 #if 0

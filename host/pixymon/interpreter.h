@@ -19,7 +19,6 @@
 
 class ConsoleWidget;
 class Renderer;
-class MainWindow;
 
 typedef std::pair<QString,QString> Arg;
 typedef std::vector<Arg> ArgList;
@@ -29,7 +28,7 @@ class Interpreter : public QThread
     Q_OBJECT
 
 public:
-    Interpreter(ConsoleWidget *console, VideoWidget *video, MainWindow *main);
+    Interpreter(ConsoleWidget *console, VideoWidget *video);
     ~Interpreter();
 
     // local program business
@@ -54,7 +53,6 @@ public:
     ConsoleWidget *m_console;
     VideoWidget *m_video;
     Renderer *m_renderer;
-    MainWindow *m_main;
 
     friend class ChirpMon;
 

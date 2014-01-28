@@ -4,6 +4,7 @@
 #include "chirp.hpp"
 
 #define EXEC_MAX_PROGS   8
+#define EXEC_VIDEO_PROG  EXEC_MAX_PROGS
 
 typedef int (*ProgFunc)();
 
@@ -18,7 +19,7 @@ struct Program
 void exec_loop();
 int exec_init(Chirp *chirp);
 void exec_select();
-int exec_addProg(Program *prog);
+int exec_addProg(Program *prog, bool video=false);
 
 int exec_runM0(uint8_t prog);
 int exec_stopM0();

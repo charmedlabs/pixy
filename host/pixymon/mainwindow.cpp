@@ -55,7 +55,7 @@ MainWindow::MainWindow(QWidget *parent) :
     if (m_connect->getConnected()==NONE)
         m_console->error("No Pixy devices have been detected.\n");
 
-    addAction("Run default program", "runprog 1");
+    addAction("Run default program", "runprog 0");
     addAction("Run pan/tilt demo", "runprog 2");
     addAction("Set signature 1", "cc_setSigRegion 1");
     addAction("Set signature 2", "cc_setSigRegion 2");
@@ -222,10 +222,11 @@ void MainWindow::connectPixy(bool state)
             else
             {
                 m_console->print("Pixy detected.\n");
-                m_interpreter = new Interpreter(m_console, m_video, this);
+                m_interpreter = new Interpreter(m_console, m_video);
 
                 connect(m_interpreter, SIGNAL(runState(uint)), this, SLOT(handleRunState(uint)));
                 connect(m_interpreter, SIGNAL(finished()), this, SLOT(interpreterFinished()));
+                connect(m_interpreter, SIGNAL(connected(Device,bool)), this, SLOT(handleConnected(Device,bool)));
             }
             m_pixyConnected = true;
         }
@@ -364,13 +365,13 @@ void MainWindow::on_actionConfigure_triggered()
 void MainWindow::on_actionRaw_video_triggered()
 {
     if (m_interpreter)
-        m_interpreter->execute("runprog 0");
+        m_interpreter->execute("runprog 8");
 }
 
 void MainWindow::on_actionCooked_video_triggered()
 {
     if (m_interpreter)
-        m_interpreter->execute("runprogArg 0 1");
+        m_interpreter->execute("runprogArg 8 1");
 }
 
 
@@ -380,7 +381,7 @@ void MainWindow::configFinished()
     m_configDialog->deleteLater();
     m_configDialog = NULL;
     updateButtons();
-    // if we're exitting, close interpreter (handin it down the chain)
+    // if we're exitting, close interpreter (handin it down the chain...)
     if (m_exitting)
     {
         qDebug("closing interpreter");
@@ -398,7 +399,7 @@ void MainWindow::interpreterFinished()
     // if we're disconnected, start the connect thread
     m_connect = new ConnectEvent(this);
     m_pixyConnected = false;
-
+    updateButtons();
     if (m_exitting) // if we're exitting, shut down
         close();
 }

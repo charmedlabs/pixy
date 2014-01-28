@@ -82,19 +82,24 @@ int exec_init(Chirp *chirp)
 }
 
 
-
-int exec_addProg(Program *prog)
+int exec_addProg(Program *prog, bool video)
 {
 	int i;
 
-	for (i=0; g_progTable[i]; i++)
+	if (video)
+		g_progTable[EXEC_VIDEO_PROG-1] = prog;
+	else
+	{
+		for (i=0; g_progTable[i]; i++)
 
-	if (i>=EXEC_MAX_PROGS)
-		return -1;
+		if (i>=EXEC_MAX_PROGS)
+			return -1;
 
-   g_progTable[i] = prog;
-   return 0;
+   		g_progTable[i] = prog;
+	}
+	return 0;
 }
+
 
 uint32_t exec_running()
 {
@@ -121,11 +126,15 @@ int32_t exec_run()
 
 int32_t exec_runprog(const uint8_t &progNum)
 {			   
-	if (progNum>=EXEC_MAX_PROGS || g_progTable[progNum]==NULL)
+	if (progNum!=0 && (progNum>EXEC_MAX_PROGS || g_progTable[progNum-1]==NULL))
 		return -1;
 
 	g_execArg = 0;
-	g_program = progNum;
+
+	if (progNum==0) // default program!
+		g_program = 0; // change to get from flash param
+  	else
+		g_program = progNum-1;
 	return exec_run();
 }
 
@@ -143,7 +152,7 @@ int32_t exec_list()
 {
 	int i;
 	for (i=0; g_progTable[i]; i++)
-		cprintf("%d = %s: %s\n", i, g_progTable[i]->progName, g_progTable[i]->desc);
+		cprintf("%d: %s, %s\n", i+1, g_progTable[i]->progName, g_progTable[i]->desc);
 
  	return 0;
 }

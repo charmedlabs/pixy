@@ -14,11 +14,10 @@
 
 QString printType(uint32_t val, bool parens=false);
 
-Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, MainWindow *main) : m_mutexProg(QMutex::Recursive)
+Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video) : m_mutexProg(QMutex::Recursive)
 {
     m_console = console;
     m_video = video;
-    m_main = main;
     m_pc = 0;
     m_programming = false;
     m_localProgramRunning = false;
@@ -40,8 +39,6 @@ Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, MainWindow 
     connect(this, SIGNAL(prompt(QString)), m_console, SLOT(prompt(QString)));
     connect(this, SIGNAL(videoInput(VideoWidget::InputMode)), m_video, SLOT(acceptInput(VideoWidget::InputMode)));
     connect(m_video, SIGNAL(selection(int,int,int,int)), this, SLOT(handleSelection(int,int,int,int)));
-    // we necessarily want to execute in the gui thread, so queue
-    connect(this, SIGNAL(connected(Device,bool)), m_main, SLOT(handleConnected(Device,bool)), Qt::QueuedConnection);
 
     m_run = true;
     start();
