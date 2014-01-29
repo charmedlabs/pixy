@@ -35,8 +35,8 @@ static const ProcModule g_module[] =
 	"cc_setSigRegion",
 	(ProcPtr)cc_setSigRegion, 
 	{CRP_UINT8, CRP_HTYPE(FOURCC('R','E','G','1')), END}, 
-	"Set model by selecting region in image"
-	"@p model numerical index of model, can be 1-7"
+	"Set signature by selecting region in image"
+	"@p signature numerical index of signature, can be 1-7"
 	"@p region user-selected region"
 	"@r 0 to 100 if success where 100=good, 0=poor, negative if error"
 	},
@@ -44,10 +44,25 @@ static const ProcModule g_module[] =
 	"cc_setSigPoint",
 	(ProcPtr)cc_setSigPoint, 
 	{CRP_UINT8, CRP_HTYPE(FOURCC('P','N','T','1')), END}, 
-	"Set model by selecting point in image"
-	"@p model numerical index of model, can be 1-7"
+	"Set signature by selecting point in image"
+	"@p signature numerical index of signature, can be 1-7"
 	"@p point user-selected point"
 	"@r 0 to 100 if success where 100=good, 0=poor, negative if error"
+	},
+	{
+	"cc_clearSig",
+	(ProcPtr)cc_clearSig, 
+	{CRP_UINT8, END}, 
+	"Clear signature"
+	"@p signature numerical index of signature, can be 1-7"
+	"@r 0 if success, negative if error"
+	},
+	{
+	"cc_clearAllSig",
+	(ProcPtr)cc_clearAllSig, 
+	{END}, 
+	"Clear signature"
+	"@r 0 if success, negative if error"
 	},
 	{
 	"cc_setMemory",
@@ -191,6 +206,50 @@ int32_t cc_setSigPoint(const uint8_t &model, const uint16_t &x, const uint16_t &
 
 	return result;
 }
+
+int32_t cc_clearSig(const uint8_t &model)
+{
+	char id[32];
+	ColorModel cmodel;
+	int res;
+
+ 	if (model<1 || model>NUM_MODELS)
+		return -1;
+
+	memset(&cmodel, 0, sizeof(cmodel));
+
+	sprintf(id, "signature%d", model);
+	res = prm_set(id, INTS8(sizeof(ColorModel), &cmodel), END);
+
+	// update lut
+ 	cc_loadLut();
+
+	return res;
+}
+
+int32_t cc_clearAllSig()
+{
+	char id[32];
+	uint8_t model;
+	ColorModel cmodel;
+	int res; 
+
+	memset(&cmodel, 0, sizeof(cmodel));
+
+   	for (model=1; model<=NUM_MODELS; model++)
+	{
+		sprintf(id, "signature%d", model);
+		res = prm_set(id, INTS8(sizeof(ColorModel), &cmodel), END);
+		if (res<0)
+			return res;			
+	}
+
+	// update lut
+ 	cc_loadLut();
+
+	return 0;
+}
+
 
 int32_t cc_getRLSFrameChirp(Chirp *chirp)
 {

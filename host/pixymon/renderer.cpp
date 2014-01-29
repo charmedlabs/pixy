@@ -332,7 +332,7 @@ void Renderer::handleRL(QImage *image, uint color, uint row, uint startCol, uint
     uint *line;
     uint col;
 
-    if (row>=(uint)image->height() || startCol>=(uint)image->width() || startCol+len>=(uint)image->width())
+    if (row>=(uint)image->height() || startCol>=(uint)image->width() || startCol+len>(uint)image->width())
         return;
     line = (unsigned int *)image->scanLine(row);
     for (col=startCol; col<startCol+len; col++)
