@@ -66,7 +66,15 @@ QMAKE_CXXFLAGS_DEBUG += -O0
 FORMS    += mainwindow.ui \
     configdialog.ui
 
-LIBS += ./libusb-1.0.dll.a
+# LIBS += ./libusb-1.0.dll.a
+
+unix:!macx {
+    PKGCONFIG += libusb-1.0
+    LIBS += -lusb-1.0
+} else {
+    LIBS += ./libusb-1.0.dll.a
+}
+
 
 RESOURCES += \
     resources.qrc
