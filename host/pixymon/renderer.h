@@ -3,7 +3,7 @@
 #include <QObject>
 #include <QImage>
 #include "pixytypes.h"
-#include "processBlobs.h"
+#include "processblobs.h"
 
 class Interpreter;
 

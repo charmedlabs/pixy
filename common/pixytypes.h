@@ -1,6 +1,8 @@
 #ifndef PIXYTYPES_H
 #define PIXYTYPES_H
 
+#include <stdint.h>
+
 #define RENDER_FLAG_FLUSH            0x01
 #define RENDER_FLAG_BLEND_BG         0x02
 
