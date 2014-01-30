@@ -344,9 +344,9 @@
             <uThumb>0</uThumb>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>CORE_M4 IPC_MASTER</Define>
+              <Define>CORE_M4 IPC_MASTER PIXY</Define>
               <Undefine></Undefine>
-              <IncludePath>., ..\libpixy</IncludePath>
+              <IncludePath>., ..\libpixy, ..\..\common</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -373,7 +373,7 @@
             <useFile>0</useFile>
             <TextAddressRange>0x00000000</TextAddressRange>
             <DataAddressRange>0x10000000</DataAddressRange>
-            <ScatterFile>.\video.sct</ScatterFile>
+            <ScatterFile>.\spifi.sct</ScatterFile>
             <IncludeLibs></IncludeLibs>
             <IncludeLibsPath></IncludeLibsPath>
             <Misc></Misc>
@@ -809,7 +809,7 @@
             </VariousControls>
           </Aads>
           <LDads>
-            <umfTarg>1</umfTarg>
+            <umfTarg>0</umfTarg>
             <Ropi>0</Ropi>
             <Rwpi>0</Rwpi>
             <noStLib>0</noStLib>
@@ -817,7 +817,7 @@
             <useFile>0</useFile>
             <TextAddressRange>0x00000000</TextAddressRange>
             <DataAddressRange>0x10000000</DataAddressRange>
-            <ScatterFile></ScatterFile>
+            <ScatterFile>.\ram.sct</ScatterFile>
             <IncludeLibs></IncludeLibs>
             <IncludeLibsPath></IncludeLibsPath>
             <Misc></Misc>

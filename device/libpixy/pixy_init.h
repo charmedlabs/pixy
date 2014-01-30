@@ -3,6 +3,7 @@
 
 #include "lpc_types.h"
 #include "debug_frmwrk.h"
+#include "debug.h"
 #include "lpc43xx_adc.h"
 #include "usb.h"
 #include "usbcfg.h"
@@ -12,6 +13,10 @@
 #include "chirpm0.h"
 #include "chirpusb.h"
 #include "pixyvals.h"
+
+extern uint8_t *__Vectors;
+#define STACK_GUARD           *(uint16_t *)(__Vectors - 0x600)
+#define STACK_GUARD_WORD      0xABCD
 
 void pixyInit(uint32_t slaveRomStart, const unsigned char slaveImage[], uint32_t imageSize);
 void pixySimpleInit(void);

@@ -6,14 +6,10 @@
 #endif
 #include "debug_frmwrk.h"
 
-#ifdef DEBUG
 #ifdef CORE_M0
 #define printf(...)  printf(__VA_ARGS__)
 #else
 #define printf(...)  lpc_printf(__VA_ARGS__)
-#endif
-#else
-#define printf(...) 
 #endif
 
 #endif

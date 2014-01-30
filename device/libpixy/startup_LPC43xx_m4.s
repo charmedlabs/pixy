@@ -26,9 +26,10 @@
 ;   <o> Stack Size (in Bytes) <0x0-0xFFFFFFFF:8>
 ; </h>
 
-Stack_Size      EQU     0x00000400
+Stack_Size      EQU     0x00000600
 
                 AREA    STACK, NOINIT, READWRITE, ALIGN=3
+
 Stack_Mem       SPACE   Stack_Size
 __initial_sp
 
@@ -46,17 +47,22 @@ __heap_limit
                 PRESERVE8
                 THUMB
 
-; Vector Table Mapped to Address 0 at Reset
+; These 2 words need to be here for reset
 
                 AREA    RESET, DATA, READONLY
+
+			    DCD     __initial_sp              	; 0 Top of Stack
+                DCD     Reset_Handler             	; 1 Reset Handler
+
+                AREA    VECTORS, DATA, READONLY
                 EXPORT  __Vectors
 
 Sign_Value		EQU		0x5A5A5A5A
 
-__Vectors       DCD     __initial_sp              	; 0 Top of Stack
+__Vectors 		DCD     __initial_sp           		; 0 Top of Stack
                 DCD     Reset_Handler             	; 1 Reset Handler
-                DCD     NMI_Handler               	; 2 NMI Handler
-                DCD     HardFault_Handler         	; 3 Hard Fault Handler
+				DCD     NMI_Handler               	; 2 NMI Handler
+				DCD     HardFault_Handler         	; 3 Hard Fault Handler
                 DCD     MemManage_Handler         	; 4 MPU Fault Handler
                 DCD     BusFault_Handler          	; 5 Bus Fault Handler
                 DCD     UsageFault_Handler        	; 6 Usage Fault Handler

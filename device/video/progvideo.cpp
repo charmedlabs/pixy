@@ -1,6 +1,6 @@
+#include <stdio.h>
 #include "progvideo.h"
 #include "pixy_init.h"
-#include <stdio.h>
 #include "camera.h"
 //#include "colorlut.h"
 #include "blobs.h"

@@ -488,7 +488,7 @@ void __default_signal_handler(int signal, int type)
 }
 }
 
-
+ 
 int main(void) 
  {
  	pixyInit(SRAM3_LOC, &LR0[0], sizeof(LR0));

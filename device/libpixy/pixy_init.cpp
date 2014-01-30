@@ -148,12 +148,19 @@ void handleAWB()
 
 void periodic()
 {
+	// check to see if guard data still there
+	if (STACK_GUARD!=STACK_GUARD_WORD)
+		showError(1, 0xffff00, "stack corruption\n");
+
 	while(g_chirpUsb->service());
 	handleAWB();
 }
 
 void pixyInit(uint32_t slaveRomStart, const unsigned char slaveImage[], uint32_t imageSize)
 {
+	// write stack guard word
+ 	STACK_GUARD = STACK_GUARD_WORD;
+
 	commonInit();
 
 	IPC_haltSlave();

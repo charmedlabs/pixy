@@ -274,6 +274,7 @@ int32_t prm_setChirp(const char *id, const uint32_t &valLen, const uint8_t *val)
 
 	offset = prm_getDataOffset(rec);	
 	memcpy((uint8_t *)rec+offset, val, valLen);
+
 	 	
 	rec->len = valLen;
 	rec->crc = prm_crc(rec);
