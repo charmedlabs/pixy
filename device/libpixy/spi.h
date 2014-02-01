@@ -1,9 +1,12 @@
 #ifndef _SPI_H
 #define _SPI_H
 
-#define SPI_RECEIVEBUF_SIZE   1
-#define SPI_TRANSMITBUF_SIZE  16
+#define SPI_RECEIVEBUF_SIZE   	1
+#define SPI_TRANSMITBUF_SIZE  	16
 #define RECEIVE_LEN()     (g_receive.m_produced - g_receive.m_consumed) 	// note, don't need to deal with overflow because of the way ints subtract
+
+#define SS_ASSERT()  			LPC_SGPIO->GPIO_OUTREG = 0;
+#define SS_NEGATE() 			LPC_SGPIO->GPIO_OUTREG = 1<<14;
 
 typedef uint32_t (*TransmitCallback)(uint16_t *data, uint32_t len); 	
 

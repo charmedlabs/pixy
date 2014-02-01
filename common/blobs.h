@@ -13,7 +13,6 @@
 #define LUT_MEMORY		((uint8_t *)SRAM1_LOC + SRAM1_SIZE-CL_LUT_SIZE)  // +0x100 make room for prebuf and palette
 
 #define BL_BEGIN_MARKER	0xaa55
-#define BL_END_MARKER	0xccaa
 
 
 class Blobs
@@ -43,7 +42,6 @@ private:
     bool closeby(int a, int b, int dist);
     void addCoded(int a, int b);
     void processCoded();
-    void copyBlobs();
 
     CBlobAssembler m_assembler[NUM_MODELS];
     Qqueue *m_qq;

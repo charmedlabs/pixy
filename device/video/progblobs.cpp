@@ -47,19 +47,10 @@ int blobsSetup()
 
 int blobsLoop()
 {
-#if 0
-	static int i=0;
-	Qval qval;
-
-	while(g_qqueue->dequeue(&qval))
-	{
-		if (qval==0xffffffff)
-			cprintf("%d\n", i++);	
-	}
-#else
 	uint16_t recvBuf[1];
 	BlobA *blobs;
 	uint32_t numBlobs;
+	static uint8_t syncCounter = 0;
 
 	// create blobs
 	g_blobs->blobify();
@@ -71,11 +62,27 @@ int blobsLoop()
 	// just grab a word-- don't worry about looking at data except to see if we're synchronized.
 	if (spi_receive(recvBuf, 1))
 	{
-		if (recvBuf[0]!=0xa5a5) // if received data isn't correct, we're out of sync
-			spi_sync();
-		//cprintf("%x\n", recvBuf[0]); 
+		if ((recvBuf[0]&0xff00)!=0x5a00) // if received data isn't correct, we're out of sync
+		{
+			syncCounter++;
+
+			if (syncCounter==3) // if we receive 3 bad syncs in a row, we need to resync 
+			{
+				spi_sync();
+				cprintf("sync\n");
+				syncCounter = 0;
+			}
+		}
+		else
+			syncCounter = 0;
 	}
-#endif
+	else
+	{
+		// need to pump up the fifo because we only get an interrupt when fifo is half full
+		// (and we won't receive data if we don't toggle SS)
+		SS_NEGATE();
+		SS_ASSERT();
+	}
 	
 	return 0;
 }

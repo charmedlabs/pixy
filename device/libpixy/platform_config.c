@@ -69,7 +69,7 @@ void vIOInit(void)
 
 	LPC_CCU1->CLK_M4_SSP0_CFG = 0;
 	LPC_CCU1->CLK_M4_QEI_CFG = 0;
-	LPC_CCU1->CLK_PERIPH_SGPIO_CFG = 0;
+	//LPC_CCU1->CLK_PERIPH_SGPIO_CFG = 0;
 
 	LPC_CCU2->CLK_APB0_SSP0_CFG = 0;
 	LPC_CCU2->CLK_APB2_USART3_CFG = 0;
@@ -115,7 +115,7 @@ void vIOInit(void)
 	scu_pinmux(0x2, 2, (MD_PLN | MD_EZI | MD_ZI | MD_EHS), FUNC4); 	         // gpio5[2] 
 	scu_pinmux(0x2, 3, (MD_PLN | MD_EZI | MD_ZI | MD_EHS), FUNC4); 	         // gpio5[3] 
 	scu_pinmux(0x2, 4, (MD_PLN | MD_EZI | MD_ZI | MD_EHS), FUNC4); 	         // gpio5[4] 
-	scu_pinmux(0x2, 5, (MD_PLN | MD_EZI | MD_ZI | MD_EHS), FUNC4); 	         // gpio5[5] rev 1.1 SS control
+	scu_pinmux(0x2, 5, (MD_PLN | MD_EZI | MD_ZI | MD_EHS), FUNC0); // FUNC4 	         // gpio5[5] rev 1.1 SS control
 	scu_pinmux(0x3, 2, (MD_PLN | MD_EZI | MD_ZI | MD_EHS), FUNC4); 	         // gpio5[9]
 	
 	scu_pinmux(0x2, 8, (MD_PLN | MD_EZI | MD_ZI | MD_EHS), FUNC4); 	         // push-button gpio5[7]

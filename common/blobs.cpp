@@ -172,7 +172,7 @@ void Blobs::unpack()
     }
     //cprintf("rows %d %d\n", row, i);
     // finish frame
-    for (i=0, m_numBlobs=0; i<NUM_MODELS; i++)
+    for (i=0; i<NUM_MODELS; i++)
     {
         m_assembler[i].EndFrame();
         m_assembler[i].SortFinished();
@@ -183,10 +183,10 @@ uint16_t Blobs::getBlock(uint16_t *buf)
 {
     uint16_t temp, width, height;
     uint16_t checksum;
-    uint16_t len = 8;  // default
+    uint16_t len = 7;  // default
     int i = m_blobReadIndex*5;
 
-    if (m_mutex) // we're copying, so no blocks for now....
+    if (m_mutex || m_blobReadIndex>=m_numBlobs) // we're copying, so no blocks for now....
     {	// return a couple null words to give us time to copy
         // (otherwise we may spend too much time in the ISR)
         buf[0] = 0;
@@ -194,18 +194,11 @@ uint16_t Blobs::getBlock(uint16_t *buf)
         return 2;
     }
 
-    if (m_blobReadIndex>=m_numBlobs)
-    {
-        m_mutex = false;
-        return 0;
-    }
-
     if (m_blobReadIndex==0)	// beginning of frame, mark it with empty block
     {
         buf[0] = BL_BEGIN_MARKER;
-        buf[1] = BL_END_MARKER;
-        len += 2;
-        buf += 2;
+        len++;
+        buf++;
     }
 
     // beginning of block
@@ -237,9 +230,6 @@ uint16_t Blobs::getBlock(uint16_t *buf)
     buf[4] = temp;
 
     buf[1] = checksum;
-
-    // end of block
-    buf[7] = BL_END_MARKER;
 
     // next blob
     m_blobReadIndex++;
