@@ -2,6 +2,7 @@
 #include <new>
 #include "chirp.hpp"
 
+
 // todo yield, sleep() while waiting for sync response
 // todo
 
@@ -426,6 +427,7 @@ int Chirp::call(uint8_t service, ChirpProc proc, ...)
     {
         ChirpProc recvProc;
         void *recvArgs[CRP_MAX_ARGS+1];
+        m_link->setTimer(); // set timer, so we can check to see if we're taking too much time
 
         while(1)
         {
@@ -441,6 +443,8 @@ int Chirp::call(uint8_t service, ChirpProc proc, ...)
                 va_end(args);
                 return res;
             }
+            if (m_link->getTimer()>m_idleTimeout) // we could receive XDATA (for example) and never exit this while loop
+                return CRP_RES_ERROR_RECV_TIMEOUT;
         }
 
         // deal with args

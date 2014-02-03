@@ -26,6 +26,8 @@
 #include "usbcore.h"
 #include "usbuser.h"
 
+#include "debug.h"
+
 void sendChunk(void);
 void recvChunk(void);
 void bulkOutNak(void);
@@ -275,6 +277,7 @@ uint32_t USB_handleState(void)
 			USB_ResetEP(USB_BULK_OUT_EP);
 			USB_ResetEP(USB_BULK_IN_EP);
 			USB_Configuration = 0;
+			printf("reset configuration\n");
 		}
 	}
 

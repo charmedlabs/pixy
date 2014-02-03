@@ -29,7 +29,12 @@ public:
 	~SMLink();
     virtual int send(const uint8_t *data, uint32_t len, uint16_t timeoutMs);
     virtual int receive(uint8_t *data, uint32_t len, uint16_t timeoutMs);
+    virtual void setTimer();
+    virtual uint32_t getTimer();
     virtual uint32_t getFlags(uint8_t index=LINK_FLAG_INDEX_FLAGS);
+
+private:
+	uint32_t m_timer;
 };
 
 #endif

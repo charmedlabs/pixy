@@ -446,7 +446,7 @@ void Interpreter::run()
                 (!m_fastPoll && time.elapsed()>RUN_POLL_PERIOD_SLOW)))
         {
             getRunning();
-            time.restart();
+            time.start();
         }
         else
         {

@@ -73,6 +73,15 @@ int USBLink::receive(uint8_t *data, uint32_t len, uint16_t timeoutMs)
     return transferred;
 }
 
+void USBLink::setTimer()
+{
+    m_time.start();
+}
+
+uint32_t USBLink::getTimer()
+{
+    return m_time.elapsed();
+}
 
 
 

@@ -66,7 +66,7 @@ int blobsLoop()
 		{
 			syncCounter++;
 
-			if (syncCounter==3) // if we receive 3 bad syncs in a row, we need to resync 
+			if (syncCounter==5) // if we receive 5 bad syncs in a row, we need to resync 
 			{
 				spi_sync();
 				cprintf("sync\n");

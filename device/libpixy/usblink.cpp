@@ -7,6 +7,7 @@
 #include "usbuser.h"
 #include "usbhw.h"
 #include "lpc43xx.h"
+#include "misc.h"
 
 #define GBUF_SIZE 64
 
@@ -103,3 +104,13 @@ int USBLink::receive(uint8_t *data, uint32_t len, uint16_t timeoutMs)
 	}
 }
 
+
+void USBLink::setTimer()
+{
+	::setTimer(&m_timer);
+}
+
+uint32_t USBLink::getTimer()
+{
+	return ::getTimer(m_timer);
+}

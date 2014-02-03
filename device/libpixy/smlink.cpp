@@ -1,4 +1,5 @@
 #include "lpc43xx.h"
+#include "misc.h"
 #include "smlink.hpp"
 
 #define CLKRATE   204000000
@@ -49,6 +50,17 @@ int SMLink::receive(uint8_t *data, uint32_t len, uint16_t timeoutMs)
 	SM_OBJECT->recvStatus = 0;	
 
 	return len;
+}
+
+
+void SMLink::setTimer()
+{
+	::setTimer(&m_timer);
+}
+
+uint32_t SMLink::getTimer()
+{
+	return ::getTimer(m_timer);
 }
 
 uint32_t SMLink::getFlags(uint8_t index)

@@ -32,7 +32,6 @@ SOURCES += main.cpp\
     configdialog.cpp
 
 HEADERS  += mainwindow.h \
-    link.h \
     videowidget.h \
     usblink.h \
     console.h \
@@ -57,7 +56,8 @@ HEADERS  += mainwindow.h \
     processblobs.h \
     ../../common/qqueue.h \
     pixymon.h \
-    configdialog.h
+    configdialog.h \
+    ../../common/link.h
 
 INCLUDEPATH += ../../common
 
@@ -78,6 +78,8 @@ unix:!macx {
 
 RESOURCES += \
     resources.qrc
+
+
 
 
 

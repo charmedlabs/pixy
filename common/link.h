@@ -36,6 +36,8 @@ public:
     // not the summation of the idle times.
     virtual int send(const uint8_t *data, uint32_t len, uint16_t timeoutMs) = 0;
     virtual int receive(uint8_t *data, uint32_t len, uint16_t timeoutMs) = 0;
+    virtual void setTimer() = 0;
+    virtual uint32_t getTimer() = 0; // returns elapsed time in milliseconds since setTimer() was called
     virtual uint32_t getFlags(uint8_t index=LINK_FLAG_INDEX_FLAGS)
     {
         if (index==LINK_FLAG_INDEX_FLAGS)
