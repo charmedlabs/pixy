@@ -1,4 +1,4 @@
 Pixy	KEYWORD1
-getBlobs	KEYWORD2
-waitForFrame	KEYWORD2
-setSizeLimit	KEYWORD2
+getBlocks	KEYWORD2
+Block	KEYWORD1
+print	KEYWORD2

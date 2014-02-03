@@ -9,40 +9,38 @@
                   // the library.
 #include <Pixy.h>
 
-Pixy* pixy;
+Pixy pixy;
 
 void setup()
 {
   Serial.begin(9600);
   Serial.print("Starting...\n");
-  pixy = new Pixy();
 }
 
 void loop()
 { 
-  vector<Blob>* blobs = pixy->getBlobs();
+  static int i = 0;
+  int j;
+  uint16_t blocks;
+  char buf[16]; 
   
-  for (int i = 0; i < blobs->size(); i++) {
-    Serial.print("Color Sig: ");
-    Serial.print(blobs->at(i).model);
-    Serial.print("\n");
+  blocks = pixy.getBlocks();
+  
+  if (blocks)
+  {
+    i++;
     
-    Serial.print("X Center: ");
-    Serial.print(blobs->at(i).x_center);
-    Serial.print("\n");
-    
-    Serial.print("Y Center: ");
-    Serial.print(blobs->at(i).y_center);
-    Serial.print("\n");
-    
-    Serial.print("Width: ");
-    Serial.print(blobs->at(i).width);
-    Serial.print("\n");
-    
-    Serial.print("Height: ");
-    Serial.print(blobs->at(i).height);
-    Serial.print("\n");
-    Serial.print("\n");
-  }
+    if (i%10==0)
+    {
+      sprintf(buf, "Detected %d:\n", blocks);
+      Serial.print(buf);
+      for (j=0; j<blocks; j++)
+      {
+        sprintf(buf, "  block %d: ", j);
+        Serial.print(buf); 
+        pixy.blocks[j].print();
+      }
+    }
+  }  
 }
 

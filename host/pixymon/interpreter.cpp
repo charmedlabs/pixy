@@ -347,6 +347,7 @@ void Interpreter::getRunning()
     int res, running;
 
     res = m_chirp->callSync(m_exec_running, END_OUT_ARGS, &running, END_IN_ARGS);
+    qDebug("running %d %d", res, running);
     if (res<0 && !m_notified)
     {
         running = false;
