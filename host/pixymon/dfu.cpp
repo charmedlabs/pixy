@@ -2,17 +2,10 @@
 #include <stdio.h>
 #include <QThread>
 #include "dfu.h"
+#include "sleeper.h"
 
-class SleeperThread : public QThread
-{
-public:
-    static void msleep(unsigned long msecs)
-    {
-        QThread::msleep(msecs);
-    }
-};
 
-#define milli_sleep(msec) SleeperThread::msleep(msec)
+#define milli_sleep(msec) Sleeper::msleep(msec)
 
 /* Find DFU interfaces in a given device.
  * Iterate through all DFU interfaces and their alternate settings

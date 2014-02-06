@@ -217,7 +217,7 @@ int Chirp::vserialize(Chirp *chirp, uint8_t *buf, uint32_t bufSize, va_list *arg
 
     while(1)
     {
-#if defined(__WIN32__) || defined(__arm)
+#if 1
         type = va_arg(*args, int);
 #else
         type = va_arg(*args, uint8_t);
@@ -237,7 +237,7 @@ int Chirp::vserialize(Chirp *chirp, uint8_t *buf, uint32_t bufSize, va_list *arg
 
         if (type==CRP_INT8)
         {
-#if defined(__WIN32__) || defined(__arm)
+#if 1
             int8_t val = va_arg(*args, int);
 #else
             int8_t val = va_arg(*args, int8_t);
@@ -247,7 +247,7 @@ int Chirp::vserialize(Chirp *chirp, uint8_t *buf, uint32_t bufSize, va_list *arg
         }
         else if (type==CRP_INT16)
         {
-#if defined(__WIN32__) || defined(__arm)
+#if 1
             int16_t val = va_arg(*args, int);
 #else
             int16_t val = va_arg(*args, int16_t);
@@ -268,7 +268,7 @@ int Chirp::vserialize(Chirp *chirp, uint8_t *buf, uint32_t bufSize, va_list *arg
         }
         else if (type==CRP_FLT32)
         {
-#if defined(__WIN32__) || defined(__arm)
+#if 1
             float val = va_arg(*args, double);
 #else
             float val = va_arg(*args, float);
@@ -1182,6 +1182,7 @@ int Chirp::recvFull(uint8_t *type, ChirpProc *proc, bool wait)
 {
     int res;
     uint32_t startCode;
+    uint32_t len, recvd;
 
     // receive header, with startcode check to make sure we're synced
     while(1)
@@ -1205,11 +1206,14 @@ int Chirp::recvFull(uint8_t *type, ChirpProc *proc, bool wait)
 
     if (m_len+m_headerLen>CRP_MAX_HEADER_LEN && !m_sharedMem)
     {
-        if ((res=m_link->receive(m_buf+CRP_MAX_HEADER_LEN, m_len-(CRP_MAX_HEADER_LEN-m_headerLen), m_idleTimeout))<0)
-            return res;
-        // check to see if we received less data than expected
-        if (res<(int)m_len-(CRP_MAX_HEADER_LEN-(int)m_headerLen))
-            return CRP_RES_ERROR;
+        len = m_len+m_headerLen;
+        recvd = CRP_MAX_HEADER_LEN;
+        while(recvd<len)
+        {
+            if ((res=m_link->receive(m_buf+recvd, len, m_idleTimeout))<0)
+                return res;
+            recvd += res;
+        }
     }
 
     return CRP_RES_OK;

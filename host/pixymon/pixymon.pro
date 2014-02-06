@@ -57,7 +57,8 @@ HEADERS  += mainwindow.h \
     ../../common/qqueue.h \
     pixymon.h \
     configdialog.h \
-    ../../common/link.h
+    ../../common/link.h \
+    sleeper.h
 
 INCLUDEPATH += ../../common
 
@@ -68,16 +69,25 @@ FORMS    += mainwindow.ui \
 
 # LIBS += ./libusb-1.0.dll.a
 
-unix:!macx {
-    PKGCONFIG += libusb-1.0
-    LIBS += -lusb-1.0
-} else {
+win32 {
     LIBS += ./libusb-1.0.dll.a
 }
 
+macx {
+    DEFINES += __MACOS__
+#    CONFIG += x86
+#    CONFIG -= x86_64
+    LIBS += -L/opt/local/lib -lusb-1.0
+}
+
+unix:!macx {
+    PKGCONFIG += libusb-1.0
+    LIBS += -lusb-1.0
+}
 
 RESOURCES += \
     resources.qrc
+
 
 
 

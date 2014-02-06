@@ -450,7 +450,7 @@ void Interpreter::run()
         }
         else
         {
-            if (m_chirp->m_mutex.tryLock())
+            if (m_running && m_chirp->m_mutex.tryLock())
             {
                 m_chirp->service(false);
                 m_chirp->m_mutex.unlock();

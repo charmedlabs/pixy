@@ -143,7 +143,11 @@
 #define FLTS32_IN(len, a)               uint32_t & len, float * a
 #define FLTS64_IN(len, a)               uint32_t & len, double * a
 
+#ifdef __x86_64__
+#define END                             (int64_t)0
+#else
 #define END                             0
+#endif
 #define END_OUT_ARGS                    END
 #define END_IN_ARGS                     END
 
