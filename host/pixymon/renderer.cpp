@@ -230,7 +230,11 @@ int Renderer::renderCCB1(uint8_t renderFlags, uint16_t width, uint16_t height, u
     p.begin(&img);
     p.setBrush(QBrush(QColor(0xff, 0xff, 0xff, 0x20)));
     p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
+#ifdef __MACOS__
+    QFont font("verdana", 18);
+#else
     QFont font("verdana", 12);
+#endif
     p.setFont(font);
     for (i=0; i<numBlobs; i++)
     {
