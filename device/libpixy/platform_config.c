@@ -51,7 +51,6 @@ void vIOInit(void)
 {	
 	// disable clocks to peripherals we don't use	
 	LPC_CCU1->CLK_APB3_I2C1_CFG = 0;
-	//LPC_CCU1->CLK_APB3_DAC_CFG = 0;
 	LPC_CCU1->CLK_APB3_ADC1_CFG = 0;
 	LPC_CCU1->CLK_APB3_CAN0_CFG = 0;
 	LPC_CCU1->CLK_APB1_MOTOCONPWM_CFG = 0;
@@ -69,7 +68,6 @@ void vIOInit(void)
 
 	LPC_CCU1->CLK_M4_SSP0_CFG = 0;
 	LPC_CCU1->CLK_M4_QEI_CFG = 0;
-	//LPC_CCU1->CLK_PERIPH_SGPIO_CFG = 0;
 
 	LPC_CCU2->CLK_APB0_SSP0_CFG = 0;
 	LPC_CCU2->CLK_APB2_USART3_CFG = 0;

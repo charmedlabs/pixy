@@ -446,6 +446,11 @@
               <FileType>8</FileType>
               <FilePath>..\..\common\qqueue.cpp</FilePath>
             </File>
+            <File>
+              <FileName>lpc43xx_i2c.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\libpixy\lpc43xx_i2c.c</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>
@@ -889,6 +894,11 @@
               <FileName>qqueue.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>..\..\common\qqueue.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>lpc43xx_i2c.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\libpixy\lpc43xx_i2c.c</FilePath>
             </File>
           </Files>
         </Group>

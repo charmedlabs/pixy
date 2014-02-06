@@ -14,6 +14,7 @@ void delayus(uint32_t us)
 	while(getTimer(timer)<us);
 }
 
+
 void delayms(uint32_t ms)
 {
 	uint32_t timer;

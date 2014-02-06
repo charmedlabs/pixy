@@ -516,7 +516,6 @@ INLINE uint32_t USB_ReqSetConfiguration (void) {
         USB_EndPointStall = 0x00000000;
         USB_Configure(FALSE);
       }
-
       if (USB_Configuration != SetupPacket.wValue.WB.L) {
         return (FALSE);
       }
