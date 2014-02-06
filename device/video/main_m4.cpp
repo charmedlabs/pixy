@@ -19,7 +19,7 @@
 #include "progblobs.h"
 #include "progpt.h"
 #include "param.h"
-
+#include "lpc43xx_i2c.h"
 
 #define SERVO
 
@@ -472,6 +472,81 @@ uint32_t transmitCallback(uint16_t *data, uint32_t len)
 	return 10;
 } 	
 
+uint8_t g_char = 0;
+
+void I2C_SlaveHandler()
+{
+	uint8_t stat;
+
+	stat = LPC_I2C0->STAT&I2C_STAT_CODE_BITMASK;
+	printf("%x\n", (uint32_t)stat);
+	switch (stat)
+	{
+	/* No status information */
+	case I2C_I2STAT_NO_INF:
+		LPC_I2C0->CONSET = I2C_I2CONSET_AA;
+		LPC_I2C0->CONCLR = I2C_I2CONCLR_SIC;
+		break;
+
+	/* Writing phase -------------------------------------------------------- */
+	/* Own SLA+R has been received, ACK has been returned */
+	case I2C_I2STAT_S_TX_SLAR_ACK:
+	/* Data has been transmitted, ACK has been received */
+	case I2C_I2STAT_S_TX_DAT_ACK:
+		/*
+		 * All data bytes that over-flow the specified receive
+		 * data length, just ignore them.
+		 */
+		LPC_I2C0->DAT = g_char++;
+		LPC_I2C0->CONSET = I2C_I2CONSET_AA;
+		LPC_I2C0->CONCLR = I2C_I2CONCLR_SIC;
+		break;
+
+	/* Data has been transmitted, NACK has been received,
+	 * that means there's no more data to send, exit now */
+	/*
+	 * Note: Don't wait for stop event since in slave transmit mode,
+	 * since there no proof lets us know when a stop signal has been received
+	 * on slave side.
+	 */
+	case I2C_I2STAT_S_TX_LAST_DAT_ACK:
+	case I2C_I2STAT_S_TX_DAT_NACK:
+		LPC_I2C0->CONSET = I2C_I2CONSET_AA;
+		LPC_I2C0->CONCLR = I2C_I2CONCLR_SIC;
+		//while((LPC_I2C0->STAT&I2C_STAT_CODE_BITMASK)!=I2C_I2STAT_NO_INF);
+		//LPC_I2C0->CONSET = I2C_I2CONSET_AA;
+
+#if 0
+		LPC_I2C0->CONSET = I2C_I2CONSET_AA;
+		LPC_I2C0->CONCLR = I2C_I2CONCLR_SIC;
+		while((LPC_I2C0->STAT&I2C_STAT_CODE_BITMASK)!=I2C_I2STAT_NO_INF);
+		LPC_I2C0->CONSET = I2C_I2CONSET_AA;
+#endif
+
+		// fall through to default
+
+	// Other status must be captured
+	default:
+		LPC_I2C0->CONCLR = I2C_I2CONCLR_AAC | I2C_I2CONCLR_SIC | I2C_I2CONCLR_STAC;
+		break;
+	}
+}
+
+extern "C" void I2C0_IRQHandler(void);
+
+void I2C0_IRQHandler(void)
+{
+	I2C_SlaveHandler();
+	while(1);
+}
+
+extern "C" void I2C1_IRQHandler(void);
+
+void I2C1_IRQHandler(void)
+{
+	I2C_SlaveHandler();
+	while(1);
+}
 
 extern "C" 
 {
@@ -490,11 +565,14 @@ void __default_signal_handler(int signal, int type)
 
  
 int main(void) 
- {
+{
+#if 1
  	pixyInit(SRAM3_LOC, &LR0[0], sizeof(LR0));
 	exec_init(g_chirpUsb);
 	cc_init(g_chirpUsb);
-
+#else
+	pixySimpleInit();
+#endif
 	prm_add("Data out port", 0, 
 		"Selects the port that's used to output data, 0=SPI, 1=I2C, 2=UART, 3=analog/digital (default 0)", UINT8(0), END);
 	prm_add("Max blobs", 0, 
@@ -503,13 +581,160 @@ int main(void)
 		"Sets the minimum allowed color saturation for when generating color signatures. (default 15.0)", FLT32(15.0), END);
 	prm_add("Hue spread", 0,
 		"Sets how inclusive the color signatures are with respect to hue. (default 1.0)", FLT32(1.0), END);
+
+#if 0
+	exec_addProg(&g_progVideo);
+	exec_loop();
+#endif  
+
+#if 0
+	while(1)
+		g_chirpUsb->service();
+#endif
 		
+#if 0
+	I2C_OWNSLAVEADDR_CFG_Type slaveAddr;
+	I2C_S_SETUP_Type transfer;
+	uint8_t rbuf[16], tbuf[16];
+
+	I2C_Init(LPC_I2C0, 100000);	
+	I2C_Cmd(LPC_I2C0, ENABLE);
+	printf("%x\n", LPC_SCU->SFSI2C0);
+#if 1
+	slaveAddr.SlaveAddr_7bit = 0x54;
+	slaveAddr.SlaveAddrMaskValue = 0;
+	slaveAddr.SlaveAddrChannel = 0;
+	I2C_SetOwnSlaveAddr(LPC_I2C0, &slaveAddr); 
+	slaveAddr.SlaveAddrChannel = 1;
+	I2C_SetOwnSlaveAddr(LPC_I2C0, &slaveAddr); 
+	slaveAddr.SlaveAddrChannel = 2;
+	I2C_SetOwnSlaveAddr(LPC_I2C0, &slaveAddr); 
+	slaveAddr.SlaveAddrChannel = 3;
+	I2C_SetOwnSlaveAddr(LPC_I2C0, &slaveAddr); 
+#endif
+
+#if 0
+	NVIC_SetPriority(I2C0_IRQn, 0);	// high priority interrupt
+	NVIC_SetPriority(I2C1_IRQn, 0);	// high priority interrupt
+	NVIC_EnableIRQ(I2C0_IRQn);
+	NVIC_EnableIRQ(I2C1_IRQn);
+	tbuf[0]=0x1c;
+	I2C_M_SETUP_Type mtransfer;
+	mtransfer.sl_addr7bit = 0x53; // A0&A1 are grounded = 0x9A
+	mtransfer.tx_data = tbuf ;
+	mtransfer.tx_length = 1;
+	mtransfer.rx_data = rbuf;
+	mtransfer.rx_length = 1;
+	mtransfer.retransmissions_max = 3;
+	I2C_MasterTransferData(LPC_I2C0, &mtransfer, I2C_TRANSFER_INTERRUPT);
+	while(1);
+#endif
+#if 0
+	while(1)
+	{
+		tbuf[0]=0x1c;
+		/* Start I2C slave device first */
+		transfer.tx_data = tbuf ;
+		transfer.tx_length = 1;
+		transfer.rx_data = 0;
+		transfer.rx_length = 0;
+		transfer.rx_count = 0;
+		transfer.status = 0;
+		transfer.callback = NULL;
+
+		I2C_SlaveTransferData(LPC_I2C0, &transfer, I2C_TRANSFER_POLLING);
+		printf("%x\n", rbuf[0]);
+	}
+#endif
+#if 1
+	uint8_t stat;
+
+	//LPC_I2C0->CONSET = I2C_I2CONSET_AA;
+		/* Clear SI bit to be ready ... */
+	//LPC_I2C0->CONCLR = (I2C_I2CONCLR_SIC | I2C_I2CONCLR_STAC);
+	NVIC_SetPriority(I2C0_IRQn, 0);	// high priority interrupt
+	NVIC_SetPriority(I2C1_IRQn, 0);	// high priority interrupt
+	//LPC_I2C0->CONSET = I2C_I2CONSET_SI;
+	NVIC_EnableIRQ(I2C0_IRQn);
+	NVIC_EnableIRQ(I2C1_IRQn);
+
+	//LPC_I2C0->MMCTRL = (1<<0) | (1<<1);
+ 	printf("%x\n", LPC_I2C0->CONSET);
+  	//while(1)
+	//	printf("%x %x\n", LPC_I2C0->STAT&I2C_STAT_CODE_BITMASK, LPC_I2C0->CONSET);
+
+	LPC_I2C0->CONSET = I2C_I2CONSET_AA;
+	int timeout = 0;
+	while(1)
+	{
+		stat = LPC_I2C0->STAT&I2C_STAT_CODE_BITMASK;
+
+#if 1
+		NVIC_EnableIRQ(I2C0_IRQn);
+		if (stat==I2C_I2STAT_NO_INF)
+		{	
+			timeout--;
+			if (timeout==0)
+			{
+				printf("no_inf %x\n", LPC_I2C0->CONSET);
+				LPC_I2C0->CONSET = I2C_I2CONSET_AA;
+			}
+		}
+#endif
+#if 1
+	 	if (LPC_I2C0->CONSET&I2C_I2CONSET_SI)
+		{
+			I2C_SlaveHandler();
+			timeout = 1000;
+		}
+#endif
+	}
+
+#endif
+#if 0
+	LPC_I2C0->CONSET = I2C_I2CONSET_AA;
+		/* Clear SI bit to be ready ... */
+	LPC_I2C0->CONCLR = (I2C_I2CONCLR_SIC | I2C_I2CONCLR_STAC);
+
+	while(1)
+	{
+		printf("0 %x %x\n", 	LPC_I2C0->CONSET, LPC_I2C0->STAT & I2C_STAT_CODE_BITMASK);
+#if 1
+	 	if (LPC_I2C0->CONSET & I2C_I2CONSET_SI)
+		{
+			LPC_I2C0->DAT = 0xde;
+			LPC_I2C0->CONSET = I2C_I2CONSET_AA;
+			LPC_I2C0->CONCLR = I2C_I2CONCLR_SIC;
+			break;
+		}				
+#endif
+	delayus(100000);
+	}
+	while(1)
+	{
+		while (LPC_I2C0->CONSET & I2C_I2CONSET_SI)
+		{
+			printf("1 %x %x\n", 	LPC_I2C0->CONSET, LPC_I2C0->STAT & I2C_STAT_CODE_BITMASK);
+			LPC_I2C0->CONSET = I2C_I2CONSET_AA;
+			LPC_I2C0->CONCLR = I2C_I2CONCLR_SIC;
+		}
+		printf("2 %x %x\n", 	LPC_I2C0->CONSET, LPC_I2C0->STAT & I2C_STAT_CODE_BITMASK);
+	delayus(100000);
+	}
+			
+#endif
+	
+
+		
+
+#endif
 #if 1
 	exec_addProg(&g_progBlobs);
 	exec_addProg(&g_progPt);
 	exec_addProg(&g_progVideo, true);
 	exec_loop();
 #endif  
+
 #if 0
 
 	//prm_format();
