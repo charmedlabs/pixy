@@ -12,6 +12,7 @@
 #include "flash.h"
 #include "ui_mainwindow.h"
 #include "configdialog.h"
+#include "sleeper.h"
 
 extern ChirpProc c_grabFrame;
 
@@ -71,6 +72,7 @@ MainWindow::~MainWindow()
     if (m_connect)
         delete m_connect;
 
+    qDebug("deleting mainWindow");
     // we don't delete any of the widgets because the parent deletes it's children upon deletion
 }
 
@@ -178,9 +180,12 @@ void MainWindow::connectPixyDFU(bool state)
         {
             Dfu *dfu;
             dfu = new Dfu();
-            dfu->download("pixyflash.bin.hdr");
+            QString path = QFileInfo(QCoreApplication::applicationFilePath()).absolutePath();
+            QString file = QFileInfo(path, "pixyflash.bin.hdr").absoluteFilePath();
+            dfu->download(file);
             m_pixyDFUConnected = true;
             delete dfu;
+            Sleeper::msleep(1000);
             m_connect = new ConnectEvent(this);
         }
         catch (std::runtime_error &exception)
@@ -394,14 +399,18 @@ void MainWindow::interpreterFinished()
     qDebug("interpreter finished");
     m_interpreter->deleteLater();
     m_interpreter = NULL;
+    if (m_exitting) // if we're exitting, shut down
+    {
+        close();
+        return;
+    }
+
     m_video->clear();
     m_console->acceptInput(false);
     // if we're disconnected, start the connect thread
     m_connect = new ConnectEvent(this);
     m_pixyConnected = false;
     updateButtons();
-    if (m_exitting) // if we're exitting, shut down
-        close();
 }
 
 void MainWindow::on_actionExit_triggered()

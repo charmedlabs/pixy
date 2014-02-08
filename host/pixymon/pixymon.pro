@@ -6,7 +6,7 @@
 
 QT       += core gui
 
-TARGET = pixymon
+TARGET = PixyMon
 TEMPLATE = app
 RC_FILE = resources.rc
 

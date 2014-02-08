@@ -25,8 +25,8 @@ function compilePixymon() {
 	cd ../macbuild-pixymon-${2}
 	${QMAKE} ../pixymon/pixymon.pro -r -spec macx-g++ CONFIG+=${2} CONFIG+=x86_64	
 	make -w
-	
-	cd pixymon.app/Contents
+	cp ../pixymon/pixyflash.bin.hdr PixyMon.app/Contents/MacOS
+	cd PixyMon.app/Contents
 	defaults delete "$PWD/Info" NOTE
 	defaults write "$PWD/Info" CFBundleGetInfoString "PixyMon"
 	defaults write "$PWD/Info" CFBundleIconFile "pixy.icns"
@@ -38,24 +38,24 @@ function compilePixymon() {
 
 
 #### build pixymon if needed
-if [ ! -f ../macbuild-pixymon-debug/pixymon.app/Contents/MacOS/pixymon ]; then
-	echo "${PREFIX} building macbuild-pixymon-debug/pixymon.app"
+if [ ! -f ../macbuild-pixymon-debug/PixyMon.app/Contents/MacOS/pixymon ]; then
+	echo "${PREFIX} building macbuild-pixymon-debug/PixyMon.app"
 	
 	compilePixymon Debug debug
 	
 	cd "${PIXYMON}"
 else
-	echo "${PREFIX} nothing to do for macbuild-pixymon-debug/pixymon.app"
+	echo "${PREFIX} nothing to do for macbuild-pixymon-debug/PixyMon.app"
 fi
 
-if [ ! -f ../macbuild-pixymon-release/pixymon.app/Contents/MacOS/pixymon ]; then
-	echo "${PREFIX} building macbuild-pixymon-release/pixymon.app"
+if [ ! -f ../macbuild-pixymon-release/PixyMon.app/Contents/MacOS/pixymon ]; then
+	echo "${PREFIX} building macbuild-pixymon-release/PixyMon.app"
 	
 	compilePixymon Release release
-	${QDEPLOY} pixymon.app	
+	${QDEPLOY} PixyMon.app	
 	cd "${PIXYMON}"
 else
-	echo "${PREFIX} nothing to do for macbuild-pixymon-release/pixymon.app"
+	echo "${PREFIX} nothing to do for macbuild-pixymon-release/PixyMon.app"
 fi
 
 
