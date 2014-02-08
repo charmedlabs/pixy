@@ -197,7 +197,8 @@ void pixySimpleInit(void)
 {
 	commonInit();
 
-	g_chirpUsb = new ChirpUsb();
+	USBLink *usbLink = new USBLink;
+	g_chirpUsb = new Chirp(false, false, usbLink);
 }
 
 void cprintf(const char *format, ...)

@@ -344,9 +344,9 @@
             <uThumb>0</uThumb>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>CORE_M4</Define>
+              <Define>CORE_M4 PIXY</Define>
               <Undefine></Undefine>
-              <IncludePath>., ..\libpixy</IncludePath>
+              <IncludePath>., ..\libpixy, ..\..\common</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
