@@ -4,35 +4,25 @@
 // Continuously prints blob data
 // using the Pixy library.
 
+
 #include <SPI.h>  // For some reason when SPI.h is included in a library
                   // it also needs to be included in the sketch that uses
                   // the library.
-#include <Pixy.h>
 #include <Wire.h>
+#include <Pixy.h>
 
 
-// this function is registered as an event, see setup()
-void requestEvent()
-{
-  Wire.write("hello "); // respond with message of 6 bytes
-                       // as expected by master
-}
+PixyI2C pixy;
 
-//Pixy pixy;
 
 void setup()
 {
-#if 0 
-  Wire.begin(0x53);
-  Wire.onRequest(requestEvent);
-#endif
-#if 1
-  Wire.begin();
-#endif
+  //Wire.begin();
   Serial.begin(9600);
   Serial.print("Starting...\n");
 }
 
+#if 0
 void loop()
 { 
   static unsigned int i = 0;
@@ -61,8 +51,33 @@ void loop()
     Serial.print(buf);
   }
 #endif
-#if 0
-  delay(100);
-#endif
 }
+#else
+void loop() 
+{ 
+  static int i = 0;
+  int j;
+  uint16_t blocks;
+  char buf[16]; 
+  
+  blocks = pixy.getBlocks();
+  
+  if (blocks)
+  {
+    i++;
+    
+    if (i%50==0)
+    {
+      sprintf(buf, "Detected %d:\n", blocks);
+      Serial.print(buf);
+      for (j=0; j<blocks; j++)
+      {
+        sprintf(buf, "  block %d: ", j);
+        Serial.print(buf); 
+        pixy.blocks[j].print();
+      }
+    }
+  }  
+}
+#endif
 
