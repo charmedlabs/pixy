@@ -102,9 +102,8 @@ I2c::I2c(LPC_I2Cn_Type *i2c, uint8_t addr)
 	m_tq.m_len = 0;
 	 
 	I2C_Init(m_i2c, 100000);
-	I2C_IntCmd(m_i2c, (Bool)true);	
-
    	setSlaveAddr(addr);
+	I2C_IntCmd(m_i2c, (Bool)true);	
 	
 	startSlave(); 
 }
