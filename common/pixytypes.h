@@ -32,7 +32,7 @@ struct Frame8
 {
     Frame8()
     {
-        m_pixels = NULL;
+        m_pixels = (uint8_t *)NULL;
         m_width = m_height = 0;
     }
 

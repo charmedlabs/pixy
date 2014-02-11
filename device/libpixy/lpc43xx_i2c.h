@@ -72,6 +72,7 @@ extern "C"
 #define I2C_I2CONCLR_AAC			((1<<2))
 /** I2C interrupt Clear bit */
 #define I2C_I2CONCLR_SIC			((1<<3))
+#define I2C_I2CONCLR_STOC			((1<<4))
 /** START flag Clear bit */
 #define I2C_I2CONCLR_STAC			((1<<5))
 /** I2C interface Disable bit */

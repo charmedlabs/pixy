@@ -451,6 +451,16 @@
               <FileType>1</FileType>
               <FilePath>..\libpixy\lpc43xx_i2c.c</FilePath>
             </File>
+            <File>
+              <FileName>i2c.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\libpixy\i2c.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>serial.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\libpixy\serial.cpp</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>
@@ -899,6 +909,16 @@
               <FileName>lpc43xx_i2c.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\libpixy\lpc43xx_i2c.c</FilePath>
+            </File>
+            <File>
+              <FileName>i2c.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\libpixy\i2c.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>serial.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\libpixy\serial.cpp</FilePath>
             </File>
           </Files>
         </Group>

@@ -267,11 +267,12 @@ void I2C_Init(LPC_I2Cn_Type *I2Cx, uint32_t clockrate)
     /* Set clock rate */
 	if(clockrate<1000)	//make sure SCLH,SCLL not exceed its 16bit value
 		return;
+    I2Cx->CONCLR = (I2C_I2CONCLR_AAC |I2C_I2CONCLR_SIC | I2C_I2CONCLR_STAC | I2C_I2CONCLR_I2ENC);
+
 	tem = CGU_GetPCLKFrequency(CGU_PERIPHERAL_M3CORE) / clockrate;
 	I2Cx->SCLH = (uint32_t)(tem / 2);
 	I2Cx->SCLL = (uint32_t)(tem - I2Cx->SCLH);
     /* Set I2C operation to default */
-    I2Cx->CONCLR = (I2C_I2CONCLR_AAC |I2C_I2CONCLR_SIC | I2C_I2CONCLR_STAC | I2C_I2CONCLR_I2ENC);
 }
 
 
