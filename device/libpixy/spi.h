@@ -1,19 +1,43 @@
 #ifndef _SPI_H
 #define _SPI_H
+#include "lpc43xx_ssp.h"
+#include "iserial.h"
 
 #define SPI_RECEIVEBUF_SIZE   	1
 #define SPI_TRANSMITBUF_SIZE  	16
-#define RECEIVE_LEN()     (g_receive.m_produced - g_receive.m_consumed) 	// note, don't need to deal with overflow because of the way ints subtract
 
 #define SS_ASSERT()  			LPC_SGPIO->GPIO_OUTREG = 0;
 #define SS_NEGATE() 			LPC_SGPIO->GPIO_OUTREG = 1<<14;
 
-typedef uint32_t (*TransmitCallback)(uint16_t *data, uint32_t len); 	
+#define SPI_SYNC_MASK 			0xff00
+#define SPI_SYNC_WORD			0x5a00
+#define SPI_MIN_SYNC_COUNT      5
 
-int spi_checkIdle();
-int spi_sync();
-int spi_receive(uint16_t *buf, uint32_t len);
-void spi_setCallback(TransmitCallback callback);
-void spi_init();
+class Spi : public Iserial
+{
+public:
+	Spi(SerialCallback callback);
+
+	// Iserial methods
+	virtual int open();
+	virtual int close();
+	virtual int receive(uint8_t *buf, uint32_t len);
+	virtual int update();
+
+	void slaveHandler();
+
+private:
+	int checkIdle();
+	int sync();
+	ReceiveQ<uint16_t> m_rq;
+	TransmitQ<uint16_t> m_tq;
+
+	bool m_sync;
+	uint8_t m_syncCounter;
+};
+
+void spi_init(SerialCallback callback);
+
+extern Spi *g_spi;
 
 #endif

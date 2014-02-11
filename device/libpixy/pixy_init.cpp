@@ -6,7 +6,6 @@
 #include "rcservo.h"
 #include "led.h"	  
 #include "power.h"
-#include "spi.h"
 #include "misc.h"
 
 Chirp *g_chirpUsb = NULL;
@@ -187,7 +186,6 @@ void pixyInit(uint32_t slaveRomStart, const unsigned char slaveImage[], uint32_t
 	if (prm_init(g_chirpUsb)<0) // error, let user know (don't just continue like nothing's happened)
 		showError(1, 0x0000ff, "Flash is corrupt, parameters have been lost\n");
 	pwr_init();
-	spi_init();
 	cam_init();
 	rcs_init();
 	//cc_init();

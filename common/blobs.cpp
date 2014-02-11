@@ -179,62 +179,66 @@ void Blobs::unpack()
     }
 }
 
-uint16_t Blobs::getBlock(uint16_t *buf)
-{
+uint16_t Blobs::getBlock(uint8_t *buf, uint32_t buflen)
+{							
+	uint16_t *buf16 = (uint16_t *)buf;
     uint16_t temp, width, height;
     uint16_t checksum;
     uint16_t len = 7;  // default
     int i = m_blobReadIndex*5;
 
+	if (buflen<8*sizeof(uint16_t))
+		return 0;
+
     if (m_mutex || m_blobReadIndex>=m_numBlobs) // we're copying, so no blocks for now....
     {	// return a couple null words to give us time to copy
         // (otherwise we may spend too much time in the ISR)
-        buf[0] = 0;
-        buf[1] = 0;
+        buf16[0] = 0;
+        buf16[1] = 0;
         return 2;
     }
 
     if (m_blobReadIndex==0)	// beginning of frame, mark it with empty block
     {
-        buf[0] = BL_BEGIN_MARKER;
+        buf16[0] = BL_BEGIN_MARKER;
         len++;
-        buf++;
+        buf16++;
     }
 
     // beginning of block
-    buf[0] = BL_BEGIN_MARKER;
+    buf16[0] = BL_BEGIN_MARKER;
 
     // model
     temp = m_blobs[i];
     checksum = temp;
-    buf[2] = temp;
+    buf16[2] = temp;
 
     // width
     width = m_blobs[i+2] - m_blobs[i+1];
     checksum += width;
-    buf[5] = width;
+    buf16[5] = width;
 
     // height
     height = m_blobs[i+4] - m_blobs[i+3];
     checksum += height;
-    buf[6] = height;
+    buf16[6] = height;
 
     // x center
     temp = m_blobs[i+1] + width/2;
     checksum += temp;
-    buf[3] = temp;
+    buf16[3] = temp;
 
     // y center
     temp = m_blobs[i+3] + height/2;
     checksum += temp;
-    buf[4] = temp;
+    buf16[4] = temp;
 
-    buf[1] = checksum;
+    buf16[1] = checksum;
 
     // next blob
     m_blobReadIndex++;
 
-    return len;
+    return len*2;
 }
 
 

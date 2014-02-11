@@ -21,7 +21,7 @@ public:
     Blobs(Qqueue *qq);
     ~Blobs();
     void blobify();
-    uint16_t getBlock(uint16_t *buf);
+    uint16_t getBlock(uint8_t *buf, uint32_t buflen);
     uint16_t *getMaxBlob(uint16_t signature);
     void getBlobs(BlobA **blobs, uint32_t *len);
 
