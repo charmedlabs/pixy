@@ -10,7 +10,7 @@
 #include "console.h"
 #include "mainwindow.h"
 #include "renderer.h"
-#include "calc.h"
+#include "sleeper.h"
 
 QString printType(uint32_t val, bool parens=false);
 
@@ -463,6 +463,7 @@ void Interpreter::run()
                 execute();
             else
             {
+                Sleeper::msleep(10);
                 if (m_mutexProg.tryLock())
                 {
                     if (m_argv.size())

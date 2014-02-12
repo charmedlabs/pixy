@@ -96,7 +96,7 @@ int ptLoop()
 	// create blobs
 	g_blobs->blobify();
 
-	blob = g_blobs->getMaxBlob(1);
+	blob = g_blobs->getMaxBlob();
 	if (blob)
 	{
 		x = blob[1] + (blob[2] - blob[1])/2;

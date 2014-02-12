@@ -110,14 +110,26 @@ public:
 	SerialCallback m_callback;
 };
 
-// pure virtual interface to a serial device
+// virtual interface to a serial device
 class Iserial
 {
 public:
-	virtual int open() = 0;
-	virtual int close() = 0;
-	virtual int receive(uint8_t *buf, uint32_t len) = 0;
-	virtual int update() = 0;
+	virtual int open()
+	{
+		return 0;
+	}
+	virtual int close()
+	{
+		return 0;
+	}
+	virtual int receive(uint8_t *buf, uint32_t len)
+	{
+		return 0;
+	}
+	virtual int update()
+	{
+		return 0;
+	}
 };
 
 #endif

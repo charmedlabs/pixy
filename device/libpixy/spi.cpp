@@ -1,6 +1,7 @@
 #include "pixy_init.h"
 #include "misc.h"
 #include "spi.h"
+#include "lpc43xx_scu.h"
 
 Spi *g_spi = 0;
 
@@ -113,6 +114,7 @@ int Spi::receive(uint8_t *buf, uint32_t len)
 int Spi::open()
 {
 	// todo: setup pin muxes
+	scu_pinmux(0x1, 3, (MD_PLN | MD_EZI | MD_ZI | MD_EHS), FUNC5); // SSP1_MISO
 	return 0;
 }
 
@@ -164,7 +166,7 @@ Spi::Spi(SerialCallback callback) : m_rq(SPI_RECEIVEBUF_SIZE), m_tq(SPI_TRANSMIT
 
 	// configure SGPIO bit as output so we can toggle slave select (SS)
 	LPC_SGPIO->OUT_MUX_CFG14 = 4;
-	LPC_SGPIO->GPIO_OENREG = 1<<14;
+	LPC_SGPIO->GPIO_OENREG |= 1<<14;
 
 	configStruct.CPHA = SSP_CPHA_FIRST;
 	configStruct.CPOL = SSP_CPOL_HI;

@@ -246,13 +246,21 @@ uint16_t *Blobs::getMaxBlob(uint16_t signature)
 {
     int i, j;
 
-    for (i=0, j=0; i<m_numBlobs; i++, j+=5)
-    {
-        if (m_blobs[j+0]==signature)
-            return m_blobs+j;
-    }
+	if (signature==0) // 0 means ignore signature
+	{
+		if (m_numBlobs>0)
+			return m_blobs; // return first blob regardless of signature
+	}
+	else
+	{
+    	for (i=0, j=0; i<m_numBlobs; i++, j+=5)
+    	{
+       		if (m_blobs[j+0]==signature)
+            	return m_blobs+j;
+    	}
+	}
 
-    return NULL;
+    return NULL; // no blobs...
 } 
 
 void Blobs::getBlobs(BlobA **blobs, uint32_t *len)
