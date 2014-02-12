@@ -4,10 +4,7 @@
 // Continuously prints blob data
 // using the Pixy library.
 
-#include <SPI.h>  // For some reason when SPI.h is included in a library
-                  // it also needs to be included in the sketch that uses
-                  // the library.
-#include <Wire.h>
+#include <SPI.h>  
 #include <Pixy.h>
 
 Pixy pixy;
