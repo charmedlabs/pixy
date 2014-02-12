@@ -238,7 +238,7 @@ uint16_t Blobs::getBlock(uint8_t *buf, uint32_t buflen)
     // next blob
     m_blobReadIndex++;
 
-    return len*2;
+    return len*sizeof(uint16_t);
 }
 
 

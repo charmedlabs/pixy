@@ -33,6 +33,8 @@ private:
 	TransmitQ<uint16_t> m_tq;
 
 	bool m_sync;
+	uint32_t m_recvCounter;
+	uint32_t m_lastRecvCounter; 
 	uint8_t m_syncCounter;
 };
 

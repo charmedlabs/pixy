@@ -90,6 +90,8 @@ void Spi::slaveHandler()
 	}
 	else
 		m_sync = false;
+
+	m_recvCounter++;
 }
 
 int Spi::receive(uint8_t *buf, uint32_t len)
@@ -121,10 +123,8 @@ int Spi::close()
 
 int Spi::update()
 {
-	uint16_t recvBuf[1];
-
-	// just grab a word-- don't worry about looking at data except to see if we're synchronized.
-	if (receive((uint8_t *)recvBuf, 2))
+	// check to see if we've received new data (m_rq.m_produced would have increased)
+	if (m_recvCounter-m_lastRecvCounter>0)
 	{
 		if (!m_sync) // if received data isn't correct, we're out of sync
 		{
@@ -147,6 +147,7 @@ int Spi::update()
 		SS_NEGATE();
 		SS_ASSERT();
 	}
+	m_lastRecvCounter = m_recvCounter;
 	return 0;
 }
 	
@@ -190,6 +191,8 @@ Spi::Spi(SerialCallback callback) : m_rq(SPI_RECEIVEBUF_SIZE), m_tq(SPI_TRANSMIT
 	NVIC_EnableIRQ(SSP1_IRQn);
 
 	m_sync = false;
+	m_recvCounter = 0;
+	m_lastRecvCounter = 0; 
 	m_syncCounter = 0;
 
 	// sync

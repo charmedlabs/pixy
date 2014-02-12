@@ -92,7 +92,7 @@ public:
 	{
 		if (m_len==0)
 		{
-			m_len = (*m_callback)((uint8_t *)m_buf, m_size);
+			m_len = (*m_callback)((uint8_t *)m_buf, m_size*sizeof(BufType))/sizeof(BufType);
 			if (m_len==0)
 				return 0;
 		 	m_read = 0;

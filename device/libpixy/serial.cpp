@@ -11,18 +11,12 @@ uint32_t callback(uint8_t *data, uint32_t len)
 	return g_blobs->getBlock(data, len);
 }
 
-uint32_t callback16(uint8_t *data, uint32_t len)
-{
-	return g_blobs->getBlock(data, len*sizeof(uint16_t));
-} 	
- 	
-
 
 int ser_init()
 {
 	i2c_init(callback);
-	spi_init(callback16);
-	ser_setInterface(SER_INTERFACE_I2C);
+	spi_init(callback);
+	ser_setInterface(SER_INTERFACE_SPI);
 	
 	return 0;	
 }

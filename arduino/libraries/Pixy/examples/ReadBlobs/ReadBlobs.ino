@@ -7,12 +7,14 @@
 #include <SPI.h>  // For some reason when SPI.h is included in a library
                   // it also needs to be included in the sketch that uses
                   // the library.
+#include <Wire.h>
 #include <Pixy.h>
 
 Pixy pixy;
 
 void setup()
 {
+
   Serial.begin(9600);
   Serial.print("Starting...\n");
 }
@@ -30,7 +32,7 @@ void loop()
   {
     i++;
     
-    if (i%10==0)
+    if (i%50==0)
     {
       sprintf(buf, "Detected %d:\n", blocks);
       Serial.print(buf);

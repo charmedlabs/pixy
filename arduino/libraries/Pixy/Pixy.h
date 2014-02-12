@@ -43,11 +43,15 @@ public:
   }
   uint16_t getWord()
   {
+    // ordering is different because Pixy is sending 16 bits through SPI 
+	// instead of 2 bytes in a 16-bit word as with I2C
     uint16_t w;
+	uint8_t c;
     w = SPI.transfer(PIXY_SYNC_BYTE);
     w <<= 8;
-    w |= SPI.transfer(0x00);
-
+    c = SPI.transfer(0x00);
+    w |= c;
+	
     return w;
   }
   uint8_t getByte()
@@ -67,19 +71,12 @@ public:
   uint16_t getWord()
   {
     uint16_t w;
+	uint8_t c;
 	Wire.requestFrom((int)addr, 2);
-  while(Wire.available())
-	{
-    uint8_t c = Wire.read();
+    c = Wire.read();
     w = Wire.read();
     w <<= 8;
     w |= c; 
-#if 0
-	char buf[16];
-	sprintf(buf, "%x\n", w);
-    Serial.print(buf);
-#endif
-	}
     return w;
   }
   uint8_t getByte()
@@ -137,11 +134,6 @@ template <class LinkType> boolean TPixy<LinkType>::getStart()
   while(true)
   { 
     w = link.getWord();
-#if 0
-	char buf[16];
-	sprintf(buf, "* %x\n", w);
-    Serial.print(buf);
-#endif
     if (w==0 && lastw==0)
 	{
       delayMicroseconds(10);
@@ -151,8 +143,8 @@ template <class LinkType> boolean TPixy<LinkType>::getStart()
       return true;
 	else if (w==PIXY_START_WORDX)
 	{
+	  Serial.println("reorder");
 	  link.getByte(); // resync
-	  Serial.println("***byte\n");
 	}
 	lastw = w; 
   }
