@@ -41,18 +41,9 @@ int main(void)
 {
  	pixyInit(SRAM3_LOC, &LR0[0], sizeof(LR0));
 
-	exec_init(g_chirpUsb);
 	cc_init(g_chirpUsb);
 	ser_init();
-
-	prm_add("Data out port", 0, 
-		"Selects the port that's used to output data, 0=SPI, 1=I2C, 2=UART, 3=analog/digital (default 0)", UINT8(0), END);
-	prm_add("Max blobs", 0, 
-		"Sets the maximum blobs for each color signature sent for each frame (default 10000)", UINT16(10000), END);
-	prm_add("Min saturation", 0,
-		"Sets the minimum allowed color saturation for when generating color signatures. (default 15.0)", FLT32(15.0), END);
-	prm_add("Hue spread", 0,
-		"Sets how inclusive the color signatures are with respect to hue. (default 1.0)", FLT32(1.0), END);
+	exec_init(g_chirpUsb);
 
 #if 0
 	i2c_init();

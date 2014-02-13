@@ -15,11 +15,12 @@ class ConfigDialog;
 // struct to store parameter values
 struct Param
 {
-    Param(QString id,  QString desc, uint8_t type, uint32_t len, uint8_t *data)
+    Param(QString id,  QString desc, uint8_t type, uint32_t flags, uint32_t len, uint8_t *data)
     {
         m_id = id;
         m_desc = desc;
         m_type = type;
+        m_flags = flags;
         m_len = len;
         memcpy(m_data, data, len);
         m_line = NULL;
@@ -29,6 +30,7 @@ struct Param
     QString m_id;
     QString m_desc;
     uint8_t m_type;
+    uint32_t m_flags;
     uint32_t m_len;
     uint8_t m_data[0x100];
     QLineEdit *m_line;

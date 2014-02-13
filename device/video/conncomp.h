@@ -21,6 +21,8 @@ int32_t cc_getRLSFrame(uint32_t *memory, uint8_t *lut, bool sync=true);
 int cc_sendBlobs(Chirp *chirp, const BlobA *blobs, uint32_t len, uint8_t renderFlags=RENDER_FLAG_FLUSH);
 int cc_loadLut(void);
 
+void cc_loadParams(void);
+
 extern Qqueue *g_qqueue;
 extern Blobs *g_blobs;
 

@@ -59,6 +59,7 @@ static const ProcModule g_module[] =
 	END
 };
 
+static bool g_dirty = false;
 
 struct ParamRecord
 {
@@ -151,7 +152,8 @@ int32_t  prm_getAll(const uint16_t &index, Chirp *chirp)
 int prm_format()
 {
 	flash_erase(PRM_FLASH_LOC, PRM_ALLOCATED_LEN);
-	cprintf("Parameters erased. Please cycle power to restore default values.\n");
+	cprintf("All parameters have been erased and restored to defaults!\n");
+	g_dirty = true;
 	return 0;
 }
 
@@ -282,6 +284,8 @@ int32_t prm_setChirp(const char *id, const uint32_t &valLen, const uint8_t *val)
 	flash_erase((uint32_t)sector, FLASH_SECTOR_SIZE); 
 	flash_program((uint32_t)sector, buf, FLASH_SECTOR_SIZE);
 
+	g_dirty = true; // set dirty flag
+
 end:
 	free(buf); 	
 	return res;
@@ -363,4 +367,13 @@ int prm_add(const char *id, uint32_t flags, const char *desc, ...)
 		return -4;
 	
 	return flash_program(freeLoc, (uint8_t *)rec, len+prm_getDataOffset(rec));	
+}
+
+bool prm_dirty()
+{
+	// one-shot 
+	bool res = g_dirty;
+	g_dirty = false;
+
+	return res;
 }

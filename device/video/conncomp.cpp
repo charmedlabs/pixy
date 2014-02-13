@@ -103,12 +103,13 @@ int cc_loadLut(void)
 	return 0;
 }
 
-void cc_setupSignatures(void)
+void cc_loadParams(void)
 {
 	int i;
 	ColorModel model;
 	char id[32], desc[32];
 
+	// set up signatures, load later
 	for (i=1; i<=NUM_MODELS; i++)
 	{
 		sprintf(id, "signature%d", i);
@@ -116,6 +117,39 @@ void cc_setupSignatures(void)
 		// add if it doesn't exist yet
 		prm_add(id, PRM_FLAG_INTERNAL, desc, INTS8(sizeof(ColorModel), &model), END);
 	}
+
+	// others -----
+
+	// setup
+	prm_add("Max blocks", 0, 
+		"Sets the maximum total blocks sent per frame. (default 1000)", UINT16(1000), END);
+	prm_add("Max blocks per signature", 0, 
+		"Sets the maximum blocks for each color signature sent for each frame. (default 1000)", UINT16(1000), END);
+	prm_add("Min block area", 0, 
+		"Sets the minimum required area in pixels for a block.  Blocks with less area won't be sent. (default 20)", UINT32(20), END);
+	prm_add("Min saturation", 0,
+		"Sets the minimum allowed color saturation for when generating color signatures. (default 15.0)", FLT32(15.0), END);
+	prm_add("Hue spread", 0,
+		"Sets how inclusive the color signatures are with respect to hue. (default 1.0)", FLT32(1.0), END);
+	prm_add("Saturation spread", 0,
+		"Sets how inclusive the color signatures are with respect to saturation. (default 1.0)", FLT32(1.0), END);
+
+	// load
+	float minSat, hueTol, satTol;
+	uint16_t maxBlobs, maxBlobsPerModel;
+	uint32_t minArea;
+	prm_get("Min saturation", &minSat, END);
+	prm_get("Hue spread", &hueTol, END);
+	prm_get("Saturation spread", &satTol, END);
+   	g_blobs->m_clut->setBounds(minSat, hueTol, satTol); 
+
+	prm_get("Max blocks", &maxBlobs, END);
+	prm_get("Max blocks per signature", &maxBlobsPerModel, END);
+	prm_get("Min block area", &minArea, END);
+	g_blobs->setParams(maxBlobs, maxBlobsPerModel, minArea);
+
+	cc_loadLut();
+
 }
 
 int cc_init(Chirp *chirp)
@@ -130,8 +164,7 @@ int cc_init(Chirp *chirp)
 	if (g_getRLSFrameM0<0)
 		return -1;
 
-	cc_setupSignatures(); // setup default vals (if necessary)
-	cc_loadLut(); // load lut from flash
+	cc_loadParams(); // setup default vals and load parameters
 
 	return 0;
 }

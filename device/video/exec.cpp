@@ -3,6 +3,10 @@
 #include "misc.h"
 #include "exec.h"
 #include "button.h"
+#include "camera.h"
+#include "conncomp.h"
+#include "serial.h"
+#include "param.h"
 
 static const ProcModule g_module[] =
 {
@@ -181,6 +185,8 @@ void exec_periodic()
 {
 	periodic();
 	g_override = g_bMachine->handleSignature();
+	if (prm_dirty())
+		exec_loadParams();
 }
 
 void exec_select()
@@ -197,6 +203,13 @@ void exec_select()
 	exec_runprog(prog);
 }
 
+
+void exec_loadParams()
+{
+ 	cc_loadParams();
+	ser_loadParams();
+	cam_loadParams();
+}
 
 void exec_loop()
 {

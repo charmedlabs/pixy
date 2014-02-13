@@ -5,10 +5,11 @@
 #include "pixytypes.h"
 #include "qqueue.h"
 
-#define NUM_MODELS      7
-#define MAX_BLOBS       200
-#define MAX_MERGE_DIST  5
-#define MIN_AREA        20
+#define NUM_MODELS            7
+#define MAX_BLOBS             100
+#define MAX_BLOBS_PER_MODEL	  20
+#define MAX_MERGE_DIST        5
+#define MIN_AREA              20
 
 #define LUT_MEMORY		((uint8_t *)SRAM1_LOC + SRAM1_SIZE-CL_LUT_SIZE)  // +0x100 make room for prebuf and palette
 
@@ -24,6 +25,7 @@ public:
     uint16_t getBlock(uint8_t *buf, uint32_t buflen);
     uint16_t *getMaxBlob(uint16_t signature=0);
     void getBlobs(BlobA **blobs, uint32_t *len);
+	int setParams(uint16_t maxBlobs, uint16_t maxBlobsPerModel, uint32_t minArea); 
 
     int generateLUT(uint8_t model, const Frame8 &frame, const RectA &region, ColorModel *pcmodel=NULL);
     int generateLUT(uint8_t model, const Frame8 &frame, const Point16 &seed, ColorModel *pcmodel=NULL, RectA *region=NULL);
@@ -52,6 +54,7 @@ private:
 
     bool m_mutex;
     uint16_t m_maxBlobs;
+    uint16_t m_maxBlobsPerModel;
 
     uint16_t m_blobReadIndex;
 

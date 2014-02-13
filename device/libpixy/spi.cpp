@@ -113,13 +113,26 @@ int Spi::receive(uint8_t *buf, uint32_t len)
 
 int Spi::open()
 {
-	// todo: setup pin muxes
+	// configure SGPIO bit as output so we can toggle slave select (SS)
+	LPC_SGPIO->OUT_MUX_CFG14 = 4;
+	LPC_SGPIO->GPIO_OENREG = 1<<14;
 	scu_pinmux(0x1, 3, (MD_PLN | MD_EZI | MD_ZI | MD_EHS), FUNC5); // SSP1_MISO
+	scu_pinmux(0x1, 4, (MD_PLN | MD_EZI | MD_ZI | MD_EHS), FUNC5); // SSP1_MOSI 
+	scu_pinmux(0x1, 19, (MD_PLN | MD_EZI | MD_ZI | MD_EHS), FUNC1); // SSP1_SCK 
+
+	// enable interrupt
+	NVIC_EnableIRQ(SSP1_IRQn);
+
 	return 0;
 }
 
 int Spi::close()
 {
+	// turn off driver for SS
+	LPC_SGPIO->GPIO_OENREG = 0;
+
+	// enable interrupt
+	NVIC_DisableIRQ(SSP1_IRQn);
 	return 0;
 }
 
@@ -164,10 +177,6 @@ Spi::Spi(SerialCallback callback) : m_rq(SPI_RECEIVEBUF_SIZE), m_tq(SPI_TRANSMIT
 	volatile uint32_t d;
 	SSP_CFG_Type configStruct;
 
-	// configure SGPIO bit as output so we can toggle slave select (SS)
-	LPC_SGPIO->OUT_MUX_CFG14 = 4;
-	LPC_SGPIO->GPIO_OENREG |= 1<<14;
-
 	configStruct.CPHA = SSP_CPHA_FIRST;
 	configStruct.CPOL = SSP_CPOL_HI;
 	configStruct.ClockRate = 204000000;
@@ -188,9 +197,7 @@ Spi::Spi(SerialCallback callback) : m_rq(SPI_RECEIVEBUF_SIZE), m_tq(SPI_TRANSMIT
 	SSP_ClearIntPending(LPC_SSP1, SSP_INTCFG_RX);
 	SSP_IntConfig(LPC_SSP1, SSP_INTCFG_RX, ENABLE);
 
-	// enable interrupt
 	NVIC_SetPriority(SSP1_IRQn, 0);	// high priority interrupt
-	NVIC_EnableIRQ(SSP1_IRQn);
 
 	m_sync = false;
 	m_recvCounter = 0;

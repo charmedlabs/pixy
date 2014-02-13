@@ -3,6 +3,7 @@
 #include "i2c.h"
 #include "analogdig.h"
 #include "conncomp.h"
+#include "param.h"
 
 static uint8_t g_interface = 0;
 static Iserial *g_serial = 0;
@@ -19,10 +20,25 @@ int ser_init()
 	spi_init(callback);
 	ad_init();
 
-	// set default interface
-	ser_setInterface(SER_INTERFACE_ADX);
-	
+	ser_loadParams();
+		
 	return 0;	
+}
+
+void ser_loadParams()
+{
+	prm_add("Data out port", 0, 
+		"Selects the port that's used to output data, 0=SPI, 1=I2C, 2=UART, 3=analog/digital x, 4=analog/digital y (default 0)", UINT8(0), END);
+	prm_add("I2C address", PRM_FLAG_HEX_FORMAT, 
+		"Sets the I2C address. (default 0x54)", UINT8(I2C_DEFAULT_SLAVE_ADDR), END);
+
+	uint8_t interface, addr;
+
+	prm_get("Data out port", &interface, END);
+	ser_setInterface(interface);
+
+	prm_get("I2C address", &addr, END);
+	g_i2c0->setSlaveAddr(addr);
 }
 
 int ser_setInterface(uint8_t interface)
@@ -36,18 +52,16 @@ int ser_setInterface(uint8_t interface)
 	g_interface = interface;
 
 	switch (interface)
-	{
-	case SER_INTERFACE_SPI:
-		g_serial = g_spi;
-		break;
-		    
+	{		    
 	case SER_INTERFACE_I2C:     
 		g_serial = g_i2c0;
 		break;
 
+#if 0
 	case SER_INTERFACE_UART:    
-		//g_serial = ;
+		g_serial = ;
 		break;
+#endif
 
 	case SER_INTERFACE_ADX:      
 		g_ad->setDirection(true);
@@ -58,6 +72,11 @@ int ser_setInterface(uint8_t interface)
 		g_ad->setDirection(false);
 		g_serial = g_ad;
 		break;		
+
+	default:
+	case SER_INTERFACE_SPI:
+		g_serial = g_spi;
+		break;
 	}
 
 	g_serial->open();

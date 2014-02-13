@@ -23,7 +23,7 @@ int AnalogDig::open()
 	// set pin 1 on I/O connector to output	(Use SGPIO because GPIO interferes with pixel sync)
 	scu_pinmux(0x1, 3, (MD_PLN | MD_EZI | MD_ZI | MD_EHS), FUNC2); //SGPIO10
 	LPC_SGPIO->OUT_MUX_CFG10 = 4;
-	LPC_SGPIO->GPIO_OENREG |= 1<<10;
+	LPC_SGPIO->GPIO_OENREG = 1<<10;
 	LPC_DAC->CTRL =	(1<<3); // enable dac output
 
 	return 0;	
@@ -55,7 +55,7 @@ int AnalogDig::update()
 		}
 		else
 		{
-			val = blob->m_top+(blob->m_bottom-blob->m_top)/2;
+			val = CAM_RES2_HEIGHT-(blob->m_top+(blob->m_bottom-blob->m_top)/2);
 			val *= (1<<16);
 			val /= CAM_RES2_HEIGHT;
 		}

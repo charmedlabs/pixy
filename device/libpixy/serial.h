@@ -15,4 +15,6 @@ int ser_setInterface(uint8_t interface);
 uint8_t ser_getInterface();
 Iserial *ser_getSerial();
 
+void ser_loadParams();
+
 #endif

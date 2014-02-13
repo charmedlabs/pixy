@@ -12,8 +12,14 @@ Blobs::Blobs(Qqueue *qq)
 {
     int i;
 
+    m_mutex = false;
+    m_minArea = MIN_AREA;
+	m_maxBlobs = MAX_BLOBS;
+	m_maxBlobsPerModel = MAX_BLOBS_PER_MODEL;
+    m_mergeDist = MAX_MERGE_DIST;
+
     m_qq = qq;
-    m_blobs = new uint16_t[MAX_BLOBS*5];
+    m_blobs = new uint16_t[m_maxBlobs*5];
     m_numBlobs = 0;
     m_blobReadIndex = 0;
 
@@ -24,15 +30,20 @@ Blobs::Blobs(Qqueue *qq)
     m_clut = new ColorLUT(m_lut);
 #endif
 
-    m_mutex = false;
-    m_minArea = MIN_AREA;
-    m_mergeDist = MAX_MERGE_DIST;
-
     // reset blob assemblers
     for (i=0; i<NUM_MODELS; i++)
         m_assembler[i].Reset();
 }
 
+int Blobs::setParams(uint16_t maxBlobs, uint16_t maxBlobsPerModel, uint32_t minArea)
+{
+	if (maxBlobs<=MAX_BLOBS)
+		m_maxBlobs = maxBlobs;
+	m_maxBlobsPerModel = maxBlobsPerModel;
+	m_minArea = minArea;
+
+	return 0;
+}
 
 Blobs::~Blobs()
 {
@@ -52,7 +63,7 @@ Blobs::~Blobs()
 
 void Blobs::blobify()
 {
-    uint32_t i, j;
+    uint32_t i, j, k;
     CBlob *blob;
     uint16_t *blobsStart;
     uint16_t numBlobsStart, invalid, invalid2;
@@ -67,8 +78,8 @@ void Blobs::blobify()
     m_mutex = true;
     for (i=0, m_numBlobs=0; i<NUM_MODELS; i++)
     {
-        for (j=m_numBlobs*5, blobsStart=m_blobs+j, numBlobsStart=m_numBlobs, blob=m_assembler[i].finishedBlobs;
-             blob && m_numBlobs<MAX_BLOBS; blob=blob->next)
+        for (j=m_numBlobs*5, k=0, blobsStart=m_blobs+j, numBlobsStart=m_numBlobs, blob=m_assembler[i].finishedBlobs;
+             blob && m_numBlobs<m_maxBlobs && k<m_maxBlobsPerModel; blob=blob->next, k++)
         {
             if (blob->GetArea()<(int)m_minArea)
                 continue;

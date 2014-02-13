@@ -61,8 +61,7 @@ void ConfigWorker::load()
         if (flags&PRM_FLAG_INTERNAL)
             continue;
 
-
-        m_dialog->m_paramList.push_back(Param(id, "("+typeString(argList[0])+") "+desc, argList[0], len, data));
+        m_dialog->m_paramList.push_back(Param(id, "("+typeString(argList[0])+") "+desc, argList[0], flags, len, data));
     }
 
     qDebug("loaded");
@@ -176,19 +175,28 @@ void ConfigDialog::loaded()
         {
             int8_t val;
             Chirp::deserialize(param.m_data, param.m_len, &val, END);
-            param.m_line->setText(QString::number(val));
+            if (param.m_flags&PRM_FLAG_HEX_FORMAT)
+                param.m_line->setText("0x" + QString::number(val, 16));
+            else
+                param.m_line->setText(QString::number(val));
         }
         else if (param.m_type==CRP_INT16)
         {
             int16_t val;
             Chirp::deserialize(param.m_data, param.m_len, &val, END);
-            param.m_line->setText(QString::number(val));
+            if (param.m_flags&PRM_FLAG_HEX_FORMAT)
+                param.m_line->setText("0x" + QString::number(val, 16));
+            else
+                param.m_line->setText(QString::number(val));
         }
         else if (param.m_type==CRP_INT32)
         {
             int32_t val;
             Chirp::deserialize(param.m_data, param.m_len, &val, END);
-            param.m_line->setText(QString::number(val));
+            if (param.m_flags&PRM_FLAG_HEX_FORMAT)
+                param.m_line->setText("0x" + QString::number(val, 16));
+            else
+                param.m_line->setText(QString::number(val));
         }
         else if (param.m_type==CRP_FLT32)
         {

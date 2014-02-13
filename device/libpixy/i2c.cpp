@@ -50,13 +50,18 @@ void I2c::slaveHandler()
 
 int I2c::open()
 {
-	// todo: set pin mux for SS signal, make it input
+	// turn off driver for SS signal so we can wire-or them together
+	LPC_SGPIO->GPIO_OENREG = 0;
+
+	NVIC_EnableIRQ(I2C0_IRQn);
+	startSlave(); 
+
 	return 0;
 }
 
 int I2c::close()
 {
-	// todo: disable
+	NVIC_DisableIRQ(I2C0_IRQn);
 	return 0;
 }
 
@@ -88,9 +93,8 @@ I2c::I2c(LPC_I2Cn_Type *i2c, uint8_t addr, SerialCallback callback) : m_rq(I2C_R
 	 
 	I2C_Init(m_i2c, 100000);
    	setSlaveAddr(addr);
-	I2C_IntCmd(m_i2c, (Bool)true);	
-	
-	startSlave(); 
+
+	NVIC_SetPriority(SSP1_IRQn, 0);	// high priority interrupt
 }
 
 int I2c::setSlaveAddr(uint8_t addr)

@@ -8,6 +8,7 @@
 
 #define PRM_FLAG_INTERNAL            0x01
 #define PRM_FLAG_ADVANCED            0x02
+#define PRM_FLAG_HEX_FORMAT          0x10
 
 typedef uint32_t Qval;
 

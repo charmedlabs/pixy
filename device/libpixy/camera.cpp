@@ -1,6 +1,7 @@
 #include <pixy_init.h>
 #include <pixyvals.h>
 #include "camera.h"
+#include "param.h"
 
 static const ProcModule g_module[] =
 {
@@ -248,6 +249,8 @@ int cam_init()
 	if (g_getFrameM0>0)
 		return -1;
 
+	cam_loadParams();
+
 	return 0;
 }
 
@@ -378,9 +381,6 @@ uint32_t cam_getECV()
 
 int32_t cam_setBrightness(const uint8_t &brightness)
 {
-	if (brightness>0xff)
-		return -1;
-
 	if (brightness!=g_brightness)
 	{
 		g_sccb->Write(0x24, brightness); 
@@ -532,3 +532,12 @@ void cam_setRegs(const uint8_t *rPairs, int len)
   	g_sccb->Write(0x09, 0x00);
 }
 
+void cam_loadParams()
+{
+	prm_add("Brightness", 0, 
+		"Sets the average brightness of the camera, can be between 0 and 255 (default 70)", UINT8(CAM_BRIGHTNESS_DEFAULT), END);
+
+	uint8_t brightness;
+	prm_get("Brightness", &brightness, END);
+	cam_setBrightness(brightness);
+}

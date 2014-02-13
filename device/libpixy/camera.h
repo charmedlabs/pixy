@@ -36,6 +36,8 @@ int32_t cam_getFrameChirp(const uint8_t &type, const uint16_t &xOffset, const ui
 int32_t cam_getFrameChirpFlags(const uint8_t &type, const uint16_t &xOffset, const uint16_t &yOffset, const uint16_t &xWidth, const uint16_t &yWidth, Chirp *chirp, uint8_t renderFlags=RENDER_FLAG_FLUSH);
 int32_t cam_getFrame(uint8_t *memory, uint32_t memSize, uint8_t type, uint16_t xOffset, uint16_t yOffset, uint16_t xWidth, uint16_t yWidth);
 
+void cam_loadParams();
+
 extern CSccb *g_sccb;
 extern Frame8 g_rawFrame;
 

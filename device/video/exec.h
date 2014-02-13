@@ -32,5 +32,7 @@ int32_t exec_runprog(const uint8_t &progNum);
 int32_t exec_runprogArg(const uint8_t &progNum, const int32_t &arg);
 int32_t exec_list();
 
+void exec_loadParams();
+
 extern int32_t g_execArg; 
 #endif
