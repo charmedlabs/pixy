@@ -68,6 +68,7 @@ static ChirpProc g_runM0 = -1;
 static ChirpProc g_runningM0 = -1;
 static ChirpProc g_stopM0 = -1;
 static Program *g_progTable[EXEC_MAX_PROGS];
+static void loadParams();
 
 ButtonMachine *g_bMachine = NULL;
 
@@ -81,7 +82,9 @@ int exec_init(Chirp *chirp)
 	g_runM0 = g_chirpM0->getProc("run", NULL);
 	g_runningM0 = g_chirpM0->getProc("running", NULL);
 	g_stopM0 = g_chirpM0->getProc("stop", NULL);	
-		
+
+	loadParams();		
+
 	return 0;	
 }
 
@@ -136,7 +139,7 @@ int32_t exec_runprog(const uint8_t &progNum)
 	g_execArg = 0;
 
 	if (progNum==0) // default program!
-		g_program = 0; // change to get from flash param
+		prm_get("Default program", &g_program, END);
   	else
 		g_program = progNum-1;
 	return exec_run();
@@ -203,57 +206,95 @@ void exec_select()
 	exec_runprog(prog);
 }
 
+static void loadParams()
+{
+	// exec's params added here
+	prm_add("Default program", 0, 
+		"Selects the program number that's run by default upon power-up. (default 0)", UINT8(0), END);
+}
 
 void exec_loadParams()
 {
  	cc_loadParams();
 	ser_loadParams();
 	cam_loadParams();
+
+	loadParams(); // local
 }
+
 
 void exec_loop()
 {
-	bool prevOverride;
+	uint8_t state = 0;
+	bool prevConnected = false;
+	bool connected;
 
 	exec_select();
 
 	while(1)
 	{
-		// wait for program to start
-		while(!g_run)
-		{
-			exec_periodic();
-			if (!g_chirpUsb->connected() || !USB_Configuration)
-				exec_run();
-		}
+		connected = g_chirpUsb->connected();
 
-		prevOverride = true; // force setup
+		exec_periodic();
 
-		// loop
-		while(g_run)
+		switch (state)
 		{
-			exec_periodic();
-			if (!g_override) // if we're not being overriden, run loop 
+		case 0:	// setup state
+			if ((*g_progTable[g_program]->setup)()<0)
+				state = 3; // stop state
+			else 
+				state = 1; // loop state
+			break;
+
+		case 1:	 // loop state
+			if (g_override)
 			{
-				// if we came here from outside this while statement or we're resuming, run setup
-				if (prevOverride && (*g_progTable[g_program]->setup)()<0)
-					break;	
-				if ((*g_progTable[g_program]->loop)()<0)
-					break; // loop failed!	
-			}
-			else
 				// need to stop M0 because it's using the same memory and can possibly interfere.
 				// For example if we try to grab a raw frame while M0 is running (gathering RLS values)
 				// M0 could overwrite the frame memory with RLS scratch data.
 				exec_stopM0(); 
+				state = 2; // override state
+			}
+			else if (!g_run  || (*g_progTable[g_program]->loop)()<0)
+				state = 3; // stop state
+			else if (prevConnected && !connected) // if we disconnect from pixymon, revert back to default program
+			{
+				exec_runprog(0); // run default program
+				state = 0; // setup state
+			}
+			break;
 
-			prevOverride = g_override;
+		case 2:	// override state
+			if (!g_override) 
+				state = 0; // back to setup state
+			break;
+
+		case 3:	// stop state
+			// set variable to indicate we've stopped
+			g_run = false;
+			g_running = false;
+			// stop M0
+			exec_stopM0();
+			state = 4; // wait for run state
+			break;
+
+		case 4:	// wait for run state
+			if (g_run) 
+			{
+				exec_run();
+				state = 0; // back to setup state
+			}
+			else if (!connected || !USB_Configuration) // if we disconnect from pixy or unplug cable, revert back to default program
+			{
+				exec_runprog(0); // run default program
+				state = 0;	// back to setup state
+			}
+			break;
+
+		default:
+			state = 3; // stop state				
 		}
 
-		// set variable to indicate we've stopped
-		g_run = false;
-		g_running = false;
-		// stop M0
-		exec_stopM0();
+		prevConnected = connected;
 	}
 }

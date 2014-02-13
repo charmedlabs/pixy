@@ -535,7 +535,7 @@ void cam_setRegs(const uint8_t *rPairs, int len)
 void cam_loadParams()
 {
 	prm_add("Brightness", 0, 
-		"Sets the average brightness of the camera, can be between 0 and 255 (default 70)", UINT8(CAM_BRIGHTNESS_DEFAULT), END);
+		"Sets the average brightness of the camera, can be between 0 and 255 (default 80)", UINT8(CAM_BRIGHTNESS_DEFAULT), END);
 
 	uint8_t brightness;
 	prm_get("Brightness", &brightness, END);

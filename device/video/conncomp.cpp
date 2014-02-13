@@ -128,11 +128,11 @@ void cc_loadParams(void)
 	prm_add("Min block area", 0, 
 		"Sets the minimum required area in pixels for a block.  Blocks with less area won't be sent. (default 20)", UINT32(20), END);
 	prm_add("Min saturation", 0,
-		"Sets the minimum allowed color saturation for when generating color signatures. (default 15.0)", FLT32(15.0), END);
+		"Sets the minimum allowed color saturation for when generating color signatures. Applies during teaching. (default 10.0)", FLT32(10.0), END);
 	prm_add("Hue spread", 0,
-		"Sets how inclusive the color signatures are with respect to hue. (default 1.0)", FLT32(1.0), END);
+		"Sets how inclusive the color signatures are with respect to hue. Applies during teaching. (default 1.0)", FLT32(1.0), END);
 	prm_add("Saturation spread", 0,
-		"Sets how inclusive the color signatures are with respect to saturation. (default 1.0)", FLT32(1.0), END);
+		"Sets how inclusive the color signatures are with respect to saturation. Applies during teaching. (default 1.0)", FLT32(1.0), END);
 
 	// load
 	float minSat, hueTol, satTol;
