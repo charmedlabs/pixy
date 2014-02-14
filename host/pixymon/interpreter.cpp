@@ -420,9 +420,30 @@ void Interpreter::run()
     // init
     try
     {
+        ChirpProc versionProc;
+        uint16_t *version;
+        uint32_t verLen, responseInt;
+
         if (m_link.open()<0)
             throw std::runtime_error("Unable to open USB device.");
-        m_chirp = new ChirpMon(this, &m_link);
+        m_chirp = new ChirpMon(this, &m_link);        
+
+        // get version and compare
+        versionProc = m_chirp->getProc("version");
+        if (versionProc<0)
+            throw std::runtime_error("Can't get firmware version.");
+        res = m_chirp->callSync(versionProc, END_OUT_ARGS, &responseInt, &verLen, &version, END_IN_ARGS);
+        if (res<0)
+            throw std::runtime_error("Can't get firmware version.");
+        memcpy(m_version, version, 3*sizeof(uint16_t));
+        if (m_version[0]!=VER_MAJOR || m_version[1]>VER_MINOR)
+        {
+            char buf[0x100];
+            sprintf(buf, "This Pixy's firmware version (%d.%d.%d) is not compatible with this PixyMon version (%d.%d.%d).",
+                    m_version[0], m_version[1], m_version[2], VER_MAJOR, VER_MINOR, VER_BUILD);
+            throw std::runtime_error(buf);
+        }
+
         m_exec_run = m_chirp->getProc("run");
         m_exec_running = m_chirp->getProc("running");
         m_exec_stop = m_chirp->getProc("stop");
@@ -750,6 +771,11 @@ void Interpreter::unwait()
         m_key = Qt::Key_Escape;
         emit videoInput(VideoWidget::NONE);
     }
+}
+
+uint16_t *Interpreter::getVersion()
+{
+    return m_version;
 }
 
 int Interpreter::call(const QStringList &argv, bool interactive)

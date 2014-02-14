@@ -5,5 +5,6 @@
         <file>icons/stop.png</file>
         <file>icons/raw.png</file>
         <file>icons/cooked.png</file>
+        <file>icons/pixy.png</file>
     </qresource>
 </RCC>

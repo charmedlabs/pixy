@@ -6,6 +6,10 @@
 
 #define PIXYMON_TITLE   "PixyMon"
 
+#define VER_MAJOR       1
+#define VER_MINOR       0
+#define VER_BUILD       41
+
 namespace Ui {
     class MainWindow;
 }
@@ -37,6 +41,7 @@ private slots:
     void handleActions();
     void configFinished();
     void interpreterFinished();
+    void on_actionAbout_triggered();
     void on_actionPlay_Pause_triggered();
     void on_actionConfigure_triggered();
     void on_actionExit_triggered();

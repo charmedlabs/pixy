@@ -55,6 +55,13 @@ static const ProcModule g_module[] =
 	"List available programs"
 	"@r always returns 0"
 	},
+	{
+	"version",
+	(ProcPtr)exec_version, 
+	{END}, 
+	"Get firmware version"
+	"@r always returns 0 and an array of 3 uint16 values: major, minor, and build versions."
+	},
 	END
 };
 
@@ -162,6 +169,17 @@ int32_t exec_list()
 		cprintf("%d: %s, %s\n", i+1, g_progTable[i]->progName, g_progTable[i]->desc);
 
  	return 0;
+}
+
+int32_t exec_version(Chirp *chirp)
+{
+	uint16_t ver[] = {FW_MAJOR_VER, FW_MINOR_VER, FW_BUILD_VER};
+
+	cprintf("Firmware verision %d.%d.%d\n", ver[0], ver[1], ver[2]);
+	if (chirp)
+		CRP_RETURN(chirp, UINTS16(sizeof(ver), ver), END);
+
+	return 0;
 }
 
 int exec_runM0(uint8_t prog)

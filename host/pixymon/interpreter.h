@@ -47,6 +47,8 @@ public:
     void close();
     void unwait();
 
+    uint16_t *getVersion();
+
     ChirpMon *m_chirp;
 
     // experimental
@@ -130,6 +132,7 @@ private:
     uint32_t m_rcount;
     QStringList m_argv;
     uint8_t m_argTypes[0x100];
+    uint16_t m_version[3];
 };
 
 

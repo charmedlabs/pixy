@@ -3,6 +3,10 @@
 
 #include "chirp.hpp"
 
+#define FW_MAJOR_VER		1
+#define FW_MINOR_VER		0
+#define FW_BUILD_VER		13
+
 #define EXEC_MAX_PROGS   8
 #define EXEC_VIDEO_PROG  EXEC_MAX_PROGS
 
@@ -31,6 +35,7 @@ int32_t exec_run();
 int32_t exec_runprog(const uint8_t &progNum);
 int32_t exec_runprogArg(const uint8_t &progNum, const int32_t &arg);
 int32_t exec_list();
+int32_t exec_version(Chirp *chirp=NULL);
 
 void exec_loadParams();
 

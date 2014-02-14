@@ -29,7 +29,8 @@ SOURCES += main.cpp\
     ../../common/blobs.cpp \
     processblobs.cpp \
     ../../common/qqueue.cpp \
-    configdialog.cpp
+    configdialog.cpp \
+    aboutdialog.cpp
 
 HEADERS  += mainwindow.h \
     videowidget.h \
@@ -58,14 +59,16 @@ HEADERS  += mainwindow.h \
     pixymon.h \
     configdialog.h \
     ../../common/link.h \
-    sleeper.h
+    sleeper.h \
+    aboutdialog.h
 
 INCLUDEPATH += ../../common
 
 QMAKE_CXXFLAGS_DEBUG += -O0
 
 FORMS    += mainwindow.ui \
-    configdialog.ui
+    configdialog.ui \
+    about.ui
 
 # LIBS += ./libusb-1.0.dll.a
 
@@ -89,6 +92,9 @@ unix:!macx {
 
 RESOURCES += \
     resources.qrc
+
+
+
 
 
 

@@ -13,6 +13,7 @@
 #include "ui_mainwindow.h"
 #include "configdialog.h"
 #include "sleeper.h"
+#include "aboutdialog.h"
 
 extern ChirpProc c_grabFrame;
 
@@ -302,6 +303,31 @@ void MainWindow::handleConnected(Device device, bool state)
     else if (device==PIXY_DFU)
         connectPixyDFU(state);
 }
+
+void MainWindow::on_actionAbout_triggered()
+{
+    AboutDialog *about;
+    QString contents;
+
+    contents.sprintf("%s version %d.%d.%d\n", PIXYMON_TITLE, VER_MAJOR, VER_MINOR, VER_BUILD);
+
+    if (m_interpreter)
+    {
+        QString fwver;
+        uint16_t *version;
+        version = m_interpreter->getVersion();
+        contents += fwver.sprintf("Pixy firmware version (queried) %d.%d.%d\n", version[0], version[1], version[2]);
+    }
+
+    contents += "\nCMUCam5 Pixy and PixyMon are open hardware and open source\n";
+    contents += "software projects maintained by Charmed Labs and Carnegie Mellon University.\n\n";
+    contents += "Send problems, suggestions, etc. to cmucam@cs.cmu.edu";
+
+    about = new AboutDialog(contents);
+    about->setAttribute(Qt::WA_DeleteOnClose);
+    about->show();
+}
+
 
 void MainWindow::on_actionPlay_Pause_triggered()
 {
