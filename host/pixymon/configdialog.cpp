@@ -112,11 +112,14 @@ void ConfigWorker::save()
             }
             Chirp::serialize(NULL, buf, 0x100, param.m_type, val, END);
         }
-        res = m_dialog->m_interpreter->m_chirp->callSync(prm_set, STRING(id), UINTS8(param.m_len, buf), END_OUT_ARGS, &response, END_IN_ARGS);
-        if (res<0 || response<0)
+        if (memcmp(buf, param.m_data, param.m_len)) // only write those that have changed to save the flash sector
         {
-            emit error("There was a problem setting a parameter.");
-            return;
+            res = m_dialog->m_interpreter->m_chirp->callSync(prm_set, STRING(id), UINTS8(param.m_len, buf), END_OUT_ARGS, &response, END_IN_ARGS);
+            if (res<0 || response<0)
+            {
+                emit error("There was a problem setting a parameter.");
+                return;
+            }
         }
     }
 

@@ -59,7 +59,7 @@ void getColor(uint8_t *r, uint8_t *g, uint8_t *b)
 		}
 	}
 	*r = rsum/count;
-	*g = gsum/count;
+	*g = gsum/count;										 
 	*b = bsum/count;	 	
 }
 
@@ -102,18 +102,6 @@ void saturate(uint8_t *r, uint8_t *g, uint8_t *b)
 	*b = (uint8_t)fb;
 }
 	
-
-static const uint32_t g_colors[] = 
-{
-	0xffffff, // 0 white
-	0xff0000, // 1 red
-	0xff8000, // 2 orange
-	0xffff00, // 3 yellow
-	0x00ff00, // 4 green
-	0x00ffff, // 5 cyan
-	0x0000ff, // 6 blue
-	0xff00ff  // 7 violet
-};
 
 ButtonMachine::ButtonMachine()
 {
@@ -175,6 +163,7 @@ bool ButtonMachine::handleSignature()
 		{
 			setTimer(&m_timer);
 			m_goto = 1;
+			led_set(0);
 		}
 		break;
 

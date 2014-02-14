@@ -66,6 +66,9 @@ MainWindow::MainWindow(QWidget *parent) :
     addAction("Set signature 5", "cc_setSigRegion 5");
     addAction("Set signature 6", "cc_setSigRegion 6");
     addAction("Set signature 7", "cc_setSigRegion 7");
+    addAction("Clear signature...", "cc_clearSig");
+    addAction("Clear all signatures", "cc_clearAllSig");
+    addAction("Restore default parameters", "prm_restore");
 }
 
 MainWindow::~MainWindow()
@@ -309,18 +312,18 @@ void MainWindow::on_actionAbout_triggered()
     AboutDialog *about;
     QString contents;
 
-    contents.sprintf("%s version %d.%d.%d\n", PIXYMON_TITLE, VER_MAJOR, VER_MINOR, VER_BUILD);
+    contents.sprintf("%s version %d.%d.%d BETA\n", PIXYMON_TITLE, VER_MAJOR, VER_MINOR, VER_BUILD);
 
     if (m_interpreter)
     {
         QString fwver;
         uint16_t *version;
         version = m_interpreter->getVersion();
-        contents += fwver.sprintf("Pixy firmware version (queried) %d.%d.%d\n", version[0], version[1], version[2]);
+        contents += fwver.sprintf("Pixy firmware version (queried) %d.%d.%d BETA\n", version[0], version[1], version[2]);
     }
 
-    contents += "\nCMUCam5 Pixy and PixyMon are open hardware and open source\n";
-    contents += "software projects maintained by Charmed Labs and Carnegie Mellon University.\n\n";
+    contents += "\nCMUCam5 Pixy and PixyMon are open hardware and open source software ";
+    contents += "maintained by Charmed Labs and Carnegie Mellon University.\n\n";
     contents += "Send problems, suggestions, etc. to cmucam@cs.cmu.edu";
 
     about = new AboutDialog(contents);

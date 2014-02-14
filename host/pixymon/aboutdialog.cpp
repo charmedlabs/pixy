@@ -7,7 +7,7 @@ AboutDialog::AboutDialog(const QString &contents) :
     m_ui->setupUi(this);
     m_ui->iconLabel->setPixmap(QPixmap(":/icons/icons/pixy.png"));
     m_ui->textEdit->setPlainText(contents);
-    setWindowTitle(PIXYMON_TITLE);
+    setWindowTitle("About " PIXYMON_TITLE);
 }
 
 AboutDialog::~AboutDialog()

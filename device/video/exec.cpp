@@ -4,6 +4,7 @@
 #include "exec.h"
 #include "button.h"
 #include "camera.h"
+#include "led.h"
 #include "conncomp.h"
 #include "serial.h"
 #include "param.h"
@@ -175,7 +176,7 @@ int32_t exec_version(Chirp *chirp)
 {
 	uint16_t ver[] = {FW_MAJOR_VER, FW_MINOR_VER, FW_BUILD_VER};
 
-	cprintf("Firmware verision %d.%d.%d\n", ver[0], ver[1], ver[2]);
+	cprintf("Pixy firmware version %d.%d.%d BETA\n", ver[0], ver[1], ver[2]);
 	if (chirp)
 		CRP_RETURN(chirp, UINTS16(sizeof(ver), ver), END);
 
@@ -258,6 +259,7 @@ void exec_loop()
 		switch (state)
 		{
 		case 0:	// setup state
+			led_set(0);  // turn off any stray led
 			if ((*g_progTable[g_program]->setup)()<0)
 				state = 3; // stop state
 			else 

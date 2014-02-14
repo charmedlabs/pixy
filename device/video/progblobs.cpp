@@ -44,6 +44,8 @@ int blobsLoop()
 	cc_sendBlobs(g_chirpUsb, blobs, numBlobs);
 
 	ser_getSerial()->update();
-	
+
+	cc_setLED();
+
 	return 0;
 }

@@ -461,6 +461,16 @@
               <FileType>8</FileType>
               <FilePath>..\libpixy\serial.cpp</FilePath>
             </File>
+            <File>
+              <FileName>analogdig.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\libpixy\analogdig.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>spi.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\libpixy\spi.cpp</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>
@@ -919,6 +929,16 @@
               <FileName>serial.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>..\libpixy\serial.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>analogdig.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\libpixy\analogdig.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>spi.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\libpixy\spi.cpp</FilePath>
             </File>
           </Files>
         </Group>

@@ -3,8 +3,8 @@
 
 #include "chirp.hpp"
 
-#define FW_MAJOR_VER		1
-#define FW_MINOR_VER		0
+#define FW_MAJOR_VER		0
+#define FW_MINOR_VER		1
 #define FW_BUILD_VER		13
 
 #define EXEC_MAX_PROGS   8

@@ -23,7 +23,10 @@ int cc_loadLut(void);
 
 void cc_loadParams(void);
 
+void cc_setLED();
+
 extern Qqueue *g_qqueue;
 extern Blobs *g_blobs;
+extern const uint32_t g_colors[];
 
 #endif

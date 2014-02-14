@@ -1,12 +1,14 @@
 #include <stdio.h>
 #include <debug.h>
 #include <string.h>
+#include <math.h>
 #include "pixy_init.h"
 #include "camera.h"
 #include "cameravals.h"
 #include "param.h"
 #include "conncomp.h"
 #include "blobs.h"
+#include "led.h"
 #include "qqueue.h"
 
 
@@ -71,6 +73,18 @@ static const ProcModule g_module[] =
 	"" 
 	},
 	END
+};
+
+const uint32_t g_colors[] = 
+{
+	0xffffff, // 0 white
+	0xff0000, // 1 red
+	0xff8000, // 2 orange
+	0xffff00, // 3 yellow
+	0x00ff00, // 4 green
+	0x00ffff, // 5 cyan
+	0x0000ff, // 6 blue
+	0xff00ff  // 7 violet
 };
 
 static ChirpProc g_getRLSFrameM0 = -1;
@@ -353,4 +367,47 @@ int cc_sendBlobs(Chirp *chirp, const BlobA *blobs, uint32_t len, uint8_t renderF
 	CRP_RETURN(chirp, HTYPE(FOURCC('C','C','B','1')), HINT8(renderFlags), HINT16(CAM_RES2_WIDTH), HINT16(CAM_RES2_HEIGHT), UINTS16(len*sizeof(BlobA)/sizeof(uint16_t), blobs), END);
 	return 0;
 }
+
+uint8_t ledBrightness(uint8_t channel, uint32_t area)
+{
+	uint32_t brightness;
+
+	if (channel==0)
+		return 0;
+
+	brightness = channel*area/10000;
+	if (brightness==0) // can't take log of 0...
+		return 5;
+	
+	// put on log curve
+	brightness = log((float)brightness)*50;
+	// saturate
+	if (brightness>0xff)
+		brightness = 0xff;
+
+	return brightness;
+}
+
+void cc_setLED()
+{
+	BlobA *blob;
+	uint32_t area, color;
+	uint8_t r, g, b;
+
+	blob = (BlobA *)g_blobs->getMaxBlob();
+	if (blob)
+	{
+		area = (blob->m_right - blob->m_left)*(blob->m_bottom - blob->m_top);
+		color = g_colors[blob->m_model];
+		b = ledBrightness(color&0xff, area);
+		color >>= 8;
+		g = ledBrightness(color&0xff, area);
+		color >>= 8;
+		r = ledBrightness(color&0xff, area);
+		led_setRGB(r, g, b);
+	}
+	else
+		led_set(0);
+}
+
 

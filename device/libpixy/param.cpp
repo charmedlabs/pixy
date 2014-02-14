@@ -17,10 +17,10 @@
 static const ProcModule g_module[] =
 {
 	{
-	"prm_erase",
+	"prm_restore",
 	(ProcPtr)prm_format, 
 	{END}, 
-	"Erase all parameters, set to default upon reboot"
+	"Erase all parameters and restore to default values"
 	"@r 0 if success, negative if error"
 	},
 	{

@@ -111,6 +111,8 @@ int ptLoop()
 	}
 	else
 	   	cprintf("%d\n", i);
+
+	cc_setLED();
 	
 	i++;
 	return 0;
