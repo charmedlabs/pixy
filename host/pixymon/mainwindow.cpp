@@ -59,13 +59,13 @@ MainWindow::MainWindow(QWidget *parent) :
 
     addAction("Run default program", "runprog 0");
     addAction("Run pan/tilt demo", "runprog 2");
-    addAction("Set signature 1", "cc_setSigRegion 1");
-    addAction("Set signature 2", "cc_setSigRegion 2");
-    addAction("Set signature 3", "cc_setSigRegion 3");
-    addAction("Set signature 4", "cc_setSigRegion 4");
-    addAction("Set signature 5", "cc_setSigRegion 5");
-    addAction("Set signature 6", "cc_setSigRegion 6");
-    addAction("Set signature 7", "cc_setSigRegion 7");
+    addAction("Set signature 1...", "cc_setSigRegion 1");
+    addAction("Set signature 2...", "cc_setSigRegion 2");
+    addAction("Set signature 3...", "cc_setSigRegion 3");
+    addAction("Set signature 4...", "cc_setSigRegion 4");
+    addAction("Set signature 5...", "cc_setSigRegion 5");
+    addAction("Set signature 6...", "cc_setSigRegion 6");
+    addAction("Set signature 7...", "cc_setSigRegion 7");
     addAction("Clear signature...", "cc_clearSig");
     addAction("Clear all signatures", "cc_clearAllSig");
     addAction("Restore default parameters", "prm_restore");
