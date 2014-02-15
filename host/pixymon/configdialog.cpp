@@ -143,7 +143,9 @@ ConfigDialog::ConfigDialog(Interpreter *interpreter) : m_ui(new Ui::ConfigDialog
     connect(worker, SIGNAL(saved()), this, SLOT(saved()));
     connect(worker, SIGNAL(error(QString)), this, SLOT(error(QString)));
     m_thread.start();
-
+#ifdef __MACOS__
+    setMinimumWidth(275);
+#endif
     m_rejecting = false;
     m_loading = true;
     emit load();

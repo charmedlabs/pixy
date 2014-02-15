@@ -15,7 +15,7 @@
 
 #define PROMPT  ">"
 #define RUN_POLL_PERIOD_SLOW   500 // msecs
-#define RUN_POLL_PERIOD_FAST   50  // msecs
+#define RUN_POLL_PERIOD_FAST   10  // msecs
 
 class ConsoleWidget;
 class Renderer;

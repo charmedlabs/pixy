@@ -357,7 +357,10 @@ void Interpreter::getRunning()
     // emit state if we've changed
     if (m_running!=running)
     {
-        m_fastPoll = false;
+        if (running==2)
+            m_fastPoll = true;
+        else
+            m_fastPoll = false;
         m_running = running;
         emit runState(running);
         emit enableConsole(!running);
