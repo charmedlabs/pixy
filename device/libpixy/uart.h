@@ -5,6 +5,7 @@
 
 #define UART_TRANSMIT_BUF_SIZE     32
 #define UART_RECEIVE_BUF_SIZE      32
+#define UART_DEFAULT_BAUDRATE      19200
 
 class Uart : public Iserial
 {
@@ -17,6 +18,7 @@ public:
 	virtual int receive(uint8_t *buf, uint32_t len);
 	virtual int update();
 
+	int setBaudrate(uint32_t baudrate);
 	void irqHandler();
 
 private:

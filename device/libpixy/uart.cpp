@@ -17,35 +17,25 @@ void Uart::irqHandler()
 	uint32_t status;
 	uint8_t i, c;
 	volatile uint32_t v;
- 	static uint8_t sc = 0;
 
 	m_flag = false;
 
 	/* Determine the interrupt source */
 	status = m_uart->IIR & UART_IIR_INTID_MASK;
 
-	// Receive Data Available 
-	if (status==UART_IIR_INTID_RDA) 
-	{
+	if (status==UART_IIR_INTID_RDA) // Receive Data Available 
 		m_rq.write(m_uart->RBR&UART_RBR_MASKBIT);
-	}
 	else if (status==UART_IIR_INTID_CTI)
-		v = m_uart->RBR;
-	// Transmit Holding Empty
-	else if (status==UART_IIR_INTID_THRE)
+		v = m_uart->RBR; // toss...
+	else if (status==UART_IIR_INTID_THRE) // Transmit Holding Empty
 	{
-		for (i=0; i<16; i++)
+		for (i=0; i<UART_TX_FIFO_SIZE; i++) // fill transmit FIFO
 		{
-#if 1
 			if (m_tq.read(&c))
 			{
 				m_flag = true;
 				m_uart->THR = c;
 			}
-#else
-		m_flag = true;
-		m_uart->THR = sc++;	
-#endif
 		}
 	}
 }
@@ -79,7 +69,7 @@ int Uart::update()
 {
 	if (m_flag==false)
 	{
-		m_uart->THR = 0; // send a 0 to get the transmit interrupt going again		
+		m_uart->THR = 0; // send a 0 to get the transmit interrupt going again, send 16 bits		
 		m_uart->THR = 0; 		
 	}
 	return 0;
@@ -88,33 +78,42 @@ int Uart::update()
 
 Uart::Uart(LPC_USARTn_Type *uart,  SerialCallback callback) : m_rq(UART_RECEIVE_BUF_SIZE), m_tq(UART_TRANSMIT_BUF_SIZE, callback)
 {
+	UART_FIFO_CFG_Type ufifo;
+	UART_CFG_Type ucfg;
+
 	m_uart = uart;
 	m_flag = false;
-	 
-	UART_CFG_Type ucfg;
-	UART_FIFO_CFG_Type ufifo;
-
-	ucfg.Baud_rate = 19200;
+	 	
+	// regular config			 
+	ucfg.Baud_rate = UART_DEFAULT_BAUDRATE;
 	ucfg.Databits = UART_DATABIT_8;
 	ucfg.Parity = UART_PARITY_NONE;
 	ucfg.Stopbits = UART_STOPBIT_1;
 	ucfg.Clock_Speed = CLKFREQ;
 
+	UART_Init(m_uart, &ucfg);
+
+	// config FIFOs
 	ufifo.FIFO_DMAMode = DISABLE;
 	ufifo.FIFO_Level = UART_FIFO_TRGLEV0;
 	ufifo.FIFO_ResetRxBuf = ENABLE;
 	ufifo.FIFO_ResetTxBuf = ENABLE;
 
-	UART_Init(m_uart, &ucfg);
 	UART_FIFOConfig(m_uart, &ufifo);
 	UART_TxCmd(m_uart, ENABLE);
 
+	// enable interrupts
 	UART_IntConfig(m_uart, UART_INTCFG_RBR, ENABLE);
 	UART_IntConfig(m_uart, UART_INTCFG_THRE, ENABLE);
 
     NVIC_SetPriority(USART0_IRQn, 0);
 }
 
+int Uart::setBaudrate(uint32_t baudrate)
+{
+	UART_setBaudRate(m_uart, baudrate, CLKFREQ);
+	return 0;
+}
 
 void uart_init(SerialCallback callback)
 {

@@ -664,6 +664,8 @@ void UART_IrDAPulseDivConfig(LPC_USARTn_Type *UARTx, UART_IrDA_PULSE_Type PulseD
  */
 
 
+Status UART_setBaudRate(LPC_USARTn_Type *UARTx, uint32_t baudrate, uint32_t clockspeed);
+
 #ifdef __cplusplus
 }
 #endif

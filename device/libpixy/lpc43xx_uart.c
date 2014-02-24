@@ -47,8 +47,6 @@
 
 /* Private Functions ---------------------------------------------------------- */
 
-static Status uart_set_divisors(LPC_USARTn_Type *UARTx, uint32_t baudrate, uint32_t clockspeed);
-
 /*********************************************************************//**
  * @brief		Determines best dividers to get a target clock rate
  * @param[in]	UARTx	Pointer to selected UART peripheral, should be:
@@ -61,7 +59,7 @@ static Status uart_set_divisors(LPC_USARTn_Type *UARTx, uint32_t baudrate, uint3
  * 					- SUCCESS
  * 					- ERROR
  **********************************************************************/
-static Status uart_set_divisors(LPC_USARTn_Type *UARTx, uint32_t baudrate, uint32_t clockspeed)
+Status UART_setBaudRate(LPC_USARTn_Type *UARTx, uint32_t baudrate, uint32_t clockspeed)
 {
 #ifndef CORE_M0 // rich: let's assume M0 doesn't do any initialization 
 
@@ -354,7 +352,7 @@ void UART_Init(LPC_USARTn_Type *UARTx, UART_CFG_Type *UART_ConfigStruct)
 
 	// Set Line Control register ----------------------------
 
-	uart_set_divisors(UARTx, (UART_ConfigStruct->Baud_rate), UART_ConfigStruct->Clock_Speed);
+	UART_setBaudRate(UARTx, (UART_ConfigStruct->Baud_rate), UART_ConfigStruct->Clock_Speed);
 
 	if (((LPC_UART1_Type *)UARTx) == LPC_UART1)
 	{
