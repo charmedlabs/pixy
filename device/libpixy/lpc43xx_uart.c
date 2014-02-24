@@ -235,7 +235,8 @@ void UART_Init(LPC_USARTn_Type *UARTx, UART_CFG_Type *UART_ConfigStruct)
 	{
 		/* Set up peripheral clock for UART0 module */
 		//LPC_CGU->BASE_UART0_CLK = (SRC_PL160M_0<<24) | (1<<11);	// Use PLL1 and auto block
-		CGU_EntityConnect(CGU_CLKSRC_XTAL_OSC, CGU_BASE_UART0);
+		//CGU_EntityConnect(CGU_CLKSRC_XTAL_OSC, CGU_BASE_UART0);
+		CGU_EntityConnect(CGU_CLKSRC_PLL1, CGU_BASE_UART0);
 	}
 #endif
 

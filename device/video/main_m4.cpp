@@ -16,10 +16,42 @@
 #include "progpt.h"
 #include "param.h"
 #include "serial.h"
+#include "lpc43xx.h"
+#include "lpc43xx_scu.h"
+#include "lpc43xx_uart.h"
+
 
 // M0 code 
 const // so m0 program goes into RO memory
 #include "m0_image.c"
+
+#if 0
+extern "C" void UART0_IRQHandler(void);
+
+void UART0_IRQHandler(void)
+{
+	uint32_t status;
+	volatile uint32_t v;
+
+	/* Determine the interrupt source */
+	status = LPC_USART0->IIR & UART_IIR_INTID_MASK;
+
+
+	// Receive Data Available 
+	if (status==UART_IIR_INTID_RDA || status==UART_IIR_INTID_CTI)
+	{
+		v = LPC_USART0->RBR&UART_RBR_MASKBIT;
+		printf("%d\n", v);
+
+	}
+
+	// Transmit Holding Empty
+	if (status==UART_IIR_INTID_THRE)
+	{
+		printf("tre\n");
+	}
+}
+#endif
 
 
 extern "C" 
@@ -44,6 +76,62 @@ int main(void)
 	cc_init(g_chirpUsb);
 	ser_init();
 	exec_init(g_chirpUsb);
+
+#if 0
+	scu_pinmux(0x2, 0, (MD_PLN | MD_EZI | MD_ZI | MD_EHS), FUNC1); 	         // U0_TXD 
+	scu_pinmux(0x2, 1, (MD_PLN | MD_EZI | MD_ZI | MD_EHS), FUNC1); 	         // U0_RXD
+ 	scu_pinmux(0x1, 3, (MD_PLN | MD_EZI | MD_ZI | MD_EHS), FUNC0); 	         // turn SSP1_MISO into GPIO0[10]
+	//scu_pinmux(0x2, 4, (MD_PLN | MD_EZI | MD_ZI | MD_EHS), FUNC4); 	         // gpio5[4] 
+	scu_pinmux(0x1, 4, (MD_PLN | MD_EZI | MD_ZI | MD_EHS), FUNC0); 	         // turn SSP1_MOSI into GPIO0[11]
+	//scu_pinmux(0x2, 3, (MD_PLN | MD_EZI | MD_ZI | MD_EHS), FUNC4); 	         // gpio5[3] 
+ 
+
+	UART_CFG_Type ucfg;
+	UART_FIFO_CFG_Type ufifo;
+
+	ucfg.Baud_rate = 19200;
+	ucfg.Databits = UART_DATABIT_8;
+	ucfg.Parity = UART_PARITY_NONE;
+	ucfg.Stopbits = UART_STOPBIT_1;
+	ucfg.Clock_Speed = CLKFREQ;
+
+	ufifo.FIFO_DMAMode = DISABLE;
+	ufifo.FIFO_Level = UART_FIFO_TRGLEV0;
+	ufifo.FIFO_ResetRxBuf = ENABLE;
+	ufifo.FIFO_ResetTxBuf = ENABLE;
+
+	UART_Init(LPC_USART0, &ucfg);
+	UART_FIFOConfig(LPC_USART0, &ufifo);
+	UART_TxCmd(LPC_USART0, ENABLE);
+
+	UART_IntConfig(LPC_USART0, UART_INTCFG_RBR, ENABLE);
+	UART_IntConfig(LPC_USART0, UART_INTCFG_THRE, ENABLE);
+
+	//UART_Send(LPC_USART0, "hello", 6, BLOCKING);
+	uint8_t buf;
+	volatile uint32_t v;
+
+    NVIC_SetPriority(USART0_IRQn, 0);
+	/* Enable Interrupt for UART0 channel */
+    NVIC_EnableIRQ(USART0_IRQn);
+
+#if 0
+	while(1)
+	{
+        //UART_Receive(LPC_USART0, &buf, 1, BLOCKING);
+		if(LPC_USART0->LSR & UART_LSR_RDR)
+			printf("%d\n", LPC_USART0->RBR & UART_RBR_MASKBIT);
+	}
+#endif
+#if 1
+	while(1)
+	{
+		buf = 123;
+		UART_Send(LPC_USART0, &buf, 1, BLOCKING);
+		delayus(100000);
+	} 
+#endif
+#endif
 
 #if 0
 	i2c_init();

@@ -278,7 +278,8 @@ QString printType(uint32_t val, bool parens)
 void Interpreter::handleResponse(void *args[])
 {
     // strip off response, add to print string
-    m_print = "response " + QString::number(m_rcount++) + ": " +
+    //    m_print = "response " + QString::number(m_rcount++) + ": " +
+    m_print = "response: " +
             QString::number(*(int *)args[0]) + " (0x" + QString::number((uint)*(uint *)args[0], 16) + ") ";
 
     // render rest of response, if present

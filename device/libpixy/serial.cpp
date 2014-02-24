@@ -1,6 +1,7 @@
 #include "serial.h"
 #include "spi.h"
 #include "i2c.h"
+#include "uart.h"
 #include "analogdig.h"
 #include "conncomp.h"
 #include "param.h"
@@ -18,6 +19,7 @@ int ser_init()
 {
 	i2c_init(callback);
 	spi_init(callback);
+	uart_init(callback);
 	ad_init();
 
 	ser_loadParams();
@@ -34,11 +36,15 @@ void ser_loadParams()
 
 	uint8_t interface, addr;
 
+#if 0
 	prm_get("Data out port", &interface, END);
 	ser_setInterface(interface);
 
 	prm_get("I2C address", &addr, END);
 	g_i2c0->setSlaveAddr(addr);
+#else
+	ser_setInterface(SER_INTERFACE_UART);
+#endif
 }
 
 int ser_setInterface(uint8_t interface)
@@ -57,11 +63,9 @@ int ser_setInterface(uint8_t interface)
 		g_serial = g_i2c0;
 		break;
 
-#if 0
 	case SER_INTERFACE_UART:    
-		g_serial = ;
+		g_serial = g_uart0;
 		break;
-#endif
 
 	case SER_INTERFACE_ADX:      
 		g_ad->setDirection(true);
