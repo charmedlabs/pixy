@@ -471,6 +471,11 @@
               <FileType>8</FileType>
               <FilePath>..\libpixy\spi.cpp</FilePath>
             </File>
+            <File>
+              <FileName>uart.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\libpixy\uart.cpp</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>
@@ -939,6 +944,11 @@
               <FileName>spi.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>..\libpixy\spi.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>uart.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\libpixy\uart.cpp</FilePath>
             </File>
           </Files>
         </Group>

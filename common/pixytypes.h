@@ -114,6 +114,31 @@ struct BlobA
     uint16_t m_bottom;
 };
 
+struct BlobB
+{
+    BlobB()
+    {
+        m_model = m_left = m_right = m_top = m_bottom = m_angle = 0;
+    }
+
+    BlobB(uint16_t model, uint16_t left, uint16_t right, uint16_t top, uint16_t bottom, int16_t angle)
+    {
+        m_model = model;
+        m_left = left;
+        m_right = right;
+        m_top = top;
+        m_bottom = bottom;
+		m_angle = angle;
+    }
+
+    uint16_t m_model;
+    uint16_t m_left;
+    uint16_t m_right;
+    uint16_t m_top;
+    uint16_t m_bottom;
+	int16_t m_angle;
+};
+
 
 struct HuePixel
 {

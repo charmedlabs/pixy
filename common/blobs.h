@@ -10,6 +10,9 @@
 #define MAX_BLOBS_PER_MODEL	  20
 #define MAX_MERGE_DIST        5
 #define MIN_AREA              20
+#define MAX_CODED_DIST        10
+
+
 
 #define LUT_MEMORY		((uint8_t *)SRAM1_LOC + SRAM1_SIZE-CL_LUT_SIZE)  // +0x100 make room for prebuf and palette
 
@@ -41,7 +44,7 @@ private:
     uint16_t combine2(uint16_t *blobs, uint16_t numBlobs);
     uint16_t compress(uint16_t *blobs, uint16_t numBlobs);
 
-    bool closeby(int a, int b, int dist);
+    bool closeby(int a, int b);
     void addCoded(int a, int b);
     void processCoded();
 
@@ -50,7 +53,11 @@ private:
 
 
     uint16_t *m_blobs;
+	uint16_t *m_endBlobs;
     uint16_t m_numBlobs;
+
+	BlobB *m_codedBlobs;
+	uint16_t m_numCodedBlobs;
 
     bool m_mutex;
     uint16_t m_maxBlobs;
@@ -58,9 +65,9 @@ private:
 
     uint16_t m_blobReadIndex;
 
-    uint16_t m_numCodedBlobs;
     uint32_t m_minArea;
     uint16_t m_mergeDist;
+	uint16_t m_maxCodedDist;
 };
 
 #define BLOBS_H

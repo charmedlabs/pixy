@@ -14,14 +14,16 @@ Blobs::Blobs(Qqueue *qq)
 
     m_mutex = false;
     m_minArea = MIN_AREA;
-	m_maxBlobs = MAX_BLOBS;
-	m_maxBlobsPerModel = MAX_BLOBS_PER_MODEL;
+    m_maxBlobs = MAX_BLOBS;
+    m_maxBlobsPerModel = MAX_BLOBS_PER_MODEL;
     m_mergeDist = MAX_MERGE_DIST;
+    m_maxCodedDist = MAX_CODED_DIST;
 
     m_qq = qq;
     m_blobs = new uint16_t[m_maxBlobs*5];
     m_numBlobs = 0;
     m_blobReadIndex = 0;
+    m_endBlobs = m_blobs + m_maxBlobs*5 - 6;
 
 #ifdef PIXY
     m_clut = new ColorLUT((void *)LUT_MEMORY);
@@ -37,12 +39,12 @@ Blobs::Blobs(Qqueue *qq)
 
 int Blobs::setParams(uint16_t maxBlobs, uint16_t maxBlobsPerModel, uint32_t minArea)
 {
-	if (maxBlobs<=MAX_BLOBS)
-		m_maxBlobs = maxBlobs;
-	m_maxBlobsPerModel = maxBlobsPerModel;
-	m_minArea = minArea;
+    if (maxBlobs<=MAX_BLOBS)
+        m_maxBlobs = maxBlobs;
+    m_maxBlobsPerModel = maxBlobsPerModel;
+    m_minArea = minArea;
 
-	return 0;
+    return 0;
 }
 
 Blobs::~Blobs()
@@ -93,7 +95,6 @@ void Blobs::blobify()
             j += 5;
 
         }
-#if 1
         //setTimer(&timer);
         if (true)
         {
@@ -106,10 +107,14 @@ void Blobs::blobify()
             }
         }
         //timer2 += getTimer(timer);
-#endif
     }
     //setTimer(&timer);
     invalid += combine(m_blobs, m_numBlobs);
+    if (false)
+    {
+        m_codedBlobs = (BlobB *)(m_blobs + m_numBlobs*5);
+        processCoded();
+    }
     if (invalid)
     {
         invalid2 = compress(m_blobs, m_numBlobs);
@@ -192,14 +197,14 @@ void Blobs::unpack()
 
 uint16_t Blobs::getBlock(uint8_t *buf, uint32_t buflen)
 {							
-	uint16_t *buf16 = (uint16_t *)buf;
+    uint16_t *buf16 = (uint16_t *)buf;
     uint16_t temp, width, height;
     uint16_t checksum;
     uint16_t len = 7;  // default
     int i = m_blobReadIndex*5;
 
-	if (buflen<8*sizeof(uint16_t))
-		return 0;
+    if (buflen<8*sizeof(uint16_t))
+        return 0;
 
     if (m_mutex || m_blobReadIndex>=m_numBlobs) // we're copying, so no blocks for now....
     {	// return a couple null words to give us time to copy
@@ -257,19 +262,19 @@ uint16_t *Blobs::getMaxBlob(uint16_t signature)
 {
     int i, j;
 
-	if (signature==0) // 0 means ignore signature
-	{
-		if (m_numBlobs>0)
-			return m_blobs; // return first blob regardless of signature
-	}
-	else
-	{
-    	for (i=0, j=0; i<m_numBlobs; i++, j+=5)
-    	{
-       		if (m_blobs[j+0]==signature)
-            	return m_blobs+j;
-    	}
-	}
+    if (signature==0) // 0 means ignore signature
+    {
+        if (m_numBlobs>0)
+            return m_blobs; // return first blob regardless of signature
+    }
+    else
+    {
+        for (i=0, j=0; i<m_numBlobs; i++, j+=5)
+        {
+            if (m_blobs[j+0]==signature)
+                return m_blobs+j;
+        }
+    }
 
     return NULL; // no blobs...
 } 
@@ -442,48 +447,40 @@ uint16_t Blobs::combine2(uint16_t *blobs, uint16_t numBlobs)
     return invalid;
 }
 
-#define MAX_CODED_DIST  10
-
-bool Blobs::closeby(int a, int b, int dist)
+bool Blobs::closeby(int a, int b)
 {
-
+    BlobA *blob0, *blob;
     int16_t left0, right0, top0, bottom0;
     int16_t left, right, top, bottom;
-    uint8_t model0, model;
 
-    left0 = m_blobs[a*4+0];
-    if (left0==0)
-        return false;
-    model0 = left0&0x07;
-    left0 >>= 3;
-    right0 = m_blobs[a*4+1]>>3;
-    top0 = m_blobs[a*4+2]>>3;
-    bottom0 = m_blobs[a*4+3]>>3;
+    blob0 = (BlobA *)m_blobs + a;
+    blob = (BlobA *)m_blobs + b;
 
-    left = m_blobs[b*4+0];
-    if (left==0)
+    if (blob0->m_model==0 || blob->m_model==0 || blob0->m_model==blob->m_model)
         return false;
-    model = left&0x07;
-    if (model0==model)
-        return false;
-    left >>= 3;
-    right = m_blobs[b*4+1]>>3;
-    top = m_blobs[b*4+2]>>3;
-    bottom = m_blobs[b*4+3]>>3;
 
-    if (left0>=left && left0-right<=dist &&
+    left0 = blob0->m_left;
+    right0 = blob0->m_right;
+    top0 = blob0->m_top;
+    bottom0 = blob0->m_bottom;
+    left = blob->m_left;
+    right = blob->m_right;
+    top = blob->m_top;
+    bottom = blob->m_bottom;
+
+    if (left0>=left && left0-right<=m_maxCodedDist &&
             ((top0<=top && top<=bottom0) || (top0<=bottom && (bottom<=bottom0 || top<=top0))))
         return true;
 
-    if (left>=left0 && left-right0<=dist &&
+    if (left>=left0 && left-right0<=m_maxCodedDist &&
             ((top0<=top && top<=bottom0) || (top0<=bottom && (bottom<=bottom0 || top<=top0))))
         return true;
 
-    if (top0>=top && top0-bottom<=dist &&
+    if (top0>=top && top0-bottom<=m_maxCodedDist &&
             ((left0<=left && left<=right0) || (left0<=right && (right<=right0 || left<=left0))))
         return true;
 
-    if (top>=top0 && top-bottom0<=dist &&
+    if (top>=top0 && top-bottom0<=m_maxCodedDist &&
             ((left0<=left && left<=right0) || (left0<=right && (right<=right0 || left<=left0))))
         return true;
 
@@ -492,59 +489,48 @@ bool Blobs::closeby(int a, int b, int dist)
 
 void Blobs::addCoded(int a, int b)
 {
-    //static int i=0;
     uint16_t left, right, top, bottom;
-    uint8_t model;
     uint16_t codedModel;
+    BlobA *blob0, *blob;
+    BlobB *newBlob;
 
-    model = m_blobs[a*4]&0x07;
-    codedModel = model;
+    blob0 = (BlobA *)m_blobs + a;
+    blob = (BlobA *)m_blobs + b;
+
+    codedModel = blob0->m_model;
     codedModel <<= 3;
-    model = m_blobs[b*4]&0x07;
-    codedModel |= model;
-    codedModel <<= 3; // 0 escape
+    codedModel |= blob->m_model;
 
-    left = m_blobs[a*4+0]>>3 < m_blobs[b*4+0]>>3 ? m_blobs[a*4+0]>>3 : m_blobs[b*4+0]>>3;
-    right = m_blobs[a*4+1]>>3 > m_blobs[b*4+1]>>3 ? m_blobs[a*4+1]>>3 : m_blobs[b*4+1]>>3;
-    top = m_blobs[a*4+2]>>3 < m_blobs[b*4+2]>>3 ? m_blobs[a*4+2]>>3 : m_blobs[b*4+2]>>3;
-    bottom = m_blobs[a*4+3]>>3 > m_blobs[b*4+3]>>3 ? m_blobs[a*4+3]>>3 : m_blobs[b*4+3]>>3;
+    left = blob0->m_left < blob->m_left ? blob0->m_left : blob->m_left;
+    right = blob0->m_right > blob->m_right ? blob0->m_right : blob->m_right;
+    top = blob0->m_top < blob->m_top ? blob0->m_top : blob->m_top;
+    bottom = blob0->m_bottom > blob->m_bottom ? blob0->m_bottom : blob->m_bottom;
 
-#ifdef RENDER_ANGLE
     // calculate angle
-    int acx = ((m_blobs[a*4+1]>>3)+(m_blobs[a*4+0]>>3))/2;
-    int acy = ((m_blobs[a*4+3]>>3)+(m_blobs[a*4+2]>>3))/2;
-    int bcx = ((m_blobs[b*4+1]>>3)+(m_blobs[b*4+0]>>3))/2;
-    int bcy = ((m_blobs[b*4+3]>>3)+(m_blobs[b*4+2]>>3))/2;
-    double angle = atan2(acy-bcy, acx-bcx)*180/3.1415;
+    int acx = (blob0->m_right + blob0->m_left)/2;
+    int acy = (blob0->m_bottom + blob0->m_top)/2;
+    int bcx = (blob->m_right + blob->m_left)/2;
+    int bcy = (blob->m_bottom + blob->m_top)/2;
+    float angle = atan2((float)(acy-bcy), (float)(acx-bcx))*180/3.1415;
     //qDebug() << "angle " << angle << " acx " << acx << " acy " << acy << " bcx " << bcx << " bcy " << bcy;
 
     // add rectangle
-    m_blobs[m_numBlobs*4+m_numCodedBlobs*6+0] = codedModel;
-    m_blobs[m_numBlobs*4+m_numCodedBlobs*6+1] = left;
-    m_blobs[m_numBlobs*4+m_numCodedBlobs*6+2] = right;
-    m_blobs[m_numBlobs*4+m_numCodedBlobs*6+3] = top;
-    m_blobs[m_numBlobs*4+m_numCodedBlobs*6+4] = bottom;
-    m_blobs[m_numBlobs*4+m_numCodedBlobs*6+5] = (int16_t)angle;
-#else
-    // add rectangle
-    m_blobs[m_numBlobs*4+m_numCodedBlobs*5+0] = codedModel;
-    m_blobs[m_numBlobs*4+m_numCodedBlobs*5+1] = left;
-    m_blobs[m_numBlobs*4+m_numCodedBlobs*5+2] = right;
-    m_blobs[m_numBlobs*4+m_numCodedBlobs*5+3] = top;
-    m_blobs[m_numBlobs*4+m_numCodedBlobs*5+4] = bottom;
-#endif
+    newBlob = m_codedBlobs + m_numCodedBlobs;
+    if (newBlob>(BlobB *)m_endBlobs)
+        return;
+
+    newBlob->m_model = codedModel;
+    newBlob->m_left = left;
+    newBlob->m_right = right;
+    newBlob->m_top = top;
+    newBlob->m_bottom = bottom;
+    newBlob->m_angle = (int16_t)angle;
 
     m_numCodedBlobs++;
 
-    // invalidate a and b (only if you are
-    m_blobs[a*4+0] = 0;
-    m_blobs[a*4+1] = 0;
-    m_blobs[a*4+2] = 0;
-    m_blobs[a*4+3] = 0;
-    m_blobs[b*4+0] = 0;
-    m_blobs[b*4+1] = 0;
-    m_blobs[b*4+2] = 0;
-    m_blobs[b*4+3] = 0;
+    // invalidate a and b
+    blob0->m_model = 0;
+    blob->m_model = 0;
 }
 
 void Blobs::processCoded()
@@ -556,7 +542,7 @@ void Blobs::processCoded()
     {
         for (j=i+1; j<m_numBlobs; j++)
         {
-            if (closeby(i, j, MAX_CODED_DIST))
+            if (closeby(i, j))
                 addCoded(i, j);
         }
     }
