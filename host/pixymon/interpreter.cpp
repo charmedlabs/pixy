@@ -383,7 +383,8 @@ void Interpreter::getRunning()
         emit runState(running);
         emit enableConsole(!running);
         if (!running && m_externalCommand=="")
-            prompt();
+            prompt(); // print prompt only if we expect an actual human to be typing into the command window, and we've stopped
+
     }
 }
 
@@ -524,12 +525,12 @@ void Interpreter::run()
                                     endLocalProgram();
                                     clearLocalProgram();
                                 }
-                                m_commandList.clear(); // abort out little scriptlet
+                                m_commandList.clear(); // abort our little scriptlet
                             }
                         }
                         m_argv.clear();
                         if (m_externalCommand=="")
-                            prompt();
+                            prompt(); // print prompt only if we expect an actual human to be typing into the command window
                         else
                             m_externalCommand = "";
                         // check quickly to see if we're running after this command
@@ -762,7 +763,7 @@ void Interpreter::execute(const QString &command)
     unwait(); // unhang ourselves if we're waiting for input
     m_mutexProg.lock();
     m_argv = argv;
-    m_externalCommand = command;
+    m_externalCommand = command; // save command so we can print.  This variable also indicates that we're not a human typing a command
     m_mutexProg.unlock();
     if (m_running==true)
            m_pendingCommand = STOP;
