@@ -195,28 +195,58 @@ void ConfigDialog::loaded()
         {
             int8_t val;
             Chirp::deserialize(param.m_data, param.m_len, &val, END);
-            if (param.m_flags&PRM_FLAG_HEX_FORMAT)
-                param.m_line->setText("0x" + QString::number(val, 16));
+            if (param.m_flags&PRM_FLAG_SIGNED)
+            {
+                if (param.m_flags&PRM_FLAG_HEX_FORMAT)
+                    param.m_line->setText("0x" + QString::number(val, 16));
+                else
+                    param.m_line->setText(QString::number(val));
+            }
             else
-                param.m_line->setText(QString::number(val));
+            {
+                if (param.m_flags&PRM_FLAG_HEX_FORMAT)
+                    param.m_line->setText("0x" + QString::number((uint8_t)val, 16));
+                else
+                    param.m_line->setText(QString::number((uint8_t)val));
+            }
         }
         else if (param.m_type==CRP_INT16)
         {
             int16_t val;
             Chirp::deserialize(param.m_data, param.m_len, &val, END);
-            if (param.m_flags&PRM_FLAG_HEX_FORMAT)
-                param.m_line->setText("0x" + QString::number(val, 16));
+            if (param.m_flags&PRM_FLAG_SIGNED)
+            {
+                if (param.m_flags&PRM_FLAG_HEX_FORMAT)
+                    param.m_line->setText("0x" + QString::number(val, 16));
+                else
+                    param.m_line->setText(QString::number(val));
+            }
             else
-                param.m_line->setText(QString::number(val));
+            {
+                if (param.m_flags&PRM_FLAG_HEX_FORMAT)
+                    param.m_line->setText("0x" + QString::number((uint16_t)val, 16));
+                else
+                    param.m_line->setText(QString::number((uint16_t)val));
+            }
         }
         else if (param.m_type==CRP_INT32)
         {
             int32_t val;
             Chirp::deserialize(param.m_data, param.m_len, &val, END);
-            if (param.m_flags&PRM_FLAG_HEX_FORMAT)
-                param.m_line->setText("0x" + QString::number(val, 16));
+            if (param.m_flags&PRM_FLAG_SIGNED)
+            {
+                if (param.m_flags&PRM_FLAG_HEX_FORMAT)
+                    param.m_line->setText("0x" + QString::number(val, 16));
+                else
+                    param.m_line->setText(QString::number(val));
+            }
             else
-                param.m_line->setText(QString::number(val));
+            {
+                if (param.m_flags&PRM_FLAG_HEX_FORMAT)
+                    param.m_line->setText("0x" + QString::number((uint32_t)val, 16));
+                else
+                    param.m_line->setText(QString::number((uint32_t)val));
+            }
         }
         else if (param.m_type==CRP_FLT32)
         {

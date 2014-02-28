@@ -392,3 +392,9 @@ bool prm_dirty()
 
 	return res;
 }
+
+void prm_setDirty(bool dirty)
+{
+	g_dirty = dirty;
+}
+

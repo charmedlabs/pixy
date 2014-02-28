@@ -28,6 +28,8 @@ int32_t prm_getChirp(const char *id, Chirp *chirp);
 int32_t prm_getInfo(const char *id, Chirp *chirp);
 int32_t prm_getAll(const uint16_t &index, Chirp *chirp);
 
+void prm_setDirty(bool dirty);
+
 int prm_add(const char *id, uint32_t flags, const char *desc, ...);
 bool prm_verifyAll();
 int prm_format();

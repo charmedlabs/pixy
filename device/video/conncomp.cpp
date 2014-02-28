@@ -225,6 +225,7 @@ int32_t cc_setSigRegion(const uint8_t &model, const uint16_t &xoffset, const uin
 	// save to flash
 	sprintf(id, "signature%d", model);
 	prm_set(id, INTS8(sizeof(ColorModel), &cmodel), END);
+	prm_setDirty(false); // prevent reload (because we don't want to load the lut (yet) and lose our frame
 
 	cprintf("Success!\n");
 
@@ -263,6 +264,7 @@ int32_t cc_setSigPoint(const uint8_t &model, const uint16_t &x, const uint16_t &
 	// save to flash
 	sprintf(id, "signature%d", model);
 	prm_set(id, INTS8(sizeof(ColorModel), &cmodel), END);
+	prm_setDirty(false); // prevent reload (because we don't want to load the lut (yet) and lose our frame
 
 	cprintf("Success!\n");
 
