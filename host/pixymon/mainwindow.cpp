@@ -72,18 +72,49 @@ MainWindow::MainWindow(QWidget *parent) :
     if (m_connect->getConnected()==NONE)
         m_console->error("No Pixy devices have been detected.\n");
 
-    addAction("Run default program", "runprog 0");
-    addAction("Run pan/tilt demo", "runprog 2");
-    addAction("Set signature 1...", "cc_setSigRegion 1");
-    addAction("Set signature 2...", "cc_setSigRegion 2");
-    addAction("Set signature 3...", "cc_setSigRegion 3");
-    addAction("Set signature 4...", "cc_setSigRegion 4");
-    addAction("Set signature 5...", "cc_setSigRegion 5");
-    addAction("Set signature 6...", "cc_setSigRegion 6");
-    addAction("Set signature 7...", "cc_setSigRegion 7");
-    addAction("Clear signature...", "cc_clearSig");
-    addAction("Clear all signatures", "cc_clearAllSig");
-    addAction("Restore default parameters", "prm_restore");
+    QStringList list;
+    list << "runprog 0";
+    addAction("Run default program", list);
+    list.clear();
+    list << "runprog 2";
+    addAction("Run pan/tilt demo", list);
+    list.clear();
+    list << "cc_setSigRegion 1";
+    list << "runprogArg 8 1";
+    addAction("Set signature 1...", list);
+    list.clear();
+    list << "cc_setSigRegion 2";
+    list << "runprogArg 8 1";
+    addAction("Set signature 2...", list);
+    list.clear();
+    list << "cc_setSigRegion 3";
+    list << "runprogArg 8 1";
+    addAction("Set signature 3...", list);
+    list.clear();
+    list << "cc_setSigRegion 4";
+    list << "runprogArg 8 1";
+    addAction("Set signature 4...", list);
+    list.clear();
+    list << "cc_setSigRegion 5";
+    list << "runprogArg 8 5";
+    addAction("Set signature 5...", list);
+    list.clear();
+    list << "cc_setSigRegion 6";
+    list << "runprogArg 8 1";
+    addAction("Set signature 6...", list);
+    list.clear();
+    list << "cc_setSigRegion 7";
+    list << "runprogArg 8 1";
+    addAction("Set signature 7...", list);
+    list.clear();
+    list << "cc_clearSig";
+    addAction("Clear signature...", list);
+    list.clear();
+    list << "cc_clearAllSig";
+    addAction("Clear all signatures", list);
+    list.clear();
+    list << "prm_restore";
+    addAction("Restore default parameters", list);
 }
 
 MainWindow::~MainWindow()
@@ -281,7 +312,7 @@ void MainWindow::setEnabledActions(bool enable)
         m_actions[i]->setEnabled(enable);
 }
 
-void MainWindow::addAction(const QString &label, const QString &command)
+void MainWindow::addAction(const QString &label, const QStringList &command)
 {
     QAction *action = new QAction(this);
     action->setText(label);
@@ -297,7 +328,8 @@ void MainWindow::handleActions()
     if (m_interpreter)
     {
         QVariant var = action->property("command");
-        m_interpreter->execute(var.toString());
+        QStringList list = var.toStringList();
+        m_interpreter->execute(list);
     }
 }
 

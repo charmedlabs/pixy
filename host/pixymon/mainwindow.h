@@ -71,7 +71,7 @@ private:
     void connectPixy(bool state);
     void connectPixyDFU(bool state);
     void updateButtons();
-    void addAction(const QString &label, const QString &command);
+    void addAction(const QString &label, const QStringList &command);
     void setEnabledActions(bool enable);
     void close();
 

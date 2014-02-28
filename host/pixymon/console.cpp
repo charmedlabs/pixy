@@ -25,6 +25,7 @@ ConsoleWidget::ConsoleWidget(MainWindow *main) : QPlainTextEdit((QWidget *)main)
 {
     m_main = main;
     m_color = CW_DEFAULT_COLOR;
+    m_suppress = false;
     // a block is a line, so this is the maximum number of lines to buffer
     setMaximumBlockCount(CW_SCROLLHEIGHT);
     acceptInput(false);
@@ -54,7 +55,20 @@ void ConsoleWidget::print(QString text, QColor color)
     moveCursor(QTextCursor::End);
     handleColor(color);
     m_mutexPrint.lock();
-    insertPlainText(text);
+    if (text==m_lastLine)
+    {
+        if (!m_suppress)
+        {
+            insertPlainText("...\n");
+            m_suppress = true;
+        }
+    }
+    else
+    {
+        insertPlainText(text);
+        m_suppress = false;
+    }
+    m_lastLine = text;
     m_waitPrint.wakeAll();
     m_mutexPrint.unlock();
 }
@@ -86,7 +100,7 @@ void ConsoleWidget::prompt(QString text)
     // go to new line if line isn't empty
     emptyLine();
     insertPlainText(text2);
-
+    m_lastLine = "";
     // if we have trouble keeping viewport
     QScrollBar *sb = verticalScrollBar();
     sb->setSliderPosition(sb->maximum());

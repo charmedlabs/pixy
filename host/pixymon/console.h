@@ -59,7 +59,8 @@ private:
     MainWindow *m_main;
     QString m_prompt;
     QColor m_color;
-
+    QString m_lastLine;
+    bool m_suppress;
 };
 
 #endif // CONSOLE_H

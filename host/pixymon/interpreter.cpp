@@ -168,6 +168,8 @@ QString Interpreter::printProc(const ProcInfo *info, int level)
         if (sections.size()>0)
             print += sections[0] + "\n";
         print += "Parameters:\n";
+        if (list.size()==0)
+            print += "<NONE>\n";
         for (i=0; i<(int)list.size(); i++)
         {
             print += "   " + list[i].first + ": ";
@@ -380,7 +382,7 @@ void Interpreter::getRunning()
         m_running = running;
         emit runState(running);
         emit enableConsole(!running);
-        if (!running)
+        if (!running && m_externalCommand=="")
             prompt();
     }
 }
@@ -509,26 +511,36 @@ void Interpreter::run()
                     if (m_argv.size())
                     {
                         if (m_externalCommand!="") // print command to make things explicit and all pretty
-                        {
                             emit textOut(PROMPT " " + m_externalCommand);
-                            m_externalCommand = "";
-                        }
                         if (m_argv[0]=="help")
                             handleHelp();
                         else
                         {
                             res = call(m_argv, true);
-                            if (res<0 && m_programming)
+                            if (res<0)
                             {
-                                endLocalProgram();
-                                clearLocalProgram();
+                                if (m_programming)
+                                {
+                                    endLocalProgram();
+                                    clearLocalProgram();
+                                }
+                                m_commandList.clear(); // abort out little scriptlet
                             }
                         }
                         m_argv.clear();
-                        prompt();
+                        if (m_externalCommand=="")
+                            prompt();
+                        else
+                            m_externalCommand = "";
                         // check quickly to see if we're running after this command
                         if (!m_programming)
                             getRunning();
+                        // is there another command in our little scriptlet?
+                        if (m_commandList.size())
+                        {
+                            execute(m_commandList[0]);
+                            m_commandList.removeFirst();
+                        }
                     }
                     m_mutexProg.unlock();
                 }
@@ -750,10 +762,24 @@ void Interpreter::execute(const QString &command)
     unwait(); // unhang ourselves if we're waiting for input
     m_mutexProg.lock();
     m_argv = argv;
+    m_externalCommand = command;
     m_mutexProg.unlock();
     if (m_running==true)
            m_pendingCommand = STOP;
-    m_externalCommand = command;
+}
+
+void Interpreter::execute(QStringList commandList)
+{
+    if (commandList.size()==0)
+        return;
+    execute(commandList[0]);
+    commandList.removeFirst();
+    if (commandList.size()>0)
+    {
+        m_mutexProg.lock();
+        m_commandList = commandList;
+        m_mutexProg.unlock();
+    }
 }
 
 #if 0

@@ -57,6 +57,7 @@ public:
     uint programRunning();
 
     void execute(const QString &command);
+    void execute(QStringList commandList);
     void printHelp();
 
     void close();
@@ -146,6 +147,7 @@ private:
     Qt::Key m_key;
     uint32_t m_rcount;
     QStringList m_argv;
+    QStringList m_commandList;
     uint8_t m_argTypes[0x100];
     uint16_t m_version[3];
 };
