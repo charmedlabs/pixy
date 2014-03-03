@@ -146,6 +146,23 @@ static const ProcModule g_module[] =
 	"@r 0 if success, negative if error"
 	"@r BA81 formatted data"
 	},
+	{
+	"cam_setRegister",
+	(ProcPtr)cam_setRegister,
+	{CRP_INT8, CRP_INT8, END},
+	"Write an SCCB register value on the camera chip"
+	"@p address register address"
+	"@p value register value to set"
+	"@r 0 if success, negative if error"
+	},  
+	{
+	"cam_getRegister",
+	(ProcPtr)cam_getRegister,
+	{CRP_INT8, END},
+	"Read an SCCB register on the camera chip"
+	"@p address register address"
+	"@r 0 register value"
+	},  
 	END
 };
 
@@ -182,8 +199,6 @@ static const uint8_t g_baseRegs[] =
     //Resolution and Format
     0x17, 0x25, // default 0x26 sensor horizontal output start msbs
     0x32, 0x07, // default 0x01 sensor horizontal start lsbs
-    0x24, CAM_BRIGHTNESS_DEFAULT, // default 0x60 liminance signal high range for agc
-    0x25, CAM_BRIGHTNESS_DEFAULT-CAM_BRIGHTNESS_RANGE, // default 0x55 luminance signal low range for agc
     0x26, 0xf1, // default 0xd2 fast mode large step range 
 	// note, above value may have something to do with agc oscillation
 	// 0x26=0xa1, noticed oscillation, which was improved when set back to
@@ -261,7 +276,7 @@ int cam_init()
 	
 	g_getFrameM0 = g_chirpM0->getProc("getFrame", NULL);
 
-	if (g_getFrameM0>0)
+	if (g_getFrameM0<0)
 		return -1;
 
 	cam_loadParams();
@@ -396,12 +411,10 @@ uint32_t cam_getECV()
 
 int32_t cam_setBrightness(const uint8_t &brightness)
 {
-	if (brightness!=g_brightness)
-	{
-		g_sccb->Write(0x24, brightness); 
-		g_sccb->Write(0x25, brightness>CAM_BRIGHTNESS_RANGE?brightness-CAM_BRIGHTNESS_RANGE:0);
-		g_brightness = brightness;
-	} 	
+	g_sccb->Write(0x24, brightness); 
+	g_sccb->Write(0x25, brightness>CAM_BRIGHTNESS_RANGE?brightness-CAM_BRIGHTNESS_RANGE:0);
+	g_brightness = brightness;
+
 	return 0;
 }
 
@@ -529,6 +542,16 @@ int32_t cam_getFrameChirpFlags(const uint8_t &type, const uint16_t &xOffset, con
 	return result;
 }
 
+int32_t cam_setRegister(const uint8_t &reg, const uint8_t &value)
+{
+  	g_sccb->Write(reg, value);
+	return 0;
+}
+
+int32_t cam_getRegister(const uint8_t &reg)
+{
+	return g_sccb->Read(reg);
+}
 
 void cam_setRegs(const uint8_t *rPairs, int len)
 {
@@ -545,6 +568,8 @@ void cam_setRegs(const uint8_t *rPairs, int len)
 	}
 	// take imager out of sleep mode
   	g_sccb->Write(0x09, 0x00);
+
+	cam_setBrightness(g_brightness);
 }
 
 void cam_loadParams()

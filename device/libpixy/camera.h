@@ -50,6 +50,9 @@ int cam_testPattern(const uint8_t &enable);
 int32_t cam_getFrameChirp(const uint8_t &type, const uint16_t &xOffset, const uint16_t &yOffset, const uint16_t &xWidth, const uint16_t &yWidth, Chirp *chirp);
 int32_t cam_getFrameChirpFlags(const uint8_t &type, const uint16_t &xOffset, const uint16_t &yOffset, const uint16_t &xWidth, const uint16_t &yWidth, Chirp *chirp, uint8_t renderFlags=RENDER_FLAG_FLUSH);
 int32_t cam_getFrame(uint8_t *memory, uint32_t memSize, uint8_t type, uint16_t xOffset, uint16_t yOffset, uint16_t xWidth, uint16_t yWidth);
+int32_t cam_setRegister(const uint8_t &reg, const uint8_t &value);
+int32_t cam_getRegister(const uint8_t &reg);
+
 
 void cam_loadParams();
 
