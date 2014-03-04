@@ -141,6 +141,10 @@ public:
 	{
 		return 0;
 	}
+	virtual int receiveLen()
+	{
+		return 0;
+	}
 	virtual int update()
 	{
 		return 0;

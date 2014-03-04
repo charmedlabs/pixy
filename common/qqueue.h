@@ -44,6 +44,10 @@ public:
     ~Qqueue();
 
     uint32_t dequeue(Qval *val);
+	uint32_t queued()
+	{
+		return m_fields->produced - m_fields->consumed;
+	}
 #ifndef PIXY
     int enqueue(Qval val);
 #endif

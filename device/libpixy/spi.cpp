@@ -100,6 +100,8 @@ void Spi::slaveHandler()
 	
 	// receive data
 	if ((d&SPI_SYNC_MASK)==SPI_SYNC_WORD)
+		m_sync = true;
+	else if ((d&SPI_SYNC_MASK)==SPI_SYNC_WORD_DATA)
 	{
 		m_rq.write(d);
 		m_sync = true;
@@ -113,17 +115,21 @@ void Spi::slaveHandler()
 int Spi::receive(uint8_t *buf, uint32_t len)
 {
 	uint32_t i;
-	uint16_t *buf16 = (uint16_t *)buf;
-
-	len /= 2;
+	uint16_t buf16;
 
 	for (i=0; i<len; i++)
 	{
-		if (m_rq.read(buf16+i)==0)
+		if (m_rq.read(&buf16)==0)
 			break;
+		buf[i] = buf16&0xff;
 	}
 
-	return i*2;
+	return i;
+}
+
+int Spi::receiveLen()
+{	
+	return m_rq.receiveLen();
 }
 
 int Spi::open()

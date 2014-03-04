@@ -4,72 +4,103 @@
 // Continuously prints blob data
 // using the Pixy library.
 
-#include <SPI.h>  // For some reason when SPI.h is included in a library
-                  // it also needs to be included in the sketch that uses
-                  // the library.
+#include <SPI.h>  
 #include <Pixy.h>
-#include <Servo.h>
 
-#define IMG_WIDTH 320
-#define IMG_HEIGHT 200
+#define X_CENTER    160L
+#define Y_CENTER    100L
+#define RCS_MIN_POS     0L
+#define RCS_MAX_POS     1000L
+#define RCS_CENTER_POS	((RCS_MAX_POS-RCS_MIN_POS)/2)
+
+class ServoLoop
+{
+public:
+  ServoLoop(int32_t pgain, int32_t dgain);
+
+  void update(int32_t error);
+   
+  int32_t m_pos;
+  int32_t m_prevError;
+  int32_t m_pgain;
+  int32_t m_dgain;
+};
+
+
+ServoLoop panLoop(500, 800);
+ServoLoop tiltLoop(700, 900);
+
+ServoLoop::ServoLoop(int32_t pgain, int32_t dgain)
+{
+  m_pos = RCS_CENTER_POS;
+  m_pgain = pgain;
+  m_dgain = dgain;
+  m_prevError = 0x80000000L;
+}
+
+void ServoLoop::update(int32_t error)
+{
+  long int vel;
+  char buf[32];
+  if (m_prevError!=0x80000000)
+  {	
+    vel = (error*m_pgain + (error - m_prevError)*m_dgain)>>10;
+    //sprintf(buf, "%ld\n", vel);
+    //Serial.print(buf);
+    m_pos += vel;
+    if (m_pos>RCS_MAX_POS) 
+      m_pos = RCS_MAX_POS; 
+    else if (m_pos<RCS_MIN_POS) 
+      m_pos = RCS_MIN_POS;
+
+    //cprintf("%d %d %d\n", m_axis, m_pos, vel);
+  }
+  m_prevError = error;
+}
+
 
 Pixy pixy;
 
-Servo servoPan;
-Servo servoTilt;
-
-float posX = 90;
-float posY = 90;
-
 void setup()
 {
+
   Serial.begin(9600);
   Serial.print("Starting...\n");
-  
-  servoPan.attach(9);
-  servoTilt.attach(10);
-  
-  servoPan.write(90);
-  servoTilt.write(90);
 }
 
 void loop()
 { 
   static int i = 0;
-  static int j = 0;
+  int j;
   uint16_t blocks;
   char buf[16]; 
+  int32_t panError, tiltError;
   
   blocks = pixy.getBlocks();
   
   if (blocks)
   {
+    panError = X_CENTER-pixy.blocks[0].x;
+    tiltError = pixy.blocks[0].y-Y_CENTER;
+    
+    panLoop.update(panError);
+    tiltLoop.update(tiltError);
+    
+    pixy.setServos(panLoop.m_pos, tiltLoop.m_pos);
+    
     i++;
-      if (pixy.blocks[0].x > ((IMG_WIDTH/2) + 7)) {
-        posX -= 1.5;
-        posX = max(posX, 0);
-        servoPan.write(posX);
-      } else if (pixy.blocks[0].x < ((IMG_WIDTH/2) - 7)) {
-        posX += 1.5;
-        posX += abs(((IMG_WIDTH/2) - pixy.blocks[0].x)) / 300;
-        posX = min(posX, 180);
-        servoPan.write(posX);
+    
+    if (i%50==0)
+    {
+      sprintf(buf, "Detected %d:\n", blocks);
+      Serial.print(buf);
+      for (j=0; j<blocks; j++)
+      {
+        sprintf(buf, "  block %d: ", j);
+        Serial.print(buf); 
+        pixy.blocks[j].print();
       }
-      
-      if (pixy.blocks[0].y > ((IMG_HEIGHT/2) + 5)) {
-        posY += 1.5;
-        posY = min(posY, 180);
-        servoTilt.write(posY);
-      } else if (pixy.blocks[0].y < ((IMG_HEIGHT/2) - 5)) {
-        posY -= 1.5;
-        posY = max(posY, 0);
-        servoTilt.write(posY);
-      }
-      
-    if (i%50==0) {
-      j++;
-      Serial.print(j);
-      Serial.print("\n");
     }
-  }
+  }  
 }
+

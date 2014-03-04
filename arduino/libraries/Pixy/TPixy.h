@@ -48,6 +48,8 @@ public:
   ~TPixy();
 	
   uint16_t getBlocks(uint16_t maxBlocks=1000);
+  int8_t setServos(uint16_t s0, uint16_t s1);
+  
   Block *blocks;
 	
 private:
@@ -130,6 +132,7 @@ template <class LinkType> uint16_t TPixy<LinkType>::getBlocks(uint16_t maxBlocks
     if (checksum==PIXY_START_WORD) // we've reached the beginning of the next frame
     {
       skipStart = true;
+	  //Serial.println("skip");
       return blockCount;
     }
     else if (checksum==0)
@@ -156,6 +159,18 @@ template <class LinkType> uint16_t TPixy<LinkType>::getBlocks(uint16_t maxBlocks
     if (w!=PIXY_START_WORD)
       return blockCount;
   }
+}
+
+template <class LinkType> int8_t TPixy<LinkType>::setServos(uint16_t s0, uint16_t s1)
+{
+  uint8_t outBuf[6];
+   
+  outBuf[0] = 0x00;
+  outBuf[1] = 0xff; 
+  *(uint16_t *)(outBuf + 2) = s0;
+  *(uint16_t *)(outBuf + 4) = s1;
+  
+  return link.send(outBuf, 6);
 }
 
 #endif
