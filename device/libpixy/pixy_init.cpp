@@ -104,7 +104,6 @@ void GPIOInit(void)
 	// button, SPI_SSEL
 	LPC_GPIO_PORT->MASK[5] = 0;
 	LPC_GPIO_PORT->PIN[5] = 0x20; // negate SPI_SS
-	LPC_GPIO_PORT->DIR[5] = 0x20; // SPI_SS - output
 
 	// deal with P4_1, GPIO2[1]
 	LPC_GPIO_PORT->MASK[2] = 0;

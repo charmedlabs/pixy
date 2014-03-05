@@ -32,10 +32,12 @@
 
 extern ChirpProc c_grabFrame;
 
-MainWindow::MainWindow(QWidget *parent) :
+MainWindow::MainWindow(int argc, char *argv[], QWidget *parent) :
     QMainWindow(parent),
     m_ui(new Ui::MainWindow)
 {
+    parseCommandline(argc, argv);
+
     qRegisterMetaType<Device>("Device");
 
     m_ui->setupUi(this);
@@ -47,6 +49,7 @@ MainWindow::MainWindow(QWidget *parent) :
     m_pixyDFUConnected = false;
     m_exitting = false;
     m_configDialog = NULL;
+    m_initScriptExecuted = false;
 
     m_console = new ConsoleWidget(this);
     m_video = new VideoWidget(this);
@@ -131,6 +134,30 @@ MainWindow::~MainWindow()
 
     qDebug("deleting mainWindow");
     // we don't delete any of the widgets because the parent deletes it's children upon deletion
+}
+
+void MainWindow::parseCommandline(int argc, char *argv[])
+{
+    int i;
+
+    // when updating to Qt 5, we can use QCommandLineParser
+    for (i=1; i<argc; i++)
+    {
+        if (!strcmp("-firmware", argv[i]) && i+1<argc)
+        {
+            i++;
+            m_firmwareFile = argv[i];
+            m_firmwareFile.remove(QRegExp("[\"']"));
+        }
+        else if (!strcmp("-initscript", argv[i]) && i+1<argc)
+        {
+            i++;
+            QString script = argv[i];
+            script.remove(QRegExp("[\"']"));
+            m_initScript = script.split(QRegExp("[\\r\\n]"));
+        }
+
+    }
 }
 
 void MainWindow::updateButtons()
@@ -226,13 +253,18 @@ void MainWindow::closeEvent(QCloseEvent *event)
 void MainWindow::handleRunState(uint state)
 {
     updateButtons();
+    if (state==true && m_initScript.size()>0 && !m_initScriptExecuted)
+    {
+        m_interpreter->execute(m_initScript);
+        m_initScriptExecuted = true;
+    }
 }
 
 void MainWindow::connectPixyDFU(bool state)
 {
     if (state) // connect
     {
-        m_console->print("Pixy programming state detected.\n");
+        m_console->print("Pixy programming state detected. Select the new firmware file to program by selecting \"Program\" from the \"File\" menu.\n");
         try
         {
             Dfu *dfu;
@@ -273,6 +305,8 @@ void MainWindow::connectPixy(bool state)
                 try
                 {
                     m_flash = new Flash();
+                    if (m_firmwareFile!="")
+                        program(m_firmwareFile);
                 }
                 catch (std::runtime_error &exception)
                 {
@@ -286,6 +320,7 @@ void MainWindow::connectPixy(bool state)
                 m_console->print("Pixy detected.\n");
                 m_interpreter = new Interpreter(m_console, m_video);
 
+                m_initScriptExecuted = false; // reset so we'll execute for this instance
                 connect(m_interpreter, SIGNAL(runState(uint)), this, SLOT(handleRunState(uint)));
                 connect(m_interpreter, SIGNAL(finished()), this, SLOT(interpreterFinished()));
                 connect(m_interpreter, SIGNAL(connected(Device,bool)), this, SLOT(handleConnected(Device,bool)));
@@ -392,6 +427,32 @@ void MainWindow::on_actionPlay_Pause_triggered()
 }
 
 
+void MainWindow::program(const QString &file)
+{
+    try
+    {
+        m_console->print("Programming... (" + file + ")\n");
+        QApplication::processEvents(); // render message before we continue
+        m_flash->program(file);
+        m_console->print("done! (Reset Pixy by unplugging/plugging USB cable.)\n");
+
+    }
+    catch (std::runtime_error &exception)
+    {
+        m_console->error(QString(exception.what())+"\n");
+    }
+
+    // clean up...
+    delete m_flash;
+    m_flash = NULL;
+    m_pixyDFUConnected = false;
+    m_pixyConnected = false;
+
+    // start looking for devices again (wait 4 seconds before we start looking though)
+    m_connect = new ConnectEvent(this, 4000);
+
+}
+
 void MainWindow::on_actionProgram_triggered()
 {
     if (!m_pixyDFUConnected || !m_pixyConnected)
@@ -411,33 +472,8 @@ void MainWindow::on_actionProgram_triggered()
         if (fd.exec())
         {
             QStringList slist = fd.selectedFiles();
-            if (slist.size()==1)
-            {
-                if (m_flash)
-                {
-                    try
-                    {
-                        m_console->print("Programming...\n");
-                        QApplication::processEvents(); // render message before we continue
-                        m_flash->program(slist.at(0));
-                        m_console->print("done! (Reset Pixy by unplugging/plugging USB cable.)\n");
-
-                    }
-                    catch (std::runtime_error &exception)
-                    {
-                        m_console->error(QString(exception.what())+"\n");
-                    }
-
-                    // clean up...
-                    delete m_flash;
-                    m_flash = NULL;
-                    m_pixyDFUConnected = false;
-                    m_pixyConnected = false;
-
-                    // start looking for devices again (wait 4 seconds before we start looking though)
-                    m_connect = new ConnectEvent(this, 4000);
-                }
-            }
+            if (slist.size()==1 && m_flash)
+                program(slist.at(0));
         }
     }
 }

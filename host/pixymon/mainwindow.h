@@ -44,7 +44,7 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit MainWindow(QWidget *parent = 0);
+    explicit MainWindow(int argc, char *argv[], QWidget *parent = 0);
     ~MainWindow();
 
     friend class VideoWidget;
@@ -74,6 +74,8 @@ private:
     void addAction(const QString &label, const QStringList &command);
     void setEnabledActions(bool enable);
     void close();
+    void parseCommandline(int argc, char *argv[]);
+    void program(const QString &file);
 
     bool m_pixyConnected;
     bool m_pixyDFUConnected;
@@ -86,6 +88,10 @@ private:
     ConfigDialog *m_configDialog;
     std::vector<QAction *> m_actions;
     Ui::MainWindow *m_ui;
+
+    QString m_firmwareFile;
+    QStringList m_initScript;
+    bool m_initScriptExecuted;
 };
 
 #endif // MAINWINDOW_H

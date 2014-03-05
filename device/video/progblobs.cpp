@@ -77,7 +77,7 @@ void handleRecv()
 				serial->receive((uint8_t *)&s0, 2);
 				serial->receive((uint8_t *)&s1, 2);
 
-				cprintf("servo %d %d\n", s0, s1);
+				//cprintf("servo %d %d\n", s0, s1);
 				rcs_setPos(0, s0);
 				rcs_setPos(1, s1);
 
@@ -106,7 +106,6 @@ int blobsLoop()
 	// send blobs
 	g_blobs->getBlobs(&blobs, &numBlobs);
 	cc_sendBlobs(g_chirpUsb, blobs, numBlobs);
-
 
 	ser_getSerial()->update();
 

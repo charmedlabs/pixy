@@ -83,13 +83,21 @@ void Flash::program(const QString &filename)
         {
             if (m_chirp.callSync(m_programProc, UINT32(addr), UINTS8(len, m_buf), END_OUT_ARGS,
                              &response, END_IN_ARGS)<0)
-                throw std::runtime_error("Communication error during programming.");
+                throw std::runtime_error("communication error during programming.");
             if (response==-1)
-                throw std::runtime_error("Invalid address range.");
+                throw std::runtime_error("invalid address range.");
             else if (response==-3)
-                throw std::runtime_error("Error during verify.");
+                throw std::runtime_error("during verify.");
+            else if (response<-100)
+            {
+                QString str = "I/O: " + QString::number(-response-100) + ".";
+                throw std::runtime_error(str.toStdString());
+            }
             else if (response<0)
-                throw std::runtime_error("Error during programming.");
+            {
+                QString str = "programming: " + QString::number(response) + ".";
+                throw std::runtime_error(str.toStdString());
+            }
         }
         if (res<0)
             break;
