@@ -45,11 +45,11 @@ int ser_init()
 void ser_loadParams()
 {
 	prm_add("Data out port", 0, 
-		"Selects the port that's used to output data, 0=SPI, 1=I2C, 2=UART, 3=analog/digital x, 4=analog/digital y (default 0)", UINT8(0), END);
+		"@c Interface Selects the port that's used to output data, 0=SPI, 1=I2C, 2=UART, 3=analog/digital x, 4=analog/digital y (default 0)", UINT8(0), END);
 	prm_add("I2C address", PRM_FLAG_HEX_FORMAT, 
-		"Sets the I2C address if you are using I2C data out port. (default 0x54)", UINT8(I2C_DEFAULT_SLAVE_ADDR), END);
+		"@c Interface Sets the I2C address if you are using I2C data out port. (default 0x54)", UINT8(I2C_DEFAULT_SLAVE_ADDR), END);
 	prm_add("UART baudrate", 0, 
-		"Sets the UART baudrate if you are using UART data out port. (default 19200)", UINT32(19200), END);
+		"@c Interface Sets the UART baudrate if you are using UART data out port. (default 19200)", UINT32(19200), END);
 
 	uint8_t interface, addr;
 	uint32_t baudrate;
@@ -62,7 +62,6 @@ void ser_loadParams()
 
 	prm_get("UART baudrate", &baudrate, END);
 	g_uart0->setBaudrate(baudrate);
-
 }
 
 int ser_setInterface(uint8_t interface)

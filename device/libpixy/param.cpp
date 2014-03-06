@@ -167,7 +167,7 @@ int32_t  prm_getAll(const uint16_t &index, Chirp *chirp)
 int prm_format()
 {
 	flash_erase(PRM_FLASH_LOC, PRM_ALLOCATED_LEN);
-	cprintf("All parameters have been erased and restored to defaults!\n");
+	cprintf("All parameters have been erased and restored to their defaults!\n");
 	g_dirty = true;
 	return 0;
 }

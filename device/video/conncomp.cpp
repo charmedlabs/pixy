@@ -157,11 +157,11 @@ void cc_loadParams(void)
 	prm_add("Min block area", 0, 
 		"Sets the minimum required area in pixels for a block.  Blocks with less area won't be sent. (default 20)", UINT32(20), END);
 	prm_add("Min saturation", 0,
-		"Sets the minimum allowed color saturation for when generating color signatures. Applies during teaching. (default 10.0)", FLT32(10.0), END);
+		"@c Signature_creation Sets the minimum allowed color saturation for when generating color signatures. Applies during teaching. (default 15.0)", FLT32(15.0), END);
 	prm_add("Hue spread", 0,
-		"Sets how inclusive the color signatures are with respect to hue. Applies during teaching. (default 1.0)", FLT32(1.0), END);
+		"@c Signature_creation Sets how inclusive the color signatures are with respect to hue. Applies during teaching. (default 1.0)", FLT32(1.0), END);
 	prm_add("Saturation spread", 0,
-		"Sets how inclusive the color signatures are with respect to saturation. Applies during teaching. (default 1.0)", FLT32(1.0), END);
+		"@c Signature_creation Sets how inclusive the color signatures are with respect to saturation. Applies during teaching. (default 1.0)", FLT32(1.0), END);
 
 	// load
 	float minSat, hueTol, satTol;
@@ -392,15 +392,17 @@ uint8_t ledBrightness(uint8_t channel, uint32_t area)
 	if (channel==0)
 		return 0;
 
-	brightness = channel*area/10000;
+	brightness = channel*area/50000;
 	if (brightness==0) // can't take log of 0...
-		return 5;
+		return 1;
 	
 	// put on log curve
 	brightness = log((float)brightness)*50;
 	// saturate
 	if (brightness>0xff)
 		brightness = 0xff;
+	else if (brightness==0) 
+		brightness = 1;
 
 	return brightness;
 }

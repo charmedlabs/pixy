@@ -13,6 +13,8 @@
 // end license header
 //
 
+#include <inttypes.h>
+#include "lpc43xx_scu.h"
 #include "i2c.h"
 
 I2c *g_i2c0;
@@ -65,6 +67,12 @@ void I2c::slaveHandler()
 
 int I2c::open()
 {
+	// make all pins on the I/O connector high impedance so we can just daisy chain the whole connector together
+	scu_pinmux(0x1, 3, (MD_PLN | MD_EZI | MD_ZI | MD_EHS), FUNC0); 
+	scu_pinmux(0x2, 1, (MD_PLN | MD_EZI | MD_ZI | MD_EHS), FUNC4); 	         
+	scu_pinmux(0x2, 1, (MD_PLN | MD_EZI | MD_ZI | MD_EHS), FUNC4); 	         
+	scu_pinmux(0x1, 4, (MD_PLN | MD_EZI | MD_ZI | MD_EHS), FUNC0); 	         
+	scu_pinmux(0x2, 0, (MD_PLN | MD_EZI | MD_ZI | MD_EHS), FUNC4); 	         
 	// turn off driver for SS signal so we can wire-or them together
 	LPC_SGPIO->GPIO_OENREG = 0;
 

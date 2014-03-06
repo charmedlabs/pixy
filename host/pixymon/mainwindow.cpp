@@ -411,7 +411,7 @@ void MainWindow::on_actionAbout_triggered()
         QString fwver;
         uint16_t *version;
         version = m_interpreter->getVersion();
-        contents += fwver.sprintf("Pixy firmware version (queried) %d.%d.%d BETA\n", version[0], version[1], version[2]);
+        contents += fwver.sprintf("Pixy firmware version (queried) %d.%d.%d\n", version[0], version[1], version[2]);
     }
 
     contents += "\nCMUCam5 Pixy and PixyMon are open hardware and open source software ";

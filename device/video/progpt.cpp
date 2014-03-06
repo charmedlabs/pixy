@@ -22,6 +22,7 @@
 #include "rcservo.h"
 #include "cameravals.h"
 #include "conncomp.h"
+#include "param.h"
 
 extern Qqueue *g_qqueue;
 extern Blobs *g_blobs;
@@ -72,22 +73,30 @@ void ServoLoop::reset()
 	rcs_setPos(m_axis, m_pos);
 }
 
+void ServoLoop::setGains(int32_t pgain, int32_t dgain)
+{
+	m_pgain = pgain;
+	m_dgain = dgain;	
+}
+
 
 int ptSetup()
 {
 	// setup camera mode
 	cam_setMode(CAM_MODE1);
 
-	// extend range of servos
-	rcs_setLimits(0, -200, 200);
-	rcs_setLimits(1, -200, 200);
+	// extend range of servos (handled in params)
+	// rcs_setLimits(0, -200, 200);	(handled in rcservo params)
+	// rcs_setLimits(1, -200, 200);	(handled in rcservo params)
 
 	// Increasing the PWM frequency makes the servos zippier. 
 	// Pixy updates at 50 Hz, so a default servo update freq of 50 Hz
 	// adds significant latency to the control loop--- increasing to 100 Hz decreases this.
 	// Increasing to more than 130 Hz or so creates buzzing, prob not good for the servo.
-	rcs_setFreq(100);
- 	
+	// rcs_setFreq(100); (handled in rcservo params)
+ 
+ 	ptLoadParams();
+	
 	g_panLoop.reset();
 	g_tiltLoop.reset();
 
@@ -101,6 +110,29 @@ int ptSetup()
 
 	return 0;
 }
+
+void ptLoadParams()
+{
+	prm_add("Pan P gain", 0, 
+		"@c Pan/tilt_demo Pan axis proportional gain (default 500)", INT32(500), END);
+	prm_add("Pan D gain", 0, 
+		"@c Pan/tilt_demo Pan axis derivative gain (default 800)", INT32(800), END);
+	prm_add("Tilt P gain", 0, 
+		"@c Pan/tilt_demo Tilt axis proportional gain (default 700)", INT32(700), END);
+	prm_add("Tilt D gain", 0, 
+		"@c Pan/tilt_demo Tilt axis derivative gain (default 900)", INT32(900), END);
+
+	int32_t pgain, dgain; 
+
+	prm_get("Pan P gain", &pgain, END);
+	prm_get("Pan D gain", &dgain, END);
+	g_panLoop.setGains(pgain, dgain);
+
+	prm_get("Tilt P gain", &pgain, END);
+	prm_get("Tilt D gain", &dgain, END);
+	g_tiltLoop.setGains(pgain, dgain);
+}
+
 
 int ptLoop()
 {

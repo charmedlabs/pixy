@@ -14,6 +14,8 @@
 //
 
 #include "pixy_init.h"
+#include "param.h"
+#include "pixytypes.h"
 #include "rcservo.h"
 
 static uint16_t g_rcsPos[RCS_NUM_AXES];
@@ -80,8 +82,37 @@ void rcs_init()
 		g_rcsPwmGain[i] = 1<<RCS_GAIN_SCALE;
 		rcs_setPos(i, RCS_CENTER_POS);
 	}
+
+	rcs_loadParams();
 		
 	g_chirpUsb->registerModule(g_module);
+}
+
+void rcs_loadParams()
+{
+	prm_add("S0 lower limit", PRM_FLAG_SIGNED, 
+		"@c Servo Sets the lower limit of travel for S0 (default -200)", INT16(-200), END);
+	prm_add("S0 upper limit", PRM_FLAG_SIGNED, 
+		"@c Servo Sets the upper limit of travel for S0 (default 200)", INT16(200), END);
+	prm_add("S1 lower limit", PRM_FLAG_SIGNED, 
+		"@c Servo Sets the lower limit of travel for S1 (default -200)", INT16(-200), END);
+	prm_add("S1 upper limit", PRM_FLAG_SIGNED, 
+		"@c Servo Sets the upper limit of travel for S1 (default 200)", INT16(200), END);
+	prm_add("Servo frequency", PRM_FLAG_ADVANCED, 
+		"@c Servo Sets the PWM frequency of the servos (default 100)", UINT16(100), END);
+
+	int16_t lower, upper, freq;
+
+	prm_get("S0 lower limit", &lower, END);
+	prm_get("S0 upper limit", &upper, END);
+	rcs_setLimits(0, lower, upper);
+
+	prm_get("S1 lower limit", &lower, END);
+	prm_get("S1 upper limit", &upper, END);
+	rcs_setLimits(1, lower, upper);
+
+	prm_get("Servo frequency", &freq, END);
+	rcs_setFreq(freq);
 }
 
 int32_t rcs_setPos(const uint8_t &channel, const uint16_t &pos)

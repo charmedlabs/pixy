@@ -60,6 +60,7 @@ int main(void)
 
 #if 1
 	exec_addProg(&g_progBlobs);
+	ptLoadParams();
 	exec_addProg(&g_progPt);
 	exec_addProg(&g_progVideo, true);
 	exec_loop();

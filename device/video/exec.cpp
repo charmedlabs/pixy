@@ -22,6 +22,8 @@
 #include "led.h"
 #include "conncomp.h"
 #include "serial.h"
+#include "rcservo.h"
+#include "progpt.h"
 #include "param.h"
 
 static const ProcModule g_module[] =
@@ -191,7 +193,7 @@ int32_t exec_version(Chirp *chirp)
 {
 	uint16_t ver[] = {FW_MAJOR_VER, FW_MINOR_VER, FW_BUILD_VER};
 
-	cprintf("Pixy firmware version %d.%d.%d BETA\n", ver[0], ver[1], ver[2]);
+	cprintf("Pixy firmware version %d.%d.%d\n", ver[0], ver[1], ver[2]);
 	if (chirp)
 		CRP_RETURN(chirp, UINTS16(sizeof(ver), ver), END);
 
@@ -252,6 +254,9 @@ void exec_loadParams()
  	cc_loadParams();
 	ser_loadParams();
 	cam_loadParams();
+	rcs_loadParams();
+
+	ptLoadParams();
 
 	loadParams(); // local
 }

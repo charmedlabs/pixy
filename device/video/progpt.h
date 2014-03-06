@@ -27,6 +27,7 @@ extern Program g_progPt;
 
 int ptSetup();
 int ptLoop();
+void ptLoadParams();
 
 class ServoLoop
 {
@@ -35,6 +36,7 @@ public:
 
 	void update(int32_t error);
 	void reset();
+	void setGains(int32_t pgain, int32_t dgain);
 
 private:
 	int32_t m_pos;

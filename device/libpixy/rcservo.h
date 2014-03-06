@@ -30,6 +30,7 @@
 #define RCS_NUM_AXES    2
 
 void rcs_init();
+void rcs_loadParams();
 
 int32_t rcs_setPos(const uint8_t &channel, const uint16_t &pos);
 int32_t rcs_getPos(const uint8_t &channel);
