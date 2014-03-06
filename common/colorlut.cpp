@@ -158,7 +158,7 @@ int ColorLUT::generate(ColorModel *model, const Frame8 &frame, const RectA &regi
     free(m_hpixels);
 
     // calculate goodness
-    result = (meanSat-m_minSat)*100/64; // 64 because it's half of our range
+    result = (meanSat-m_minSat)*100/64 + 10; // 64 because it's half of our range
     if (result<0)
         result = 0;
     if (result>100)
@@ -325,8 +325,9 @@ void ColorLUT::clear(uint8_t modelIndex)
 }
 
 #define GROW_INC                  4
-#define GROW_MAX_DISTANCE         12.5f
+#define GROW_MAX_DISTANCE         20.0f
 #define GROW_REGION_MAX_SIZE      100
+#define GROW_REGION_ATTEN         0.75f
 
 int ColorLUT::growRegion(RectA *result, const Frame8 &frame, const Point16 &seed)
 {
@@ -446,6 +447,10 @@ int ColorLUT::growRegion(RectA *result, const Frame8 &frame, const Point16 &seed
             if (done==0x0f) // finished!
             {
                 *result = region;
+				result->m_width = result->m_width*GROW_REGION_ATTEN;
+				result->m_xOffset += result->m_width*(1.0f-GROW_REGION_ATTEN)/2;
+				result->m_height = result->m_height*GROW_REGION_ATTEN;
+				result->m_yOffset += result->m_height*(1.0f-GROW_REGION_ATTEN)/2;
                 free(m_hpixels);
                 return 0;
             }

@@ -106,7 +106,9 @@ int ptLoop()
 {
 	int32_t panError, tiltError;
 	uint16_t *blob, x, y;
-	static int i = 0;
+	BlobA *blobs;
+	uint32_t numBlobs;
+
 
 	// create blobs
 	g_blobs->blobify();
@@ -122,13 +124,13 @@ int ptLoop()
 
 		g_panLoop.update(panError);
 		g_tiltLoop.update(tiltError);
-   		cprintf("%d: x=%d y=%d\n", i, x, y);
 	}
-	else
-	   	cprintf("%d\n", i);
+
+	// send blobs
+	g_blobs->getBlobs(&blobs, &numBlobs);
+	cc_sendBlobs(g_chirpUsb, blobs, numBlobs);
 
 	cc_setLED();
 	
-	i++;
 	return 0;
 }

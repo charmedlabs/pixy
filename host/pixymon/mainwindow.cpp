@@ -118,12 +118,15 @@ MainWindow::MainWindow(int argc, char *argv[], QWidget *parent) :
     addAction("Set signature 7...", list);
     list.clear();
     list << "cc_clearSig";
+    list << "run";
     addAction("Clear signature...", list);
     list.clear();
     list << "cc_clearAllSig";
+    list << "run";
     addAction("Clear all signatures", list);
     list.clear();
     list << "prm_restore";
+    list << "run";
     addAction("Restore default parameters", list);
 }
 
