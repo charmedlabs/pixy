@@ -1,8 +1,17 @@
-// Author: Scott Robinson
-// charmedlabs.com
 //
-// Continuously prints blob data
-// using the Pixy library.
+// begin license header
+//
+// This file is part of Pixy CMUcam5 or "Pixy" for short
+//
+// All Pixy source code is provided under the terms of the
+// GNU General Public License v2 (http://www.gnu.org/licenses/gpl-2.0.html).
+// Those wishing to use Pixy source code, software and/or
+// technologies under different licensing terms should contact us at
+// cmucam@cs.cmu.edu. Such licensing terms are available for
+// all portions of the Pixy codebase presented here.
+//
+// end license header
+//
 
 #include <SPI.h>  
 #include <Pixy.h>
@@ -21,7 +30,7 @@ void loop()
   static int i = 0;
   int j;
   uint16_t blocks;
-  char buf[16]; 
+  char buf[32]; 
   
   blocks = pixy.getBlocks();
   

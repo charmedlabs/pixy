@@ -1,9 +1,17 @@
-// Author: Scott Robinson
-// charmedlabs.com
 //
-// Continuously prints blob data
-// using the Pixy library.
-
+// begin license header
+//
+// This file is part of Pixy CMUcam5 or "Pixy" for short
+//
+// All Pixy source code is provided under the terms of the
+// GNU General Public License v2 (http://www.gnu.org/licenses/gpl-2.0.html).
+// Those wishing to use Pixy source code, software and/or
+// technologies under different licensing terms should contact us at
+// cmucam@cs.cmu.edu. Such licensing terms are available for
+// all portions of the Pixy codebase presented here.
+//
+// end license header
+//
 
 #include <Wire.h>
 #include <PixyI2C.h>
@@ -14,48 +22,17 @@ PixyI2C pixy;
 
 void setup()
 {
-  //Wire.begin();
   Serial.begin(9600);
   Serial.print("Starting...\n");
 }
 
-#if 0
-void loop()
-{ 
-  static unsigned int i = 0;
-  int j;
-  char buf[32];
-  
-#if 0  
-  for (j=0; j<256; j++)
-  {
-    Wire.beginTransmission(0x01);
-    Wire.write(j); // 
-    Wire.endTransmission();
-    delay(10);
-  }
-#endif
-#if 1
-  Wire.requestFrom(0x54, 2);
-  while(Wire.available())
-  {
-    uint8_t c = Wire.read();
-    uint16_t d = Wire.read();
-    d <<= 8;
-    d |= c; 
-    sprintf(buf, "%x\n", d);
-    //sprintf(buf, "%x %x %x\n", c);
-    Serial.print(buf);
-  }
-#endif
-}
-#else
+
 void loop() 
 { 
   static int i = 0;
   int j;
   uint16_t blocks;
-  char buf[16]; 
+  char buf[32]; 
   
   blocks = pixy.getBlocks();
   
@@ -76,5 +53,4 @@ void loop()
     }
   }  
 }
-#endif
 
