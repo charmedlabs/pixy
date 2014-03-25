@@ -20,6 +20,7 @@
 #include <vector>
 
 #define PIXYMON_TITLE   "PixyMon"
+#define PIXYMON_COMPANY "Charmed Labs"
 
 #define VER_MAJOR       0
 #define VER_MINOR       1
@@ -36,6 +37,7 @@ class Interpreter;
 class Flash;
 class ConnectEvent;
 class ConfigDialog;
+class QSettings;
 
 enum Device {NONE, PIXY, PIXY_DFU};
 
@@ -60,7 +62,6 @@ private slots:
     void on_actionPlay_Pause_triggered();
     void on_actionConfigure_triggered();
     void on_actionExit_triggered();
-    void on_actionProgram_triggered();
     void on_actionRaw_video_triggered();
     void on_actionCooked_video_triggered();
 
@@ -92,6 +93,7 @@ private:
     QString m_firmwareFile;
     QStringList m_initScript;
     bool m_initScriptExecuted;
+    QSettings *m_settings;
 };
 
 #endif // MAINWINDOW_H

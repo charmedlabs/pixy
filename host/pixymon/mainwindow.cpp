@@ -18,6 +18,7 @@
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QMetaType>
+#include <QSettings>
 #include "mainwindow.h"
 #include "videowidget.h"
 #include "console.h"
@@ -51,6 +52,7 @@ MainWindow::MainWindow(int argc, char *argv[], QWidget *parent) :
     m_configDialog = NULL;
     m_initScriptExecuted = false;
 
+    m_settings = new QSettings(QSettings::NativeFormat, QSettings::UserScope, PIXYMON_COMPANY, PIXYMON_TITLE);
     m_console = new ConsoleWidget(this);
     m_video = new VideoWidget(this);
 
@@ -267,7 +269,7 @@ void MainWindow::connectPixyDFU(bool state)
 {
     if (state) // connect
     {
-        m_console->print("Pixy programming state detected. Select the new firmware file to program by selecting \"Program\" from the \"File\" menu.\n");
+        m_console->print("Pixy programming state detected.\n");
         try
         {
             Dfu *dfu;
@@ -305,17 +307,27 @@ void MainWindow::connectPixy(bool state)
         {
             if (m_pixyDFUConnected) // we're in programming mode
             {
-                try
+                m_flash = new Flash();
+                if (m_firmwareFile!="")
+                    program(m_firmwareFile);
+                else
                 {
-                    m_flash = new Flash();
-                    if (m_firmwareFile!="")
-                        program(m_firmwareFile);
-                }
-                catch (std::runtime_error &exception)
-                {
-                    m_console->error(QString(exception.what())+"\n");
-                    m_flash = NULL;
-                    m_pixyDFUConnected = false;
+                    QString dir;
+                    QFileDialog fd(this);
+                    dir = m_settings->value("fw_dialog").toString();
+                    fd.setWindowTitle("Select a Firmware File");
+                    fd.setDirectory(QDir(dir));
+                    fd.setNameFilter("Firmware (*.hex)");
+                    if (fd.exec())
+                    {
+                        QStringList slist = fd.selectedFiles();
+                        if (slist.size()==1 && m_flash)
+                        {
+                            program(slist.at(0));
+                        }
+                    }
+                    dir = fd.directory().absolutePath();
+                    m_settings->setValue("fw_dialog", QVariant(dir));
                 }
             }
             else
@@ -333,6 +345,8 @@ void MainWindow::connectPixy(bool state)
         catch (std::runtime_error &exception)
         {
             m_console->error(QString(exception.what())+"\n");
+            m_flash = NULL;
+            m_pixyDFUConnected = false;
             m_pixyConnected = false;
         }
     }
@@ -437,7 +451,7 @@ void MainWindow::program(const QString &file)
         m_console->print("Programming... (" + file + ")\n");
         QApplication::processEvents(); // render message before we continue
         m_flash->program(file);
-        m_console->print("done! (Reset Pixy by unplugging/plugging USB cable.)\n");
+        m_console->print("done!\n");
 
     }
     catch (std::runtime_error &exception)
@@ -454,31 +468,6 @@ void MainWindow::program(const QString &file)
     // start looking for devices again (wait 4 seconds before we start looking though)
     m_connect = new ConnectEvent(this, 4000);
 
-}
-
-void MainWindow::on_actionProgram_triggered()
-{
-    if (!m_pixyDFUConnected || !m_pixyConnected)
-    {
-        m_console->print("Pixy needs to be put into programming mode.\n"
-                         "Do this by unplugging the USB cable, holding down the button,\n"
-                         "and then plugging the USB cable back in while continuing to\n"
-                         "hold down the button. You may do this now.\n");
-    }
-    else
-    {
-        QFileDialog fd(this);
-        fd.setWindowTitle("Select a Firmware File");
-        fd.setDirectory(QDir("\\"));
-        fd.setNameFilter("Firmware (*.hex)");
-
-        if (fd.exec())
-        {
-            QStringList slist = fd.selectedFiles();
-            if (slist.size()==1 && m_flash)
-                program(slist.at(0));
-        }
-    }
 }
 
 void MainWindow::on_actionConfigure_triggered()

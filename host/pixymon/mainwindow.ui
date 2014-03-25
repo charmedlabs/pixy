@@ -34,7 +34,6 @@
      <string>File</string>
     </property>
     <addaction name="actionSave_Image"/>
-    <addaction name="actionProgram"/>
     <addaction name="actionConfigure"/>
     <addaction name="actionExit"/>
    </widget>
