@@ -91,13 +91,13 @@ void rcs_init()
 void rcs_loadParams()
 {
 	prm_add("S0 lower limit", PRM_FLAG_SIGNED, 
-		"@c Servo Sets the lower limit of travel for S0 (default -200)", INT16(-200), END);
+		"@c Servo Sets the lower limit of travel for servo 0 (default -200)", INT16(-200), END);
 	prm_add("S0 upper limit", PRM_FLAG_SIGNED, 
-		"@c Servo Sets the upper limit of travel for S0 (default 200)", INT16(200), END);
+		"@c Servo Sets the upper limit of travel for servo 0 (default 200)", INT16(200), END);
 	prm_add("S1 lower limit", PRM_FLAG_SIGNED, 
-		"@c Servo Sets the lower limit of travel for S1 (default -200)", INT16(-200), END);
+		"@c Servo Sets the lower limit of travel for servo 1 (default -200)", INT16(-200), END);
 	prm_add("S1 upper limit", PRM_FLAG_SIGNED, 
-		"@c Servo Sets the upper limit of travel for S1 (default 200)", INT16(200), END);
+		"@c Servo Sets the upper limit of travel for servo 1 (default 200)", INT16(200), END);
 	prm_add("Servo frequency", PRM_FLAG_ADVANCED, 
 		"@c Servo Sets the PWM frequency of the servos (default 100)", UINT16(100), END);
 

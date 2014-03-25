@@ -157,7 +157,7 @@ void MainWindow::parseCommandline(int argc, char *argv[])
             i++;
             QString script = argv[i];
             script.remove(QRegExp("[\"']"));
-            m_initScript = script.split(QRegExp("[\\r\\n]"));
+            m_initScript = script.split(QRegExp("[\\\\]"));
         }
 
     }
