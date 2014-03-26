@@ -20,9 +20,12 @@
 #include <QLineEdit>
 #include <QLabel>
 #include <QThread>
+#include <QTableWidget>
 #include "chirpmon.h"
 #include "ui_configdialog.h"
 #include <vector>
+
+#define CD_GENERAL     "General"
 
 class Interpreter;
 class ConfigDialog;
@@ -30,9 +33,10 @@ class ConfigDialog;
 // struct to store parameter values
 struct Param
 {
-    Param(QString id,  QString desc, uint8_t type, uint32_t flags, uint32_t len, uint8_t *data)
+    Param(QString id, QString category, QString desc, uint8_t type, uint32_t flags, uint32_t len, uint8_t *data)
     {
         m_id = id;
+        m_category = category;
         m_desc = desc;
         m_type = type;
         m_flags = flags;
@@ -43,6 +47,7 @@ struct Param
     }
 
     QString m_id;
+    QString m_category;
     QString m_desc;
     uint8_t m_type;
     uint32_t m_flags;
@@ -99,15 +104,20 @@ protected slots:
     void loaded();
     void saved();
     void error(QString message);
+    void apply(QAbstractButton *button);
     virtual void accept();
     virtual void reject();
 
 private:
+    QWidget *findCategory(const QString &category);
+
     Ui::ConfigDialog *m_ui;
+    QTabWidget *m_tabs;
     Interpreter *m_interpreter;
     std::vector<Param> m_paramList;
     bool m_loading;
     bool m_rejecting;
+    bool m_applying;
 
     QThread m_thread;
 };

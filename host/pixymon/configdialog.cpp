@@ -19,6 +19,8 @@
 #include <QLabel>
 #include <QMessageBox>
 #include <QDebug>
+#include <QTableWidget>
+#include <QAbstractButton>
 #include <stdexcept>
 
 
@@ -66,9 +68,13 @@ void ConfigWorker::load()
     int res;
     for (i=0; true; i++)
     {
+        QString category;
+
         res = m_dialog->m_interpreter->m_chirp->callSync(prm_getAll, UINT16(i), END_OUT_ARGS, &response, &flags, &argList, &id, &desc, &len, &data, END_IN_ARGS);
         if (res<0)
             break;
+
+        QString sdesc(desc);
 
         if (response<0)
             break;
@@ -76,7 +82,20 @@ void ConfigWorker::load()
         if (flags&PRM_FLAG_INTERNAL)
             continue;
 
-        m_dialog->m_paramList.push_back(Param(id, "("+typeString(argList[0])+") "+desc, argList[0], flags, len, data));
+        // deal with param category
+        QStringList words = QString(desc).split(QRegExp("\\s+"));
+        int i = words.indexOf("@c");
+        if (i>=0 && words.size()>i+1)
+        {
+            category = words[i+1];
+            sdesc = sdesc.remove("@c "); // remove form description
+            sdesc = sdesc.remove(category + " "); // remove from description
+            category = category.replace('_', ' '); // make it look prettier
+        }
+        else
+            category = CD_GENERAL;
+
+        m_dialog->m_paramList.push_back(Param(id, category, "("+typeString(argList[0])+") "+sdesc, argList[0], flags, len, data));
     }
 
     qDebug("loaded");
@@ -135,6 +154,8 @@ void ConfigWorker::save()
                 emit error("There was a problem setting a parameter.");
                 return;
             }
+            // copy into param
+            memcpy(param.m_data, buf, param.m_len);
         }
     }
 
@@ -149,6 +170,10 @@ ConfigDialog::ConfigDialog(Interpreter *interpreter) : m_ui(new Ui::ConfigDialog
     m_interpreter = interpreter;
     m_interpreter->unwait(); // unhang interpreter if it's waiting
 
+    m_tabs = new QTabWidget(this);
+    m_ui->gridLayout->addWidget(m_tabs);
+    m_tabs->setMinimumWidth(400);
+
     ConfigWorker *worker = new ConfigWorker(this);
 
     worker->moveToThread(&m_thread);
@@ -157,12 +182,15 @@ ConfigDialog::ConfigDialog(Interpreter *interpreter) : m_ui(new Ui::ConfigDialog
     connect(worker, SIGNAL(loaded()), this, SLOT(loaded()));
     connect(worker, SIGNAL(saved()), this, SLOT(saved()));
     connect(worker, SIGNAL(error(QString)), this, SLOT(error(QString)));
+    connect(m_ui->buttonBox, SIGNAL(clicked(QAbstractButton*)), this, SLOT(apply(QAbstractButton*)));
+
     m_thread.start();
 #ifdef __MACOS__
     setMinimumWidth(275);
 #endif
     m_rejecting = false;
     m_loading = true;
+    m_applying = false;
     emit load();
 }
 
@@ -178,9 +206,27 @@ ConfigDialog::~ConfigDialog()
     qDebug("done");
 }
 
+QWidget *ConfigDialog::findCategory(const QString &category)
+{
+    int i;
+    QString tabText;
+
+    for (i=0; true; i++)
+    {
+        tabText = m_tabs->tabText(i);
+        if (tabText=="")
+            break;
+        else if (tabText==category)
+            return m_tabs->widget(i);
+    }
+    return NULL;
+}
+
 void ConfigDialog::loaded()
 {
     uint i;
+    QWidget *tab;
+    QGridLayout *layout;
 
     for (i=0; i<m_paramList.size(); i++)
     {
@@ -255,10 +301,34 @@ void ConfigDialog::loaded()
             param.m_line->setText(QString::number(val, 'f', 3));
         }
 
-        m_ui->gridLayout->addWidget(param.m_label, i, 0);
-        m_ui->gridLayout->addWidget(param.m_line, i, 1);
+        // deal with categories-- create category tab if needed
+        tab = findCategory(param.m_category);
+        if (tab==NULL)
+        {
+            tab = new QWidget();
+            layout = new QGridLayout(tab);
+            m_tabs->addTab(tab, param.m_category);
+        }
+        else
+            layout = (QGridLayout *)tab->layout();
+        param.m_line->setMaximumWidth(75);
+        layout->addWidget(param.m_label, i, 0);
+        layout->addWidget(param.m_line, i, 1);
     }
     m_loading = false;
+
+    // set stretch on all tabs
+    for (i=0; true; i++)
+    {
+        QWidget *tab = m_tabs->widget(i);
+        if (tab)
+        {
+            ((QGridLayout *)tab->layout())->setRowStretch(100, 1);
+            ((QGridLayout *)tab->layout())->setColumnStretch(100, 1);
+        }
+        else
+            break;
+    }
 
     if (m_rejecting) // resume reject
     {
@@ -269,8 +339,12 @@ void ConfigDialog::loaded()
 
 void ConfigDialog::saved()
 {
-    emit done();
-    QDialog::accept();
+    if (!m_applying)
+    {
+        emit done();
+        QDialog::accept();
+    }
+    m_applying = false;
 }
 
 void ConfigDialog::error(QString message)
@@ -294,6 +368,15 @@ void ConfigDialog::reject()
     }
     else
         m_rejecting = true; // defer reject
+}
+
+void ConfigDialog::apply(QAbstractButton *button)
+{
+    if (button->text()=="Apply")
+    {
+        m_applying = true;
+        emit save();
+    }
 }
 
 

@@ -139,6 +139,8 @@ MainWindow::~MainWindow()
 
     qDebug("deleting mainWindow");
     // we don't delete any of the widgets because the parent deletes it's children upon deletion
+
+    delete m_settings;
 }
 
 void MainWindow::parseCommandline(int argc, char *argv[])
