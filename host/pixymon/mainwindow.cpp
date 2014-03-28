@@ -417,7 +417,7 @@ void MainWindow::on_actionAbout_triggered()
     AboutDialog *about;
     QString contents;
 
-    contents.sprintf("%s version %d.%d.%d BETA\n", PIXYMON_TITLE, VER_MAJOR, VER_MINOR, VER_BUILD);
+    contents.sprintf("%s version %d.%d.%d\n", PIXYMON_TITLE, VER_MAJOR, VER_MINOR, VER_BUILD);
 
     if (m_interpreter)
     {
