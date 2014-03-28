@@ -172,7 +172,12 @@ ConfigDialog::ConfigDialog(Interpreter *interpreter) : m_ui(new Ui::ConfigDialog
 
     m_tabs = new QTabWidget(this);
     m_ui->gridLayout->addWidget(m_tabs);
-    m_tabs->setMinimumWidth(400);
+
+#ifdef __MACOS__
+    setMinimumWidth(550);
+#else
+    setMinimumWidth(400);
+#endif
 
     ConfigWorker *worker = new ConfigWorker(this);
 
@@ -185,9 +190,6 @@ ConfigDialog::ConfigDialog(Interpreter *interpreter) : m_ui(new Ui::ConfigDialog
     connect(m_ui->buttonBox, SIGNAL(clicked(QAbstractButton*)), this, SLOT(apply(QAbstractButton*)));
 
     m_thread.start();
-#ifdef __MACOS__
-    setMinimumWidth(275);
-#endif
     m_rejecting = false;
     m_loading = true;
     m_applying = false;
