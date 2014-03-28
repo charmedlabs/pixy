@@ -108,6 +108,8 @@ protected slots:
     virtual void accept();
     virtual void reject();
 
+protected:
+
 private:
     QWidget *findCategory(const QString &category);
 

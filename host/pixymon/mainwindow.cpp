@@ -398,10 +398,7 @@ void MainWindow::handleActions()
 void MainWindow::handleConnected(Device device, bool state)
 {
     if (m_configDialog)
-    {
-        delete m_configDialog;
-        m_configDialog = NULL;
-    }
+        m_configDialog->close();
 
     // kill connect thread
     if (m_connect)
