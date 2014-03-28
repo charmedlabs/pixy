@@ -148,6 +148,7 @@ void ConfigWorker::save()
         }
         if (memcmp(buf, param.m_data, param.m_len)) // only write those that have changed to save the flash sector
         {
+            qDebug("saving config params");
             res = m_dialog->m_interpreter->m_chirp->callSync(prm_set, STRING(id), UINTS8(param.m_len, buf), END_OUT_ARGS, &response, END_IN_ARGS);
             if (res<0 || response<0)
             {
@@ -163,7 +164,7 @@ void ConfigWorker::save()
 }
 
 
-ConfigDialog::ConfigDialog(Interpreter *interpreter) : m_ui(new Ui::ConfigDialog)
+ConfigDialog::ConfigDialog(QWidget *parent, Interpreter *interpreter) : QDialog(parent), m_ui(new Ui::ConfigDialog)
 {
 
     m_ui->setupUi(this);
@@ -172,7 +173,6 @@ ConfigDialog::ConfigDialog(Interpreter *interpreter) : m_ui(new Ui::ConfigDialog
 
     m_tabs = new QTabWidget(this);
     m_ui->gridLayout->addWidget(m_tabs);
-    m_tabs->setMinimumWidth(400);
 
     ConfigWorker *worker = new ConfigWorker(this);
 
@@ -185,13 +185,16 @@ ConfigDialog::ConfigDialog(Interpreter *interpreter) : m_ui(new Ui::ConfigDialog
     connect(m_ui->buttonBox, SIGNAL(clicked(QAbstractButton*)), this, SLOT(apply(QAbstractButton*)));
 
     m_thread.start();
-#ifdef __MACOS__
-    setMinimumWidth(275);
-#endif
     m_rejecting = false;
     m_loading = true;
     m_applying = false;
     emit load();
+
+#ifdef __MACOS__
+    setMinimumWidth(550);
+#else
+    setMinimumWidth(400);
+#endif
 }
 
 
@@ -200,7 +203,6 @@ ConfigDialog::~ConfigDialog()
     qDebug("destroying config dialog...");
     m_thread.quit();
     m_thread.wait();
-
     // we don't delete any of the widgets because the parent deletes its children
 
     qDebug("done");
@@ -228,6 +230,7 @@ void ConfigDialog::loaded()
     QWidget *tab;
     QGridLayout *layout;
 
+    qDebug("rendering config...");
     for (i=0; i<m_paramList.size(); i++)
     {
         Param &param = m_paramList[i];
@@ -335,6 +338,7 @@ void ConfigDialog::loaded()
         emit done();
         QDialog::reject();
     }
+    qDebug("rendering config done");
 }
 
 void ConfigDialog::saved()
@@ -356,6 +360,7 @@ void ConfigDialog::error(QString message)
 void ConfigDialog::accept()
 {
     emit save();
+    QDialog::accept();
 }
 
 void ConfigDialog::reject()
@@ -363,8 +368,8 @@ void ConfigDialog::reject()
     qDebug("reject called");
     if (!m_loading) // if we're in the middle of loading, defer rejection
     {
-        emit done();
         QDialog::reject();
+        emit done();
     }
     else
         m_rejecting = true; // defer reject

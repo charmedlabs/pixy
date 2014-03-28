@@ -27,6 +27,5 @@ AboutDialog::AboutDialog(const QString &contents) :
 
 AboutDialog::~AboutDialog()
 {
-    delete m_ui;
 }
 

@@ -398,10 +398,7 @@ void MainWindow::handleActions()
 void MainWindow::handleConnected(Device device, bool state)
 {
     if (m_configDialog)
-    {
-        delete m_configDialog;
-        m_configDialog = NULL;
-    }
+        m_configDialog->close();
 
     // kill connect thread
     if (m_connect)
@@ -474,7 +471,7 @@ void MainWindow::program(const QString &file)
 
 void MainWindow::on_actionConfigure_triggered()
 {
-    m_configDialog = new ConfigDialog(m_interpreter);
+    m_configDialog = new ConfigDialog(this, m_interpreter);
     connect(m_configDialog, SIGNAL(done()), this, SLOT(configFinished()));
     m_configDialog->show();
     updateButtons();

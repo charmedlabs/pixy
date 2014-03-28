@@ -548,6 +548,8 @@ void Interpreter::run()
             }
         }
     }
+    sendStop();
+    msleep(200); // let things settle a bit
     qDebug("worker thead exiting");
 }
 
@@ -610,11 +612,6 @@ int Interpreter::clearLocalProgram()
     QMutexLocker locker(&m_mutexProg);
     unsigned int i;
 
-    for (i=0; i<m_program.size() && m_localProgramRunning; i++)
-    {
-        ChirpCallData data = m_program[i];
-        delete [] data.m_buf;
-    }
     m_program.clear();
     m_programText.clear();
 

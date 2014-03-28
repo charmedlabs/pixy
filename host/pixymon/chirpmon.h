@@ -32,6 +32,10 @@ struct ChirpCallData
         memcpy(m_buf, buf, len);
         m_len = len;
     }
+    ~ChirpCallData()
+    {
+        delete [] m_buf;
+    }
 
     uint8_t m_type;
     ChirpProc m_proc;

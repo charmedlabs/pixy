@@ -88,7 +88,7 @@ class ConfigDialog : public QDialog
     Q_OBJECT
 
 public:
-    ConfigDialog(Interpreter *interpreter);
+    ConfigDialog(QWidget *parent, Interpreter *interpreter);
     ~ConfigDialog();
 
     friend class ConfigWorker;
@@ -107,6 +107,8 @@ protected slots:
     void apply(QAbstractButton *button);
     virtual void accept();
     virtual void reject();
+
+protected:
 
 private:
     QWidget *findCategory(const QString &category);

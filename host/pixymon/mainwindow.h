@@ -24,7 +24,7 @@
 
 #define VER_MAJOR       0
 #define VER_MINOR       1
-#define VER_BUILD       41
+#define VER_BUILD       47
 
 namespace Ui {
     class MainWindow;
