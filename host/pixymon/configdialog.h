@@ -88,7 +88,7 @@ class ConfigDialog : public QDialog
     Q_OBJECT
 
 public:
-    ConfigDialog(Interpreter *interpreter);
+    ConfigDialog(QWidget *parent, Interpreter *interpreter);
     ~ConfigDialog();
 
     friend class ConfigWorker;

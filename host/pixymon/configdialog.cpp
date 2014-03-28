@@ -164,7 +164,7 @@ void ConfigWorker::save()
 }
 
 
-ConfigDialog::ConfigDialog(Interpreter *interpreter) : m_ui(new Ui::ConfigDialog)
+ConfigDialog::ConfigDialog(QWidget *parent, Interpreter *interpreter) : QDialog(parent), m_ui(new Ui::ConfigDialog)
 {
 
     m_ui->setupUi(this);
@@ -191,7 +191,7 @@ ConfigDialog::ConfigDialog(Interpreter *interpreter) : m_ui(new Ui::ConfigDialog
     emit load();
 
 #ifdef __MACOS__
-    //setMinimumWidth(550);
+    setMinimumWidth(550);
 #else
     setMinimumWidth(400);
 #endif

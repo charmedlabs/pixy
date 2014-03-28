@@ -471,7 +471,7 @@ void MainWindow::program(const QString &file)
 
 void MainWindow::on_actionConfigure_triggered()
 {
-    m_configDialog = new ConfigDialog(m_interpreter);
+    m_configDialog = new ConfigDialog(this, m_interpreter);
     connect(m_configDialog, SIGNAL(done()), this, SLOT(configFinished()));
     m_configDialog->show();
     updateButtons();
