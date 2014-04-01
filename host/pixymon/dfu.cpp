@@ -15,6 +15,7 @@
 
 #include <stdexcept>
 #include <stdio.h>
+#include <stdlib.h>
 #include <QThread>
 #include "dfu.h"
 #include "sleeper.h"
