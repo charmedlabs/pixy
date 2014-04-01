@@ -45,7 +45,6 @@ HEADERS  += mainwindow.h \
     dfu_info.h \
     connectevent.h \
     pixy.h \
-    libusb.h \
     flash.h \
     reader.h \
     ../../common/pixytypes.h \
@@ -73,7 +72,8 @@ FORMS    += mainwindow.ui \
 # LIBS += ./libusb-1.0.dll.a
 
 win32 {
-    LIBS += ./libusb-1.0.dll.a
+    LIBS += ./libusb/libusb-1.0.dll.a
+    HEADERS += ./libusb/libusb.h
 }
 
 macx {
@@ -89,99 +89,9 @@ macx {
 unix:!macx {
     PKGCONFIG += libusb-1.0
     LIBS += -lusb-1.0
+    INCLUDEPATH += /usr/include/libusb-1.0
 }
 
 RESOURCES += \
     resources.qrc
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

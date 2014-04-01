@@ -59,6 +59,7 @@ int USBLink::open()
         m_handle = 0;
         return -1;
     }
+    libusb_reset_device(m_handle);
     return 0;
 }
 
