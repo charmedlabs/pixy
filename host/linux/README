@@ -8,18 +8,21 @@ sudo apt-get install libusb-1.0.0-dev
 then run buildpixymon.sh in this directory:
 ./buildpixymon.sh
 
-After building, you need to make sure that the Pixy device has the correct 
-permissions, otherwise you'll get a "Pixy device not detected" error.  This 
-is handled by udev.  In Ubuntu, you can copy the pixy.rules file into the
-/etc/udev/rules.d directory:
+The build script will make PixyMon and copy it into the current directory.
+BUT BEFORE YOU RUN PIXYMON, you need to make sure that the Pixy device 
+has the correct permissions, otherwise you'll get a "Pixy device not 
+detected" error.  This is handled by udev.  In Ubuntu, you can copy the 
+pixy.rules file (also in this directory) into the /etc/udev/rules.d directory:
 
 sudo p pixy.rules /etc/udev/rules.d/
 
+then try to run PixMon:
+
+./PixyMon
+
 If you still get an error, trying running pixymon with root privileges:
 
-sudo pixymon
+sudo ./PixyMon
 
 If you no longer get the error, there is something wrong with udev setting
-the permissions correctly.  
-
-
+the permissions correctly.
