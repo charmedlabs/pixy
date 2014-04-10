@@ -1,0 +1,11 @@
+To build PixyMon for Linux, run these guys first, to make sure you have 
+everything you need:
+
+sudo apt-get install g++
+sudo apt-get install qt4-dev-tools
+sudo apt-get install libusb-1.0.0-dev
+
+then run buildpixymon.sh in this directory:
+./buildpixymon.sh
+
+
