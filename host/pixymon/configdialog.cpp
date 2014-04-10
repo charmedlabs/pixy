@@ -192,7 +192,11 @@ ConfigDialog::ConfigDialog(QWidget *parent, Interpreter *interpreter) : QDialog(
 
 #ifdef __MACOS__
     setMinimumWidth(550);
-#else
+#endif
+#ifdef __LINUX__
+    setMinimumWidth(500);
+#endif
+#ifdef __WINDOWS__
     setMinimumWidth(420);
 #endif
 }

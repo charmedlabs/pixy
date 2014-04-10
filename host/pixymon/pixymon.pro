@@ -45,7 +45,6 @@ HEADERS  += mainwindow.h \
     dfu_info.h \
     connectevent.h \
     pixy.h \
-    libusb.h \
     flash.h \
     reader.h \
     ../../common/pixytypes.h \
@@ -65,6 +64,7 @@ HEADERS  += mainwindow.h \
 INCLUDEPATH += ../../common
 
 QMAKE_CXXFLAGS_DEBUG += -O0
+QMAKE_CXXFLAGS += -Wno-unused-parameter
 
 FORMS    += mainwindow.ui \
     configdialog.ui \
@@ -73,7 +73,9 @@ FORMS    += mainwindow.ui \
 # LIBS += ./libusb-1.0.dll.a
 
 win32 {
-    LIBS += ./libusb-1.0.dll.a
+    DEFINDES += __WINDOWS__
+    LIBS += ../windows/libusb-1.0.dll.a
+    HEADERS += ../windows/libusb.h
 }
 
 macx {
@@ -87,101 +89,13 @@ macx {
 }
 
 unix:!macx {
+    DEFINES += __LINUX__
     PKGCONFIG += libusb-1.0
     LIBS += -lusb-1.0
+    INCLUDEPATH += /usr/include/libusb-1.0
+   
 }
 
 RESOURCES += \
     resources.qrc
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

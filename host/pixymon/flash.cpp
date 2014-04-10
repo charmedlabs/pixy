@@ -21,7 +21,7 @@
 
 Flash::Flash() : m_chirp(false, true) // not hinterested, client
 {
-    uint32_t sectorSizeProc;
+    ChirpProc sectorSizeProc;
 
     if (m_link.open()<0)
         throw std::runtime_error("Cannot initialize USB for flash programming.");

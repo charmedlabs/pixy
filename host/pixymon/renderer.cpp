@@ -182,10 +182,7 @@ int Renderer::renderBA81(uint8_t renderFlags, uint16_t width, uint16_t height, u
     uint16_t x, y;
     uint32_t *line;
     uint32_t r, g, b;
-    uint8_t *frame0;
 
-
-    frame0 = frame;
     memcpy(m_rawFrame.m_pixels, frame, width*height);
     m_rawFrame.m_width = width;
     m_rawFrame.m_height = height;

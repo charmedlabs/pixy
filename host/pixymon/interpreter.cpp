@@ -610,7 +610,6 @@ uint Interpreter::programRunning()
 int Interpreter::clearLocalProgram()
 {
     QMutexLocker locker(&m_mutexProg);
-    unsigned int i;
 
     m_program.clear();
     m_programText.clear();
