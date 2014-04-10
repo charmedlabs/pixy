@@ -1,5 +1,5 @@
 #!/bin/bash     
-cd pixymon
+cd src/host/pixymon
 qmake pixymon.pro -o Makefile 
 make
 cd ..
