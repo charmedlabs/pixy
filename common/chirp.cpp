@@ -490,7 +490,7 @@ int Chirp::call(uint8_t service, ChirpProc proc, ...)
 
 int Chirp::sendChirpRetry(uint8_t type, ChirpProc proc)
 {
-    int i, res;
+    int i, res=-1;
 
     if (!m_connected && !(type&CRP_INTRINSIC))
         return CRP_RES_ERROR_NOT_CONNECTED;
