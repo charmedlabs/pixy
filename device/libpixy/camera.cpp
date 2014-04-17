@@ -209,7 +209,7 @@ static const uint8_t g_baseRegs[] =
 
     //General
     0x13, 0xa5, // default 0x85 (set banding filter on)
-    0x14, 0x80, // default 0x40 bit 4 reserved 	;Gain Ceiling 8X
+    0x14, 0x88, // default 0x40 bit 4 reserved 	;Gain Ceiling 8X
 
     //Banding
     0x22, 0x03, // default 0x00 max smooth banding steps
