@@ -14,7 +14,7 @@ has the correct permissions, otherwise you'll get a "Pixy device not
 detected" error.  This is handled by udev.  In Ubuntu, you can copy the 
 pixy.rules file (also in this directory) into the /etc/udev/rules.d directory:
 
-sudo p pixy.rules /etc/udev/rules.d/
+sudo cp pixy.rules /etc/udev/rules.d/
 
 then try to run PixMon:
 
