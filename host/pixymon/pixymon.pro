@@ -83,7 +83,8 @@ macx {
     DEFINES += __MACOS__
     CONFIG += x86
     CONFIG -= x86_64
-    LIBS += -L../mac -lusb-1.0
+    LIBS += -L/opt/local/lib -lusb-1.0
+    INCLUDEPATH += /opt/local/include/libusb-1.0
     #QMAKE_MAC_SDK = /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.7.sdk
     #QMAKE_MACOSX_DEPLOYMENT_TARGET = 10.7
 }

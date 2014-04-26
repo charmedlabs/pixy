@@ -149,7 +149,7 @@ QString Interpreter::printProc(const ProcInfo *info, int level)
     ArgList list;
     QString print;
     QStringList sections;
-    int i;
+    int i, j;
 
     print = QString(info->procName) + "(";
     if (getArgs(info, &list)<0)
@@ -158,7 +158,8 @@ QString Interpreter::printProc(const ProcInfo *info, int level)
     {
         if (i>0)
             print +=  ", ";
-        print += printArgType(&info->argTypes[i], i) + " " + list[i].first;
+	j = i;
+        print += printArgType(&info->argTypes[i], i) + " " + list[j].first;
     }
     print += ")\n";
 
@@ -826,7 +827,7 @@ int Interpreter::call(const QStringList &argv, bool interactive)
     ChirpProc proc;
     ProcInfo info;
     int args[20];
-    int i, j, n, base, res;
+    int i, j, k, n, base, res;
     bool ok;
     uint type;
     ArgList list;
@@ -873,8 +874,9 @@ int Interpreter::call(const QStringList &argv, bool interactive)
                         }
 
                     }
-                    pstring = printArgType(&info.argTypes[i], i) + " " + list[i].first +
-                            (list[i].second=="" ? "?" : " (" + list[i].second + ")?") + " " + pstring2;
+                    k = i;
+                    pstring = printArgType(&info.argTypes[i], i) + " " + list[k].first +
+                            (list[k].second=="" ? "?" : " (" + list[k].second + ")?") + " " + pstring2;
 
                     emit prompt(pstring);
                     m_mutexInput.lock();
@@ -944,7 +946,8 @@ int Interpreter::call(const QStringList &argv, bool interactive)
             {
                 if (i>1)
                     callString += ", ";
-                callString += printArgType(&m_argTypes[i-1], i) + "(" + argv[i] + ")";
+                j = i;
+                callString += printArgType(&m_argTypes[i-1], i) + "(" + argv[j] + ")";
             }
             emit textOut(callString + "\n");
         }
