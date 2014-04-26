@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <QThread>
 #include "dfu.h"
+#include "pixy.h"
 #include "sleeper.h"
 
 
@@ -280,6 +281,7 @@ Dfu::Dfu()
     if (ret)
         throw std::runtime_error("Cannot initialize USB.");
 
+#if 0
     num_devs = count_dfu_devices(m_context, &m_dif);
     if (num_devs != 1)
         throw std::runtime_error("Cannot find Pixy DFU device.");
@@ -288,6 +290,12 @@ Dfu::Dfu()
     ret = libusb_open(m_dif.dev, &m_dif.dev_handle);
     if (ret || !m_dif.dev_handle)
         throw std::runtime_error("Cannot open Pixy DFU device.");
+#else
+    m_dif.dev_handle = libusb_open_device_with_vid_pid(m_context, PIXY_DFU_VID, PIXY_DFU_DID);
+    if (m_dif.dev_handle==NULL)
+        throw std::runtime_error("Cannot open Pixy DFU device.");
+    m_dif.dev = libusb_get_device(m_dif.dev_handle);
+#endif
     if (libusb_set_configuration(m_dif.dev_handle, 1) < 0)
         throw std::runtime_error("Cannot set configuration for Pixy DFU device.");
     if (libusb_claim_interface(m_dif.dev_handle, m_dif.interface) < 0)
