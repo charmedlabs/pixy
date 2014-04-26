@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
+QT       += core gui widgets
 
 TARGET = PixyMon
 TEMPLATE = app
@@ -73,9 +73,11 @@ FORMS    += mainwindow.ui \
 # LIBS += ./libusb-1.0.dll.a
 
 win32 {
-    DEFINDES += __WINDOWS__
+    DEFINES += __WINDOWS__
     LIBS += ../windows/libusb-1.0.dll.a
     HEADERS += ../windows/libusb.h
+    INCLUDEPATH += ../windows
+
 }
 
 macx {
