@@ -1,6 +1,6 @@
 #!/bin/bash     
 cd src/host/pixymon
-qmake pixymon.pro -o Makefile 
+qmake-qt4 pixymon.pro -o Makefile 
 make
 cd ../../..
 mkdir bin
