@@ -46,7 +46,7 @@ public:
         if (!m_file.open(QIODevice::ReadOnly))
             throw std::runtime_error((QString("Cannot open file ") + filename + QString(".")).toStdString());
     }
-    ~IReader()
+    virtual ~IReader()
     {
         m_file.close();
     }
