@@ -145,7 +145,7 @@ void ButtonMachine::setSignature()
 	int goodness;
 
 	// grow region, create model, save
-	goodness = cc_setSigPoint(m_index, CAM_RES2_WIDTH/2, CAM_RES2_HEIGHT/2, g_chirpUsb);
+	goodness = cc_setSigPoint(0, m_index, CAM_RES2_WIDTH/2, CAM_RES2_HEIGHT/2, g_chirpUsb);
 	if (goodness>0)
 	{
 		cprintf("goodness=%d\n", goodness);

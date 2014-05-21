@@ -27,6 +27,7 @@
 #include "progvideo.h"
 #include "progblobs.h"
 #include "progpt.h"
+#include "progchase.h"
 #include "param.h"
 #include "serial.h"
 
@@ -59,10 +60,17 @@ int main(void)
 	exec_init(g_chirpUsb);
 
 #if 1
+	// load programs
+
 	exec_addProg(&g_progBlobs);
 	ptLoadParams();
 	exec_addProg(&g_progPt);
+#if 0
+	chaseLoadParams();
+	exec_addProg(&g_progChase);
+#endif
 	exec_addProg(&g_progVideo, true);
+
 	exec_loop();
 #endif  
 

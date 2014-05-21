@@ -51,8 +51,9 @@ static const ProcModule g_module[] =
 	{
 	"cc_setSigRegion",
 	(ProcPtr)cc_setSigRegion, 
-	{CRP_UINT8, CRP_HTYPE(FOURCC('R','E','G','1')), END}, 
+	{CRP_UINT32, CRP_UINT8, CRP_HTYPE(FOURCC('R','E','G','1')), END}, 
 	"Set signature by selecting region in image"
+	"@p type 0=normal signature, 1=color code signature"
 	"@p signature numerical index of signature, can be 1-7"
 	"@p region user-selected region"
 	"@r 0 to 100 if success where 100=good, 0=poor, negative if error"
@@ -60,8 +61,9 @@ static const ProcModule g_module[] =
 	{
 	"cc_setSigPoint",
 	(ProcPtr)cc_setSigPoint, 
-	{CRP_UINT8, CRP_HTYPE(FOURCC('P','N','T','1')), END}, 
+	{CRP_UINT32, CRP_UINT8, CRP_HTYPE(FOURCC('P','N','T','1')), END}, 
 	"Set signature by selecting point in image"
+	"@p type 0=normal signature, 1=color code signature"
 	"@p signature numerical index of signature, can be 1-7"
 	"@p point user-selected point"
 	"@r 0 to 100 if success where 100=good, 0=poor, negative if error"
@@ -162,15 +164,16 @@ void cc_loadParams(void)
 		"@c Signature_creation Sets how inclusive the color signatures are with respect to hue. Applies during teaching. (default 1.0)", FLT32(1.0), END);
 	prm_add("Saturation spread", 0,
 		"@c Signature_creation Sets how inclusive the color signatures are with respect to saturation. Applies during teaching. (default 1.0)", FLT32(1.0), END);
+	prm_add("CC min saturation", 0,
+		"@c Signature_creation Sets the minimum allowed color saturation for when generating color code (CC) signatures. Applies during teaching. (default 20.0)", FLT32(20.0), END);
+	prm_add("CC hue spread", 0,
+		"@c Signature_creation Sets how inclusive the color code (CC) signatures are with respect to hue. Applies during teaching. (default 2.0)", FLT32(2.0), END);
+	prm_add("CC saturation spread", 0,
+		"@c Signature_creation Sets how inclusive the color code (CC) signatures are with respect to saturation for color codes. Applies during teaching. (default 20.0)", FLT32(20.0), END);
 
 	// load
-	float minSat, hueTol, satTol;
 	uint16_t maxBlobs, maxBlobsPerModel;
 	uint32_t minArea;
-	prm_get("Min saturation", &minSat, END);
-	prm_get("Hue spread", &hueTol, END);
-	prm_get("Saturation spread", &satTol, END);
-   	g_blobs->m_clut->setBounds(minSat, hueTol, satTol); 
 
 	prm_get("Max blocks", &maxBlobs, END);
 	prm_get("Max blocks per signature", &maxBlobsPerModel, END);
@@ -198,8 +201,28 @@ int cc_init(Chirp *chirp)
 	return 0;
 }
 
+void cc_setBounds(const uint8_t mode)
+{
+	float minSat, hueTol, satTol;
+
+	if (mode==1)
+	{
+		prm_get("CC min saturation", &minSat, END);
+		prm_get("CC hue spread", &hueTol, END);
+		prm_get("CC saturation spread", &satTol, END);
+	}
+	else
+	{
+		prm_get("Min saturation", &minSat, END);
+		prm_get("Hue spread", &hueTol, END);
+		prm_get("Saturation spread", &satTol, END);
+	}
+
+   	g_blobs->m_clut->setBounds(minSat, hueTol, satTol); 
+}
+
 // this routine assumes it can grab valid pixels in video memory described by the box
-int32_t cc_setSigRegion(const uint8_t &model, const uint16_t &xoffset, const uint16_t &yoffset, const uint16_t &width, const uint16_t &height)
+int32_t cc_setSigRegion(const uint32_t &type, const uint8_t &model, const uint16_t &xoffset, const uint16_t &yoffset, const uint16_t &width, const uint16_t &height)
 {
 	int result;
 	char id[32];
@@ -207,6 +230,8 @@ int32_t cc_setSigRegion(const uint8_t &model, const uint16_t &xoffset, const uin
 
 	if (model<1 || model>NUM_MODELS)
 		return -1;
+
+	cc_setBounds(type);
 
 	if (g_rawFrame.m_pixels==NULL)
 	{
@@ -222,6 +247,8 @@ int32_t cc_setSigRegion(const uint8_t &model, const uint16_t &xoffset, const uin
 		return result;
 	}
 
+	cmodel.m_type = type;
+
 	// save to flash
 	sprintf(id, "signature%d", model);
 	prm_set(id, INTS8(sizeof(ColorModel), &cmodel), END);
@@ -232,7 +259,7 @@ int32_t cc_setSigRegion(const uint8_t &model, const uint16_t &xoffset, const uin
 	return result;
 }
 
-int32_t cc_setSigPoint(const uint8_t &model, const uint16_t &x, const uint16_t &y, Chirp *chirp)
+int32_t cc_setSigPoint(const uint32_t &type, const uint8_t &model, const uint16_t &x, const uint16_t &y, Chirp *chirp)
 {
 	RectA region;
 	int result; 
@@ -241,6 +268,8 @@ int32_t cc_setSigPoint(const uint8_t &model, const uint16_t &x, const uint16_t &
 
 	if (model<1 || model>NUM_MODELS)
 		return -1;
+
+	cc_setBounds(type);
 
 	if (g_rawFrame.m_pixels==NULL)
 	{
@@ -260,6 +289,8 @@ int32_t cc_setSigPoint(const uint8_t &model, const uint16_t &x, const uint16_t &
 		BlobA blob(model, region.m_xOffset, region.m_xOffset+region.m_width, region.m_yOffset, region.m_yOffset+region.m_height);
 		cc_sendBlobs(chirp, &blob, 1, RENDER_FLAG_FLUSH | RENDER_FLAG_BLEND_BG);
 	}
+
+	cmodel.m_type = type;
 
 	// save to flash
 	sprintf(id, "signature%d", model);

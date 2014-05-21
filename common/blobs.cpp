@@ -526,7 +526,7 @@ void Blobs::addCoded(int a, int b)
     int acy = (blob0->m_bottom + blob0->m_top)/2;
     int bcx = (blob->m_right + blob->m_left)/2;
     int bcy = (blob->m_bottom + blob->m_top)/2;
-    float angle = atan2((float)(acy-bcy), (float)(acx-bcx))*180/3.1415;
+    float angle = atan2((float)(acy-bcy), (float)(acx-bcx))*180/3.1415f;
     //qDebug() << "angle " << angle << " acx " << acx << " acy " << acy << " bcx " << bcx << " bcy " << bcy;
 
     // add rectangle

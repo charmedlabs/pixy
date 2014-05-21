@@ -13,6 +13,8 @@
 // end license header
 //
 #ifndef BLOBS_H
+#define BLOBS_H
+
 #include <stdint.h>
 #include "blob.h"
 #include "colorlut.h"
@@ -25,8 +27,6 @@
 #define MAX_MERGE_DIST        5
 #define MIN_AREA              20
 #define MAX_CODED_DIST        10
-
-
 
 #define LUT_MEMORY		((uint8_t *)SRAM1_LOC + SRAM1_SIZE-CL_LUT_SIZE)  // +0x100 make room for prebuf and palette
 
@@ -84,6 +84,5 @@ private:
 	uint16_t m_maxCodedDist;
 };
 
-#define BLOBS_H
 
 #endif // BLOBS_H

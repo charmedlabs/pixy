@@ -78,6 +78,9 @@ ColorLUT::ColorLUT(const void *lutMem)
     m_outlierRatio = CL_DEFAULT_OUTLIER_RATIO;
 
     clear();
+
+	for (int i=0; i<CL_NUM_MODELS; i++)
+		m_types[i] = 0;		
 }
 
 ColorLUT::~ColorLUT()
@@ -277,6 +280,9 @@ void ColorLUT::add(const ColorModel *model, uint8_t modelIndex)
     uint32_t i;
     HuePixel p;
 
+	if (modelIndex-1 > CL_NUM_MODELS)
+		return;
+
     if (model->m_hue[0].m_slope==0.0f)
         return;
 
@@ -288,6 +294,16 @@ void ColorLUT::add(const ColorModel *model, uint8_t modelIndex)
                 checkBounds(model, &p))
             m_lut[i] = modelIndex;
     }
+
+	m_types[modelIndex-1] = model->m_type;
+}
+
+uint32_t ColorLUT::getType(uint8_t modelIndex)
+{
+	if (modelIndex-1 > CL_NUM_MODELS)
+		return 0;
+
+	return m_types[modelIndex-1];
 }
 
 bool ColorLUT::checkBounds(const ColorModel *model, const HuePixel *pixel)

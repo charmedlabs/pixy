@@ -21,6 +21,7 @@
 #undef PI
 #define PI 3.1415926f
 
+#define CL_NUM_MODELS                   7
 #define CL_LUT_SIZE                     0x10000
 #define CL_DEFAULT_ITERATE_STEP         0.1f
 #define CL_DEFAULT_HUETOL               1.0f
@@ -33,6 +34,13 @@
 
 struct ColorModel
 {
+	ColorModel()
+	{
+		m_type = 0;
+		// Lines have their own constructors
+	}
+
+	uint32_t m_type; // bitmap  0x1 = color code
     Line m_hue[2];
     Line m_sat[2];
 };
@@ -51,6 +59,7 @@ public:
     int growRegion(RectA *result, const Frame8 &frame, const Point16 &seed);
     void add(const ColorModel *model, uint8_t modelIndex);
     void clear(uint8_t modelIndex=0); // 0 = all models
+	uint32_t getType(uint8_t modelIndex);
 
 private:
     void map(const Frame8 &frame, const RectA &region);
@@ -69,7 +78,7 @@ private:
     HuePixel *m_hpixels;
     uint32_t m_hpixelLen;  // number of pixels
     uint32_t m_hpixelSize; // size of m_hpixels memory in HuePixels
-
+	uint32_t m_types[CL_NUM_MODELS];
     float m_iterateStep;
     float m_hueTol;
     float m_satTol;

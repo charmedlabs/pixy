@@ -24,6 +24,7 @@
 #include "serial.h"
 #include "rcservo.h"
 #include "progpt.h"
+#include "progchase.h"
 #include "param.h"
 
 static const ProcModule g_module[] =
@@ -164,7 +165,15 @@ int32_t exec_runprog(const uint8_t &progNum)
 	g_execArg = 0;
 
 	if (progNum==0) // default program!
-		prm_get("Default program", &g_program, END);
+
+	{
+		uint8_t program;
+		prm_get("Default program", &program, END);
+		if (program==0 || program>EXEC_MAX_PROGS)
+			g_program = 0;
+		if (g_progTable[program-1]!=NULL)
+			g_program = program-1;
+	}
   	else
 		g_program = progNum-1;
 	return exec_run();
@@ -257,6 +266,7 @@ void exec_loadParams()
 	rcs_loadParams();
 
 	ptLoadParams();
+	chaseLoadParams();
 
 	loadParams(); // local
 }

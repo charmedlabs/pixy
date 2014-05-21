@@ -476,6 +476,11 @@
               <FileType>8</FileType>
               <FilePath>..\libpixy\uart.cpp</FilePath>
             </File>
+            <File>
+              <FileName>progchase.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>.\progchase.cpp</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>
@@ -949,6 +954,11 @@
               <FileName>uart.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>..\libpixy\uart.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>progchase.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>.\progchase.cpp</FilePath>
             </File>
           </Files>
         </Group>
