@@ -165,11 +165,11 @@ void cc_loadParams(void)
 	prm_add("Saturation spread", 0,
 		"@c Signature_creation Sets how inclusive the color signatures are with respect to saturation. Applies during teaching. (default 1.0)", FLT32(1.0), END);
 	prm_add("CC min saturation", 0,
-		"@c Signature_creation Sets the minimum allowed color saturation for when generating color code (CC) signatures. Applies during teaching. (default 20.0)", FLT32(20.0), END);
+		"@c Signature_creation Sets the minimum allowed color saturation for when generating color code (CC) signatures. Applies during teaching. (default 10.0)", FLT32(10.0), END);
 	prm_add("CC hue spread", 0,
-		"@c Signature_creation Sets how inclusive the color code (CC) signatures are with respect to hue. Applies during teaching. (default 2.0)", FLT32(2.0), END);
+		"@c Signature_creation Sets how inclusive the color code (CC) signatures are with respect to hue. Applies during teaching. (default 1.5)", FLT32(1.5), END);
 	prm_add("CC saturation spread", 0,
-		"@c Signature_creation Sets how inclusive the color code (CC) signatures are with respect to saturation for color codes. Applies during teaching. (default 20.0)", FLT32(20.0), END);
+		"@c Signature_creation Sets how inclusive the color code (CC) signatures are with respect to saturation for color codes. Applies during teaching. (default 50.0)", FLT32(50.0), END);
 
 	// load
 	uint16_t maxBlobs, maxBlobsPerModel;

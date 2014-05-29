@@ -31,16 +31,17 @@
 #define CL_DEFAULT_OUTLIER_RATIO        0.90f
 #define CL_MIN_MEAN                     0.001f
 #define CL_HPIXEL_MAX_SIZE              10000
+#define CL_MODEL_TYPE_COLORCODE         1
 
 struct ColorModel
 {
-	ColorModel()
-	{
-		m_type = 0;
-		// Lines have their own constructors
-	}
+    ColorModel()
+    {
+        m_type = 0;
+        // Lines have their own constructors
+    }
 
-	uint32_t m_type; // bitmap  0x1 = color code
+    uint32_t m_type; // bitmap  0x1 = color code
     Line m_hue[2];
     Line m_sat[2];
 };
@@ -59,7 +60,7 @@ public:
     int growRegion(RectA *result, const Frame8 &frame, const Point16 &seed);
     void add(const ColorModel *model, uint8_t modelIndex);
     void clear(uint8_t modelIndex=0); // 0 = all models
-	uint32_t getType(uint8_t modelIndex);
+    uint32_t getType(uint8_t modelIndex);
 
 private:
     void map(const Frame8 &frame, const RectA &region);
@@ -78,7 +79,7 @@ private:
     HuePixel *m_hpixels;
     uint32_t m_hpixelLen;  // number of pixels
     uint32_t m_hpixelSize; // size of m_hpixels memory in HuePixels
-	uint32_t m_types[CL_NUM_MODELS];
+    uint32_t m_types[CL_NUM_MODELS];
     float m_iterateStep;
     float m_hueTol;
     float m_satTol;

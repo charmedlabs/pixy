@@ -79,8 +79,8 @@ ColorLUT::ColorLUT(const void *lutMem)
 
     clear();
 
-	for (int i=0; i<CL_NUM_MODELS; i++)
-		m_types[i] = 0;		
+    for (int i=0; i<CL_NUM_MODELS; i++)
+        m_types[i] = 0;
 }
 
 ColorLUT::~ColorLUT()
@@ -295,7 +295,7 @@ void ColorLUT::add(const ColorModel *model, uint8_t modelIndex)
             m_lut[i] = modelIndex;
     }
 
-	m_types[modelIndex-1] = model->m_type;
+    m_types[modelIndex-1] = model->m_type;
 }
 
 uint32_t ColorLUT::getType(uint8_t modelIndex)

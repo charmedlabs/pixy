@@ -143,7 +143,7 @@ struct BlobB
         m_right = right;
         m_top = top;
         m_bottom = bottom;
-		m_angle = angle;
+        m_angle = angle;
     }
 
     uint16_t m_model;
@@ -151,7 +151,7 @@ struct BlobB
     uint16_t m_right;
     uint16_t m_top;
     uint16_t m_bottom;
-	int16_t m_angle;
+    int16_t m_angle;
 };
 
 

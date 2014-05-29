@@ -23,10 +23,11 @@
 
 #define NUM_MODELS            7
 #define MAX_BLOBS             100
-#define MAX_BLOBS_PER_MODEL	  20
+#define MAX_BLOBS_PER_MODEL   20
 #define MAX_MERGE_DIST        5
 #define MIN_AREA              20
-#define MAX_CODED_DIST        10
+#define MAX_CODED_DIST        6
+#define MAX_COLOR_CODE_MODELS 5
 
 #define LUT_MEMORY		((uint8_t *)SRAM1_LOC + SRAM1_SIZE-CL_LUT_SIZE)  // +0x100 make room for prebuf and palette
 
@@ -58,19 +59,20 @@ private:
     uint16_t combine2(uint16_t *blobs, uint16_t numBlobs);
     uint16_t compress(uint16_t *blobs, uint16_t numBlobs);
 
-    bool closeby(int a, int b);
-    void addCoded(int a, int b);
+    bool closeby(BlobA *blob0, BlobA *blob1);
+    int16_t distance(BlobA *blob0, BlobA *blob1);
+    void sort(BlobA *blobs[], uint16_t len, BlobA *firstBlob, bool horiz);
+    int16_t angle(BlobA *blob0, BlobA *blob1);
+    int16_t distance(BlobA *blob0, BlobA *blob1, bool horiz);
     void processCoded();
 
     CBlobAssembler m_assembler[NUM_MODELS];
     Qqueue *m_qq;
 
-
     uint16_t *m_blobs;
-	uint16_t *m_endBlobs;
     uint16_t m_numBlobs;
 
-	BlobB *m_codedBlobs;
+    BlobB *m_codedBlobs;
 	uint16_t m_numCodedBlobs;
 
     bool m_mutex;
