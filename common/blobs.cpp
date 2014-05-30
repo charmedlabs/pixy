@@ -520,9 +520,9 @@ int16_t Blobs::distance(BlobA *blob0, BlobA *blob1, bool horiz)
     int16_t dist;
 
     if (horiz)
-        dist = (blob0->m_right-blob0->m_left)/2 - (blob1->m_right-blob1->m_left)/2;
+        dist = (blob0->m_right+blob0->m_left)/2 - (blob1->m_right+blob1->m_left)/2;
     else
-        dist = (blob0->m_bottom-blob0->m_top)/2 - (blob1->m_bottom-blob1->m_top)/2;
+        dist = (blob0->m_bottom+blob0->m_top)/2 - (blob1->m_bottom+blob1->m_top)/2;
 
     if (dist<0)
         return -dist;
@@ -540,7 +540,7 @@ int16_t Blobs::angle(BlobA *blob0, BlobA *blob1)
     bcx = (blob1->m_right + blob1->m_left)/2;
     bcy = (blob1->m_bottom + blob1->m_top)/2;
 
-    res = atan2((float)(acy-bcy), (float)(acx-bcx))*180/3.1415f;
+    res = atan2((float)(acy-bcy), (float)(bcx-acx))*180/3.1415f;
 
     return (int16_t)res;
 }
@@ -581,9 +581,10 @@ void Blobs::sort(BlobA *blobs[], uint16_t len, BlobA *firstBlob, bool horiz)
 
 void Blobs::processCoded()
 {
-    uint16_t i, j, k, scount, count = 1;
+    int16_t i, j, k;
+    uint16_t scount, count = 0;
     uint16_t left, right, top, bottom;
-    uint16_t codedModel;
+    uint16_t codedModel0, codedModel;
     BlobB *codedBlob;
     BlobA *blob0, *blob1, *endBlob;
     BlobA *blobs[MAX_COLOR_CODE_MODELS];
@@ -600,10 +601,10 @@ void Blobs::processCoded()
                 qDebug("close");
                 if (blob0->m_model<=NUM_MODELS && blob0->m_model<=NUM_MODELS)
                 {
+                    count++;
                     scount = count<<3;
                     blob0->m_model |= scount;
                     blob1->m_model |= scount;
-                    count++;
                 }
                 else if (blob0->m_model>NUM_MODELS)
                 {
@@ -618,9 +619,8 @@ void Blobs::processCoded()
             }
         }
     }
-    return;
     // 2nd pass
-    for (i=1; i<count; i++)
+    for (i=1; i<=count; i++)
     {
         scount = i<<3;
         // find all blobs with index i
@@ -651,23 +651,40 @@ void Blobs::processCoded()
         else
             sort(blobs, j, blobs[top], false);
 
-        // create new blob
-        for (k=0, codedModel=0; k<j; k++, codedModel<<=3)
+
+        // create new blob, compare the coded models, pick the smaller one
+        for (k=0, codedModel0=0; k<j; k++)
         {
-            codedModel |= blobs[k]->m_model&0x07;
-            blobs[k] = 0; // invalidate
+            codedModel0 <<= 3;
+            codedModel0 |= blobs[k]->m_model&0x07;
         }
+        for (k=j-1, codedModel=0; k>=0; k--)
+        {
+            codedModel <<= 3;
+            codedModel |= blobs[k]->m_model&0x07;
+            blobs[k]->m_model = 0; // invalidate
+        }
+
         codedBlob = m_codedBlobs + i - 1;
-        codedBlob->m_model = codedModel;
+        if (codedModel0<codedModel)
+        {
+            codedBlob->m_model = codedModel0;
+            codedBlob->m_angle = angle(blobs[0], blobs[j-1]);
+            qDebug("angle0 %d", codedBlob->m_angle);
+        }
+        else
+        {
+            codedBlob->m_model = codedModel;
+            codedBlob->m_angle = angle(blobs[j-1], blobs[0]);
+            qDebug("angle %d", codedBlob->m_angle);
+        }
         codedBlob->m_left = blobs[left]->m_left;
         codedBlob->m_right = blobs[right]->m_right;
         codedBlob->m_top = blobs[top]->m_top;
         codedBlob->m_bottom = blobs[bottom]->m_bottom;
-        // calculate angle
-        codedBlob->m_angle = angle(blobs[0], blobs[j-1]);
-
-        m_numCodedBlobs++;
     }
+    // coded blobs
+    m_numCodedBlobs += count;
 }
 
 int Blobs::generateLUT(uint8_t model, const Frame8 &frame, const RectA &region, ColorModel *pcmodel)

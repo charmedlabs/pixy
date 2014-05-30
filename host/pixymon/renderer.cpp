@@ -201,7 +201,6 @@ int Renderer::renderBA81(uint8_t renderFlags, uint16_t width, uint16_t height, u
         for (x=1; x<width-1; x++, frame++)
         {
             interpolateBayer(width, x, y, frame, r, g, b);
-            // simulate 15 bit color r >>= 4; g >>= 4; b >>= 4; r <<= 4; g <<= 4; b <<= 4;
             *line++ = (0x40<<24) | (r<<16) | (g<<8) | (b<<0);
         }
         frame++;
@@ -378,8 +377,6 @@ int Renderer::renderCCQ1(uint8_t renderFlags, uint16_t width, uint16_t height, u
         for (i=0; i<sizeof(palette)/sizeof(unsigned int); i++)
             palette[i] |= 0xff000000;
     }
-
-    qDebug() << numVals;
 
     // q val:
     // | 4 bits    | 7 bits      | 9 bits | 9 bits    | 3 bits |
