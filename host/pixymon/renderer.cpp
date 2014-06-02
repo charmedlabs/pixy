@@ -217,18 +217,107 @@ int Renderer::renderBA81(uint8_t renderFlags, uint16_t width, uint16_t height, u
     return 0;
 }
 
-int Renderer::renderCCB1(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t numBlobs, uint16_t *blobs)
+
+void Renderer::renderBlobsB(QImage *image, float scale, BlobB *blobs, uint32_t numBlobs)
 {
-    uint16_t i, left, right, top, bottom;
+    QPainter p;
+    QString str, modelStr;
+    uint16_t left, right, top, bottom;
+    uint i;
+
+    p.begin(image);
+    p.setBrush(QBrush(QColor(0xff, 0xff, 0xff, 0x20)));
+    p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
+
+#ifdef __MACOS__
+    QFont font("verdana", 18);
+#else
+    QFont font("verdana", 12);
+#endif
+    p.setFont(font);
+    for (i=0; i<numBlobs; i++)
+    {
+        left = scale*blobs[i].m_left;
+        right = scale*blobs[i].m_right;
+        top = scale*blobs[i].m_top;
+        bottom = scale*blobs[i].m_bottom;
+
+        //qDebug() << left << " " << right << " " << top << " " << bottom;
+        p.drawRect(left, top, right-left, bottom-top);
+        if (blobs[i].m_model)
+        {
+#if 0
+            label = m_blobs.getLabel(model);
+            if (label)
+                str = *label;
+            else
+#endif
+                modelStr = QString::number(blobs[i].m_model, 8);
+            str = "s=" + modelStr + ", " + QChar(0xa6, 0x03) + "=" + QString::number(blobs[i].m_angle);
+            p.setPen(QPen(QColor(0, 0, 0, 0xff)));
+            p.drawText(left+1, top+1, str);
+            p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
+            p.drawText(left, top, str);
+#if 0
+            str = QChar(0xa6, 0x03) + str.sprintf("=%d", scale*blobs[i].m_angle);
+            p.setPen(QPen(QColor(0, 0, 0, 0xff)));
+            p.drawText(left+1, bottom+12, str);
+            p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
+            p.drawText(left, bottom+11, str);
+#endif
+        }
+    }
+    p.end();
+}
+
+void Renderer::renderBlobsA(QImage *image, float scale, BlobA *blobs, uint32_t numBlobs)
+{
+    QPainter p;
+    QString str;
+    uint16_t left, right, top, bottom;
+    uint i;
+
+    p.begin(image);
+    p.setBrush(QBrush(QColor(0xff, 0xff, 0xff, 0x20)));
+    p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
+
+#ifdef __MACOS__
+    QFont font("verdana", 18);
+#else
+    QFont font("verdana", 12);
+#endif
+    p.setFont(font);
+    for (i=0; i<numBlobs; i++)
+    {
+        left = scale*blobs[i].m_left;
+        right = scale*blobs[i].m_right;
+        top = scale*blobs[i].m_top;
+        bottom = scale*blobs[i].m_bottom;
+
+        //qDebug() << left << " " << right << " " << top << " " << bottom;
+        p.drawRect(left, top, right-left, bottom-top);
+        if (blobs[i].m_model)
+        {
+#if 0
+            label = m_blobs.getLabel(model);
+            if (label)
+                str = *label;
+            else
+#endif
+                str = str.sprintf("s=%d", blobs[i].m_model);
+            p.setPen(QPen(QColor(0, 0, 0, 0xff)));
+            p.drawText(left+1, top+1, str);
+            p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
+            p.drawText(left, top, str);
+        }
+    }
+    p.end();
+}
+
+int Renderer::renderCCB2(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t numBlobs, uint16_t *blobs, uint32_t numCCBlobs, uint16_t *ccBlobs)
+{
     float scale = (float)m_video->activeWidth()/width;
     QImage img(width*scale, height*scale, QImage::Format_ARGB32);
-    QPainter p;
-    uint16_t model;
-    QString str;
-
-    numBlobs /= sizeof(BlobA)/sizeof(uint16_t);
-
-    // qDebug() << "numblobs " << numBlobs;
 
     // render background so we can blend ontop of it
     if (renderFlags&RENDER_FLAG_BLEND_BG)
@@ -238,84 +327,35 @@ int Renderer::renderCCB1(uint8_t renderFlags, uint16_t width, uint16_t height, u
         img.fill(0xff000000);
     else
         img.fill(0x00000000); // otherwise, we're transparent
-    p.begin(&img);
-    p.setBrush(QBrush(QColor(0xff, 0xff, 0xff, 0x20)));
-    p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
-#ifdef __MACOS__
-    QFont font("verdana", 18);
-#else
-    QFont font("verdana", 12);
-#endif
-    p.setFont(font);
-    for (i=0; i<numBlobs; i++)
-    {
-        model = blobs[i*5+0];
-        left = scale*blobs[i*5+1];
-        right = scale*blobs[i*5+2];
-        top = scale*blobs[i*5+3];
-        bottom = scale*blobs[i*5+4];
-        //qDebug() << left << " " << right << " " << top << " " << bottom;
-        p.drawRect(left, top, right-left, bottom-top);
-        if (model)
-        {
-#if 0
-            label = m_blobs.getLabel(model);
-            if (label)
-                str = *label;
-            else
-#endif
-            str = str.sprintf("s=%d", model);
-            p.setPen(QPen(QColor(0, 0, 0, 0xff)));
-            p.drawText(left+1, top+1, str);
-            p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
-            p.drawText(left, top, str);
-        }
-    }
-#if 0
-    //deal with coded blobs
-    blobs += i*5;
-    numBlobs -= i;
-    for (i=0; i<numBlobs; i++)
-    {
-#ifdef RENDER_ANGLE
-        int16_t angle;
-        model = scale*(blobs[i*6+0]>>3);
-        left = scale*(blobs[i*6+1]);
-        right = scale*(blobs[i*6+2]);
-        top = scale*(blobs[i*6+3]);
-        bottom = scale*(blobs[i*6+4]);
-        angle = scale*(blobs[i*6+5]);
-#else
-        model = scale*(blobs[i*5+0]>>3);
-        left = scale*(blobs[i*5+1]);
-        right = scale*(blobs[i*5+2]);
-        top = scale*(blobs[i*5+3]);
-        bottom = scale*(blobs[i*5+4]);
-#endif
-        //qDebug() << left << " " << right << " " << top << " " << bottom;
-        p.drawRect(left, top, right-left, bottom-top);
-        label = m_blobs.getLabel(model);
-        if (label)
-            str = *label;
-        else
-            str = "m=" + code2string(model); // + QChar(0xa6, 0x03); //QChar(0xb8, 0x03);//  QChar(0xa6, 0x03)
 
-        p.setPen(QPen(QColor(0, 0, 0, 0xff)));
-        p.drawText(left+1, top+1, str);
-        p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
-        p.drawText(left, top, str);
+    numBlobs /= sizeof(BlobA)/sizeof(uint16_t);
+    numCCBlobs /= sizeof(BlobB)/sizeof(uint16_t);
+    renderBlobsA(&img, scale, (BlobA *)blobs, numBlobs);
+    renderBlobsB(&img, scale, (BlobB *)ccBlobs, numCCBlobs);
 
-#ifdef RENDER_ANGLE
-        str = QChar(0xa6, 0x03) + str.sprintf("=%d", angle);
-        p.setPen(QPen(QColor(0, 0, 0, 0xff)));
-        p.drawText(left+1, bottom+12, str);
-        p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
-        p.drawText(left, bottom+11, str);
-#endif
-    }
-    //qDebug() << numBlobs;
-#endif
-    p.end();
+    emitImage(img);
+    if (renderFlags&RENDER_FLAG_FLUSH)
+        emitFlushImage();
+
+    return 0;
+}
+
+int Renderer::renderCCB1(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t numBlobs, uint16_t *blobs)
+{
+    float scale = (float)m_video->activeWidth()/width;
+    QImage img(width*scale, height*scale, QImage::Format_ARGB32);
+
+    // render background so we can blend ontop of it
+    if (renderFlags&RENDER_FLAG_BLEND_BG)
+        renderBackground();
+
+    if (m_backgroundFrame) // if we're the background, we should be opaque
+        img.fill(0xff000000);
+    else
+        img.fill(0x00000000); // otherwise, we're transparent
+
+    numBlobs /= sizeof(BlobA)/sizeof(uint16_t);
+    renderBlobsA(&img, scale, (BlobA *)blobs, numBlobs);
 
     emitImage(img);
     if (renderFlags&RENDER_FLAG_FLUSH)
@@ -409,8 +449,9 @@ int Renderer::renderCCQ1(uint8_t renderFlags, uint16_t width, uint16_t height, u
 int Renderer::renderCMV1(uint8_t renderFlags, uint32_t cmodelsLen, float *cmodels, uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame)
 {
     int i;
-    uint32_t numBlobs;
+    uint32_t numBlobs, numCCBlobs;
     BlobA *blobs;
+    BlobB *ccBlobs;
     uint32_t numQvals;
     uint32_t *qVals;
 
@@ -421,11 +462,11 @@ int Renderer::renderCMV1(uint8_t renderFlags, uint32_t cmodelsLen, float *cmodel
             m_blobs.m_blobs->m_clut->add((ColorModel *)cmodels, i+1);
     }
 
-    m_blobs.process(Frame8(frame, width, height), &numBlobs, &blobs, &numQvals, &qVals);
+    m_blobs.process(Frame8(frame, width, height), &numBlobs, &blobs, &numCCBlobs, &ccBlobs, &numQvals, &qVals);
 
     renderBA81(0, width, height, frameLen, frame);
     renderCCQ1(0, width/2, height/2, numQvals, qVals);
-    renderCCB1(RENDER_FLAG_FLUSH, width/2, height/2, numBlobs*sizeof(BlobA)/sizeof(uint16_t), (uint16_t *)blobs);
+    renderCCB2(RENDER_FLAG_FLUSH, width/2, height/2, numBlobs*sizeof(BlobA)/sizeof(uint16_t), (uint16_t *)blobs, numCCBlobs*sizeof(BlobB)/sizeof(uint16_t), (uint16_t *)ccBlobs);
 
     return 0;
 }

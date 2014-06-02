@@ -37,9 +37,10 @@ Blobs::Blobs(Qqueue *qq)
 #else
     m_maxCodedDist = MAX_CODED_DIST/2;
 #endif
+    m_codedMode = 1;
 
     m_qq = qq;
-    m_blobs = new uint16_t[m_maxBlobs*5];
+    m_blobs = new uint16_t[MAX_BLOBS*5];
     m_numBlobs = 0;
     m_blobReadIndex = 0;
 
@@ -59,7 +60,7 @@ int Blobs::setParams(uint16_t maxBlobs, uint16_t maxBlobsPerModel, uint32_t minA
 {
     if (maxBlobs<=MAX_BLOBS)
         m_maxBlobs = maxBlobs;
-	else
+    else
         m_maxBlobs = MAX_BLOBS;
 
     m_maxBlobsPerModel = maxBlobsPerModel;
@@ -131,19 +132,16 @@ void Blobs::blobify()
     }
     //setTimer(&timer);
     invalid += combine(m_blobs, m_numBlobs);
-    if (true)
+    if (m_codedMode)
     {
         m_codedBlobs = (BlobB *)(m_blobs + m_numBlobs*5);
         // calculate number of codedblobs left
         processCoded();
     }
-    if (invalid)
+    if (invalid || m_codedMode)
     {
         invalid2 = compress(m_blobs, m_numBlobs);
         m_numBlobs -= invalid2;
-        if (invalid2!=invalid)
-            cprintf("**** %d %d\n", invalid2, invalid);
-
     }
     //timer2 += getTimer(timer);
     //cprintf("time=%d\n", timer2); // never seen this greater than 200us.  or 1% of frame period
@@ -301,10 +299,13 @@ uint16_t *Blobs::getMaxBlob(uint16_t signature)
     return NULL; // no blobs...
 } 
 
-void Blobs::getBlobs(BlobA **blobs, uint32_t *len)
+void Blobs::getBlobs(BlobA **blobs, uint32_t *len, BlobB **ccBlobs, uint32_t *ccLen)
 {
     *blobs = (BlobA *)m_blobs;
     *len = m_numBlobs;
+
+    *ccBlobs = m_codedBlobs;
+    *ccLen = m_numCodedBlobs;
 }
 
 
@@ -585,7 +586,7 @@ void Blobs::processCoded()
     uint16_t scount, count = 0;
     uint16_t left, right, top, bottom;
     uint16_t codedModel0, codedModel;
-    BlobB *codedBlob;
+    BlobB *codedBlob, *endBlobB;
     BlobA *blob0, *blob1, *endBlob;
     BlobA *blobs[MAX_COLOR_CODE_MODELS];
 
@@ -598,7 +599,6 @@ void Blobs::processCoded()
         {
             if (closeby(blob0, blob1))
             {
-                qDebug("close");
                 if (blob0->m_model<=NUM_MODELS && blob0->m_model<=NUM_MODELS)
                 {
                     count++;
@@ -619,8 +619,10 @@ void Blobs::processCoded()
             }
         }
     }
+
     // 2nd pass
-    for (i=1; i<=count; i++)
+    endBlobB = (BlobB *)((BlobA *)m_blobs + MAX_BLOBS)-1;
+    for (i=1, codedBlob = m_codedBlobs, m_numCodedBlobs=0; i<=count && codedBlob<endBlobB; i++, codedBlob++, m_numCodedBlobs++)
     {
         scount = i<<3;
         // find all blobs with index i
@@ -645,7 +647,12 @@ void Blobs::processCoded()
             if (blobs[bottom]->m_bottom < blobs[k]->m_bottom)
                 bottom = k;
         }
-        // is it more horizontal than verticle?
+        codedBlob->m_left = blobs[left]->m_left;
+        codedBlob->m_right = blobs[right]->m_right;
+        codedBlob->m_top = blobs[top]->m_top;
+        codedBlob->m_bottom = blobs[bottom]->m_bottom;
+
+        // is it more horizontal than vertical?
         if (blobs[right]->m_right-blobs[left]->m_left > blobs[bottom]->m_bottom-blobs[top]->m_top)
             sort(blobs, j, blobs[left], true);
         else
@@ -665,26 +672,17 @@ void Blobs::processCoded()
             blobs[k]->m_model = 0; // invalidate
         }
 
-        codedBlob = m_codedBlobs + i - 1;
         if (codedModel0<codedModel)
         {
             codedBlob->m_model = codedModel0;
             codedBlob->m_angle = angle(blobs[0], blobs[j-1]);
-            qDebug("angle0 %d", codedBlob->m_angle);
         }
         else
         {
             codedBlob->m_model = codedModel;
             codedBlob->m_angle = angle(blobs[j-1], blobs[0]);
-            qDebug("angle %d", codedBlob->m_angle);
         }
-        codedBlob->m_left = blobs[left]->m_left;
-        codedBlob->m_right = blobs[right]->m_right;
-        codedBlob->m_top = blobs[top]->m_top;
-        codedBlob->m_bottom = blobs[bottom]->m_bottom;
     }
-    // coded blobs
-    m_numCodedBlobs += count;
 }
 
 int Blobs::generateLUT(uint8_t model, const Frame8 &frame, const RectA &region, ColorModel *pcmodel)

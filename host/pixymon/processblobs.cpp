@@ -30,7 +30,7 @@ ProcessBlobs::~ProcessBlobs()
     delete [] m_qMem;
 }
 
-void ProcessBlobs::process(const Frame8 &frame, uint32_t *numBlobs, BlobA **blobs, uint32_t *numQvals, Qval **qMem)
+void ProcessBlobs::process(const Frame8 &frame, uint32_t *numBlobs, BlobA **blobs, uint32_t *numCCBlobs, BlobB **ccBlobs, uint32_t *numQvals, Qval **qMem)
 {
 #if 0
     uint16_t boxes[] = {
@@ -53,7 +53,7 @@ void ProcessBlobs::process(const Frame8 &frame, uint32_t *numBlobs, BlobA **blob
 
     rls(frame);
     m_blobs->blobify();
-    m_blobs->getBlobs(blobs, numBlobs);
+    m_blobs->getBlobs(blobs, numBlobs, ccBlobs, numCCBlobs);
     *numQvals = m_numQvals;
     *qMem = m_qMem;
 
