@@ -13,6 +13,13 @@
 // end license header
 //
 
+/*
+  06.04.2014 v0.1.3 John Leimon 
+    + Added init() for initializing Pixy, which should
+      be called from the setup() function. See comment
+      in Pixy.h for details.
+*/
+
 #ifndef _TPIXY_H
 #define _TPIXY_H
 
@@ -49,6 +56,7 @@ public:
 	
   uint16_t getBlocks(uint16_t maxBlocks=1000);
   int8_t setServos(uint16_t s0, uint16_t s1);
+  void init();
   
   Block *blocks;
 	
@@ -57,7 +65,7 @@ private:
   void resize();
 
   LinkType link;
-  boolean skipStart;
+  boolean  skipStart;
   uint16_t blockCount;
   uint16_t blockArraySize;
 };
@@ -69,7 +77,12 @@ template <class LinkType> TPixy<LinkType>::TPixy(uint8_t addr)
   blockCount = 0;
   blockArraySize = PIXY_INITIAL_ARRAYSIZE;
   blocks = (Block *)malloc(sizeof(Block)*blockArraySize);
-  link.init(addr);
+  link.setAddress(addr);
+}
+
+template <class LinkType> void TPixy<LinkType>::init()
+{
+  link.init();
 }
 
 template <class LinkType> TPixy<LinkType>::~TPixy()
@@ -84,7 +97,7 @@ template <class LinkType> boolean TPixy<LinkType>::getStart()
   lastw = 0xffff;
   
   while(true)
-  { 
+  {
     w = link.getWord();
     if (w==0 && lastw==0)
 	{
