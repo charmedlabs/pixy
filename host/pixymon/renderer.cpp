@@ -258,13 +258,6 @@ void Renderer::renderBlobsB(QImage *image, float scale, BlobB *blobs, uint32_t n
             p.drawText(left+1, top+1, str);
             p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
             p.drawText(left, top, str);
-#if 0
-            str = QChar(0xa6, 0x03) + str.sprintf("=%d", scale*blobs[i].m_angle);
-            p.setPen(QPen(QColor(0, 0, 0, 0xff)));
-            p.drawText(left+1, bottom+12, str);
-            p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
-            p.drawText(left, bottom+11, str);
-#endif
         }
     }
     p.end();

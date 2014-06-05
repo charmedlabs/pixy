@@ -26,6 +26,7 @@
 #define MAX_BLOBS_PER_MODEL   20
 #define MAX_MERGE_DIST        5
 #define MIN_AREA              20
+#define MIN_COLOR_CODE_AREA   10
 #define MAX_CODED_DIST        6
 #define MAX_COLOR_CODE_MODELS 5
 
@@ -65,6 +66,8 @@ private:
     int16_t angle(BlobA *blob0, BlobA *blob1);
     int16_t distance(BlobA *blob0, BlobA *blob1, bool horiz);
     void processCoded();
+    void cleanup(BlobA *blobs[], int16_t *numBlobs);
+    void analyzeDistances(BlobA *blobs0[], int16_t numBlobs0, BlobA *blobs[], int16_t numBlobs, BlobA **blobA, BlobA **blobB);
 
     CBlobAssembler m_assembler[NUM_MODELS];
     Qqueue *m_qq;

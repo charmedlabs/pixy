@@ -88,6 +88,7 @@ Blobs::~Blobs()
 void Blobs::blobify()
 {
     uint32_t i, j, k;
+    bool colorCode;
     CBlob *blob;
     uint16_t *blobsStart;
     uint16_t numBlobsStart, invalid, invalid2;
@@ -102,10 +103,13 @@ void Blobs::blobify()
     m_mutex = true;
     for (i=0, m_numBlobs=0; i<NUM_MODELS; i++)
     {
+        colorCode = m_clut->getType(i+1)==CL_MODEL_TYPE_COLORCODE;
+
         for (j=m_numBlobs*5, k=0, blobsStart=m_blobs+j, numBlobsStart=m_numBlobs, blob=m_assembler[i].finishedBlobs;
              blob && m_numBlobs<m_maxBlobs && k<m_maxBlobsPerModel; blob=blob->next, k++)
         {
-            if (blob->GetArea()<(int)m_minArea)
+            if ((colorCode && blob->GetArea()<MIN_COLOR_CODE_AREA) ||
+                    (!colorCode && blob->GetArea()<(int)m_minArea))
                 continue;
             blob->getBBox((short &)left, (short &)top, (short &)right, (short &)bottom);
             m_blobs[j + 0] = i+1;
@@ -118,7 +122,7 @@ void Blobs::blobify()
 
         }
         //setTimer(&timer);
-        if (true)
+        if (!colorCode) // do not combine color code models
         {
             while(1)
             {
@@ -386,7 +390,6 @@ uint16_t Blobs::combine2(uint16_t *blobs, uint16_t numBlobs)
     uint16_t left, right, top, bottom;
     uint16_t invalid;
 
-    // delete blobs that are fully enclosed by larger blobs
     for (i=0, ii=0, invalid=0; i<numBlobs; i++, ii+=5)
     {
         if (blobs[ii+0]==0)
@@ -501,17 +504,16 @@ int16_t Blobs::distance(BlobA *blob0, BlobA *blob1)
 
 bool Blobs::closeby(BlobA *blob0, BlobA *blob1)
 {
-    // check to see that the blobs are from color code models.  If they aren't both
-    // color code blobs, we return false
-#if 0
-    if (m_clut->getType(blob0->m_model & ~0x07)!=CL_MODEL_TYPE_COLORCODE ||
-            m_clut->getType(blob1->m_model & ~0x07)!=CL_MODEL_TYPE_COLORCODE)
-        return false;
-#endif
-
     // check to see if blobs are invalid or equal
     if (blob0->m_model==0 || blob1->m_model==0 || blob0->m_model==blob1->m_model)
         return false;
+#if 1
+    // check to see that the blobs are from color code models.  If they aren't both
+    // color code blobs, we return false
+    if (m_clut->getType(blob0->m_model&0x07)!=CL_MODEL_TYPE_COLORCODE ||
+            m_clut->getType(blob1->m_model&0x07)!=CL_MODEL_TYPE_COLORCODE)
+        return false;
+#endif
 
     return distance(blob0, blob1)<=m_maxCodedDist;
 }
@@ -548,7 +550,7 @@ int16_t Blobs::angle(BlobA *blob0, BlobA *blob1)
 
 void Blobs::sort(BlobA *blobs[], uint16_t len, BlobA *firstBlob, bool horiz)
 {
-    uint16_t i, td, distances[MAX_COLOR_CODE_MODELS-1];
+    uint16_t i, td, distances[MAX_COLOR_CODE_MODELS];
     bool done;
     BlobA *tb;
 
@@ -580,6 +582,104 @@ void Blobs::sort(BlobA *blobs[], uint16_t len, BlobA *firstBlob, bool horiz)
     }
 }
 
+void Blobs::analyzeDistances(BlobA *blobs0[], int16_t numBlobs0, BlobA *blobs[], int16_t numBlobs, BlobA **blobA, BlobA **blobB)
+{
+    bool skip;
+    int16_t dist, minDist, i, j, k;
+
+    for (i=0, minDist=0x7fff; i<numBlobs0; i++)
+    {
+        for (j=0; j<numBlobs; j++)
+        {
+            for (k=0, skip=false; k<numBlobs0; k++)
+            {
+                if (blobs0[k]==blobs[j] || (blobs0[k]->m_model&0x07)==(blobs[j]->m_model&0x07))
+                {
+                    skip = true;
+                    break;
+                }
+            }
+            if (skip)
+                continue;
+            dist = distance(blobs0[i], blobs[j]);
+            if (dist<minDist)
+            {
+                minDist = dist;
+                *blobA = blobs0[i];
+                *blobB = blobs[j];
+            }
+        }
+    }
+}
+
+void Blobs::cleanup(BlobA *blobs[], int16_t *numBlobs)
+{
+    int16_t i, j, k, numNewBlobs;
+    uint16_t numModels, minBlobs, minBlobModel, numMinBlobModel;
+    uint16_t models[MAX_COLOR_CODE_MODELS];
+    BlobA *blobA, *blobB;
+    BlobA *table[MAX_COLOR_CODE_MODELS][4];
+    BlobA *newBlobs[MAX_COLOR_CODE_MODELS];
+
+    // zero out table
+    for (i=0; i<MAX_COLOR_CODE_MODELS; i++)
+    {
+        for (j=0; j<4; j++)
+            table[i][j] = NULL;
+    }
+
+    // first, determine numModels is less than numBlobs
+    for (i=1, numModels=0, minBlobs=4, minBlobModel = 0; i<=NUM_MODELS; i++)
+    {
+        for (j=0, k=0; j<*numBlobs; j++)
+        {
+            if ((blobs[j]->m_model&0x07)==i)
+            {
+                table[numModels][k++] = blobs[j];
+                if (k==4)
+                    break;
+            }
+        }
+        if (k>0)
+        {
+            models[numModels] = i;
+            if (k<minBlobs)
+            {
+                minBlobModel = numModels;
+                minBlobs = k;
+            }
+            numModels++;
+            if (numModels==MAX_COLOR_CODE_MODELS)
+                break;
+        }
+    }
+
+    // this is the best case-- don't need to do anything
+    if (*numBlobs==numModels)
+        return;
+
+    // otherwise, numBlobs>numModels and we need to get rid of some blobs.
+    // The model with the least number of blobs is minBlobModel.  Find the blob that's closest to this/these blob(s)
+
+    // figure out how many blobs are in of the minBlobModel = numMinBlobModel
+    for (numMinBlobModel=0; table[minBlobModel][numMinBlobModel]!=NULL && numMinBlobModel<4; numMinBlobModel++);
+    analyzeDistances(&table[minBlobModel][0], numMinBlobModel, blobs, *numBlobs, &blobA, &blobB);
+
+    newBlobs[0] = blobA;
+    newBlobs[1] = blobB;
+
+    for (numNewBlobs=2; numNewBlobs<numModels; numNewBlobs++)
+    {
+        analyzeDistances(newBlobs, numNewBlobs, blobs, *numBlobs, &blobA, &blobB);
+        newBlobs[numNewBlobs] = blobB;
+    }
+
+    // copy new blobs over
+    for (i=0; i<numNewBlobs; i++)
+        blobs[i] = newBlobs[i];
+    *numBlobs = numNewBlobs;
+}
+
 void Blobs::processCoded()
 {
     int16_t i, j, k;
@@ -588,7 +688,28 @@ void Blobs::processCoded()
     uint16_t codedModel0, codedModel;
     BlobB *codedBlob, *endBlobB;
     BlobA *blob0, *blob1, *endBlob;
-    BlobA *blobs[MAX_COLOR_CODE_MODELS];
+    BlobA *blobs[MAX_COLOR_CODE_MODELS*2];
+
+#if 0
+    BlobA b0(1, 1, 20, 40, 50);
+    BlobA b1(1, 1, 20, 52, 60);
+    BlobA b2(1, 1, 20, 62, 70);
+    BlobA b3(2, 22, 30, 40, 50);
+    BlobA b4(2, 22, 30, 52, 60);
+    BlobA b5(3, 32, 40, 40, 50);
+    BlobA b6(4, 42, 50, 40, 50);
+    BlobA b7(4, 42, 50, 52, 60);
+    BlobA b8(6, 22, 30, 52, 60);
+    BlobA b9(6, 22, 30, 52, 60);
+    BlobA b10(7, 22, 30, 52, 60);
+
+    BlobA *testBlobs[] =
+    {
+        &b0, &b1, &b2, &b3, &b4, &b5, &b6, &b7 //, &b8, &b9, &b10
+    };
+    int16_t ntb = 8;
+    cleanup(testBlobs, &ntb);
+#endif
 
     endBlob = (BlobA *)m_blobs + m_numBlobs;
 
@@ -599,7 +720,7 @@ void Blobs::processCoded()
         {
             if (closeby(blob0, blob1))
             {
-                if (blob0->m_model<=NUM_MODELS && blob0->m_model<=NUM_MODELS)
+                if (blob0->m_model<=NUM_MODELS && blob1->m_model<=NUM_MODELS)
                 {
                     count++;
                     scount = count<<3;
@@ -631,10 +752,18 @@ void Blobs::processCoded()
             if ((blob0->m_model&scount)==scount)
             {
                 blobs[j++] = blob0;
-                if (j==MAX_COLOR_CODE_MODELS)
+                if (j==MAX_COLOR_CODE_MODELS*2)
                     break;
             }
         }
+
+        qDebug("count=%d %d", count, j);
+        // cleanup blobs, deal with cases where there are more blobs than models
+        cleanup(blobs, &j);
+        if (j<2)
+            continue;
+        qDebug("%d", j);
+
         // find left, right, top, bottom of color coded block
         for (k=0, left=right=top=bottom=0; k<j; k++)
         {
@@ -683,6 +812,14 @@ void Blobs::processCoded()
             codedBlob->m_angle = angle(blobs[j-1], blobs[0]);
         }
     }
+
+    // 3rd pass, invalidate blobs
+    for (blob0=(BlobA *)m_blobs; blob0<endBlob; blob0++)
+    {
+        if (blob0->m_model>NUM_MODELS || m_clut->getType(blob0->m_model)==CL_MODEL_TYPE_COLORCODE)
+            blob0->m_model = 0; // invalidate-- not part of a color code
+    }
+
 }
 
 int Blobs::generateLUT(uint8_t model, const Frame8 &frame, const RectA &region, ColorModel *pcmodel)
