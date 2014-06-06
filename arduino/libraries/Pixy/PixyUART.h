@@ -22,9 +22,12 @@
 class LinkUART
 {
 public:
-  void init(uint8_t address)
+  void init()
   {
     Serial1.begin(19200);
+  }
+  void setAddress(uint8_t addr)
+  {
   }
   uint16_t getWord()
   {

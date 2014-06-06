@@ -74,6 +74,8 @@ void setup()
 {
   Serial.begin(9600);
   Serial.print("Starting...\n");
+  
+  pixy.init();
 }
 
 void loop()

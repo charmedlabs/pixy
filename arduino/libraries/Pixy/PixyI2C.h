@@ -22,9 +22,12 @@
 class LinkI2C
 {
 public:
-  void init(uint8_t address)
+  void init()
   {
     Wire.begin();
+  }
+  void setAddress(uint8_t address)
+  {
 	addr = address;
   }
   uint16_t getWord()

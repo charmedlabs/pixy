@@ -13,6 +13,11 @@
 // end license header
 //
 
+/* 
+   06.04.2014 v0.1.3 John Leimon
+     + Now using pixy.init() to initialize Pixy in setup().
+*/
+
 #include <SPI.h>  
 #include <Pixy.h>
 
@@ -23,6 +28,8 @@ void setup()
 
   Serial.begin(9600);
   Serial.print("Starting...\n");
+
+  pixy.init();
 }
 
 void loop()
