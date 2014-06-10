@@ -36,6 +36,7 @@ public:
     int renderBackground();
     int renderRect(uint16_t width, uint16_t height, const RectA &rect);
     void emitFlushImage();
+    void regionCommand(int x0, int y0, int width, int height, const QStringList &argv);
 
     void setMode(uint32_t mode)
     {
@@ -67,6 +68,8 @@ private:
     int renderBA81Filter(uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame);
 
     void handleRL(QImage *image, uint color, uint row, uint startCol, uint len);
+
+    void pixelsOut(int x0, int y0, int width, int height);
 
     VideoWidget *m_video;
     bool m_backgroundFrame; // our own copy because we're in a different thread (not gui thread)

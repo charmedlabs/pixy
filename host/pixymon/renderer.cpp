@@ -16,6 +16,7 @@
 #include <QPainter>
 #include <QFont>
 #include <QDebug>
+#include <QFile>
 #include "renderer.h"
 #include "videowidget.h"
 #include <chirp.hpp>
@@ -496,6 +497,84 @@ int Renderer::render(uint32_t type, void *args[])
 
     return res;
 }
+
+void matlabArrayOut(QFile *file, const QString &name, float *data, int width, int height)
+{
+    int i, j;
+    float (&array)[height][width] = *reinterpret_cast<float (*)[height][width]>(data);
+
+    QTextStream out(file);
+
+    out << name << "=[\n";
+
+    for (i=0; i<height; i++)
+    {
+        if (i!=0)
+            out << "\n";
+        for(j=0; j<width; j++)
+        {
+            if (j!=0)
+                out << ", ";
+            out << array[i][j];
+        }
+    }
+    out << "];\n";
+}
+
+void Renderer::pixelsOut(int x0, int y0, int width, int height)
+{
+    uint pixel, *line;
+    int u, v;
+    uint r, g, b;
+    int x, y, n = width*height;
+    float uvals[n], vvals[n];
+    //QString str, name = "pixels";
+    //QFile file(name + QString::number(index) + ".m");
+    QFile file("pixels.m");
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+        return;
+
+    QTextStream out(&file);
+
+
+    for (y=0; y<height; y++)
+    {
+        line = (unsigned int *)m_background.scanLine(y0+y);
+        for (x=0; x<width; x++)
+        {
+            pixel = line[x0+x];
+            b = pixel&0xff;
+            pixel >>= 8;
+            g = pixel&0xff;
+            pixel >>= 8;
+            r = pixel&0xff;
+            u = r-g;
+            v = b-g;
+            u >>= 1;
+            v >>= 1;
+
+            uvals[y*width+x] = u;
+            vvals[y*width+x] = v;
+        }
+    }
+    matlabArrayOut(&file, "u", uvals, 1, n);
+    matlabArrayOut(&file, "v", vvals, 1, n);
+
+    file.close();
+}
+
+
+void Renderer::regionCommand(int x0, int y0, int width, int height, const QStringList &argv)
+{
+    qDebug("%d %d %d %d", x0, y0, width, height);
+
+    if (m_background.width()==0)
+        return;
+
+    pixelsOut(x0, y0, width, height);
+
+}
+
 
 int Renderer::renderBackground()
 {

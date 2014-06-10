@@ -164,7 +164,8 @@ int chaseLoop()
 {
 	uint16_t x, y;
 	BlobA *blobs, *blob;
-	uint32_t numBlobs;
+	BlobB *ccBlobs;
+	uint32_t numBlobs, numCCBlobs;
 
 
 	// create blobs
@@ -186,7 +187,7 @@ int chaseLoop()
 
 
 	// send blobs
-	g_blobs->getBlobs(&blobs, &numBlobs);
+	g_blobs->getBlobs(&blobs, &numBlobs, &ccBlobs, &numCCBlobs);
 	cc_sendBlobs(g_chirpUsb, blobs, numBlobs);
 
 	cc_setLED();

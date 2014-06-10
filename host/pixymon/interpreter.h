@@ -100,6 +100,7 @@ private:
     int call(const QStringList &argv, bool interactive=false);
     void handleResponse(void *args[]);
     void handleData(void *args[]);
+
     int addProgram(ChirpCallData data);
     int addProgram(const QStringList &argv);
     int execute();
@@ -146,7 +147,8 @@ private:
     QString m_print;
     Qt::Key m_key;
     uint32_t m_rcount;
-    QStringList m_argv;
+    QStringList m_argv; // executed on Pixy
+    QStringList m_argvHost;  // executed on host
     QStringList m_commandList;
     uint8_t m_argTypes[0x100];
     uint16_t m_version[3];

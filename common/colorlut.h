@@ -71,7 +71,7 @@ private:
     bool checkBounds(const ColorModel *model, const HuePixel *pixel);
 
 #ifndef PIXY
-    void matlabOut(const ColorModel *model);
+    void matlabOut(const ColorModel *model, uint8_t index);
     void matlabOut();
 #endif
 

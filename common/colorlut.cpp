@@ -280,8 +280,12 @@ void ColorLUT::add(const ColorModel *model, uint8_t modelIndex)
     uint32_t i;
     HuePixel p;
 
-	if (modelIndex-1 > CL_NUM_MODELS)
-		return;
+#ifndef PIXY
+    matlabOut(model, modelIndex);
+#endif
+
+    if (modelIndex-1 > CL_NUM_MODELS)
+        return;
 
     if (model->m_hue[0].m_slope==0.0f)
         return;
@@ -475,22 +479,24 @@ int ColorLUT::growRegion(RectA *result, const Frame8 &frame, const Point16 &seed
 }
 
 #ifndef PIXY
-void ColorLUT::matlabOut(const ColorModel *model)
+void ColorLUT::matlabOut(const ColorModel *model, uint8_t index)
 {
     unsigned int i;
     QString str, name = "lutinfo";
-    QFile file(name + ".m");
+    QFile file(name + QString::number(index) + ".m");
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
         return;
 
     QTextStream out(&file);
 
+#if 0
     out << "function [HuePixels, Lines]=" << name << "()\n\n";
     out << "HuePixels=[\n";
     for (i=0; i<m_hpixelLen; i++)
         out << str.sprintf("%d %d\n", m_hpixels[i].m_u, m_hpixels[i].m_v);
 
     out << "];\n\n";
+#endif
     out << "Lines=[\n";
     out << str.sprintf("%f %f\n",  model->m_hue[0].m_slope,  model->m_hue[0].m_yi);
     out << str.sprintf("%f %f\n",  model->m_hue[1].m_slope,  model->m_hue[1].m_yi);

@@ -616,7 +616,6 @@ void Blobs::cleanup(BlobA *blobs[], int16_t *numBlobs)
 {
     int16_t i, j, k, numNewBlobs;
     uint16_t numModels, minBlobs, minBlobModel, numMinBlobModel;
-    uint16_t models[MAX_COLOR_CODE_MODELS];
     BlobA *blobA, *blobB;
     BlobA *table[MAX_COLOR_CODE_MODELS][4];
     BlobA *newBlobs[MAX_COLOR_CODE_MODELS];
@@ -642,7 +641,6 @@ void Blobs::cleanup(BlobA *blobs[], int16_t *numBlobs)
         }
         if (k>0)
         {
-            models[numModels] = i;
             if (k<minBlobs)
             {
                 minBlobModel = numModels;
@@ -757,12 +755,10 @@ void Blobs::processCoded()
             }
         }
 
-        qDebug("count=%d %d", count, j);
         // cleanup blobs, deal with cases where there are more blobs than models
         cleanup(blobs, &j);
         if (j<2)
             continue;
-        qDebug("%d", j);
 
         // find left, right, top, bottom of color coded block
         for (k=0, left=right=top=bottom=0; k<j; k++)

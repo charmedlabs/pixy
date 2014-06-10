@@ -139,8 +139,8 @@ int ptLoop()
 	int32_t panError, tiltError;
 	uint16_t *blob, x, y;
 	BlobA *blobs;
-	uint32_t numBlobs;
-
+	BlobB *ccBlobs;
+	uint32_t numBlobs, numCCBlobs;
 
 	// create blobs
 	g_blobs->blobify();
@@ -159,7 +159,7 @@ int ptLoop()
 	}
 
 	// send blobs
-	g_blobs->getBlobs(&blobs, &numBlobs);
+	g_blobs->getBlobs(&blobs, &numBlobs, &ccBlobs, &numCCBlobs);
 	cc_sendBlobs(g_chirpUsb, blobs, numBlobs);
 
 	cc_setLED();

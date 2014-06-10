@@ -697,6 +697,11 @@ void Interpreter::command(const QString &command)
         else
             emit textOut("Missing mode parameter.\n");
     }
+    else if (words[0]=="region")
+    {
+        emit videoInput(VideoWidget::REGION);
+        m_argvHost = words;
+    }
 #if 0
     else if (words[0]=="set")
     {
@@ -799,10 +804,21 @@ int Interpreter::uploadLut()
 
 void Interpreter::handleSelection(int x0, int y0, int width, int height)
 {
-    QMutexLocker locker(&m_mutexInput);
-    m_command = QString::number(x0) + " " + QString::number(y0) +  " " + QString::number(width) +  " " + QString::number(height);
-    m_key = (Qt::Key)0;
-    m_waitInput.wakeAll();
+    if (m_argvHost.size()>0 && m_argvHost[0]=="region")
+    {
+        m_renderer->regionCommand(x0, y0, width, height, m_argvHost);
+        m_argvHost.clear();
+    }
+    else
+    {
+        m_mutexInput.lock();
+        m_command = QString::number(x0) + " " + QString::number(y0) +  " " + QString::number(width) +  " " + QString::number(height);
+        m_key = (Qt::Key)0;
+        m_waitInput.wakeAll();
+        m_mutexInput.unlock();
+        m_renderer->regionCommand(x0, y0, width, height, m_argvHost);
+    }
+
 }
 
 void Interpreter::unwait()
