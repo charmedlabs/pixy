@@ -548,6 +548,7 @@ void Renderer::pixelsOut(int x0, int y0, int width, int height)
             g = pixel&0xff;
             pixel >>= 8;
             r = pixel&0xff;
+            qDebug("%d: %d %d %d", y*width+x, r, g, b);
             u = r-g;
             v = b-g;
             u >>= 1;

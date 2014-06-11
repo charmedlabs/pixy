@@ -550,7 +550,7 @@ int16_t Blobs::angle(BlobA *blob0, BlobA *blob1)
 
 void Blobs::sort(BlobA *blobs[], uint16_t len, BlobA *firstBlob, bool horiz)
 {
-    uint16_t i, td, distances[MAX_COLOR_CODE_MODELS];
+    uint16_t i, td, distances[MAX_COLOR_CODE_MODELS*2];
     bool done;
     BlobA *tb;
 
@@ -561,7 +561,7 @@ void Blobs::sort(BlobA *blobs[], uint16_t len, BlobA *firstBlob, bool horiz)
     // sort -- note, we only have 5 maximum to sort, so no worries about efficiency
     while(1)
     {
-        for (i=1, done=true; i<len; i++)
+        for (i=1, done=true; i<len && i<MAX_COLOR_CODE_MODELS*2; i++)
         {
             if (distances[i-1]>distances[i])
             {
@@ -582,9 +582,10 @@ void Blobs::sort(BlobA *blobs[], uint16_t len, BlobA *firstBlob, bool horiz)
     }
 }
 
-void Blobs::analyzeDistances(BlobA *blobs0[], int16_t numBlobs0, BlobA *blobs[], int16_t numBlobs, BlobA **blobA, BlobA **blobB)
+bool Blobs::analyzeDistances(BlobA *blobs0[], int16_t numBlobs0, BlobA *blobs[], int16_t numBlobs, BlobA **blobA, BlobA **blobB)
 {
     bool skip;
+    bool result = false;
     int16_t dist, minDist, i, j, k;
 
     for (i=0, minDist=0x7fff; i<numBlobs0; i++)
@@ -607,9 +608,15 @@ void Blobs::analyzeDistances(BlobA *blobs0[], int16_t numBlobs0, BlobA *blobs[],
                 minDist = dist;
                 *blobA = blobs0[i];
                 *blobB = blobs[j];
+                result = true;
             }
         }
     }
+#ifndef PIXY
+    if (!result)
+        qDebug("not set!");
+#endif
+    return result;
 }
 
 void Blobs::cleanup(BlobA *blobs[], int16_t *numBlobs)
@@ -661,14 +668,19 @@ void Blobs::cleanup(BlobA *blobs[], int16_t *numBlobs)
 
     // figure out how many blobs are in of the minBlobModel = numMinBlobModel
     for (numMinBlobModel=0; table[minBlobModel][numMinBlobModel]!=NULL && numMinBlobModel<4; numMinBlobModel++);
-    analyzeDistances(&table[minBlobModel][0], numMinBlobModel, blobs, *numBlobs, &blobA, &blobB);
+    if (!analyzeDistances(&table[minBlobModel][0], numMinBlobModel, blobs, *numBlobs, &blobA, &blobB))
+    {
+        *numBlobs = 0;
+        return;
+    }
 
     newBlobs[0] = blobA;
     newBlobs[1] = blobB;
 
     for (numNewBlobs=2; numNewBlobs<numModels; numNewBlobs++)
     {
-        analyzeDistances(newBlobs, numNewBlobs, blobs, *numBlobs, &blobA, &blobB);
+        if (!analyzeDistances(newBlobs, numNewBlobs, blobs, *numBlobs, &blobA, &blobB))
+            break; // didn't find any
         newBlobs[numNewBlobs] = blobB;
     }
 
@@ -678,10 +690,29 @@ void Blobs::cleanup(BlobA *blobs[], int16_t *numBlobs)
     *numBlobs = numNewBlobs;
 }
 
+void Blobs::printBlobs()
+{
+    int i;
+    BlobA *blobs = (BlobA *)m_blobs;
+    for (i=0; i<m_numBlobs; i++)
+        qDebug("blob %d: %d %d %d %d %d", i, blobs[i].m_model, blobs[i].m_left, blobs[i].m_right, blobs[i].m_top, blobs[i].m_bottom);
+}
+
+void Blobs::mergeClumps(uint16_t scount0, uint16_t scount1)
+{
+    int i;
+    BlobA *blobs = (BlobA *)m_blobs;
+    for (i=0; i<m_numBlobs; i++)
+    {
+        if ((blobs[i].m_model&~0x07)==scount1)
+            blobs[i].m_model = (blobs[i].m_model&0x07) | scount0;
+    }
+}
+
 void Blobs::processCoded()
 {
     int16_t i, j, k;
-    uint16_t scount, count = 0;
+    uint16_t scount, scount1, count = 0;
     uint16_t left, right, top, bottom;
     uint16_t codedModel0, codedModel;
     BlobB *codedBlob, *endBlobB;
@@ -711,10 +742,10 @@ void Blobs::processCoded()
 
     endBlob = (BlobA *)m_blobs + m_numBlobs;
 
-    // 1st pass:
+    // 1st pass: mark all closeby blobs
     for (blob0=(BlobA *)m_blobs; blob0<endBlob; blob0++)
     {
-        for (blob1=(BlobA *)m_blobs+1; blob1<endBlob; blob1++)
+        for (blob1=(BlobA *)blob0+1; blob1<endBlob; blob1++)
         {
             if (closeby(blob0, blob1))
             {
@@ -725,23 +756,47 @@ void Blobs::processCoded()
                     blob0->m_model |= scount;
                     blob1->m_model |= scount;
                 }
-                else if (blob0->m_model>NUM_MODELS)
+                else if (blob0->m_model>NUM_MODELS && blob1->m_model<=NUM_MODELS)
                 {
                    scount = blob0->m_model & ~0x07;
                    blob1->m_model |= scount;
                 }
-                else if (blob1->m_model>NUM_MODELS)
+                else if (blob1->m_model>NUM_MODELS && blob0->m_model<=NUM_MODELS)
                 {
                    scount = blob1->m_model & ~0x07;
                    blob0->m_model |= scount;
+                }
+                else
+                {
                 }
             }
         }
     }
 
-    // 2nd pass
+    // 2nd pass: merge blob clumps
+    for (blob0=(BlobA *)m_blobs; blob0<endBlob; blob0++)
+    {
+        if (blob0->m_model<=NUM_MODELS) // skip normal blobs
+            continue;
+        scount = blob0->m_model&~0x07;
+        for (blob1=(BlobA *)blob0+1; blob1<endBlob; blob1++)
+        {
+            if (blob1->m_model<=NUM_MODELS)
+                continue;
+
+            scount1 = blob1->m_model&~0x07;
+            if (scount!=scount1 && closeby(blob0, blob1))
+                mergeClumps(scount, scount1);
+        }
+    }
+
+
+    qDebug("count = %d", count);
+    printBlobs();
+
+    // 3rd pass
     endBlobB = (BlobB *)((BlobA *)m_blobs + MAX_BLOBS)-1;
-    for (i=1, codedBlob = m_codedBlobs, m_numCodedBlobs=0; i<=count && codedBlob<endBlobB; i++, codedBlob++, m_numCodedBlobs++)
+    for (i=1, codedBlob = m_codedBlobs, m_numCodedBlobs=0; i<=count && codedBlob<endBlobB; i++)
     {
         scount = i<<3;
         // find all blobs with index i
@@ -756,7 +811,9 @@ void Blobs::processCoded()
         }
 
         // cleanup blobs, deal with cases where there are more blobs than models
+#if 0
         cleanup(blobs, &j);
+#endif
         if (j<2)
             continue;
 
@@ -807,6 +864,8 @@ void Blobs::processCoded()
             codedBlob->m_model = codedModel;
             codedBlob->m_angle = angle(blobs[j-1], blobs[0]);
         }
+        codedBlob++;
+        m_numCodedBlobs++;
     }
 
     // 3rd pass, invalidate blobs
