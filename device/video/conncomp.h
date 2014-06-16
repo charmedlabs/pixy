@@ -34,6 +34,7 @@ int32_t cc_getRLSFrameChirpFlags(Chirp *chirp, uint8_t renderFlags=RENDER_FLAG_F
 int32_t cc_getRLSFrame(uint32_t *memory, uint8_t *lut, bool sync=true);
 
 int cc_sendBlobs(Chirp *chirp, const BlobA *blobs, uint32_t len, uint8_t renderFlags=RENDER_FLAG_FLUSH);
+int cc_sendBlobs(Chirp *chirp, const BlobA *blobs, uint32_t len, const BlobB *ccBlobs, uint32_t ccLen, uint8_t renderFlags=RENDER_FLAG_FLUSH);
 int cc_loadLut(void);
 
 void cc_loadParams(void);

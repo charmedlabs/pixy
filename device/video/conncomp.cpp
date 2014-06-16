@@ -416,6 +416,12 @@ int cc_sendBlobs(Chirp *chirp, const BlobA *blobs, uint32_t len, uint8_t renderF
 	return 0;
 }
 
+int cc_sendBlobs(Chirp *chirp, const BlobA *blobs, uint32_t len, const BlobB *ccBlobs, uint32_t ccLen, uint8_t renderFlags)
+{
+	CRP_RETURN(chirp, HTYPE(FOURCC('C','C','B','2')), HINT8(renderFlags), HINT16(CAM_RES2_WIDTH), HINT16(CAM_RES2_HEIGHT), UINTS16(len*sizeof(BlobA)/sizeof(uint16_t), blobs), UINTS16(ccLen*sizeof(BlobB)/sizeof(uint16_t), ccBlobs), END);
+	return 0;
+}
+
 uint8_t ledBrightness(uint8_t channel, uint32_t area)
 {
 	uint32_t brightness;

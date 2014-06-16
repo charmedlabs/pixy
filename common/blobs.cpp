@@ -626,7 +626,7 @@ void Blobs::cleanup(BlobA *blobs[], int16_t *numBlobs)
 {
     int i, j;
     bool set;
-    uint16_t maxEqual, numEqual, numNewBlobs, maxEqualBlob;
+    uint16_t maxEqual, numEqual, numNewBlobs;
     BlobA *newBlobs[MAX_COLOR_CODE_MODELS*2];
     uint32_t area0, area1, lowerArea, upperArea, maxEqualArea;
 
@@ -647,7 +647,6 @@ void Blobs::cleanup(BlobA *blobs[], int16_t *numBlobs)
         if (numEqual>maxEqual)
         {
             maxEqual = numEqual;
-            maxEqualBlob = i;
             maxEqualArea = area0;
             set = true;
         }
@@ -663,8 +662,10 @@ void Blobs::cleanup(BlobA *blobs[], int16_t *numBlobs)
         upperArea = area0 + (area0*TOL)/100;
         if (lowerArea<=maxEqualArea && maxEqualArea<=upperArea)
             newBlobs[numNewBlobs++] = blobs[i];
+#ifndef PIXY
         else if (*numBlobs>=5 && (blobs[i]->m_model&0x07)==2)
             qDebug("eliminated!");
+#endif
     }
 
     // copy new blobs over
