@@ -619,88 +619,21 @@ bool Blobs::analyzeDistances(BlobA *blobs0[], int16_t numBlobs0, BlobA *blobs[],
     return result;
 }
 
+#define TOL  400
+
+// impose weak size constraint
 void Blobs::cleanup(BlobA *blobs[], int16_t *numBlobs)
 {
-#if 0
-    int16_t i, j, k, numNewBlobs;
-    uint16_t numModels, minBlobs, minBlobModel, numMinBlobModel;
-    BlobA *blobA, *blobB;
-    BlobA *table[MAX_COLOR_CODE_MODELS][4];
-    BlobA *newBlobs[MAX_COLOR_CODE_MODELS];
-
-    // zero out table
-    for (i=0; i<MAX_COLOR_CODE_MODELS; i++)
-    {
-        for (j=0; j<4; j++)
-            table[i][j] = NULL;
-    }
-
-    // first, determine numModels is less than numBlobs
-    for (i=1, numModels=0, minBlobs=4, minBlobModel = 0; i<=NUM_MODELS; i++)
-    {
-        for (j=0, k=0; j<*numBlobs; j++)
-        {
-            if ((blobs[j]->m_model&0x07)==i)
-            {
-                table[numModels][k++] = blobs[j];
-                if (k==4)
-                    break;
-            }
-        }
-        if (k>0)
-        {
-            if (k<minBlobs)
-            {
-                minBlobModel = numModels;
-                minBlobs = k;
-            }
-            numModels++;
-            if (numModels==MAX_COLOR_CODE_MODELS)
-                break;
-        }
-    }
-
-    // this is the best case-- don't need to do anything
-    if (*numBlobs==numModels)
-        return;
-
-    // otherwise, numBlobs>numModels and we need to get rid of some blobs.
-    // The model with the least number of blobs is minBlobModel.  Find the blob that's closest to this/these blob(s)
-
-    // figure out how many blobs are in of the minBlobModel = numMinBlobModel
-    for (numMinBlobModel=0; table[minBlobModel][numMinBlobModel]!=NULL && numMinBlobModel<4; numMinBlobModel++);
-    if (!analyzeDistances(&table[minBlobModel][0], numMinBlobModel, blobs, *numBlobs, &blobA, &blobB))
-    {
-        *numBlobs = 0;
-        return;
-    }
-
-    newBlobs[0] = blobA;
-    newBlobs[1] = blobB;
-
-    for (numNewBlobs=2; numNewBlobs<numModels; numNewBlobs++)
-    {
-        if (!analyzeDistances(newBlobs, numNewBlobs, blobs, *numBlobs, &blobA, &blobB))
-            break; // didn't find any
-        newBlobs[numNewBlobs] = blobB;
-    }
-
-    // copy new blobs over
-    for (i=0; i<numNewBlobs; i++)
-        blobs[i] = newBlobs[i];
-    *numBlobs = numNewBlobs;
-#else
-#define TOL  20
     int i, j;
     bool set;
     uint16_t maxEqual, numEqual, numNewBlobs, maxEqualBlob;
-    BlobA *newBlobs[MAX_COLOR_CODE_MODELS];
+    BlobA *newBlobs[MAX_COLOR_CODE_MODELS*2];
     uint32_t area0, area1, lowerArea, upperArea, maxEqualArea;
 
     for (i=0, maxEqual=0, set=false; i<*numBlobs; i++)
     {
         area0 = (blobs[i]->m_right-blobs[i]->m_left) * (blobs[i]->m_bottom-blobs[i]->m_top);
-        lowerArea = area0 - (area0*TOL)/100;
+        lowerArea = (area0*100)/(100+TOL);
         upperArea = area0 + (area0*TOL)/100;
 
         for (j=0, numEqual=0; j<*numBlobs; j++)
@@ -726,24 +659,22 @@ void Blobs::cleanup(BlobA *blobs[], int16_t *numBlobs)
     for (i=0, numNewBlobs=0; i<*numBlobs; i++)
     {
         area0 = (blobs[i]->m_right-blobs[i]->m_left) * (blobs[i]->m_bottom-blobs[i]->m_top);
-        lowerArea = area0 - (area0*TOL)/100;
+        lowerArea = (area0*100)/(100+TOL);
         upperArea = area0 + (area0*TOL)/100;
         if (lowerArea<=maxEqualArea && maxEqualArea<=upperArea)
             newBlobs[numNewBlobs++] = blobs[i];
-#ifndef PIXY
-        else
-            qDebug("");
-#endif
+        else if (*numBlobs>=5 && (blobs[i]->m_model&0x07)==2)
+            qDebug("eliminated!");
     }
 
     // copy new blobs over
     for (i=0; i<numNewBlobs; i++)
         blobs[i] = newBlobs[i];
     *numBlobs = numNewBlobs;
-
-#endif
 }
 
+
+// eliminate duplicate and adjacent signatures
 void Blobs::cleanup2(BlobA *blobs[], int16_t *numBlobs)
 {
     BlobA *newBlobs[MAX_COLOR_CODE_MODELS*2];
@@ -756,7 +687,7 @@ void Blobs::cleanup2(BlobA *blobs[], int16_t *numBlobs)
         newBlobs[numNewBlobs++] = blobs[i];
         for (j=i+1; j<*numBlobs; j++)
         {
-            if (blobs[j]->m_model==blobs[i]->m_model)
+            if ((blobs[j]->m_model&0x07)==(blobs[i]->m_model&0x07))
                 set = true;
             else
                 break;
@@ -850,9 +781,6 @@ void Blobs::processCoded()
                    scount = blob1->m_model & ~0x07;
                    blob0->m_model |= scount;
                 }
-                else
-                {
-                }
             }
         }
     }
@@ -876,12 +804,7 @@ void Blobs::processCoded()
     }
 #endif
 
-#ifndef PIXY
-    qDebug("count = %d", count);
-#endif
-    printBlobs();
-
-    // 3rd pass
+    // 3rd and final pass, find each blob clean it up and add it to the table
     endBlobB = (BlobB *)((BlobA *)m_blobs + MAX_BLOBS)-1;
     for (i=1, codedBlob = m_codedBlobs, m_numCodedBlobs=0; i<=count && codedBlob<endBlobB; i++)
     {
@@ -897,7 +820,7 @@ void Blobs::processCoded()
             }
         }
 
-#if 0
+#if 1
         // cleanup blobs, deal with cases where there are more blobs than models
         cleanup(blobs, &j);
 #endif
@@ -908,7 +831,7 @@ void Blobs::processCoded()
         // find left, right, top, bottom of color coded block
         for (k=0, left=right=top=bottom=0; k<j; k++)
         {
-            qDebug("* cc %x %d i %d: %d %d %d %d %d", blobs[k], m_numCodedBlobs, k, blobs[k]->m_model, blobs[k]->m_left, blobs[k]->m_right, blobs[k]->m_top, blobs[k]->m_bottom);
+            //qDebug("* cc %x %d i %d: %d %d %d %d %d", blobs[k], m_numCodedBlobs, k, blobs[k]->m_model, blobs[k]->m_left, blobs[k]->m_right, blobs[k]->m_top, blobs[k]->m_bottom);
             if (blobs[left]->m_left > blobs[k]->m_left)
                 left = k;
             if (blobs[top]->m_top > blobs[k]->m_top)
@@ -934,6 +857,8 @@ void Blobs::processCoded()
         cleanup2(blobs, &j);
         if (j<2)
             continue;
+        else if (j>5)
+            j = 5;
 #endif
         // create new blob, compare the coded models, pick the smaller one
         for (k=0, codedModel0=0; k<j; k++)
@@ -959,7 +884,7 @@ void Blobs::processCoded()
             codedBlob->m_angle = angle(blobs[j-1], blobs[0]);
         }
 #endif
-        qDebug("cc %d %d %d %d %d", m_numCodedBlobs, codedBlob->m_left, codedBlob->m_right, codedBlob->m_top, codedBlob->m_bottom);
+        //qDebug("cc %d %d %d %d %d", m_numCodedBlobs, codedBlob->m_left, codedBlob->m_right, codedBlob->m_top, codedBlob->m_bottom);
         codedBlob++;
         m_numCodedBlobs++;
     }
