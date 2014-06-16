@@ -621,6 +621,7 @@ bool Blobs::analyzeDistances(BlobA *blobs0[], int16_t numBlobs0, BlobA *blobs[],
 
 void Blobs::cleanup(BlobA *blobs[], int16_t *numBlobs)
 {
+#if 0
     int16_t i, j, k, numNewBlobs;
     uint16_t numModels, minBlobs, minBlobModel, numMinBlobModel;
     BlobA *blobA, *blobB;
@@ -688,14 +689,97 @@ void Blobs::cleanup(BlobA *blobs[], int16_t *numBlobs)
     for (i=0; i<numNewBlobs; i++)
         blobs[i] = newBlobs[i];
     *numBlobs = numNewBlobs;
+#else
+#define TOL  20
+    int i, j;
+    bool set;
+    uint16_t maxEqual, numEqual, numNewBlobs, maxEqualBlob;
+    BlobA *newBlobs[MAX_COLOR_CODE_MODELS];
+    uint32_t area0, area1, lowerArea, upperArea, maxEqualArea;
+
+    for (i=0, maxEqual=0, set=false; i<*numBlobs; i++)
+    {
+        area0 = (blobs[i]->m_right-blobs[i]->m_left) * (blobs[i]->m_bottom-blobs[i]->m_top);
+        lowerArea = area0 - (area0*TOL)/100;
+        upperArea = area0 + (area0*TOL)/100;
+
+        for (j=0, numEqual=0; j<*numBlobs; j++)
+        {
+            if (i==j)
+                continue;
+            area1 = (blobs[j]->m_right-blobs[j]->m_left) * (blobs[j]->m_bottom-blobs[j]->m_top);
+            if (lowerArea<=area1 && area1<=upperArea)
+                numEqual++;
+        }
+        if (numEqual>maxEqual)
+        {
+            maxEqual = numEqual;
+            maxEqualBlob = i;
+            maxEqualArea = area0;
+            set = true;
+        }
+    }
+
+    if (!set)
+        *numBlobs = 0;
+
+    for (i=0, numNewBlobs=0; i<*numBlobs; i++)
+    {
+        area0 = (blobs[i]->m_right-blobs[i]->m_left) * (blobs[i]->m_bottom-blobs[i]->m_top);
+        lowerArea = area0 - (area0*TOL)/100;
+        upperArea = area0 + (area0*TOL)/100;
+        if (lowerArea<=maxEqualArea && maxEqualArea<=upperArea)
+            newBlobs[numNewBlobs++] = blobs[i];
+#ifndef PIXY
+        else
+            qDebug("");
+#endif
+    }
+
+    // copy new blobs over
+    for (i=0; i<numNewBlobs; i++)
+        blobs[i] = newBlobs[i];
+    *numBlobs = numNewBlobs;
+
+#endif
 }
+
+void Blobs::cleanup2(BlobA *blobs[], int16_t *numBlobs)
+{
+    BlobA *newBlobs[MAX_COLOR_CODE_MODELS*2];
+    int i, j;
+    uint16_t numNewBlobs;
+    bool set;
+
+    for (i=0, numNewBlobs=0, set=false; i<*numBlobs && numNewBlobs<MAX_COLOR_CODE_MODELS*2; i=j)
+    {
+        newBlobs[numNewBlobs++] = blobs[i];
+        for (j=i+1; j<*numBlobs; j++)
+        {
+            if (blobs[j]->m_model==blobs[i]->m_model)
+                set = true;
+            else
+                break;
+        }
+    }
+    if (set)
+    {
+        // copy new blobs over
+        for (i=0; i<numNewBlobs; i++)
+            blobs[i] = newBlobs[i];
+        *numBlobs = numNewBlobs;
+    }
+}
+
 
 void Blobs::printBlobs()
 {
     int i;
     BlobA *blobs = (BlobA *)m_blobs;
+#ifndef PIXY
     for (i=0; i<m_numBlobs; i++)
         qDebug("blob %d: %d %d %d %d %d", i, blobs[i].m_model, blobs[i].m_left, blobs[i].m_right, blobs[i].m_top, blobs[i].m_bottom);
+#endif
 }
 
 void Blobs::mergeClumps(uint16_t scount0, uint16_t scount1)
@@ -713,7 +797,7 @@ void Blobs::processCoded()
 {
     int16_t i, j, k;
     uint16_t scount, scount1, count = 0;
-    uint16_t left, right, top, bottom;
+    int16_t left, right, top, bottom;
     uint16_t codedModel0, codedModel;
     BlobB *codedBlob, *endBlobB;
     BlobA *blob0, *blob1, *endBlob;
@@ -773,6 +857,7 @@ void Blobs::processCoded()
         }
     }
 
+#if 1
     // 2nd pass: merge blob clumps
     for (blob0=(BlobA *)m_blobs; blob0<endBlob; blob0++)
     {
@@ -789,9 +874,11 @@ void Blobs::processCoded()
                 mergeClumps(scount, scount1);
         }
     }
+#endif
 
-
+#ifndef PIXY
     qDebug("count = %d", count);
+#endif
     printBlobs();
 
     // 3rd pass
@@ -802,7 +889,7 @@ void Blobs::processCoded()
         // find all blobs with index i
         for (j=0, blob0=(BlobA *)m_blobs; blob0<endBlob; blob0++)
         {
-            if ((blob0->m_model&scount)==scount)
+            if ((blob0->m_model&~0x07)==scount)
             {
                 blobs[j++] = blob0;
                 if (j==MAX_COLOR_CODE_MODELS*2)
@@ -810,16 +897,18 @@ void Blobs::processCoded()
             }
         }
 
-        // cleanup blobs, deal with cases where there are more blobs than models
 #if 0
+        // cleanup blobs, deal with cases where there are more blobs than models
         cleanup(blobs, &j);
 #endif
+
         if (j<2)
             continue;
 
         // find left, right, top, bottom of color coded block
         for (k=0, left=right=top=bottom=0; k<j; k++)
         {
+            qDebug("* cc %x %d i %d: %d %d %d %d %d", blobs[k], m_numCodedBlobs, k, blobs[k]->m_model, blobs[k]->m_left, blobs[k]->m_right, blobs[k]->m_top, blobs[k]->m_bottom);
             if (blobs[left]->m_left > blobs[k]->m_left)
                 left = k;
             if (blobs[top]->m_top > blobs[k]->m_top)
@@ -834,13 +923,18 @@ void Blobs::processCoded()
         codedBlob->m_top = blobs[top]->m_top;
         codedBlob->m_bottom = blobs[bottom]->m_bottom;
 
+#if 1
         // is it more horizontal than vertical?
         if (blobs[right]->m_right-blobs[left]->m_left > blobs[bottom]->m_bottom-blobs[top]->m_top)
             sort(blobs, j, blobs[left], true);
         else
             sort(blobs, j, blobs[top], false);
 
-
+#if 1
+        cleanup2(blobs, &j);
+        if (j<2)
+            continue;
+#endif
         // create new blob, compare the coded models, pick the smaller one
         for (k=0, codedModel0=0; k<j; k++)
         {
@@ -864,6 +958,8 @@ void Blobs::processCoded()
             codedBlob->m_model = codedModel;
             codedBlob->m_angle = angle(blobs[j-1], blobs[0]);
         }
+#endif
+        qDebug("cc %d %d %d %d %d", m_numCodedBlobs, codedBlob->m_left, codedBlob->m_right, codedBlob->m_top, codedBlob->m_bottom);
         codedBlob++;
         m_numCodedBlobs++;
     }
@@ -887,8 +983,6 @@ int Blobs::generateLUT(uint8_t model, const Frame8 &frame, const RectA &region, 
     goodness = m_clut->generate(&cmodel, frame, region);
     if (goodness==0)
         return -1; // this model sucks!
-    m_clut->clear(model);
-    m_clut->add(&cmodel, model);
 
     if (pcmodel)
         *pcmodel = cmodel;
@@ -908,8 +1002,6 @@ int Blobs::generateLUT(uint8_t model, const Frame8 &frame, const Point16 &seed, 
     if (goodness==0)
         return -1; // this model sucks!
 
-    m_clut->clear(model);
-    m_clut->add(&cmodel, model);
 
     if (region)
         *region = cregion;

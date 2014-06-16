@@ -67,6 +67,7 @@ private:
     int16_t distance(BlobA *blob0, BlobA *blob1, bool horiz);
     void processCoded();
     void cleanup(BlobA *blobs[], int16_t *numBlobs);
+    void cleanup2(BlobA *blobs[], int16_t *numBlobs);
     bool analyzeDistances(BlobA *blobs0[], int16_t numBlobs0, BlobA *blobs[], int16_t numBlobs, BlobA **blobA, BlobA **blobB);
     void mergeClumps(uint16_t scount0, uint16_t scount1);
 
