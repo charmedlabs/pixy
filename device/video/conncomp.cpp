@@ -170,6 +170,8 @@ void cc_loadParams(void)
 		"@c Signature_creation Sets how inclusive the color code (CC) signatures are with respect to hue. Applies during teaching. (default 2.0)", FLT32(2.0), END);
 	prm_add("CC saturation spread", 0,
 		"@c Signature_creation Sets how inclusive the color code (CC) signatures are with respect to saturation for color codes. Applies during teaching. (default 50.0)", FLT32(50.0), END);
+	prm_add("CC saturation spread", 0,
+		"@c Signature_creation Sets how inclusive the color code (CC) signatures are with respect to saturation for color codes. Applies during teaching. (default 50.0)", FLT32(50.0), END);
 
 	// load
 	uint16_t maxBlobs, maxBlobsPerModel;
@@ -178,7 +180,7 @@ void cc_loadParams(void)
 	prm_get("Max blocks", &maxBlobs, END);
 	prm_get("Max blocks per signature", &maxBlobsPerModel, END);
 	prm_get("Min block area", &minArea, END);
-	g_blobs->setParams(maxBlobs, maxBlobsPerModel, minArea);
+	g_blobs->setParams(maxBlobs, maxBlobsPerModel, minArea, ENABLED);
 
 	cc_loadLut();
 

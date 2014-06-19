@@ -32,8 +32,16 @@
 
 #define LUT_MEMORY		((uint8_t *)SRAM1_LOC + SRAM1_SIZE-CL_LUT_SIZE)  // +0x100 make room for prebuf and palette
 
-#define BL_BEGIN_MARKER	0xaa55
+#define BL_BEGIN_MARKER	      0xaa55
+#define BL_BEGIN_MARKER_CC    0xaa56
 
+enum ColorCodeMode
+{
+    DISABLED = 0,
+    ENABLED = 1,
+	CC_ONLY = 2, 
+    MIXED = 3
+};
 
 class Blobs
 {
@@ -42,9 +50,10 @@ public:
     ~Blobs();
     void blobify();
     uint16_t getBlock(uint8_t *buf, uint32_t buflen);
+    uint16_t getCCBlock(uint8_t *buf, uint32_t buflen);
     uint16_t *getMaxBlob(uint16_t signature=0);
     void getBlobs(BlobA **blobs, uint32_t *len, BlobB **ccBlobs, uint32_t *ccLen);
-	int setParams(uint16_t maxBlobs, uint16_t maxBlobsPerModel, uint32_t minArea); 
+    int setParams(uint16_t maxBlobs, uint16_t maxBlobsPerModel, uint32_t minArea, ColorCodeMode ccMode);
 
     int generateLUT(uint8_t model, const Frame8 &frame, const RectA &region, ColorModel *pcmodel=NULL);
     int generateLUT(uint8_t model, const Frame8 &frame, const Point16 &seed, ColorModel *pcmodel=NULL, RectA *region=NULL);
@@ -65,7 +74,7 @@ private:
     void sort(BlobA *blobs[], uint16_t len, BlobA *firstBlob, bool horiz);
     int16_t angle(BlobA *blob0, BlobA *blob1);
     int16_t distance(BlobA *blob0, BlobA *blob1, bool horiz);
-    void processCoded();
+    void processCC();
     void cleanup(BlobA *blobs[], int16_t *numBlobs);
     void cleanup2(BlobA *blobs[], int16_t *numBlobs);
     bool analyzeDistances(BlobA *blobs0[], int16_t numBlobs0, BlobA *blobs[], int16_t numBlobs, BlobA **blobA, BlobA **blobB);
@@ -79,19 +88,20 @@ private:
     uint16_t *m_blobs;
     uint16_t m_numBlobs;
 
-    BlobB *m_codedBlobs;
-	uint16_t m_numCodedBlobs;
+    BlobB *m_ccBlobs;
+    uint16_t m_numCCBlobs;
 
     bool m_mutex;
     uint16_t m_maxBlobs;
     uint16_t m_maxBlobsPerModel;
 
     uint16_t m_blobReadIndex;
+    uint16_t m_ccBlobReadIndex;
 
     uint32_t m_minArea;
     uint16_t m_mergeDist;
     uint16_t m_maxCodedDist;
-    uint8_t m_codedMode;
+    ColorCodeMode m_ccMode;
 };
 
 

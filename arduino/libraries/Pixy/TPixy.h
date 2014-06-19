@@ -28,8 +28,15 @@
 #define PIXY_INITIAL_ARRAYSIZE      30
 #define PIXY_MAXIMUM_ARRAYSIZE      130
 #define PIXY_START_WORD             0xaa55
+#define PIXY_START_WORD_CC          0xaa56
 #define PIXY_START_WORDX            0x55aa
 #define PIXY_DEFAULT_ADDR           0x54  // I2C
+
+enum BlockType
+{
+	NORMAL_BLOCK,
+	CC_BLOCK
+};
 
 struct Block 
 {
@@ -37,7 +44,7 @@ struct Block
   {
     char buf[64];
   
-    sprintf(buf, "sig: %d x: %d y: %d width: %d height: %d\n", signature, x, y, width, height);
+    sprintf(buf, "sig: %d x: %d y: %d width: %d height: %d angle %d\n", signature, x, y, width, height, angle);
     Serial.print(buf);  
   }
   uint16_t signature;
@@ -45,7 +52,9 @@ struct Block
   uint16_t y;
   uint16_t width;
   uint16_t height;
+  uint16_t angle;
 };
+
 
 
 template <class LinkType> class TPixy
@@ -66,6 +75,7 @@ private:
 
   LinkType link;
   boolean  skipStart;
+  BlockType blockType;
   uint16_t blockCount;
   uint16_t blockArraySize;
 };
@@ -105,7 +115,15 @@ template <class LinkType> boolean TPixy<LinkType>::getStart()
 	  return false;
 	}		
     else if (w==PIXY_START_WORD && lastw==PIXY_START_WORD)
+	{
+      blockType = NORMAL_BLOCK;
       return true;
+	}
+    else if (w==PIXY_START_WORD_CC && lastw==PIXY_START_WORD)
+	{
+      blockType = CC_BLOCK;
+      return true;
+	}	
 	else if (w==PIXY_START_WORDX)
 	{
 	  Serial.println("reorder");
@@ -117,12 +135,8 @@ template <class LinkType> boolean TPixy<LinkType>::getStart()
 
 template <class LinkType> void TPixy<LinkType>::resize()
 {
-  Block *newBlocks;
   blockArraySize += PIXY_INITIAL_ARRAYSIZE;
-  newBlocks = (Block *)malloc(sizeof(Block)*blockArraySize);
-  memcpy(newBlocks, blocks, sizeof(Block)*blockCount);
-  free(blocks);
-  blocks = newBlocks;
+  blocks = (Block *)realloc(blocks, sizeof(Block)*blockArraySize);
 }  
 		
 template <class LinkType> uint16_t TPixy<LinkType>::getBlocks(uint16_t maxBlocks)
@@ -145,9 +159,16 @@ template <class LinkType> uint16_t TPixy<LinkType>::getBlocks(uint16_t maxBlocks
     if (checksum==PIXY_START_WORD) // we've reached the beginning of the next frame
     {
       skipStart = true;
+	  blockType = NORMAL_BLOCK;
 	  //Serial.println("skip");
       return blockCount;
     }
+	else if (checksum==PIXY_START_WORD_CC)
+	{
+	  skipStart = true;
+	  blockType = CC_BLOCK;
+	  return blockCount;
+	}
     else if (checksum==0)
       return blockCount;
     
@@ -158,6 +179,11 @@ template <class LinkType> uint16_t TPixy<LinkType>::getBlocks(uint16_t maxBlocks
 	
     for (i=0, sum=0; i<sizeof(Block)/sizeof(uint16_t); i++)
     {
+	  if (blockType==NORMAL_BLOCK && i>=5) // skip 
+	  {
+		block->angle = 0;
+		break;
+	  }
       w = link.getWord();
       sum += w;
       *((uint16_t *)block + i) = w;
@@ -169,7 +195,7 @@ template <class LinkType> uint16_t TPixy<LinkType>::getBlocks(uint16_t maxBlocks
       Serial.println("cs error");
 	
 	w = link.getWord();
-    if (w!=PIXY_START_WORD)
+    if (w!=PIXY_START_WORD && w!=PIXY_START_WORD_CC)
       return blockCount;
   }
 }

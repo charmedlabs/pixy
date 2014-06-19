@@ -37,12 +37,13 @@ Blobs::Blobs(Qqueue *qq)
 #else
     m_maxCodedDist = MAX_CODED_DIST/2;
 #endif
-    m_codedMode = 1;
+    m_ccMode = ENABLED;
 
     m_qq = qq;
     m_blobs = new uint16_t[MAX_BLOBS*5];
     m_numBlobs = 0;
     m_blobReadIndex = 0;
+    m_ccBlobReadIndex = 0;
 
 #ifdef PIXY
     m_clut = new ColorLUT((void *)LUT_MEMORY);
@@ -56,7 +57,7 @@ Blobs::Blobs(Qqueue *qq)
         m_assembler[i].Reset();
 }
 
-int Blobs::setParams(uint16_t maxBlobs, uint16_t maxBlobsPerModel, uint32_t minArea)
+int Blobs::setParams(uint16_t maxBlobs, uint16_t maxBlobsPerModel, uint32_t minArea, ColorCodeMode ccMode)
 {
     if (maxBlobs<=MAX_BLOBS)
         m_maxBlobs = maxBlobs;
@@ -65,6 +66,7 @@ int Blobs::setParams(uint16_t maxBlobs, uint16_t maxBlobsPerModel, uint32_t minA
 
     m_maxBlobsPerModel = maxBlobsPerModel;
     m_minArea = minArea;
+    m_ccMode = ccMode;
 
     return 0;
 }
@@ -136,13 +138,13 @@ void Blobs::blobify()
     }
     //setTimer(&timer);
     invalid += combine(m_blobs, m_numBlobs);
-    if (m_codedMode)
+    if (m_ccMode!=DISABLED)
     {
-        m_codedBlobs = (BlobB *)(m_blobs + m_numBlobs*5);
+        m_ccBlobs = (BlobB *)(m_blobs + m_numBlobs*5);
         // calculate number of codedblobs left
-        processCoded();
+        processCC();
     }
-    if (invalid || m_codedMode)
+    if (invalid || m_ccMode!=DISABLED)
     {
         invalid2 = compress(m_blobs, m_numBlobs);
         m_numBlobs -= invalid2;
@@ -150,8 +152,9 @@ void Blobs::blobify()
     //timer2 += getTimer(timer);
     //cprintf("time=%d\n", timer2); // never seen this greater than 200us.  or 1% of frame period
 
-    // reset read index-- new frame
+    // reset read indexes-- new frame
     m_blobReadIndex = 0;
+    m_ccBlobReadIndex = 0;
     m_mutex = false;
 
     // free memory
@@ -219,6 +222,72 @@ void Blobs::unpack()
     }
 }
 
+uint16_t Blobs::getCCBlock(uint8_t *buf, uint32_t buflen)
+{
+    uint16_t *buf16 = (uint16_t *)buf;
+    uint16_t temp, width, height;
+    uint16_t checksum;
+    uint16_t len = 8;  // default
+
+    if (buflen<9*sizeof(uint16_t))
+        return 0;
+
+    if (m_mutex || m_ccBlobReadIndex>=m_numCCBlobs) // we're copying, so no CC blocks for now....
+    {	// return a couple null words to give us time to copy
+        // (otherwise we may spend too much time in the ISR)
+        buf16[0] = 0;
+        buf16[1] = 0;
+        return 2;
+    }
+
+    if (m_blobReadIndex==0 && m_ccBlobReadIndex==0)	// beginning of frame, mark it with empty block
+    {
+        buf16[0] = BL_BEGIN_MARKER;
+        len++;
+        buf16++;
+    }
+
+    // beginning of block
+    buf16[0] = BL_BEGIN_MARKER_CC;
+
+    // model
+    temp = m_ccBlobs[m_ccBlobReadIndex].m_model;
+    checksum = temp;
+    buf16[2] = temp;
+
+    // width
+    width = m_ccBlobs[m_ccBlobReadIndex].m_right - m_ccBlobs[m_ccBlobReadIndex].m_left;
+    checksum += width;
+    buf16[5] = width;
+
+    // height
+    height = m_ccBlobs[m_ccBlobReadIndex].m_bottom - m_ccBlobs[m_ccBlobReadIndex].m_top;
+    checksum += height;
+    buf16[6] = height;
+
+    // x center
+    temp = m_ccBlobs[m_ccBlobReadIndex].m_left + width/2;
+    checksum += temp;
+    buf16[3] = temp;
+
+    // y center
+    temp = m_ccBlobs[m_ccBlobReadIndex].m_top + height/2;
+    checksum += temp;
+    buf16[4] = temp;
+
+    temp = m_ccBlobs[m_ccBlobReadIndex].m_angle;
+    checksum += temp;
+    buf16[7] = temp;
+
+    buf16[1] = checksum;
+
+    // next blob
+    m_ccBlobReadIndex++;
+
+    return len*sizeof(uint16_t);
+}
+
+
 uint16_t Blobs::getBlock(uint8_t *buf, uint32_t buflen)
 {							
     uint16_t *buf16 = (uint16_t *)buf;
@@ -229,6 +298,9 @@ uint16_t Blobs::getBlock(uint8_t *buf, uint32_t buflen)
 
     if (buflen<8*sizeof(uint16_t))
         return 0;
+
+    if (m_blobReadIndex>=m_numBlobs && m_ccMode!=DISABLED)
+        return getCCBlock(buf, buflen);
 
     if (m_mutex || m_blobReadIndex>=m_numBlobs) // we're copying, so no blocks for now....
     {	// return a couple null words to give us time to copy
@@ -308,8 +380,8 @@ void Blobs::getBlobs(BlobA **blobs, uint32_t *len, BlobB **ccBlobs, uint32_t *cc
     *blobs = (BlobA *)m_blobs;
     *len = m_numBlobs;
 
-    *ccBlobs = m_codedBlobs;
-    *ccLen = m_numCodedBlobs;
+    *ccBlobs = m_ccBlobs;
+    *ccLen = m_numCCBlobs;
 }
 
 
@@ -725,7 +797,7 @@ void Blobs::mergeClumps(uint16_t scount0, uint16_t scount1)
     }
 }
 
-void Blobs::processCoded()
+void Blobs::processCC()
 {
     int16_t i, j, k;
     uint16_t scount, scount1, count = 0;
@@ -807,7 +879,7 @@ void Blobs::processCoded()
 
     // 3rd and final pass, find each blob clean it up and add it to the table
     endBlobB = (BlobB *)((BlobA *)m_blobs + MAX_BLOBS)-1;
-    for (i=1, codedBlob = m_codedBlobs, m_numCodedBlobs=0; i<=count && codedBlob<endBlobB; i++)
+    for (i=1, codedBlob = m_ccBlobs, m_numCCBlobs=0; i<=count && codedBlob<endBlobB; i++)
     {
         scount = i<<3;
         // find all blobs with index i
@@ -832,7 +904,7 @@ void Blobs::processCoded()
         // find left, right, top, bottom of color coded block
         for (k=0, left=right=top=bottom=0; k<j; k++)
         {
-            //qDebug("* cc %x %d i %d: %d %d %d %d %d", blobs[k], m_numCodedBlobs, k, blobs[k]->m_model, blobs[k]->m_left, blobs[k]->m_right, blobs[k]->m_top, blobs[k]->m_bottom);
+            //qDebug("* cc %x %d i %d: %d %d %d %d %d", blobs[k], m_numCCBlobs, k, blobs[k]->m_model, blobs[k]->m_left, blobs[k]->m_right, blobs[k]->m_top, blobs[k]->m_bottom);
             if (blobs[left]->m_left > blobs[k]->m_left)
                 left = k;
             if (blobs[top]->m_top > blobs[k]->m_top)
@@ -885,9 +957,9 @@ void Blobs::processCoded()
             codedBlob->m_angle = angle(blobs[j-1], blobs[0]);
         }
 #endif
-        //qDebug("cc %d %d %d %d %d", m_numCodedBlobs, codedBlob->m_left, codedBlob->m_right, codedBlob->m_top, codedBlob->m_bottom);
+        //qDebug("cc %d %d %d %d %d", m_numCCBlobs, codedBlob->m_left, codedBlob->m_right, codedBlob->m_top, codedBlob->m_bottom);
         codedBlob++;
-        m_numCodedBlobs++;
+        m_numCCBlobs++;
     }
 
     // 3rd pass, invalidate blobs
