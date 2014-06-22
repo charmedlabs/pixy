@@ -13,16 +13,27 @@
 // end license header
 //
 
-#ifndef PIXY_H
-#define PIXY_H
+#ifndef __TIMER_HPP__
+#define __TIMER_HPP__
 
-#define PIXY_VID            0xb1ac
-#define PIXY_DID            0xf000
-#define PIXY_DFU_VID        0x1fc9
-#define PIXY_DFU_DID        0x000c
+#include <chrono>
+#include <stdint.h>
 
-#define VER_MAJOR           0
-#define VER_MINOR           1
-#define VER_BUILD           49
+namespace util
+{
+  class timer 
+  {
+    public:
 
-#endif // PIXY_H
+      timer();
+      
+      void     reset();
+      uint32_t elapsed();
+
+    private:
+    
+      std::chrono::steady_clock::time_point epoch_;
+  };
+}
+
+#endif

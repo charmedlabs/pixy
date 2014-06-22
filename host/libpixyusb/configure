@@ -1,0 +1,45 @@
+#!/bin/bash
+
+echo "=========================================================="
+echo "  Configuring libpixyusb"
+echo "=========================================================="
+
+rm -rdf configuration
+mkdir configuration
+
+## Define library dependencies ##
+
+LIBUSB="libusb-1.0.a"
+
+# Identify operating system #
+
+UNAME=`uname`
+case $UNAME in
+	"Linux")
+		echo "__LINUX__" > configuration/OS;;
+  "Darwin")
+		echo "__MACOS__" > configuration/OS;;
+	"OpenBSD")
+		echo "__OPENBSD__" > confiugration/OS;;
+	"FreeBSD" )
+		echo "__FREEBSD__" > confiugration/OS;;
+esac
+
+## Find libusb ##
+
+echo -n "dependency: libusb "
+
+find /usr 2> /dev/null | grep $LIBUSB$ | sed -n 's/'$LIBUSB'//p' > configuration/LIBUSB_PATH
+
+if [[ -s configuration/LIBUSB_PATH ]]; then
+	echo -n "found: "
+	cat "configuration/LIBUSB_PATH"
+else
+  echo "Not found. Please install libusb 1.0 then re-run ./configure"
+	exit 1
+fi
+
+touch configuration/READY
+
+echo ""
+echo "Configuration complete. Please run make."

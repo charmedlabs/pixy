@@ -13,16 +13,16 @@
 // end license header
 //
 
-#ifndef PIXY_H
-#define PIXY_H
+#ifndef __PIXYDEFS_H__
+#define __PIXYDEFS_H__
 
-#define PIXY_VID            0xb1ac
-#define PIXY_DID            0xf000
-#define PIXY_DFU_VID        0x1fc9
-#define PIXY_DFU_DID        0x000c
+#define PIXY_VID       0xB1AC
+#define PIXY_DID       0xF000
+#define PIXY_DFU_VID   0x1FC9
+#define PIXY_DFU_DID   0x000C
 
 #define VER_MAJOR           0
 #define VER_MINOR           1
-#define VER_BUILD           49
+#define VER_BUILD          49
 
-#endif // PIXY_H
+#endif

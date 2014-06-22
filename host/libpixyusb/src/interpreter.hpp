@@ -13,16 +13,14 @@
 // end license header
 //
 
-#ifndef PIXY_H
-#define PIXY_H
+#ifndef __INTERPRETER_HPP__
+#define __INTERPRETER_HPP__
 
-#define PIXY_VID            0xb1ac
-#define PIXY_DID            0xf000
-#define PIXY_DFU_VID        0x1fc9
-#define PIXY_DFU_DID        0x000c
+class Interpreter
+{
+  public:
 
-#define VER_MAJOR           0
-#define VER_MINOR           1
-#define VER_BUILD           49
+    virtual void interpret_data(void *data []) = 0;
+};
 
-#endif // PIXY_H
+#endif
