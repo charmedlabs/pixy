@@ -24,7 +24,7 @@
 #define PRM_MAX_LEN       			256
 #define PRM_HEADER_LEN    			8
 #define PRM_DATA_LEN      			(PRM_MAX_LEN-PRM_HEADER_LEN)
-#define PRM_ALLOCATED_LEN 			(FLASH_SECTOR_SIZE*2) // 2 sectors
+#define PRM_ALLOCATED_LEN 			(FLASH_SECTOR_SIZE*8) // 8 sectors
 #define PRM_FLASH_LOC	  			(FLASH_BEGIN + FLASH_SIZE - PRM_ALLOCATED_LEN)  // last sectors
 #define PRM_ENDREC_OFFSET 			((PRM_ALLOCATED_LEN/PRM_MAX_LEN)*PRM_MAX_LEN)  // last sector
 #define PRM_ENDREC	      			(PRM_FLASH_LOC + PRM_ENDREC_OFFSET)  // last sector

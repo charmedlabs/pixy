@@ -175,7 +175,7 @@ int chaseLoop()
 	if (blob)
 	{
 		x = blob->m_left + (blob->m_right - blob->m_left)/2;
-		y = blob->m_top + (blob->m_top - blob->m_bottom)/2;
+		y = blob->m_top + (blob->m_bottom - blob->m_top)/2;
 
 		combine(x, y);
 	}

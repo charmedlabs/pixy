@@ -449,7 +449,6 @@ uint16_t Blobs::combine(uint16_t *blobs, uint16_t numBlobs)
                 blobs[ii+0] = 0; // invalidate
                 invalid++;
             }
-
         }
     }
 
@@ -627,7 +626,7 @@ void Blobs::sort(BlobA *blobs[], uint16_t len, BlobA *firstBlob, bool horiz)
     BlobA *tb;
 
     // create list of distances
-    for (i=0; i<len; i++)
+    for (i=0; i<len && i<MAX_COLOR_CODE_MODELS*2; i++)
         distances[i] = distance(firstBlob, blobs[i], horiz);
 
     // sort -- note, we only have 5 maximum to sort, so no worries about efficiency
@@ -727,7 +726,7 @@ void Blobs::cleanup(BlobA *blobs[], int16_t *numBlobs)
     if (!set)
         *numBlobs = 0;
 
-    for (i=0, numNewBlobs=0; i<*numBlobs; i++)
+    for (i=0, numNewBlobs=0; i<*numBlobs && numNewBlobs<MAX_COLOR_CODE_MODELS*2; i++)
     {
         area0 = (blobs[i]->m_right-blobs[i]->m_left) * (blobs[i]->m_bottom-blobs[i]->m_top);
         lowerArea = (area0*100)/(100+TOL);
@@ -883,14 +882,10 @@ void Blobs::processCC()
     {
         scount = i<<3;
         // find all blobs with index i
-        for (j=0, blob0=(BlobA *)m_blobs; blob0<endBlob; blob0++)
+        for (j=0, blob0=(BlobA *)m_blobs; blob0<endBlob && j<MAX_COLOR_CODE_MODELS*2; blob0++)
         {
             if ((blob0->m_model&~0x07)==scount)
-            {
                 blobs[j++] = blob0;
-                if (j==MAX_COLOR_CODE_MODELS*2)
-                    break;
-            }
         }
 
 #if 1

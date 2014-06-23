@@ -19,6 +19,7 @@
 int32_t flash_erase(uint32_t addr, uint32_t len)
 {
 	SPIFIopers spifi;
+	uint32_t addrTemp;
 	uint32_t i;
 
 	// add offset
@@ -29,8 +30,8 @@ int32_t flash_erase(uint32_t addr, uint32_t len)
 
 	for (i=0; i<len; i+=FLASH_SECTOR_SIZE)
 	{ 
-		addr = FLASH_SECTOR_MASK(addr+i);
-		spifi.dest = (char *)addr;
+		addrTemp = FLASH_SECTOR_MASK(addr+i);
+		spifi.dest = (char *)addrTemp;
 		spifi.length = FLASH_SECTOR_SIZE;
 		spifi.scratch = NULL;
 		spifi.options = S_VERIFY_ERASE;

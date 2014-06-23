@@ -195,7 +195,11 @@ template <class LinkType> uint16_t TPixy<LinkType>::getBlocks(uint16_t maxBlocks
       Serial.println("cs error");
 	
 	w = link.getWord();
-    if (w!=PIXY_START_WORD && w!=PIXY_START_WORD_CC)
+	if (w==PIXY_START_WORD)
+	  blockType = NORMAL_BLOCK;
+	else if (w==PIXY_START_WORD_CC)
+	  blockType = CC_BLOCK;
+	else
       return blockCount;
   }
 }

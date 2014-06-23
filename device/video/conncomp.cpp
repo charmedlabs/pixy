@@ -424,14 +424,11 @@ int cc_sendBlobs(Chirp *chirp, const BlobA *blobs, uint32_t len, const BlobB *cc
 	return 0;
 }
 
-uint8_t ledBrightness(uint8_t channel, uint32_t area)
+uint8_t ledBrightness(uint32_t area)
 {
 	uint32_t brightness;
 
-	if (channel==0)
-		return 0;
-
-	brightness = channel*area/50000;
+	brightness = 0x100*area/20000;
 	if (brightness==0) // can't take log of 0...
 		return 1;
 	
@@ -449,19 +446,23 @@ uint8_t ledBrightness(uint8_t channel, uint32_t area)
 void cc_setLED()
 {
 	BlobA *blob;
-	uint32_t area, color;
-	uint8_t r, g, b;
+	uint32_t area, color, r, g, b;
+	uint8_t brightness;
 
 	blob = (BlobA *)g_blobs->getMaxBlob();
-	if (blob)
+	if (blob && blob->m_model<=NUM_MODELS)
 	{
 		area = (blob->m_right - blob->m_left)*(blob->m_bottom - blob->m_top);
 		color = g_colors[blob->m_model];
-		b = ledBrightness(color&0xff, area);
+		brightness = ledBrightness(area);
+		b = color&0xff;
+		b = b ? (b*brightness>>8)+1 : 0;
 		color >>= 8;
-		g = ledBrightness(color&0xff, area);
+		g = color&0xff;
+		g = g ? (g*brightness>>8)+1 : 0;
 		color >>= 8;
-		r = ledBrightness(color&0xff, area);
+		r = color&0xff;
+		r = r ? (r*brightness>>8)+1 : 0;
 		led_setRGB(r, g, b);
 	}
 	else
