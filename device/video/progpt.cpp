@@ -137,8 +137,8 @@ void ptLoadParams()
 int ptLoop()
 {
 	int32_t panError, tiltError;
-	uint16_t *blob, x, y;
-	BlobA *blobs;
+	uint16_t x, y;
+	BlobA *blob, *blobs;
 	BlobB *ccBlobs;
 	uint32_t numBlobs, numCCBlobs;
 
@@ -148,8 +148,8 @@ int ptLoop()
 	blob = g_blobs->getMaxBlob();
 	if (blob)
 	{
-		x = blob[1] + (blob[2] - blob[1])/2;
-		y = blob[3] + (blob[4] - blob[3])/2;
+		x = blob->m_left + (blob->m_right - blob->m_left)/2;
+		y = blob->m_top + (blob->m_bottom - blob->m_top)/2;
 
 		panError = X_CENTER-x;
 		tiltError = y-Y_CENTER;
@@ -160,7 +160,7 @@ int ptLoop()
 
 	// send blobs
 	g_blobs->getBlobs(&blobs, &numBlobs, &ccBlobs, &numCCBlobs);
-	cc_sendBlobs(g_chirpUsb, blobs, numBlobs);
+	cc_sendBlobs(g_chirpUsb, blobs, numBlobs, ccBlobs, numCCBlobs);
 
 	cc_setLED();
 	

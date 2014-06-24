@@ -103,14 +103,18 @@ void Blobs::blobify()
     invalid = 0;
     // mutex keeps interrupt routine from stepping on us
     m_mutex = true;
-    for (i=0, m_numBlobs=0; i<NUM_MODELS; i++)
+    for (i=0, m_numBlobs=0, m_numCCBlobs=0; i<NUM_MODELS; i++)
     {
-        colorCode = m_clut->getType(i+1)==CL_MODEL_TYPE_COLORCODE;
+        if (m_ccMode==MIXED)
+            colorCode = false;
+        else
+            colorCode = m_clut->getType(i+1)==CL_MODEL_TYPE_COLORCODE;
 
         for (j=m_numBlobs*5, k=0, blobsStart=m_blobs+j, numBlobsStart=m_numBlobs, blob=m_assembler[i].finishedBlobs;
              blob && m_numBlobs<m_maxBlobs && k<m_maxBlobsPerModel; blob=blob->next, k++)
         {
             if ((colorCode && blob->GetArea()<MIN_COLOR_CODE_AREA) ||
+                    (!colorCode && m_ccMode==CC_ONLY) ||
                     (!colorCode && blob->GetArea()<(int)m_minArea))
                 continue;
             blob->getBBox((short &)left, (short &)top, (short &)right, (short &)bottom);
@@ -354,21 +358,49 @@ uint16_t Blobs::getBlock(uint8_t *buf, uint32_t buflen)
 }
 
 
-uint16_t *Blobs::getMaxBlob(uint16_t signature)
+BlobA *Blobs::getMaxBlob(uint16_t signature)
 {
     int i, j;
+    uint32_t area=0, ccArea=0;
+    BlobA *blob=NULL, *ccBlob=NULL;
 
     if (signature==0) // 0 means ignore signature
     {
         if (m_numBlobs>0)
-            return m_blobs; // return first blob regardless of signature
+        {
+            blob = (BlobA *)m_blobs;
+            area = (blob->m_right - blob->m_left)*(blob->m_bottom - blob->m_top);
+        }
+        if (m_numCCBlobs>0)
+        {
+            ccBlob = (BlobA *)m_ccBlobs;
+            ccArea = (ccBlob->m_right - ccBlob->m_left)*(ccBlob->m_bottom - ccBlob->m_top);
+        }
+        if (m_ccMode==CC_ONLY)
+        {
+            if (ccBlob)
+                return ccBlob;
+            else
+                return NULL;
+        }
+        else if (m_ccMode==DISABLED)
+        {
+            if (blob)
+                return blob;
+            else
+                return NULL;
+        }
+        else if (area>ccArea)
+            return blob;
+        else if (ccArea>area)
+            return ccBlob;
     }
     else
     {
         for (i=0, j=0; i<m_numBlobs; i++, j+=5)
         {
             if (m_blobs[j+0]==signature)
-                return m_blobs+j;
+                return (BlobA *)(m_blobs+j);
         }
     }
 
@@ -578,13 +610,11 @@ bool Blobs::closeby(BlobA *blob0, BlobA *blob1)
     // check to see if blobs are invalid or equal
     if (blob0->m_model==0 || blob1->m_model==0 || blob0->m_model==blob1->m_model)
         return false;
-#if 1
     // check to see that the blobs are from color code models.  If they aren't both
     // color code blobs, we return false
-    if (m_clut->getType(blob0->m_model&0x07)!=CL_MODEL_TYPE_COLORCODE ||
-            m_clut->getType(blob1->m_model&0x07)!=CL_MODEL_TYPE_COLORCODE)
+    if (m_ccMode!=MIXED && (m_clut->getType(blob0->m_model&0x07)!=CL_MODEL_TYPE_COLORCODE ||
+                            m_clut->getType(blob1->m_model&0x07)!=CL_MODEL_TYPE_COLORCODE))
         return false;
-#endif
 
     return distance(blob0, blob1)<=m_maxCodedDist;
 }
@@ -845,13 +875,13 @@ void Blobs::processCC()
                 }
                 else if (blob0->m_model>NUM_MODELS && blob1->m_model<=NUM_MODELS)
                 {
-                   scount = blob0->m_model & ~0x07;
-                   blob1->m_model |= scount;
+                    scount = blob0->m_model & ~0x07;
+                    blob1->m_model |= scount;
                 }
                 else if (blob1->m_model>NUM_MODELS && blob0->m_model<=NUM_MODELS)
                 {
-                   scount = blob1->m_model & ~0x07;
-                   blob0->m_model |= scount;
+                    scount = blob1->m_model & ~0x07;
+                    blob0->m_model |= scount;
                 }
             }
         }
@@ -960,10 +990,9 @@ void Blobs::processCC()
     // 3rd pass, invalidate blobs
     for (blob0=(BlobA *)m_blobs; blob0<endBlob; blob0++)
     {
-        if (blob0->m_model>NUM_MODELS || m_clut->getType(blob0->m_model)==CL_MODEL_TYPE_COLORCODE)
+        if (m_ccMode!=MIXED && (blob0->m_model>NUM_MODELS || m_clut->getType(blob0->m_model)==CL_MODEL_TYPE_COLORCODE))
             blob0->m_model = 0; // invalidate-- not part of a color code
     }
-
 }
 
 int Blobs::generateLUT(uint8_t model, const Frame8 &frame, const RectA &region, ColorModel *pcmodel)

@@ -40,7 +40,7 @@ enum ColorCodeMode
     DISABLED = 0,
     ENABLED = 1,
 	CC_ONLY = 2, 
-    MIXED = 3
+    MIXED = 3 // experimental
 };
 
 class Blobs
@@ -51,7 +51,7 @@ public:
     void blobify();
     uint16_t getBlock(uint8_t *buf, uint32_t buflen);
     uint16_t getCCBlock(uint8_t *buf, uint32_t buflen);
-    uint16_t *getMaxBlob(uint16_t signature=0);
+    BlobA *getMaxBlob(uint16_t signature=0);
     void getBlobs(BlobA **blobs, uint32_t *len, BlobB **ccBlobs, uint32_t *ccLen);
     int setParams(uint16_t maxBlobs, uint16_t maxBlobsPerModel, uint32_t minArea, ColorCodeMode ccMode);
 

@@ -266,7 +266,7 @@ void exec_loadParams()
 	rcs_loadParams();
 
 	ptLoadParams();
-	chaseLoadParams();
+	//chaseLoadParams();
 
 	loadParams(); // local
 }

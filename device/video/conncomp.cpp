@@ -161,26 +161,28 @@ void cc_loadParams(void)
 	prm_add("Min saturation", 0,
 		"@c Signature_creation Sets the minimum allowed color saturation for when generating color signatures. Applies during teaching. (default 15.0)", FLT32(15.0), END);
 	prm_add("Hue spread", 0,
-		"@c Signature_creation Sets how inclusive the color signatures are with respect to hue. Applies during teaching. (default 1.0)", FLT32(1.0), END);
+		"@c Signature_creation Sets how inclusive the color signatures are with respect to hue. Applies during teaching. (default 1.5)", FLT32(1.5), END);
 	prm_add("Saturation spread", 0,
-		"@c Signature_creation Sets how inclusive the color signatures are with respect to saturation. Applies during teaching. (default 1.0)", FLT32(1.0), END);
+		"@c Signature_creation Sets how inclusive the color signatures are with respect to saturation. Applies during teaching. (default 1.5)", FLT32(1.5), END);
 	prm_add("CC min saturation", 0,
-		"@c Signature_creation Sets the minimum allowed color saturation for when generating color code (CC) signatures. Applies during teaching. (default 10.0)", FLT32(10.0), END);
+		"@c Signature_creation Sets the minimum allowed color saturation for when generating color code (CC) signatures. Applies during teaching. (default 15.0)", FLT32(15.0), END);
 	prm_add("CC hue spread", 0,
-		"@c Signature_creation Sets how inclusive the color code (CC) signatures are with respect to hue. Applies during teaching. (default 2.0)", FLT32(2.0), END);
+		"@c Signature_creation Sets how inclusive the color code (CC) signatures are with respect to hue. Applies during teaching. (default 3.0)", FLT32(3.0), END);
 	prm_add("CC saturation spread", 0,
 		"@c Signature_creation Sets how inclusive the color code (CC) signatures are with respect to saturation for color codes. Applies during teaching. (default 50.0)", FLT32(50.0), END);
-	prm_add("CC saturation spread", 0,
-		"@c Signature_creation Sets how inclusive the color code (CC) signatures are with respect to saturation for color codes. Applies during teaching. (default 50.0)", FLT32(50.0), END);
+	prm_add("Color code mode", 0,
+		"Sets the color code mode, 0=disabled, 1=enabled, 2=color codes only (default 1)", INT8(1), END);
 
 	// load
+	uint8_t ccMode;
 	uint16_t maxBlobs, maxBlobsPerModel;
 	uint32_t minArea;
 
 	prm_get("Max blocks", &maxBlobs, END);
 	prm_get("Max blocks per signature", &maxBlobsPerModel, END);
 	prm_get("Min block area", &minArea, END);
-	g_blobs->setParams(maxBlobs, maxBlobsPerModel, minArea, ENABLED);
+	prm_get("Color code mode", &ccMode, END);
+	g_blobs->setParams(maxBlobs, maxBlobsPerModel, minArea, (ColorCodeMode)ccMode);
 
 	cc_loadLut();
 
@@ -450,10 +452,14 @@ void cc_setLED()
 	uint8_t brightness;
 
 	blob = (BlobA *)g_blobs->getMaxBlob();
-	if (blob && blob->m_model<=NUM_MODELS)
+	if (blob)
 	{
+		if (blob->m_model<=NUM_MODELS)
+			color = g_colors[blob->m_model];
+		else
+			color = g_colors[0];
+
 		area = (blob->m_right - blob->m_left)*(blob->m_bottom - blob->m_top);
-		color = g_colors[blob->m_model];
 		brightness = ledBrightness(area);
 		b = color&0xff;
 		b = b ? (b*brightness>>8)+1 : 0;
