@@ -560,8 +560,10 @@ void Renderer::pixelsOut(int x0, int y0, int width, int height)
             vvals[y*width+x] = v;
         }
     }
+#ifdef MATLAB
     matlabArrayOut(&file, "u", uvals, 1, n);
     matlabArrayOut(&file, "v", vvals, 1, n);
+#endif
 
     file.close();
 }

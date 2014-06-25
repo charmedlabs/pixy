@@ -281,7 +281,9 @@ void ColorLUT::add(const ColorModel *model, uint8_t modelIndex)
     HuePixel p;
 
 #ifndef PIXY
+#ifdef MATLAB
     matlabOut(model, modelIndex);
+#endif
 #endif
 
     if (modelIndex-1 > CL_NUM_MODELS)
