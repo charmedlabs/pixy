@@ -1225,7 +1225,7 @@ int Chirp::recvFull(uint8_t *type, ChirpProc *proc, bool wait)
         recvd = CRP_MAX_HEADER_LEN;
         while(recvd<len)
         {
-            if ((res=m_link->receive(m_buf+recvd, len, m_idleTimeout))<0)
+            if ((res=m_link->receive(m_buf+recvd, len-recvd, m_idleTimeout))<0)
                 return res;
             recvd += res;
         }
