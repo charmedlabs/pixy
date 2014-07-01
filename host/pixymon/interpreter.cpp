@@ -416,10 +416,37 @@ int Interpreter::sendStop()
 }
 
 
+int Interpreter::sendGetAction(int index)
+{
+    QMutexLocker locker(&m_chirp->m_mutex);
+    int res, response;
+    char *action, *scriptlet;
+    QStringList scriptlet2;
+    QString action2;
+
+    res = m_chirp->callSync(m_exec_get_action, UINT16(index), END_OUT_ARGS, &response, &action, &scriptlet, END_IN_ARGS);
+
+    if (res<0)
+        return res;
+
+    if (response<0)
+        return response;
+
+    action2 = QString(action);
+    scriptlet2 = QString(scriptlet).split(QRegExp("[\\n]"), QString::SkipEmptyParts);
+
+    emit actionScriptlet(index, action2, scriptlet2);
+    return response;
+}
+
 
 void Interpreter::handlePendingCommand()
 {
-    switch (m_pendingCommand)
+    // copy first, prevent race condition
+    PendingCommand command = m_pendingCommand;
+    m_pendingCommand = NONE;
+
+    switch (command)
     {
     case NONE:
         break;
@@ -431,8 +458,11 @@ void Interpreter::handlePendingCommand()
     case RUN:
         sendRun();
         break;
+
+    case GET_ACTION:
+        sendGetAction(m_pendingArg);
+        break;
     }
-    m_pendingCommand = NONE;
 }
 
 void Interpreter::run()
@@ -470,7 +500,8 @@ void Interpreter::run()
         m_exec_run = m_chirp->getProc("run");
         m_exec_running = m_chirp->getProc("running");
         m_exec_stop = m_chirp->getProc("stop");
-        if (m_exec_run<0 || m_exec_running<0 || m_exec_stop<0)
+        m_exec_get_action = m_chirp->getProc("getAction");
+        if (m_exec_run<0 || m_exec_running<0 || m_exec_stop<0 || m_exec_get_action<0)
             throw std::runtime_error("Communication error with Pixy.");
     }
     catch (std::runtime_error &exception)
@@ -784,6 +815,14 @@ void Interpreter::execute(QStringList commandList)
         m_mutexProg.unlock();
     }
 }
+
+
+void Interpreter::getAction(int index)
+{
+    m_pendingArg = index;
+    m_pendingCommand = GET_ACTION;
+}
+
 
 #if 0
 int Interpreter::uploadLut()

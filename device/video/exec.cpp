@@ -81,7 +81,124 @@ static const ProcModule g_module[] =
 	"Get firmware version"
 	"@r always returns 0 and an array of 3 uint16 values: major, minor, and build versions."
 	},
+	{
+	"getAction",
+	(ProcPtr)exec_getAction, 
+	{CRP_UINT16, END}, 
+	"Run the specified program with an argument"
+	"@p action index"
+	"@r returns 0 if successful, -1 otherwise"
+	},
 	END
+};
+
+static const ActionScriptlet actions[]=
+{
+	{
+	"Run pan/tilt demo", 
+	"runprog 2\n"
+	}, 
+	{
+	"Set signature 1...", 
+	"cam_getFrame 0x21 0 0 320 200\n"
+    "cc_setSigRegion 0 1\n"
+	"runprogArg 8 1\n"
+	},
+	{
+	"Set signature 2...", 
+	"cam_getFrame 0x21 0 0 320 200\n"
+    "cc_setSigRegion 0 2\n"
+	"runprogArg 8 1\n"
+	},
+	{
+	"Set signature 3...", 
+	"cam_getFrame 0x21 0 0 320 200\n"
+    "cc_setSigRegion 0 3\n"
+	"runprogArg 8 1\n"
+	},
+	{
+	"Set signature 4...", 
+	"cam_getFrame 0x21 0 0 320 200\n"
+    "cc_setSigRegion 0 4\n"
+	"runprogArg 8 1\n"
+	},
+	{
+	"Set signature 5...", 
+	"cam_getFrame 0x21 0 0 320 200\n"
+    "cc_setSigRegion 0 5\n"
+	"runprogArg 8 1\n"
+	},
+	{
+	"Set signature 6...", 
+	"cam_getFrame 0x21 0 0 320 200\n"
+    "cc_setSigRegion 0 6\n"
+	"runprogArg 8 1\n"
+	},
+	{
+	"Set signature 7...", 
+	"cam_getFrame 0x21 0 0 320 200\n"
+    "cc_setSigRegion 0 7\n"
+	"runprogArg 8 1\n"
+	},
+
+	{
+	"Set CC signature 1...", 
+	"cam_getFrame 0x21 0 0 320 200\n"
+    "cc_setSigRegion 1 1\n"
+	"runprogArg 8 1\n"
+	},
+	{
+	"Set CC signature 2...", 
+	"cam_getFrame 0x21 0 0 320 200\n"
+    "cc_setSigRegion 1 2\n"
+	"runprogArg 8 1\n"
+	},
+	{
+	"Set CC signature 3...", 
+	"cam_getFrame 0x21 0 0 320 200\n"
+    "cc_setSigRegion 1 3\n"
+	"runprogArg 8 1\n"
+	},
+	{
+	"Set CC signature 4...", 
+	"cam_getFrame 0x21 0 0 320 200\n"
+    "cc_setSigRegion 1 4\n"
+	"runprogArg 8 1\n"
+	},
+	{
+	"Set CC signature 5...", 
+	"cam_getFrame 0x21 0 0 320 200\n"
+    "cc_setSigRegion 1 5\n"
+	"runprogArg 8 1\n"
+	},
+	{
+	"Set CC signature 6...", 
+	"cam_getFrame 0x21 0 0 320 200\n"
+    "cc_setSigRegion 1 6\n"
+	"runprogArg 8 1\n"
+	},
+	{
+	"Set CC signature 7...", 
+	"cam_getFrame 0x21 0 0 320 200\n"
+    "cc_setSigRegion 1 7\n"
+	"runprogArg 8 1\n"
+	},
+
+	{
+	"Clear signature...", 
+    "cc_clearSig\n"
+	"run\n"
+	},
+	{
+	"Clear all signatures", 
+    "cc_clearAllSig\n"
+	"run\n"
+	},
+	{
+	"Restore default parameter values", 
+    "prm_restore"
+	"run\n"
+	}
 };
 
 uint8_t g_running = false;
@@ -207,6 +324,19 @@ int32_t exec_version(Chirp *chirp)
 		CRP_RETURN(chirp, UINTS16(sizeof(ver), ver), END);
 
 	return 0;
+}
+
+int32_t exec_getAction(const uint16_t &index, Chirp *chirp)
+{
+	int n = sizeof(actions)/sizeof(ActionScriptlet);
+
+	if (index>=n)
+		return -1;
+
+	if (chirp)
+		CRP_RETURN(chirp, STRING(actions[index].action), STRING(actions[index].scriptlet), END);
+
+	return 0;		
 }
 
 int exec_runM0(uint8_t prog)

@@ -49,6 +49,7 @@
      <string>Action</string>
     </property>
     <addaction name="actionPlay_Pause"/>
+    <addaction name="actionDefault_program"/>
     <addaction name="actionRaw_video"/>
     <addaction name="actionCooked_video"/>
    </widget>
@@ -129,6 +130,11 @@
    </property>
    <property name="toolTip">
     <string>Display cooked (processed) video</string>
+   </property>
+  </action>
+  <action name="actionDefault_program">
+   <property name="text">
+    <string>Default program</string>
    </property>
   </action>
  </widget>

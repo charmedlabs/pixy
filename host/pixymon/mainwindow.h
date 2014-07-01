@@ -56,10 +56,12 @@ private slots:
     void handleRunState(uint state);
     void handleConnected(Device device, bool state);
     void handleActions();
+    void handleActionScriptlet(int index, QString action, QStringList scriptlet);
     void configFinished();
     void interpreterFinished();
     void on_actionAbout_triggered();
     void on_actionPlay_Pause_triggered();
+    void on_actionDefault_program_triggered();
     void on_actionConfigure_triggered();
     void on_actionExit_triggered();
     void on_actionRaw_video_triggered();
@@ -73,6 +75,7 @@ private:
     void connectPixyDFU(bool state);
     void updateButtons();
     void addAction(const QString &label, const QStringList &command);
+    void clearActions();
     void setEnabledActions(bool enable);
     void close();
     void parseCommandline(int argc, char *argv[]);

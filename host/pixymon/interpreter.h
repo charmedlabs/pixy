@@ -58,6 +58,7 @@ public:
 
     void execute(const QString &command);
     void execute(QStringList commandList);
+    void getAction(int index);
     void printHelp();
 
     void close();
@@ -82,6 +83,7 @@ signals:
     void videoInput(VideoWidget::InputMode mode);
     void enableConsole(bool enable);
     void connected(Device device, bool state);
+    void actionScriptlet(int index, QString action, QStringList scriptlet);
 
 public slots:
 
@@ -108,6 +110,7 @@ private:
     void getRunning();
     int sendRun();
     int sendStop();
+    int sendGetAction(int index);
     void handlePendingCommand();
 
     void prompt();
@@ -120,15 +123,19 @@ private:
     USBLink m_link;
 
     // for thread
+    enum PendingCommand {NONE, STOP, RUN, GET_ACTION};
+
     QMutex m_mutexProg;
     QMutex m_mutexInput;
     QWaitCondition m_waitInput;
-    enum {NONE, STOP, RUN} m_pendingCommand;
+    int m_pendingArg;
+    PendingCommand m_pendingCommand;
 
     unsigned int m_pc;
     ChirpProc m_exec_run;
     ChirpProc m_exec_running;
     ChirpProc m_exec_stop;
+    ChirpProc m_exec_get_action;
 
     // for program
     bool m_programming;

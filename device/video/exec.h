@@ -35,6 +35,12 @@ struct Program
 	ProgFunc loop;
 };
 
+struct ActionScriptlet
+{
+	const char *action;
+	const char *scriptlet;
+};
+
 void exec_loop();
 int exec_init(Chirp *chirp);
 void exec_select();
@@ -51,7 +57,7 @@ int32_t exec_runprog(const uint8_t &progNum);
 int32_t exec_runprogArg(const uint8_t &progNum, const int32_t &arg);
 int32_t exec_list();
 int32_t exec_version(Chirp *chirp=NULL);
-
+int32_t exec_getAction(const uint16_t &index, Chirp *chirp=NULL);
 void exec_loadParams();
 
 extern int32_t g_execArg; 

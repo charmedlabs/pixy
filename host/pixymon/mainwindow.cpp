@@ -61,6 +61,9 @@ MainWindow::MainWindow(int argc, char *argv[], QWidget *parent) :
 
     m_ui->toolBar->addAction(m_ui->actionPlay_Pause);
 
+    m_ui->actionDefault_program->setIcon(QIcon(":/icons/icons/home.png"));
+    m_ui->toolBar->addAction(m_ui->actionDefault_program);
+
     m_ui->actionRaw_video->setIcon(QIcon(":/icons/icons/raw.png"));
     m_ui->toolBar->addAction(m_ui->actionRaw_video);
 
@@ -76,98 +79,6 @@ MainWindow::MainWindow(int argc, char *argv[], QWidget *parent) :
     m_connect = new ConnectEvent(this);
     if (m_connect->getConnected()==NONE)
         m_console->error("No Pixy devices have been detected.\n");
-
-    QStringList list;
-    list << "runprog 0";
-    addAction("Run default program", list);
-    list.clear();
-    list << "runprog 2";
-    addAction("Run pan/tilt demo", list);
-    list.clear();
-    list << "cam_getFrame 0x21 0 0 320 200";
-    list << "cc_setSigRegion 0 1";
-    list << "runprogArg 8 1";
-    addAction("Set signature 1...", list);
-    list.clear();
-    list << "cam_getFrame 0x21 0 0 320 200";
-    list << "cc_setSigRegion 0 2";
-    list << "runprogArg 8 1";
-    addAction("Set signature 2...", list);
-    list.clear();
-    list << "cam_getFrame 0x21 0 0 320 200";
-    list << "cc_setSigRegion 0 3";
-    list << "runprogArg 8 1";
-    addAction("Set signature 3...", list);
-    list.clear();
-    list << "cam_getFrame 0x21 0 0 320 200";
-    list << "cc_setSigRegion 0 4";
-    list << "runprogArg 8 1";
-    addAction("Set signature 4...", list);
-    list.clear();
-    list << "cam_getFrame 0x21 0 0 320 200";
-    list << "cc_setSigRegion 0 5";
-    list << "runprogArg 8 1";
-    addAction("Set signature 5...", list);
-    list.clear();
-    list << "cam_getFrame 0x21 0 0 320 200";
-    list << "cc_setSigRegion 0 6";
-    list << "runprogArg 8 1";
-    addAction("Set signature 6...", list);
-    list.clear();
-    list << "cam_getFrame 0x21 0 0 320 200";
-    list << "cc_setSigRegion 0 7";
-    list << "runprogArg 8 1";
-    addAction("Set signature 7...", list);
-
-    list.clear();
-    list << "cam_getFrame 0x21 0 0 320 200";
-    list << "cc_setSigRegion 1 1";
-    list << "runprogArg 8 1";
-    addAction("Set CC signature 1...", list);
-    list.clear();
-    list << "cam_getFrame 0x21 0 0 320 200";
-    list << "cc_setSigRegion 1 2";
-    list << "runprogArg 8 1";
-    addAction("Set CC signature 2...", list);
-    list.clear();
-    list << "cam_getFrame 0x21 0 0 320 200";
-    list << "cc_setSigRegion 1 3";
-    list << "runprogArg 8 1";
-    addAction("Set CC signature 3...", list);
-    list.clear();
-    list << "cam_getFrame 0x21 0 0 320 200";
-    list << "cc_setSigRegion 1 4";
-    list << "runprogArg 8 1";
-    addAction("Set CC signature 4...", list);
-    list.clear();
-    list << "cam_getFrame 0x21 0 0 320 200";
-    list << "cc_setSigRegion 1 5";
-    list << "runprogArg 8 1";
-    addAction("Set CC signature 5...", list);
-    list.clear();
-    list << "cam_getFrame 0x21 0 0 320 200";
-    list << "cc_setSigRegion 1 6";
-    list << "runprogArg 8 1";
-    addAction("Set CC signature 6...", list);
-    list.clear();
-    list << "cam_getFrame 0x21 0 0 320 200";
-    list << "cc_setSigRegion 1 7";
-    list << "runprogArg 8 1";
-    addAction("Set CC signature 7...", list);
-
-
-    list.clear();
-    list << "cc_clearSig";
-    list << "run";
-    addAction("Clear signature...", list);
-    list.clear();
-    list << "cc_clearAllSig";
-    list << "run";
-    addAction("Clear all signatures", list);
-    list.clear();
-    list << "prm_restore";
-    list << "run";
-    addAction("Restore default parameters", list);
 }
 
 MainWindow::~MainWindow()
@@ -223,46 +134,46 @@ void MainWindow::updateButtons()
     if (m_pixyDFUConnected && m_pixyConnected) // we're in programming mode
     {
         m_ui->actionPlay_Pause->setEnabled(false);
+        m_ui->actionDefault_program->setEnabled(false);
         m_ui->actionRaw_video->setEnabled(false);
         m_ui->actionCooked_video->setEnabled(false);
         m_ui->actionConfigure->setEnabled(false);
-        m_ui->actionProgram->setEnabled(true);
         setEnabledActions(false);
     }
     else if (runstate==2) // we're in forced runstate
     {
         m_ui->actionPlay_Pause->setEnabled(false);
+        m_ui->actionDefault_program->setEnabled(false);
         m_ui->actionRaw_video->setEnabled(false);
         m_ui->actionCooked_video->setEnabled(false);
         m_ui->actionConfigure->setEnabled(true);
-        m_ui->actionProgram->setEnabled(false);
         setEnabledActions(false);
     }
     else if (runstate) // runstate==1
     {
         m_ui->actionPlay_Pause->setEnabled(true);
+        m_ui->actionDefault_program->setEnabled(true);
         m_ui->actionRaw_video->setEnabled(true);
         m_ui->actionCooked_video->setEnabled(true);
         m_ui->actionConfigure->setEnabled(true);
-        m_ui->actionProgram->setEnabled(false);
         setEnabledActions(true);
     }
     else if (m_pixyConnected) // runstate==0
     {
         m_ui->actionPlay_Pause->setEnabled(true);
+        m_ui->actionDefault_program->setEnabled(true);
         m_ui->actionRaw_video->setEnabled(true);
         m_ui->actionCooked_video->setEnabled(true);
         m_ui->actionConfigure->setEnabled(true);
-        m_ui->actionProgram->setEnabled(true);
         setEnabledActions(true);
     }
     else // nothing connected
     {
         m_ui->actionPlay_Pause->setEnabled(false);
+        m_ui->actionDefault_program->setEnabled(false);
         m_ui->actionRaw_video->setEnabled(false);
         m_ui->actionCooked_video->setEnabled(false);
         m_ui->actionConfigure->setEnabled(false);
-        m_ui->actionProgram->setEnabled(false);
         setEnabledActions(false);
     }
 
@@ -379,6 +290,9 @@ void MainWindow::connectPixy(bool state)
                 connect(m_interpreter, SIGNAL(runState(uint)), this, SLOT(handleRunState(uint)));
                 connect(m_interpreter, SIGNAL(finished()), this, SLOT(interpreterFinished()));
                 connect(m_interpreter, SIGNAL(connected(Device,bool)), this, SLOT(handleConnected(Device,bool)));
+                connect(m_interpreter, SIGNAL(actionScriptlet(int,QString,QStringList)), this, SLOT(handleActionScriptlet(int,QString,QStringList)));
+                clearActions();
+                m_interpreter->getAction(0);  // start action query process
             }
             m_pixyConnected = true;
         }
@@ -421,6 +335,15 @@ void MainWindow::addAction(const QString &label, const QStringList &command)
     connect(action, SIGNAL(triggered()), this, SLOT(handleActions()));
 }
 
+void MainWindow::clearActions()
+{
+    uint i;
+
+    for (i=0; i<m_actions.size(); i++)
+        m_ui->menuAction->removeAction(m_actions[i]);
+    m_actions.clear();
+}
+
 void MainWindow::handleActions()
 {
     QAction *action = (QAction *)sender();
@@ -432,6 +355,12 @@ void MainWindow::handleActions()
     }
 }
 
+
+void MainWindow::handleActionScriptlet(int index, QString action, QStringList scriptlet)
+{
+    m_interpreter->getAction(index+1);
+    addAction(action, scriptlet);
+}
 
 void MainWindow::handleConnected(Device device, bool state)
 {
@@ -479,6 +408,12 @@ void MainWindow::on_actionPlay_Pause_triggered()
 {
     m_interpreter->runOrStopProgram();
 }
+
+void MainWindow::on_actionDefault_program_triggered()
+{
+    m_interpreter->execute("runprog 0");
+}
+
 
 
 void MainWindow::program(const QString &file)
