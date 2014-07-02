@@ -23,9 +23,10 @@
 #include "calc.h"
 #include <math.h>
 
-Renderer::Renderer(VideoWidget *video) : m_background(0, 0)
+Renderer::Renderer(VideoWidget *video, Interpreter *interpreter) : m_blobs(interpreter), m_background(0, 0)
 {
     m_video = video;
+    m_interpreter = interpreter;
 
     m_rawFrame.m_pixels = new uint8_t[0x10000];
 

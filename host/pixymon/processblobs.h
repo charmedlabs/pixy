@@ -16,24 +16,40 @@
 #ifndef PROCESSBLOBS_H
 #define PROCESSBLOBS_H
 
+#include <QObject>
 #include "blobs.h"
 
-class ProcessBlobs
+class Interpreter;
+
+class ProcessBlobs : public QObject
 {
+    Q_OBJECT
+
 public:
-    ProcessBlobs();
+    ProcessBlobs(Interpreter *interpreter);
     ~ProcessBlobs();
 
     void process(const Frame8 &frame, uint32_t *numBlobs, BlobA **blobs, uint32_t *numCCBlobs, BlobB **ccBlobs, uint32_t *numQvals, Qval **qMem);
 
     Blobs *m_blobs;
 
+private slots:
+    void handleParameter(QString id, QByteArray data);
+    void handleParamChange();
+
 private:
     void rls(const Frame8 &frame);
 
+    Interpreter *m_interpreter;
     uint32_t *m_qMem;
     uint32_t m_numQvals;
     Qqueue *m_qq;
+
+    int m_paramResponses;
+    uint16_t m_maxBlobs;
+    uint16_t m_maxBlobsPerModel;
+    uint32_t m_minArea;
+    uint8_t m_ccMode;
 };
 
 #endif // PROCESSBLOBS_H

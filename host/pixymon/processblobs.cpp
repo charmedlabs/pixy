@@ -14,13 +14,20 @@
 //
 
 #include "processblobs.h"
+#include "interpreter.h"
 
-
-ProcessBlobs::ProcessBlobs()
+ProcessBlobs::ProcessBlobs(Interpreter *interpreter)
 {
+    m_interpreter = interpreter;
     m_qq = new Qqueue();
     m_blobs = new Blobs(m_qq);
     m_qMem = new uint32_t[0x10000];
+
+    connect(m_interpreter, SIGNAL(parameter(QString,QByteArray)), this, SLOT(handleParameter(QString,QByteArray)));
+    connect(m_interpreter, SIGNAL(paramChange()), this, SLOT(handleParamChange()));
+
+    // force loading of parameters
+    handleParamChange();
 }
 
 ProcessBlobs::~ProcessBlobs()
@@ -78,7 +85,7 @@ void ProcessBlobs::rls(const Frame8 &frame)
     uint32_t x, y, count, index, startCol, model, lutVal, r, g1, g2, b;
     int32_t c1, c2;
     bool stateIn, stateOut;
-    uint32_t prevLutVal=0, prevModel=0;
+    uint32_t prevModel=0;
 
     for (y=1, m_numQvals=0; y<(uint32_t)frame.m_height; y+=2)
     {
@@ -176,3 +183,47 @@ void ProcessBlobs::rls(const Frame8 &frame)
     m_qq->enqueue(0xffffffff);
     m_qMem[m_numQvals++] = 0xffffffff;
 }
+
+void ProcessBlobs::handleParameter(QString id, QByteArray data)
+{
+    uint8_t *data2;
+    uint32_t len;
+
+    data2 = (uint8_t *)data.constData();
+    len = data.size();
+
+    if (id=="Max blocks")
+    {
+        Chirp::deserialize(data2, len, &m_maxBlobs, END);
+        m_paramResponses++;
+    }
+    else if(id=="Max blocks per signature")
+    {
+        Chirp::deserialize(data2, len, &m_maxBlobsPerModel, END);
+        m_paramResponses++;
+    }
+    else if(id=="Min block area")
+    {
+        Chirp::deserialize(data2, len, &m_minArea, END);
+        m_paramResponses++;
+    }
+    else if(id=="Color code mode")
+    {
+        Chirp::deserialize(data2, len, &m_ccMode, END);
+        m_paramResponses++;
+    }
+
+    if (m_paramResponses==4)
+        m_blobs->setParams(m_maxBlobs, m_maxBlobsPerModel, m_minArea, (ColorCodeMode)m_ccMode);
+}
+
+void ProcessBlobs::handleParamChange()
+{
+    m_paramResponses = 0;
+    // get parameters
+    m_interpreter->getParam("Max blocks");
+    m_interpreter->getParam("Max blocks per signature");
+    m_interpreter->getParam("Min block area");
+    m_interpreter->getParam("Color code mode");
+}
+

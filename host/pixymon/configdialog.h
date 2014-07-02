@@ -97,6 +97,7 @@ signals:
     void load();
     void save();
     void done();
+    void change();
 
 public slots:
 

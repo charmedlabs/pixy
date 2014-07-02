@@ -20,7 +20,9 @@
 #include <QMutex>
 #include <QStringList>
 #include <QColor>
+#include <QVariant>
 #include <vector>
+#include <queue>
 #include <utility>
 #include "chirpmon.h"
 #include "videowidget.h"
@@ -37,6 +39,11 @@ class Renderer;
 
 typedef std::pair<QString,QString> Arg;
 typedef std::vector<Arg> ArgList;
+
+enum CommandType {STOP, RUN, GET_ACTION, GET_PARAM};
+
+typedef std::pair<CommandType,QVariant> Command;
+typedef std::queue<Command> CommandQueue;
 
 class Interpreter : public QThread
 {
@@ -59,6 +66,8 @@ public:
     void execute(const QString &command);
     void execute(QStringList commandList);
     void getAction(int index);
+    void getParam(const QString &id);
+
     void printHelp();
 
     void close();
@@ -67,12 +76,6 @@ public:
     uint16_t *getVersion();
 
     ChirpMon *m_chirp;
-
-    // experimental
-    ConsoleWidget *m_console;
-    VideoWidget *m_video;
-    Renderer *m_renderer;
-
     friend class ChirpMon;
 
 signals:
@@ -84,8 +87,11 @@ signals:
     void enableConsole(bool enable);
     void connected(Device device, bool state);
     void actionScriptlet(int index, QString action, QStringList scriptlet);
+    void parameter(QString id, QByteArray data);
+    void paramChange();
 
 public slots:
+    void handleParamChange();
 
 private slots:
     void controlKey(Qt::Key key);
@@ -111,6 +117,8 @@ private:
     int sendRun();
     int sendStop();
     int sendGetAction(int index);
+    int sendGetParam(const QString &id);
+    void queueCommand(CommandType type, QVariant arg=QVariant(0));
     void handlePendingCommand();
 
     void prompt();
@@ -120,22 +128,25 @@ private:
     QString printArgType(uint8_t *type, int &index);
     void augmentProcInfo(ProcInfo *info);
 
+    ConsoleWidget *m_console;
+    VideoWidget *m_video;
+    Renderer *m_renderer;
+
     USBLink m_link;
 
     // for thread
-    enum PendingCommand {NONE, STOP, RUN, GET_ACTION};
-
     QMutex m_mutexProg;
     QMutex m_mutexInput;
+    QMutex m_mutexQueue;
     QWaitCondition m_waitInput;
-    int m_pendingArg;
-    PendingCommand m_pendingCommand;
+    CommandQueue m_commandQueue;
 
     unsigned int m_pc;
     ChirpProc m_exec_run;
     ChirpProc m_exec_running;
     ChirpProc m_exec_stop;
     ChirpProc m_exec_get_action;
+    ChirpProc m_get_param;
 
     // for program
     bool m_programming;
@@ -157,6 +168,7 @@ private:
     QStringList m_argv; // executed on Pixy
     QStringList m_argvHost;  // executed on host
     QStringList m_commandList;
+
     uint8_t m_argTypes[0x100];
     uint16_t m_version[3];
 };

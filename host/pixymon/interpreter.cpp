@@ -40,11 +40,10 @@ Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video) : m_mutexPr
     m_waiting = false;
     m_fastPoll = true;
     m_notified = false;
-    m_pendingCommand = NONE;
     m_running = -1; // set to bogus value to force update
     m_chirp = NULL;
 
-    m_renderer = new Renderer(m_video);
+    m_renderer = new Renderer(m_video, this);
 
     connect(m_console, SIGNAL(textLine(QString)), this, SLOT(command(QString)));
     connect(m_console, SIGNAL(controlKey(Qt::Key)), this, SLOT(controlKey(Qt::Key)));
@@ -439,18 +438,40 @@ int Interpreter::sendGetAction(int index)
     return response;
 }
 
+int Interpreter::sendGetParam(const QString &id)
+{
+    QMutexLocker locker(&m_chirp->m_mutex);
+    int res, response, len;
+    const char *data;
+    QByteArray data2, str = id.toUtf8();
+    const char *id2 = str.constData();
+
+    res = m_chirp->callSync(m_get_param, STRING(id2), END_OUT_ARGS, &response, &len, &data, END_IN_ARGS);
+
+    if (res<0)
+        return res;
+
+    if (response<0)
+        return response;
+
+    data2 = QByteArray(data, len);
+
+    emit parameter(id, data2);
+    return response;
+}
+
 
 void Interpreter::handlePendingCommand()
 {
-    // copy first, prevent race condition
-    PendingCommand command = m_pendingCommand;
-    m_pendingCommand = NONE;
+    QMutexLocker locker(&m_mutexQueue);
+    if (m_commandQueue.empty())
+        return;
+    const Command command = m_commandQueue.front();
+    m_commandQueue.pop();
+    locker.unlock();
 
-    switch (command)
+    switch (command.first)
     {
-    case NONE:
-        break;
-
     case STOP:
         sendStop();
         break;
@@ -460,9 +481,23 @@ void Interpreter::handlePendingCommand()
         break;
 
     case GET_ACTION:
-        sendGetAction(m_pendingArg);
+        sendGetAction(command.second.toInt());
+        break;
+
+    case GET_PARAM:
+        sendGetParam(command.second.toString());
         break;
     }
+
+}
+
+
+void Interpreter::queueCommand(CommandType type, QVariant arg)
+{
+    Command command(type, arg);
+    m_mutexQueue.lock();
+    m_commandQueue.push(command);
+    m_mutexQueue.unlock();
 }
 
 void Interpreter::run()
@@ -501,7 +536,8 @@ void Interpreter::run()
         m_exec_running = m_chirp->getProc("running");
         m_exec_stop = m_chirp->getProc("stop");
         m_exec_get_action = m_chirp->getProc("getAction");
-        if (m_exec_run<0 || m_exec_running<0 || m_exec_stop<0 || m_exec_get_action<0)
+        m_get_param = m_chirp->getProc("prm_get");
+        if (m_exec_run<0 || m_exec_running<0 || m_exec_stop<0 || m_exec_get_action<0 || m_get_param<0)
             throw std::runtime_error("Communication error with Pixy.");
     }
     catch (std::runtime_error &exception)
@@ -623,9 +659,9 @@ void Interpreter::runOrStopProgram()
     if (m_localProgramRunning)
         m_localProgramRunning = false;
     else if (m_running==false)
-        m_pendingCommand = RUN;
+        queueCommand(RUN);
     else if (m_running==true)
-        m_pendingCommand = STOP;
+        queueCommand(STOP);
     // no case to run local program because this is sort of an undocumented feature for now
 }
 
@@ -799,7 +835,7 @@ void Interpreter::execute(const QString &command)
     m_externalCommand = command; // save command so we can print.  This variable also indicates that we're not a human typing a command
     m_mutexProg.unlock();
     if (m_running==true)
-           m_pendingCommand = STOP;
+        queueCommand(STOP);
 }
 
 void Interpreter::execute(QStringList commandList)
@@ -819,10 +855,13 @@ void Interpreter::execute(QStringList commandList)
 
 void Interpreter::getAction(int index)
 {
-    m_pendingArg = index;
-    m_pendingCommand = GET_ACTION;
+    queueCommand(GET_ACTION, index);
 }
 
+void Interpreter::getParam(const QString &id)
+{
+    queueCommand(GET_PARAM, id);
+}
 
 #if 0
 int Interpreter::uploadLut()
@@ -858,6 +897,11 @@ void Interpreter::handleSelection(int x0, int y0, int width, int height)
         m_renderer->regionCommand(x0, y0, width, height, m_argvHost);
     }
 
+}
+
+void Interpreter::handleParamChange()
+{
+    emit paramChange();  // re-emit
 }
 
 void Interpreter::unwait()

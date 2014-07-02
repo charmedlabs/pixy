@@ -98,6 +98,7 @@ static const ActionScriptlet actions[]=
 	"Run pan/tilt demo", 
 	"runprog 2\n"
 	}, 
+
 	{
 	"Set signature 1...", 
 	"cam_getFrame 0x21 0 0 320 200\n"
@@ -196,7 +197,7 @@ static const ActionScriptlet actions[]=
 	},
 	{
 	"Restore default parameter values", 
-    "prm_restore"
+    "prm_restore\n"
 	"run\n"
 	}
 };

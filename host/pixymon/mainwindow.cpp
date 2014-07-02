@@ -358,7 +358,7 @@ void MainWindow::handleActions()
 
 void MainWindow::handleActionScriptlet(int index, QString action, QStringList scriptlet)
 {
-    m_interpreter->getAction(index+1);
+    m_interpreter->getAction(index+1);  // get next action, we'll stop getting called back when there are no more actions
     addAction(action, scriptlet);
 }
 

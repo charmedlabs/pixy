@@ -183,6 +183,7 @@ ConfigDialog::ConfigDialog(QWidget *parent, Interpreter *interpreter) : QDialog(
     connect(worker, SIGNAL(saved()), this, SLOT(saved()));
     connect(worker, SIGNAL(error(QString)), this, SLOT(error(QString)));
     connect(m_ui->buttonBox, SIGNAL(clicked(QAbstractButton*)), this, SLOT(apply(QAbstractButton*)));
+    connect(this, SIGNAL(change()), m_interpreter, SLOT(handleParamChange()));
 
     m_thread.start();
     m_rejecting = false;
@@ -353,6 +354,8 @@ void ConfigDialog::saved()
         QDialog::accept();
     }
     m_applying = false;
+
+    emit change(); // signal other folks
 }
 
 void ConfigDialog::error(QString message)
