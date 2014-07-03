@@ -105,7 +105,8 @@ void VideoWidget::paintEvent(QPaintEvent *event)
     m_height = this->height();
     float war;
     float pmar;
-    QPainter p(this);
+    QPainter p(this); // we could render to a QImage instead of to a widget.  This might take longer, but
+    // it would allow us to save off the blended image, e.g. to a file.
     QPixmap bgPixmap;
 
     if (m_renderedImages.size()==0)

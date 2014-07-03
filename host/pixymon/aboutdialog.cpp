@@ -15,6 +15,7 @@
 
 #include "mainwindow.h"
 #include "aboutdialog.h"
+#include "pixymon.h"
 
 AboutDialog::AboutDialog(const QString &contents) :
     m_ui(new Ui::AboutDialog)

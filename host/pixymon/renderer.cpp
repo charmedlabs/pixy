@@ -589,3 +589,9 @@ int Renderer::renderBackground()
 
     return 0;
 }
+
+int Renderer::saveImage(const QString &filename)
+{
+    return m_background.save(filename);
+}
+

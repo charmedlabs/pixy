@@ -20,4 +20,13 @@
 
 #define cprintf qDebug
 
+#define PIXYMON_TITLE   "PixyMon"
+#define PIXYMON_COMPANY "Charmed Labs"
+
+#define VER_MAJOR       1
+#define VER_MINOR       0
+#define VER_BUILD       2
+
+#define PM_DEFAULT_DATA_DIR   "PixyMon"
+
 #endif // PIXYMON_H

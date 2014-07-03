@@ -43,6 +43,8 @@ public:
         m_mode = mode;
     }
 
+    int saveImage(const QString &filename);
+
     Frame8 m_rawFrame;
     ProcessBlobs m_blobs;
 

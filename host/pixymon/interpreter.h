@@ -37,13 +37,14 @@
 class ConsoleWidget;
 class Renderer;
 
-typedef std::pair<QString,QString> Arg;
-typedef std::vector<Arg> ArgList;
-
 enum CommandType {STOP, RUN, GET_ACTION, GET_PARAM};
 
 typedef std::pair<CommandType,QVariant> Command;
 typedef std::queue<Command> CommandQueue;
+
+typedef std::pair<QString,QString> Arg;
+typedef std::vector<Arg> ArgList;
+
 
 class Interpreter : public QThread
 {
@@ -67,7 +68,7 @@ public:
     void execute(QStringList commandList);
     void getAction(int index);
     void getParam(const QString &id);
-
+    int saveImage(const QString &filename);
     void printHelp();
 
     void close();

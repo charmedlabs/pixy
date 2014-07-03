@@ -19,7 +19,10 @@
 #include <QFileDialog>
 #include <QMetaType>
 #include <QSettings>
+#include <QDesktopServices>
+#include <QUrl>
 #include "mainwindow.h"
+#include "pixymon.h"
 #include "videowidget.h"
 #include "console.h"
 #include "interpreter.h"
@@ -37,6 +40,9 @@ MainWindow::MainWindow(int argc, char *argv[], QWidget *parent) :
     QMainWindow(parent),
     m_ui(new Ui::MainWindow)
 {
+    QCoreApplication::setOrganizationName(PIXYMON_COMPANY);
+    QCoreApplication::setApplicationName(PIXYMON_TITLE);
+
     parseCommandline(argc, argv);
 
     qRegisterMetaType<Device>("Device");
@@ -358,8 +364,11 @@ void MainWindow::handleActions()
 
 void MainWindow::handleActionScriptlet(int index, QString action, QStringList scriptlet)
 {
-    m_interpreter->getAction(index+1);  // get next action, we'll stop getting called back when there are no more actions
-    addAction(action, scriptlet);
+    if (m_interpreter)
+    {
+        m_interpreter->getAction(index+1);  // get next action, we'll stop getting called back when there are no more actions
+        addAction(action, scriptlet);
+    }
 }
 
 void MainWindow::handleConnected(Device device, bool state)
@@ -406,12 +415,14 @@ void MainWindow::on_actionAbout_triggered()
 
 void MainWindow::on_actionPlay_Pause_triggered()
 {
-    m_interpreter->runOrStopProgram();
+    if (m_interpreter)
+        m_interpreter->runOrStopProgram();
 }
 
 void MainWindow::on_actionDefault_program_triggered()
 {
-    m_interpreter->execute("runprog 0");
+    if (m_interpreter)
+        m_interpreter->execute("runprog 0");
 }
 
 
@@ -444,10 +455,13 @@ void MainWindow::program(const QString &file)
 
 void MainWindow::on_actionConfigure_triggered()
 {
-    m_configDialog = new ConfigDialog(this, m_interpreter);
-    connect(m_configDialog, SIGNAL(done()), this, SLOT(configFinished()));
-    m_configDialog->show();
-    updateButtons();
+    if (m_interpreter)
+    {
+        m_configDialog = new ConfigDialog(this, m_interpreter);
+        connect(m_configDialog, SIGNAL(done()), this, SLOT(configFinished()));
+        m_configDialog->show();
+        updateButtons();
+    }
 }
 
 void MainWindow::on_actionRaw_video_triggered()
@@ -499,4 +513,40 @@ void MainWindow::interpreterFinished()
 void MainWindow::on_actionExit_triggered()
 {
     close();
+}
+
+void MainWindow::on_actionHelp_triggered()
+{
+    QDesktopServices::openUrl(QUrl("http://charmedlabs.com/pixymonhelp"));
+}
+
+const QString uniqueFilename(const QDir &dir, const QString &filebase, const QString &extension)
+{
+    int i;
+
+    for (i=1; true; i++)
+    {
+        QFileInfo testFile(dir, filebase + QString::number(i) + "." + extension);
+        if (!testFile.exists())
+            return testFile.absoluteFilePath();
+    }
+}
+
+void MainWindow::on_actionSave_Image_triggered()
+{
+    QString filename, docPath;
+
+    if (m_interpreter)
+    {
+        docPath = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation);
+        QDir dir(docPath);
+
+        if (!dir.exists(PM_DEFAULT_DATA_DIR))
+            dir.mkdir(PM_DEFAULT_DATA_DIR);
+        dir.cd(PM_DEFAULT_DATA_DIR);
+        filename = uniqueFilename(dir, "image", "png");
+        m_interpreter->saveImage(filename);
+    }
+
+
 }

@@ -26,6 +26,7 @@
 #include "mainwindow.h"
 #include "renderer.h"
 #include "sleeper.h"
+#include "pixymon.h"
 
 QString printType(uint32_t val, bool parens=false);
 
@@ -498,6 +499,12 @@ void Interpreter::queueCommand(CommandType type, QVariant arg)
     m_mutexQueue.lock();
     m_commandQueue.push(command);
     m_mutexQueue.unlock();
+}
+
+
+int Interpreter::saveImage(const QString &filename)
+{
+    return m_renderer->saveImage(filename);
 }
 
 void Interpreter::run()

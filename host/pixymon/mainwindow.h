@@ -19,13 +19,6 @@
 #include <QMainWindow>
 #include <vector>
 
-#define PIXYMON_TITLE   "PixyMon"
-#define PIXYMON_COMPANY "Charmed Labs"
-
-#define VER_MAJOR       1
-#define VER_MINOR       0
-#define VER_BUILD       1
-
 namespace Ui {
     class MainWindow;
 }
@@ -63,6 +56,8 @@ private slots:
     void on_actionPlay_Pause_triggered();
     void on_actionDefault_program_triggered();
     void on_actionConfigure_triggered();
+    void on_actionHelp_triggered();
+    void on_actionSave_Image_triggered();
     void on_actionExit_triggered();
     void on_actionRaw_video_triggered();
     void on_actionCooked_video_triggered();
