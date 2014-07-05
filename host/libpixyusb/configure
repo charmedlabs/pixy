@@ -35,9 +35,10 @@ if [[ -s configuration/LIBUSB_PATH ]]; then
 	echo -n "found: "
 	cat "configuration/LIBUSB_PATH"
 else
-  echo "Not found."
+  echo ".. not found"
   echo ""
-  echo "Please install libusb 1.0 then re-run ./configure"
+  echo "Please install libusb 1.0-0-dev then re-run ./configure"
+  echo ""
 	exit 1
 fi
 
