@@ -41,13 +41,21 @@ check_config:
 	@test -f ../configuration/READY || { echo "Configuration files not found. Please run ./configure"; exit 1; }
 
 build_example:
+	@echo " "
 	@echo "=========================================================="
-	@echo "  Building example"
+	@echo "  Building hello_pixy example"
 	@echo "=========================================================="
-
-	@echo -n "OS: "
-	@echo $(OS)
-
 	$(COMPILER) -c $(DEFINES) $(INCLUDES) $(TARGETS) 
 	$(COMPILER) $(OBJECTS) $(THREAD) $(LIBRARIES) -o ../hello_pixy
 	rm *.o
+	@echo " "
+	@echo "Build complete!"
+	@echo " "
+	@echo " "
+	@echo "To get started:"
+	@echo " "
+	@echo "  - Copy <pixy_folder>/host/linux/pixy.rules to /udev/rules.d before starting 'hello_pixy'."
+	@echo ""
+	@echo "  - If you get an error, try running hello_pixy with root priviledges: 'sudo ./hello_pixy'"
+	@echo ""
+	@echo ""

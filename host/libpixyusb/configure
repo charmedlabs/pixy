@@ -44,8 +44,8 @@ else
   echo ".. not found"
 fi
 
+rm a.out 2> /dev/null
 rm testcpp11.cpp
-rm a.out
 
 ## Find libboost ##
 

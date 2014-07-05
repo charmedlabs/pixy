@@ -51,6 +51,7 @@ check_config:
 	@test -f configuration/READY || { echo "Configuration files not found. Please run ./configure"; exit 1; }
 
 build_libpixyusb:
+	@echo " "
 	@echo "=========================================================="
 	@echo "  Building libpixyusb  v$(VERSION)"
 	@echo "=========================================================="
@@ -59,6 +60,6 @@ build_libpixyusb:
 	rm *.o
 
 build_example:
-	cd example; \
+	cd example;\
 	make
 
