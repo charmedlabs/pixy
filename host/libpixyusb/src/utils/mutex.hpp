@@ -21,6 +21,7 @@
 #ifdef __USING_CXX11__
 #include <mutex>
 #elif  __USING_BOOST__
+#include <boost/thread/mutex.hpp>
 #else
 #error CXX11 or boost libraries required for mutex support.
 #endif
@@ -39,8 +40,9 @@ namespace util
     private:
 
       #ifdef __USING_CXX11__
-      std::mutex mutex_;
+      std::mutex   mutex_;
       #elif  __USING_BOOST__
+      boost::mutex mutex_;
       #endif
   };
 }

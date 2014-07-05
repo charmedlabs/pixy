@@ -17,7 +17,11 @@
 #define __PIXYINTERPRETER_HPP__
 
 #include <vector>
+#ifdef __USING_CXX11__
 #include <thread>
+#elif  __USING_BOOST__
+#include <boost/thread.hpp>
+#endif
 #include "pixy.h"
 #include "usblink.h"
 #include "utils/mutex.hpp"
@@ -64,7 +68,11 @@ class PixyInterpreter : public Interpreter
     
     ChirpReceiver *    receiver_;
     USBLink            link_;
+    #ifdef __USING_CXX11__
     std::thread        thread_;
+    #elif  __USING_BOOST__
+    boost::thread      thread_;
+    #endif
     bool               thread_die_;
     bool               thread_dead_;
     std::vector<Block> blocks_;

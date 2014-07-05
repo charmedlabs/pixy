@@ -24,7 +24,10 @@
 
 #ifdef __USING_CXX11__
 using namespace std::chrono;
+#elif  __USING_BOOST__
+using namespace boost::chrono;
 #endif
+
 
 std::string util::timer::implementation()
 {
@@ -37,31 +40,22 @@ std::string util::timer::implementation()
 
 util::timer::timer()
 {
-  #ifdef __USING_CXX11__
   epoch_ = steady_clock::now();
-  #elif  __USING_BOOST__
-  #endif
 }
 
 void util::timer::reset()
 {
-  #ifdef __USING_CXX11__
   epoch_ = steady_clock::now();
-  #elif  __USING_BOOST__
-  #endif
 }
 
 uint32_t util::timer::elapsed()
 {
-  #ifdef __USING_CXX11__
   steady_clock::time_point mark;
   
   // Compute difference in time //
   
   mark = steady_clock::now();
   return duration_cast<milliseconds>(mark - epoch_).count();
-  #elif  __USING_BOOST__
-  #endif
 }
 
 

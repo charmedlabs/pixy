@@ -26,18 +26,10 @@ std::string util::mutex::implementation()
 
 void util::mutex::lock()
 {
-  #ifdef __USING_CXX11__
   mutex_.lock();
-  #elif  __USING_BOOST__
-
-  #endif
 }
 
 void util::mutex::unlock()
 {
-  #ifdef __USING_CXX11__
   mutex_.unlock();
-  #elif  __USING_BOOST__
-
-  #endif
 }

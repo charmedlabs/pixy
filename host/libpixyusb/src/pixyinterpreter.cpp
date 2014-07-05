@@ -22,7 +22,7 @@ PixyInterpreter::PixyInterpreter()
 {
   thread_die_  = false;
   thread_dead_ = true;
-  receiver_    = nullptr;
+  receiver_    = 0;
 }
 
 void PixyInterpreter::init()
@@ -44,7 +44,11 @@ void PixyInterpreter::init()
   // Create the interpreter thread //
 
   thread_dead_ = false;
+  #ifdef __USING_CXX11__
   thread_      = std::thread(&PixyInterpreter::interpreter_thread, this);
+  #elif  __USING_BOOST__
+  thread_      = boost::thread(&PixyInterpreter::interpreter_thread, this);
+  #endif
 }
 
 void PixyInterpreter::close()
