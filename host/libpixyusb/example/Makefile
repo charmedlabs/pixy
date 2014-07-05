@@ -19,6 +19,19 @@ COMPILER   = g++
 
 THREAD     = -pthread
 
+BOOST      = $(shell cat ../configuration/BOOST_AVAILABLE)
+CXX11      = $(shell cat ../configuration/CXX11_AVAILABLE)
+
+ifeq ($(BOOST), "YES")
+DEFINES    = -D__USING_BOOST__
+LIBRARIES += -lboost-thread
+endif
+
+ifeq ($(CXX11), YES)
+DEFINES   += -D__USING_CXX11__
+CPPFLAGS  += -std=c++11
+endif
+
 all: build_example
 
 build_example:

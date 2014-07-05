@@ -15,12 +15,29 @@
 
 #include "utils/mutex.hpp"
 
+std::string util::mutex::implementation()
+{
+  #ifdef __USING_CXX11__
+  return std::string("C++11");
+  #elif  __USING_BOOST__
+  return std::string("BOOST"); 
+  #endif
+}
+
 void util::mutex::lock()
 {
+  #ifdef __USING_CXX11__
   mutex_.lock();
+  #elif  __USING_BOOST__
+
+  #endif
 }
 
 void util::mutex::unlock()
 {
+  #ifdef __USING_CXX11__
   mutex_.unlock();
+  #elif  __USING_BOOST__
+
+  #endif
 }

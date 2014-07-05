@@ -16,7 +16,14 @@
 #ifndef __MUTEX_HPP__
 #define __MUTEX_HPP__
 
+#include <string>
+
+#ifdef __USING_CXX11__
 #include <mutex>
+#elif  __USING_BOOST__
+#else
+#error CXX11 or boost libraries required for mutex support.
+#endif
 
 namespace util
 {
@@ -24,12 +31,17 @@ namespace util
   {
     public:
 
-     void lock();
-     void unlock();
+      void lock();
+      void unlock();
+
+      std::string implementation();
 
     private:
 
-     std::mutex mutex_;
+      #ifdef __USING_CXX11__
+      std::mutex mutex_;
+      #elif  __USING_BOOST__
+      #endif
   };
 }
 

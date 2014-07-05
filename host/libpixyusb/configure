@@ -10,6 +10,7 @@ mkdir configuration
 ## Define library dependencies ##
 
 LIBUSB="libusb-1.0.a"
+LIBBOOST="libboost_thread.a"
 
 # Identify operating system #
 
@@ -24,6 +25,46 @@ case $UNAME in
 	"FreeBSD" )
 		echo "__FREEBSD__" > confiugration/OS;;
 esac
+
+## Query C++11 support ##
+
+echo -n "checking for C++11 support: "
+
+echo "#include<thread>"                  > testcpp11.cpp
+echo "#include<mutex>"                  >> testcpp11.cpp
+echo "int main(int a, char * b[])"      >> testcpp11.cpp
+echo "{ std::thread t; std::mutex m; }" >> testcpp11.cpp
+g++ -std=c++11 testcpp11.cpp
+
+if [ $? -eq 0 ]; then
+  echo "g++ supports C++11"
+  HAS_CXX11="YES"
+  echo "YES" > configuration/CXX11_AVAILABLE
+else
+  echo ".. not found"
+fi
+
+
+## Find libboost ##
+
+echo -n "dependency: libboost "
+
+find /usr 2> /dev/null | grep $LIBBOOST$ | sed -n 's/'$LIBBOOST'//p' > configuration/LIBBOOST_PATH
+
+if [[ -s configuration/LIBBOOST_PATH ]]; then
+  HAS_BOOST=YES
+	echo -n "found: "
+	cat "configuration/LIBBOOST_PATH"
+  echo "YES" > configuration/BOOST_AVAILABLE
+else
+  echo ".. not found"
+  echo ""
+fi
+
+if [[ -z $HAS_BOOST && -z $HAS_Cxx11 ]]; then
+  echo "Please install libboost-all-dev then re-run ./configure"
+  exit 1
+fi
 
 ## Find libusb ##
 
