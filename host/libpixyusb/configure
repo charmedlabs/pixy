@@ -4,7 +4,7 @@ echo "=========================================================="
 echo "  Configuring libpixyusb"
 echo "=========================================================="
 
-rm -rdf configuration
+rm -rf configuration
 mkdir configuration
 
 ## Define library dependencies ##
@@ -35,7 +35,9 @@ if [[ -s configuration/LIBUSB_PATH ]]; then
 	echo -n "found: "
 	cat "configuration/LIBUSB_PATH"
 else
-  echo "Not found. Please install libusb 1.0 then re-run ./configure"
+  echo "Not found."
+  echo ""
+  echo "Please install libusb 1.0 then re-run ./configure"
 	exit 1
 fi
 
