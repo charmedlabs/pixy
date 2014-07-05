@@ -18,7 +18,7 @@
 #include <stdlib.h>
 #include <QThread>
 #include "dfu.h"
-#include "pixy.h"
+#include "pixydefs.h"
 #include "sleeper.h"
 
 

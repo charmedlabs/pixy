@@ -16,7 +16,7 @@
 #include <QDebug>
 #include "usblink.h"
 #include "sleeper.h"
-#include "pixy.h"
+#include "pixydefs.h"
 
 
 

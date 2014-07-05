@@ -15,7 +15,7 @@
 
 #include "connectevent.h"
 #include "libusb.h"
-#include "pixy.h"
+#include "pixydefs.h"
 #include "mainwindow.h"
 
 ConnectEvent::ConnectEvent(MainWindow *main, unsigned int sleep)

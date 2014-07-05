@@ -44,10 +44,10 @@ HEADERS  += mainwindow.h \
     usb_dfu.h \
     dfu_info.h \
     connectevent.h \
-    pixy.h \
     flash.h \
     reader.h \
     ../../common/pixytypes.h \
+    ../../common/pixydefs.h \
     ../../common/chirp.hpp \
     ../../common/colorlut.h \
     ../../common/blobs.h \
