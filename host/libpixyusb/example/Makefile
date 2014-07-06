@@ -54,7 +54,7 @@ build_example:
 	@echo " "
 	@echo "To get started:"
 	@echo " "
-	@echo "  - Copy <pixy_folder>/host/linux/pixy.rules to /udev/rules.d before starting 'hello_pixy'."
+	@echo "  - Copy <pixy_folder>/host/linux/pixy.rules to /etc/udev/rules.d before starting 'hello_pixy'."
 	@echo ""
 	@echo "  - If you get an error, try running hello_pixy with root priviledges: 'sudo ./hello_pixy'"
 	@echo ""

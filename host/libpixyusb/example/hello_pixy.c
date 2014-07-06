@@ -27,7 +27,6 @@ Block blocks[BLOCK_BUFFER_SIZE];
 void handle_SIGINT(int unused)
 {
   // On CTRL+C - abort! //
-  printf("SIGINT!\n");
 
   // Disconnect from Pixy //
   pixy_close();
