@@ -501,6 +501,7 @@ int Renderer::render(uint32_t type, void *args[])
     return res;
 }
 
+#if 0
 void matlabArrayOut(QFile *file, const QString &name, float *data, int width, int height)
 {
     int i, j;
@@ -523,6 +524,7 @@ void matlabArrayOut(QFile *file, const QString &name, float *data, int width, in
     }
     out << "];\n";
 }
+#endif
 
 void Renderer::pixelsOut(int x0, int y0, int width, int height)
 {
