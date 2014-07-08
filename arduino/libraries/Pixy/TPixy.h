@@ -42,9 +42,20 @@ struct Block
 {
   void print()
   {
-    char buf[64];
-  
-    sprintf(buf, "sig: %d x: %d y: %d width: %d height: %d angle %d\n", signature, x, y, width, height, angle);
+    int i, j;
+    char buf[64], sig[6], d;
+	bool flag;
+	
+	for (i=12, j=0, flag=false; i>=0; i-=3)
+	{
+	  d = (signature>>i)&0x07;
+      if (d>0 && !flag)
+	    flag = true;
+	  if (flag)
+	     sig[j++] = d + '0';
+	}
+    sig[j] = '\0';	
+    sprintf(buf, "sig: %s x: %d y: %d width: %d height: %d angle %d\n", sig, x, y, width, height, angle);
     Serial.print(buf);  
   }
   uint16_t signature;
