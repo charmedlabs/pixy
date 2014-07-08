@@ -68,7 +68,7 @@ MainWindow::MainWindow(int argc, char *argv[], QWidget *parent) :
     m_ui->toolBar->addAction(m_ui->actionPlay_Pause);
 
     m_ui->actionDefault_program->setIcon(QIcon(":/icons/icons/home.png"));
-    m_ui->toolBar->addAction(m_ui->actionDefault_program);
+    m_ui->toolBar->addAction(m_ui->actionDefault_program);    
 
     m_ui->actionRaw_video->setIcon(QIcon(":/icons/icons/raw.png"));
     m_ui->toolBar->addAction(m_ui->actionRaw_video);

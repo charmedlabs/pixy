@@ -22,6 +22,7 @@
 #include "blobs.h"
 #include "colorlut.h"
 
+#define CC_SIGNATURE(s) (m_ccMode==CC_ONLY || m_clut->getType(s)==CL_MODEL_TYPE_COLORCODE)
 
 Blobs::Blobs(Qqueue *qq)
 {
@@ -105,17 +106,13 @@ void Blobs::blobify()
     m_mutex = true;
     for (i=0, m_numBlobs=0, m_numCCBlobs=0; i<NUM_MODELS; i++)
     {
-        if (m_ccMode==MIXED)
-            colorCode = false;
-        else
-            colorCode = m_clut->getType(i+1)==CL_MODEL_TYPE_COLORCODE;
+        colorCode = CC_SIGNATURE(i+1);
 
         for (j=m_numBlobs*5, k=0, blobsStart=m_blobs+j, numBlobsStart=m_numBlobs, blob=m_assembler[i].finishedBlobs;
              blob && m_numBlobs<m_maxBlobs && k<m_maxBlobsPerModel; blob=blob->next, k++)
         {
             if ((colorCode && blob->GetArea()<MIN_COLOR_CODE_AREA) ||
-                    (!colorCode && m_ccMode==CC_ONLY) ||
-                    (!colorCode && blob->GetArea()<(int)m_minArea))
+                (!colorCode && blob->GetArea()<(int)m_minArea))
                 continue;
             blob->getBBox((short &)left, (short &)top, (short &)right, (short &)bottom);
             m_blobs[j + 0] = i+1;
@@ -612,8 +609,7 @@ bool Blobs::closeby(BlobA *blob0, BlobA *blob1)
         return false;
     // check to see that the blobs are from color code models.  If they aren't both
     // color code blobs, we return false
-    if (m_ccMode!=MIXED && (m_clut->getType(blob0->m_model&0x07)!=CL_MODEL_TYPE_COLORCODE ||
-                            m_clut->getType(blob1->m_model&0x07)!=CL_MODEL_TYPE_COLORCODE))
+    if (!CC_SIGNATURE(blob0->m_model&0x07) || !CC_SIGNATURE(blob1->m_model&0x07))
         return false;
 
     return distance(blob0, blob1)<=m_maxCodedDist;
@@ -990,7 +986,12 @@ void Blobs::processCC()
     // 3rd pass, invalidate blobs
     for (blob0=(BlobA *)m_blobs; blob0<endBlob; blob0++)
     {
-        if (m_ccMode!=MIXED && (blob0->m_model>NUM_MODELS || m_clut->getType(blob0->m_model)==CL_MODEL_TYPE_COLORCODE))
+        if (m_ccMode==MIXED)
+        {
+            if (blob0->m_model>NUM_MODELS)
+                blob0->m_model = 0;
+        }
+        else if (blob0->m_model>NUM_MODELS || CC_SIGNATURE(blob0->m_model))
             blob0->m_model = 0; // invalidate-- not part of a color code
     }
 }

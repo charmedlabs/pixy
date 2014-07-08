@@ -70,8 +70,9 @@ void ConnectEvent::run()
         dev = getConnected();
         if (dev!=NONE)
         {
+            msleep(1000);
             emit connected(dev, true);
-            break;
+            return;
         }
         msleep(1000);
     }

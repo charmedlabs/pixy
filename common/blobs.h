@@ -39,7 +39,7 @@ enum ColorCodeMode
 {
     DISABLED = 0,
     ENABLED = 1,
-	CC_ONLY = 2, 
+    CC_ONLY = 2,
     MIXED = 3 // experimental
 };
 

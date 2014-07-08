@@ -92,6 +92,8 @@ int USBLink::receive(uint8_t *data, uint32_t len, uint16_t timeoutMs)
     if (timeoutMs==0) // 0 equals infinity
         timeoutMs = 50;
 
+    // Note: if this call is taking more time than than expected, check to see if we're connected as USB 2.0.  Bad USB cables can
+    // cause us to revert to a 1.0 connection.
     if ((res=libusb_bulk_transfer(m_handle, 0x82, (unsigned char *)data, len, &transferred, timeoutMs))<0)
     {
 #ifdef __MACOS__
