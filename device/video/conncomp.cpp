@@ -171,7 +171,7 @@ void cc_loadParams(void)
 	prm_add("CC saturation spread", 0,
 		"@c Signature_creation Sets how inclusive the color code (CC) signatures are with respect to saturation for color codes. Applies during teaching. (default 50.0)", FLT32(50.0), END);
 	prm_add("Color code mode", 0,
-		"Sets the color code mode, 0=disabled, 1=enabled, 2=color codes only (default 1)", INT8(1), END);
+		"Sets the color code mode, 0=disabled, 1=enabled, 2=color codes only, 3=mixed (default 1)", INT8(1), END);
 
 	// load
 	uint8_t ccMode;

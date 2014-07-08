@@ -579,8 +579,9 @@ void Renderer::regionCommand(int x0, int y0, int width, int height, const QStrin
     if (m_background.width()==0)
         return;
 
+#ifdef MATLAB
     pixelsOut(x0, y0, width, height);
-
+#endif
 }
 
 
