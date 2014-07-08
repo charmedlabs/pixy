@@ -572,6 +572,7 @@ void Interpreter::run()
             {
                 m_chirp->service(false);
                 m_chirp->m_mutex.unlock();
+                msleep(1); // give config thread time to run
             }
         }
         handlePendingCommand();
