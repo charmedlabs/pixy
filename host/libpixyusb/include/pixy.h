@@ -22,8 +22,11 @@
 
 // Pixy C API //
 
+#ifdef __cplusplus
 extern "C"
 {
+#endif
+  
   struct Block
   {
     uint16_t signature;
@@ -54,6 +57,9 @@ extern "C"
     @brief Terminates connection with Pixy.
   */
   void     pixy_close();
+
+#ifdef __cplusplus
 }
+#endif
 
 #endif

@@ -22,7 +22,7 @@
 #define BLOCK_BUFFER_SIZE    25
 
 // Pixy Block buffer // 
-Block blocks[BLOCK_BUFFER_SIZE];
+struct Block blocks[BLOCK_BUFFER_SIZE];
 
 void handle_SIGINT(int unused)
 {

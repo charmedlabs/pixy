@@ -44,7 +44,7 @@ int USBLink::open()
     if (m_handle==NULL)
         return -1;
 #ifdef __MACOS__
-    const unsigned int MILLISECONDS_TO_SLEEP = 100
+    const unsigned int MILLISECONDS_TO_SLEEP = 100;
     libusb_reset_device(m_handle);
     usleep(MILLISECONDS_TO_SLEEP * 1000);
 #endif

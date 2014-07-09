@@ -44,11 +44,7 @@ void PixyInterpreter::init()
   // Create the interpreter thread //
 
   thread_dead_ = false;
-  #ifdef __USING_CXX11__
-  thread_      = std::thread(&PixyInterpreter::interpreter_thread, this);
-  #elif  __USING_BOOST__
   thread_      = boost::thread(&PixyInterpreter::interpreter_thread, this);
-  #endif
 }
 
 void PixyInterpreter::close()
