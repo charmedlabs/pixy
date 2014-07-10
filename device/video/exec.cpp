@@ -85,9 +85,9 @@ static const ProcModule g_module[] =
 	"getAction",
 	(ProcPtr)exec_getAction, 
 	{CRP_UINT16, END}, 
-	"Run the specified program with an argument"
+	"Get the action scriptlet assocated with the index argument"
 	"@p action index"
-	"@r returns 0 if successful, -1 otherwise"
+	"@r returns 0 if successful, -1 otherwise, or if index is out of range"
 	},
 	END
 };
