@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.0)
+cmake_minimum_required (VERSION 2.8)
 project (libpixyusb CXX)
 
 add_library (pixyusb STATIC ../../src/chirpreceiver.cpp
@@ -15,4 +15,4 @@ include_directories (../../src
                      ../../include
                      ../../../../common
                      ${Boost_INCLUDE_DIR}
-                     ${LIBUSB_INCLUDE})
+                     ${LIBUSB_1_INCLUDE_DIRS})
