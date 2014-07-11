@@ -94,14 +94,14 @@ class PixyInterpreter : public Interpreter
 
       @param[in] data  Incoming Chirp protocol data from Pixy.
     */
-    void interpret_CCB1(void * CCB1_data[]);
+    void interpret_CCB1(void * data[]);
     
     /**
       @brief Interprets CCB2 messages sent from Pixy.
 
       @param[in] data  Incoming Chirp protocol data from Pixy.
     */
-    void interpret_CCB2(void * CCB1_data[]);
+    void interpret_CCB2(void * data[]);
 
     /**
       @brief Adds blocks with normal signatures to the PixyInterpreter
