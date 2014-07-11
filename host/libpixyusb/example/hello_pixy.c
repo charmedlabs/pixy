@@ -55,12 +55,26 @@ int main(int argc, char * argv[])
     // Display received blocks //
     for(index = 0; index != blocks_copied; ++index) {
 
-      printf("[sig:%2u w:%3u h:%3u x:%3u y:%3u]\n",
-             blocks[index].signature,
-             blocks[index].width,
-             blocks[index].height,
-             blocks[index].x,
-             blocks[index].y);
+      switch (blocks[index].type) {
+        case TYPE_NORMAL:
+          printf("[sig:%2u w:%3u h:%3u x:%3u y:%3u]\n",
+                 blocks[index].signature,
+                 blocks[index].width,
+                 blocks[index].height,
+                 blocks[index].x,
+                 blocks[index].y);
+        break;
+
+        case TYPE_COLOR_CODE:
+          printf("[sig:%2u w:%3u h:%3u x:%3u y:%3u ang:%3i]\n",
+                 blocks[index].signature,
+                 blocks[index].width,
+                 blocks[index].height,
+                 blocks[index].x,
+                 blocks[index].y,
+                 blocks[index].angle);
+        break;
+      }
     }
 
     // Sleep for 1/10 sec //

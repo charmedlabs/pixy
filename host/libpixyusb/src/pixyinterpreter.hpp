@@ -19,6 +19,7 @@
 #include <vector>
 #include <boost/thread.hpp>
 #include <boost/thread/mutex.hpp>
+#include "pixytypes.h"
 #include "pixy.h"
 #include "usblink.h"
 #include "interpreter.hpp"
@@ -89,11 +90,36 @@ class PixyInterpreter : public Interpreter
     void interpret_data(void * chrip_data[]);
 
     /**
-      @brief Interprets CCB1 'block' objects sent from Pixy.
+      @brief Interprets CCB1 messages sent from Pixy.
 
       @param[in] data  Incoming Chirp protocol data from Pixy.
     */
     void interpret_CCB1(void * CCB1_data[]);
+    
+    /**
+      @brief Interprets CCB2 messages sent from Pixy.
+
+      @param[in] data  Incoming Chirp protocol data from Pixy.
+    */
+    void interpret_CCB2(void * CCB1_data[]);
+
+    /**
+      @brief Adds blocks with normal signatures to the PixyInterpreter
+             'blocks_' buffer.
+
+      @param[in] blocks  An array of normal signature blocks to add to buffer.
+      @param[in] count   Size of the 'blocks' array.
+    */
+    void add_normal_blocks(BlobA * blocks, uint32_t count);
+    
+    /**
+      @brief Adds blocks with color code signatures to the PixyInterpreter
+             'blocks_' buffer.
+
+      @param[in] blocks  An array of color code signature blocks to add to buffer.
+      @param[in] count   Size of the 'blocks' array.
+    */
+    void add_color_code_blocks(BlobB * blocks, uint32_t count);
 };
 
 #endif
