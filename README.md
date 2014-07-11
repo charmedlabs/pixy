@@ -8,7 +8,7 @@ This directory contains:
 /host - this directory contains code that runs on the host computer.
 (Windows PC, Linux PC, Mac)
 
-/host/libpixyusb - this directory contains the Linux USB library for communicating with Pixy.
+/host/libpixyusb - this directory contains the USB library for communicating with Pixy.
 
 /arduino - this directory contains the Arduino library for communicating with Pixy.
 
