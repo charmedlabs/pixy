@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
+#include <string.h>
 #include "pixy.h"
 
 #define BLOCK_BUFFER_SIZE    25
@@ -38,9 +39,6 @@ int main(int argc, char * argv[])
 {
   int      index;
   uint16_t blocks_copied;
-  uint16_t pixy_version;
-  uint32_t version_length;
-  uint32_t response;
 
   // Catch CTRL+C (SIGINT) signals //
   signal(SIGINT, handle_SIGINT);
@@ -51,10 +49,24 @@ int main(int argc, char * argv[])
   pixy_init();
 
   // Request Pixy firmware version //
+  {
+    uint16_t * pixy_version;
+    uint32_t   version_length;
+    uint32_t   response;
+    uint16_t   version[3];
+    int        return_value;
 
-  pixy_command("version",  0, &response, &version_length, &pixy_version, 0);
-  printf("Pixy Firmware Version: %02x:%02x\n", pixy_version >> 8, pixy_version & 0xFF);
-  printf("Response: %d length: %d\n", response, version_length);
+    return_value = pixy_command("version",  0, &response, &version_length, &pixy_version, 0);
+
+    if (return_value) {
+      // Error //
+      printf("Failed to retrieve Pixy firmware version. Error: %d\n", return_value);
+    } else {
+      // Success //
+      memcpy((void *) version, pixy_version, 3 * sizeof(uint16_t));
+      printf("Pixy Firmware Version: %d.%d.%d\n", version[0], version[1], version[2]);
+    }
+  }
 
   for(;;)
   {

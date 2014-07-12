@@ -82,6 +82,18 @@ uint16_t PixyInterpreter::get_blocks(uint16_t max_blocks, Block * blocks)
   return number_of_blocks_to_copy;
 }
 
+int PixyInterpreter::send_command(const char * name, ...)
+{
+  va_list arguments;
+  int     return_value;
+
+  va_start(arguments, name);
+  return_value = send_command(name, arguments);
+  va_end(arguments);
+
+  return return_value;
+}
+
 int PixyInterpreter::send_command(const char * name, va_list args)
 {
   ChirpProc procedure_id;
@@ -92,8 +104,6 @@ int PixyInterpreter::send_command(const char * name, va_list args)
 
   // Request chirp procedure id for 'name'. //
   procedure_id = receiver_->getProc(name);
-
-  printf("procedure id = %u\n", procedure_id); // DEBUG //
 
   // Was there an error requesting procedure id? //
   if (procedure_id == -1) {
