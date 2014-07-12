@@ -58,6 +58,14 @@ extern "C"
   */
   uint16_t pixy_get_blocks(uint16_t max_blocks, struct Block * blocks);
   
+  /** 
+    @brief      Send a command to Pixy.
+    @param[in]  name  Chirp remote procedure call identifier string.
+    @return     -1    Error
+  
+  */
+  int pixy_command(const char *name, ...);
+  
   /**
     @brief Terminates connection with Pixy.
   */

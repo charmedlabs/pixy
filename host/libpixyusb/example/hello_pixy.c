@@ -38,14 +38,23 @@ int main(int argc, char * argv[])
 {
   int      index;
   uint16_t blocks_copied;
+  uint16_t pixy_version;
+  uint32_t version_length;
+  uint32_t response;
 
   // Catch CTRL+C (SIGINT) signals //
   signal(SIGINT, handle_SIGINT);
-
+  
   printf("Hello Pixy: libpixyusb Version: %s\n", __LIBPIXY_VERSION__);
-
+  
   // Connect to Pixy //
   pixy_init();
+
+  // Request Pixy firmware version //
+
+  pixy_command("version",  0, &response, &version_length, &pixy_version, 0);
+  printf("Pixy Firmware Version: %02x:%02x\n", pixy_version >> 8, pixy_version & 0xFF);
+  printf("Response: %d length: %d\n", response, version_length);
 
   for(;;)
   {

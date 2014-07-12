@@ -61,6 +61,14 @@ class PixyInterpreter : public Interpreter
       */
       uint16_t get_blocks(uint16_t max_blocks, Block * blocks);
 
+      /** 
+        @brief     Sends a command to Pixy. 
+        @param[in]     name       Remote procedure call identifier string.
+        @param[in,out] arguments  Argument list to function call.
+        @return    -1    Error
+      */
+      int send_command(const char * name, va_list arguments);
+
   private:
     
     ChirpReceiver *    receiver_;
