@@ -85,6 +85,7 @@ class PixyInterpreter : public Interpreter
     bool               thread_dead_;
     std::vector<Block> blocks_;
     boost::mutex       blocks_access_mutex_;
+    boost::mutex       chirp_access_mutex_;
 
     /**
       @brief  Interpreter thread entry point. 

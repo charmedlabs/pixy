@@ -68,6 +68,45 @@ int main(int argc, char * argv[])
     }
   }
 
+  // Pixy Command Examples //
+  {
+    int32_t response;
+    int     return_value;
+
+    // Execute remote procedure call "cam_setAWB" with one output (host->pixy) parameter (Value = 1)
+    //
+    //   Parameters:                 Notes:
+    //
+    //   pixy_command("cam_setAWB",  String identifier for remote procedure
+    //                        0x01,  Length (in bytes) of first output parameter
+    //                           1,  Value of first output parameter
+    //                           0,  Parameter list seperator token (See value of: END_OUT_ARGS)
+    //                   &response,  Pointer to memory address for return value from remote procedure call
+    //                           0); Parameter list seperator token (See value of: END_IN_ARGS)
+    //
+
+    // Enable auto white balance //
+    return_value = pixy_command("cam_setAWB", 0x01, 1, 0, &response, 0);
+
+    printf("Enabling auto white balance... Pixy Response: [%d]\n", response);
+
+    // Execute remote procedure call "cam_getAWB" with no output (host->pixy) parameters 
+    //
+    //   Parameters:                 Notes:
+    //
+    //   pixy_command("cam_setAWB",  String identifier for remote procedure
+    //                           0,  Parameter list seperator token (See value of: END_OUT_ARGS)
+    //                   &response,  Pointer to memory address for return value from remote procedure call
+    //                           0); Parameter list seperator token (See value of: END_IN_ARGS)
+    //
+
+    // Get auto white balance //
+    return_value = pixy_command("cam_getAWB", 0, &response, 0);
+
+    printf("Requesting auto white balance value... Response: %s\n",
+           (response == 1 ? "Enabled" : "Disabled"));
+  }
+
   for(;;)
   {
     // Get blocks from Pixy //

@@ -102,6 +102,9 @@ int PixyInterpreter::send_command(const char * name, va_list args)
 
   va_copy(arguments, args);
 
+  // Mutual exclusion for receiver_ object (Lock) //
+  chirp_access_mutex_.lock();
+
   // Request chirp procedure id for 'name'. //
   procedure_id = receiver_->getProc(name);
 
@@ -116,6 +119,9 @@ int PixyInterpreter::send_command(const char * name, va_list args)
   return_value = receiver_->call(SYNC, procedure_id, arguments); 
   va_end(arguments);
 
+  // Mutual exclusion for receiver_ object (Unlock) //
+  chirp_access_mutex_.unlock();
+
   return return_value;
 }
 
@@ -127,7 +133,13 @@ void PixyInterpreter::interpreter_thread()
   // protocol until we're told to stop.            //
 
   while(!thread_die_) {
+  // Mutual exclusion for receiver_ object (Lock) //
+    chirp_access_mutex_.lock();
+
     receiver_->service(false);
+
+    // Mutual exclusion for receiver_ object (Unlock) //
+    chirp_access_mutex_.unlock();
   }
 
   thread_dead_ = true;
