@@ -212,7 +212,7 @@ public:
     int registerModule(const ProcModule *module);
 
     int call(uint8_t service, ChirpProc proc, ...);
-    int call(uint8_t service, ChirpProc proc, va_list arguments);
+    int call(uint8_t service, ChirpProc proc, va_list args);
     static uint8_t getType(void *arg);
     int service(bool all=true);
     int assemble(uint8_t type, ...);

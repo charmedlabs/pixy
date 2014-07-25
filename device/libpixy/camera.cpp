@@ -587,7 +587,7 @@ void cam_loadParams()
 		"@c Camera Enables/disables Auto White Balance, 0=disabled, 1=enabled on startup, 2=always enabled (default 1)", UINT8(1), END);
 
 	prm_add("AWB Value", PRM_FLAG_HEX_FORMAT | PRM_FLAG_ADVANCED, 
-		"@c Camera Sets the Auto Exposure Correction value.  The parameter only applies when AWB Enable=0. Use the command \"cam_getWBV\" to get the current value (default 0x808080)", UINT32(0x808080), END);
+		"@c Camera Sets the Auto White Balance value.  The parameter only applies when AWB Enable=0. Use the command \"cam_getWBV\" to get the current value (default 0x808080)", UINT32(0x808080), END);
 
 	uint8_t brightness, aec, awb;
 	uint32_t ecv, wbv;
