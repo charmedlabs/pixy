@@ -187,7 +187,10 @@ bool ButtonMachine::handleSignature()
 			m_goto = 0;
 		else if (getTimer(m_timer)>BT_INITIAL_BUTTON_TIMEOUT)
 		{
-			m_index = 0;
+			if (cam_getAWB())
+				m_index = 1;
+			else
+				m_index = 0;
 			setTimer(&m_timer);
 			setLED();
 			m_goto = 2;

@@ -361,7 +361,7 @@ BlobA *Blobs::getMaxBlob(uint16_t signature)
     uint32_t area=0, ccArea=0;
     BlobA *blob=NULL, *ccBlob=NULL;
 
-    if (signature==0) // 0 means ignore signature
+    if (signature==0) // 0 means return the biggest regardless of signature number
     {
         if (m_numBlobs>0)
         {

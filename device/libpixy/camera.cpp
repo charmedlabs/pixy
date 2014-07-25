@@ -577,7 +577,33 @@ void cam_loadParams()
 	prm_add("Brightness", 0, 
 		"Sets the average brightness of the camera, can be between 0 and 255 (default 90)", UINT8(CAM_BRIGHTNESS_DEFAULT), END);
 
-	uint8_t brightness;
+	prm_add("AEC Enable", PRM_FLAG_ADVANCED, 
+		"@c Camera Enables/disables Auto Exposure Correction, 0=disabled, 1=enabled (default 1)", UINT8(1), END);
+
+	prm_add("AEC Value", PRM_FLAG_HEX_FORMAT | PRM_FLAG_ADVANCED, 
+		"@c Camera Sets the Auto Exposure Correction value.  The parameter only applies when AEC Enable=0. Use the command \"cam_getECV\" to get the current value (default 0)", UINT32(0), END);
+																		   
+	prm_add("AWB Enable", PRM_FLAG_ADVANCED, 
+		"@c Camera Enables/disables Auto White Balance, 0=disabled, 1=enabled on startup, 2=always enabled (default 1)", UINT8(1), END);
+
+	prm_add("AWB Value", PRM_FLAG_HEX_FORMAT | PRM_FLAG_ADVANCED, 
+		"@c Camera Sets the Auto Exposure Correction value.  The parameter only applies when AWB Enable=0. Use the command \"cam_getWBV\" to get the current value (default 0x808080)", UINT32(0x808080), END);
+
+	uint8_t brightness, aec, awb;
+	uint32_t ecv, wbv;
 	prm_get("Brightness", &brightness, END);
+	prm_get("AEC Enable", &aec, END);
+	prm_get("AEC Value", &ecv, END);
+	prm_get("AWB Enable", &awb, END);
+	prm_get("AWB Value", &wbv, END);
 	cam_setBrightness(brightness);
+	cam_setAEC(aec);
+	if (!aec)
+		cam_setECV(ecv);
+	if (awb==0 || awb==1)
+		cam_setAWB(0);
+	else if (awb==2)
+		cam_setAWB(1);
+	if (awb==0)
+		cam_setWBV(wbv);
 }
