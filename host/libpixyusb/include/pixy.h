@@ -22,15 +22,23 @@
 
 // Pixy C API //
 
+#ifdef __cplusplus
 extern "C"
 {
+#endif
+
+  #define TYPE_NORMAL        0
+  #define TYPE_COLOR_CODE    1
+  
   struct Block
   {
+    uint16_t type;
     uint16_t signature;
     uint16_t x;
     uint16_t y;
     uint16_t width;
     uint16_t height;
+    int16_t  angle;
   };
 
   /**
@@ -50,10 +58,21 @@ extern "C"
   */
   uint16_t pixy_get_blocks(uint16_t max_blocks, struct Block * blocks);
   
+  /** 
+    @brief      Send a command to Pixy.
+    @param[in]  name  Chirp remote procedure call identifier string.
+    @return     -1    Error
+  
+  */
+  int pixy_command(const char *name, ...);
+  
   /**
     @brief Terminates connection with Pixy.
   */
   void     pixy_close();
+
+#ifdef __cplusplus
 }
+#endif
 
 #endif

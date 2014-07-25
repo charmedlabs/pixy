@@ -1,5 +1,11 @@
 #!/bin/bash
 
+function query_library {
+  local TARGET=$1
+
+  find /usr 2> /dev/null | grep $TARGET$ | sed -n 's/'$TARGET'//p'
+}
+
 echo "=========================================================="
 echo "  Configuring libpixyusb"
 echo "=========================================================="
@@ -50,6 +56,22 @@ rm testcpp11.cpp
 ## Find libboost ##
 
 echo -n "dependency: libboost "
+
+echo ""
+
+unset $BOOSTLIB_PATH
+BOOSTLIB_PATH=$(query_library "libboost_thread.a")
+if [ ! -z "$BOOSTLIB_PATH" ] 
+then
+  echo "found [1]: < $BOOSTLIB_PATH >"
+fi
+
+unset $BOOSTLIB_PATH
+BOOSTLIB_PATH=$(query_library "libboost_thread-mt.a")
+if [ ! -z "$BOOSTLIB_PATH" ] 
+then
+  echo "found [1]: < $BOOSTLIB_PATH >"
+fi
 
 find /usr 2> /dev/null | grep $LIBBOOST$ | sed -n 's/'$LIBBOOST'//p' > configuration/LIBBOOST_PATH
 

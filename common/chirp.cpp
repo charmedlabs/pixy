@@ -400,18 +400,19 @@ int Chirp::loadArgs(va_list *args, void *recvArgs[])
     return CRP_RES_OK;
 }
 
-int Chirp::call(uint8_t service, ChirpProc proc, ...)
+int Chirp::call(uint8_t service, ChirpProc proc, va_list arguments)
 {
     int res, i;
     uint8_t type;
     va_list args;
+
+    va_copy(args, arguments);
 
     // if it's just a regular call (not init or enumerate), we need to be connected
     if (!(service&CRP_CALL) && !m_connected)
         return CRP_RES_ERROR_NOT_CONNECTED;
 
     // parse args and assemble in m_buf
-    va_start(args, proc);
     m_len = 0;
     // restore buffer in case it was changed
     restoreBuffer();
@@ -486,6 +487,15 @@ int Chirp::call(uint8_t service, ChirpProc proc, ...)
 
     va_end(args);
     return CRP_RES_OK;
+}
+
+int Chirp::call(uint8_t service, ChirpProc proc, ...)
+{
+  va_list arguments;
+
+  va_start(arguments, proc);
+  call(service, proc, arguments);
+  va_end(arguments);
 }
 
 int Chirp::sendChirpRetry(uint8_t type, ChirpProc proc)

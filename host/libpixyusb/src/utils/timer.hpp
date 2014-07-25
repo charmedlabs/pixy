@@ -18,14 +18,7 @@
 
 #include <stdint.h>
 #include <string>
-
-#ifdef __USING_CXX11__
-#include <chrono>
-#elif  __USING_BOOST__
 #include <boost/chrono.hpp>
-#else
-#error C++11 or boost libraries required for timer support.
-#endif
 
 namespace util
 {
@@ -38,15 +31,9 @@ namespace util
       void     reset();
       uint32_t elapsed();
 
-      std::string implementation();
-
     private:
     
-      #ifdef __USING_CXX11__
-      std::chrono::steady_clock::time_point   epoch_;
-      #elif  __USING_BOOST__
       boost::chrono::steady_clock::time_point epoch_;
-      #endif
   };
 }
 

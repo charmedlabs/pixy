@@ -17,14 +17,11 @@
 #define __PIXYINTERPRETER_HPP__
 
 #include <vector>
-#ifdef __USING_CXX11__
-#include <thread>
-#elif  __USING_BOOST__
 #include <boost/thread.hpp>
-#endif
+#include <boost/thread/mutex.hpp>
+#include "pixytypes.h"
 #include "pixy.h"
 #include "usblink.h"
-#include "utils/mutex.hpp"
 #include "interpreter.hpp"
 #include "chirpreceiver.hpp"
 
@@ -64,19 +61,31 @@ class PixyInterpreter : public Interpreter
       */
       uint16_t get_blocks(uint16_t max_blocks, Block * blocks);
 
+      /** 
+        @brief         Sends a command to Pixy. 
+        @param[in]     name       Remote procedure call identifier string.
+        @param[in,out] arguments  Argument list to function call.
+        @return        -1         Error
+      */
+      int send_command(const char * name, va_list arguments);
+      
+      /** 
+        @brief         Sends a command to Pixy. 
+        @param[in]     name       Remote procedure call identifier string.
+        @return        -1         Error
+      */
+      int send_command(const char * name, ...);
+
   private:
     
     ChirpReceiver *    receiver_;
     USBLink            link_;
-    #ifdef __USING_CXX11__
-    std::thread        thread_;
-    #elif  __USING_BOOST__
     boost::thread      thread_;
-    #endif
     bool               thread_die_;
     bool               thread_dead_;
     std::vector<Block> blocks_;
-    util::mutex        blocks_access_mutex_;
+    boost::mutex       blocks_access_mutex_;
+    boost::mutex       chirp_access_mutex_;
 
     /**
       @brief  Interpreter thread entry point. 
@@ -97,11 +106,36 @@ class PixyInterpreter : public Interpreter
     void interpret_data(void * chrip_data[]);
 
     /**
-      @brief Interprets CCB1 'block' objects sent from Pixy.
+      @brief Interprets CCB1 messages sent from Pixy.
 
       @param[in] data  Incoming Chirp protocol data from Pixy.
     */
-    void interpret_CCB1(void * CCB1_data[]);
+    void interpret_CCB1(void * data[]);
+    
+    /**
+      @brief Interprets CCB2 messages sent from Pixy.
+
+      @param[in] data  Incoming Chirp protocol data from Pixy.
+    */
+    void interpret_CCB2(void * data[]);
+
+    /**
+      @brief Adds blocks with normal signatures to the PixyInterpreter
+             'blocks_' buffer.
+
+      @param[in] blocks  An array of normal signature blocks to add to buffer.
+      @param[in] count   Size of the 'blocks' array.
+    */
+    void add_normal_blocks(BlobA * blocks, uint32_t count);
+    
+    /**
+      @brief Adds blocks with color code signatures to the PixyInterpreter
+             'blocks_' buffer.
+
+      @param[in] blocks  An array of color code signature blocks to add to buffer.
+      @param[in] count   Size of the 'blocks' array.
+    */
+    void add_color_code_blocks(BlobB * blocks, uint32_t count);
 };
 
 #endif
