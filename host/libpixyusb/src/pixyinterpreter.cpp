@@ -185,9 +185,6 @@ void PixyInterpreter::interpret_data(void * chirp_data[])
 
       case CRP_HSTRING:
 
-        // Pixy debug message //
-
-        printf("libpixy (DEBUG): %s\n", static_cast<char *>(chirp_data[0]));
         break;
       
       default:
