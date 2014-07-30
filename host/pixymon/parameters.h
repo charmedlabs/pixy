@@ -2,105 +2,71 @@
 #define PARAMETERS_H
 
 #include <QString>
+#include <QVariant>
+#include <QList>
 #include <vector>
 
-class Value
+struct RadioValue
 {
-public:
-    Value(const QString &description,  int value)
+    RadioValue(const QString &description,  const QVariant &value)
     {
         m_description = description;
         m_value = value;
     }
 
-    const QString &description()
-    {
-        return m_description;
-    }
-
-    int value()
-    {
-        return m_value;
-    }
-
-    // meant to only be used for continuous values
-    void setValue(int value)
-    {
-        m_value = value;
-        m_description = QString::number(value);
-    }
-
-    // meant to only be used for continuous values
-    void setDescription(const QString &description)
-    {
-        m_value = description.toInt();
-        m_description = description;
-     }
-
-private:
     QString m_description;
-    int m_value;
+    QVariant m_value;
 };
 
-typedef std::vector<Value> Values;
 
-class ParameterList;
+typedef QList<RadioValue> RadioValues;
 
 class Parameter
 {
 public:
-    Parameter(const QString &id, bool continuous=false);
+    Parameter(const QString &id);
     ~Parameter();
 
-    Value *getValue();
-    int get();
+    const QString &id();
+    const QVariant &value();
+    const QString *description();
 
-    int setValue(int value);
-    int setValue(const QString &desc);
+    int set(const QVariant &value);
+    int set(const QString &description);
 
-    void add(const Value &data);
+    void addRadioValue(const RadioValue &value);
     void onOff();
     void trueFalse();
 
-    const QString &getId()
-    {
-        return m_id;
-    }
-
-    Values *getValues()
-    {
-        return &m_values;
-    }
-
 private:
-    Values m_values;
+    RadioValues m_radioValues; // m_radioValues.size()>0 we're a radio parameter
+    int m_radioValue;
+    QVariant m_value; // else we're just a regular parameter with value in m_value.
+
     QString m_id;
-    int m_value; // index
-    bool m_continuous;
 };
 
 
-typedef std::vector<Parameter> Parameters;
+typedef QList<Parameter> Parameters;
 
-class ParameterList
+class ParameterDB
 {
 public:
-    ParameterList();
-    ~ParameterList();
+    ParameterDB();
+    ~ParameterDB();
 
-    Value *getData(const QString &id);
-    Parameter *getValues(const QString &id);
-    Parameters *getValues();
-    int get(const QString &id);
-    const QString getDescription(const QString &id);
-    int set(const QString &id, const QString &desc);
-    int set(const QString &id, int value);
+    const QVariant *value(const QString &id);
+    Parameter *parameter(const QString &id);
+    const QString *description(const QString &id);
 
-    void add(const Parameter &data);
-    void add(const QString &id, const QString &desc); // continuous
+    Parameters &parameters();
+    int set(const QString &id, const QVariant &value);
+    int set(const QString &id, const QString &description);
+
+    void add(const Parameter &parameter);
 
 private:
-    Parameters m_values;
+    Parameters m_parameters;
 };
 
 #endif // PARAMETERS_H

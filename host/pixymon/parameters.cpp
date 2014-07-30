@@ -1,191 +1,160 @@
 #include <stdexcept>
 #include "parameters.h"
 
-Parameter::Parameter(const QString &id, bool continuous)
+
+Parameter::Parameter(const QString &id)
 {
     m_id = id;
-    m_value = -1; // invalid
-    m_continuous = continuous;
-    if (continuous)
-    {
-        m_values.push_back(Value("0", 0));
-        m_value = 0;
-    }
+    m_radioValue = 0;
 }
-
 
 Parameter::~Parameter()
 {
 }
 
-Value *Parameter::getValue()
+const QString &Parameter::id()
 {
-    if (m_value>=0)
-        return &m_values[m_value];
+    return m_id;
+}
+
+const QVariant &Parameter::value()
+{
+    if (m_radioValues.size()>0)
+        return m_radioValues[m_radioValue].m_value;
     else
-        return NULL;
+        return m_value;
 }
 
-int Parameter::get()
+const QString *Parameter::description()
 {
-    if (m_value>=0)
-        return m_values[m_value].value();
-    return -1;
+    if (m_radioValues.size()>0)
+        return &m_radioValues[m_radioValue].m_description;
+    return NULL;
 }
 
-int Parameter::setValue(int value)
+int Parameter::set(const QVariant &value)
 {
-    unsigned int i;
-
-    if (m_continuous)
+    if (m_radioValues.size()>0)
     {
-        m_values[0].setValue(value);
-        return 0;
-    }
-
-    for (i=0; i<m_values.size(); i++)
-    {
-        if (m_values[i].value()==value)
+        for (int i=0; i<m_radioValues.size(); i++)
         {
-            m_value = i;
-            return 0;
+            if (m_radioValues[i].m_value==value)
+            {
+                m_radioValue = i;
+                return 0;
+            }
+        }
+        return -1;
+    }
+    else
+        m_value = value;
+
+    return 0;
+}
+
+int Parameter::set(const QString &description)
+{
+    if (m_radioValues.size()>0)
+    {
+        for (int i=0; i<m_radioValues.size(); i++)
+        {
+            if (QString::compare(m_radioValues[i].m_description, description, Qt::CaseInsensitive)==0)
+            {
+                m_radioValue = i;
+                return 0;
+            }
         }
     }
 
     return -1;
 }
 
-int Parameter::setValue(const QString &desc)
+void Parameter::addRadioValue(const RadioValue &value)
 {
-    unsigned int i;
-
-    if (m_continuous)
-    {
-        m_values[0].setDescription(desc);
-        return 0;
-    }
-
-    for (i=0; i<m_values.size(); i++)
-    {
-        if (m_values[i].description()==desc)
-        {
-            m_value = i;
-            return 0;
-        }
-    }
-    return -1;
-}
-
-
-void Parameter::add(const Value &data)
-{
-    m_values.push_back(data);
+    m_radioValues.push_back(value);
 }
 
 void Parameter::onOff()
 {
-    add(Value("Off", 0));
-    add(Value("On", 1));
+    addRadioValue(RadioValue("Off", 0));
+    addRadioValue(RadioValue("On", 1));
 }
 
 void Parameter::trueFalse()
 {
-    add(Value("False", 0));
-    add(Value("True", 1));
-}
-
-ParameterList::ParameterList()
-{
+    addRadioValue(RadioValue("True", 0));
+    addRadioValue(RadioValue("False", 1));
 }
 
 
-ParameterList::~ParameterList()
+
+
+ParameterDB::ParameterDB()
 {
 }
 
-
-Value *ParameterList::getData(const QString &id)
+ParameterDB::~ParameterDB()
 {
-    Parameter *data = getValues(id);
-    if (data)
-        return data->getValue();
-    else
-        return NULL;
- }
+}
 
-Parameter *ParameterList::getValues(const QString &id)
+const QVariant *ParameterDB::value(const QString &id)
 {
-    unsigned int i;
-
-    for (i=0; i<m_values.size(); i++)
+    for (int i=0; i<m_parameters.size(); i++)
     {
-        if (m_values[i].getId()==id)
-            return &m_values[i];
+        if (QString::compare(m_parameters[i].id(), id, Qt::CaseInsensitive)==0)
+            return &m_parameters[i].value();
     }
-
     return NULL;
 }
 
-Parameters *ParameterList::getValues()
+Parameter *ParameterDB::parameter(const QString &id)
 {
-    return &m_values;
+    for (int i=0; i<m_parameters.size(); i++)
+    {
+        if (QString::compare(m_parameters[i].id(), id, Qt::CaseInsensitive)==0)
+            return &m_parameters[i];
+    }
+    return NULL;
 }
 
-
-int ParameterList::get(const QString &id)
+const QString *ParameterDB::description(const QString &id)
 {
-    Value *data;
-
-    data = getData(id);
-
-    if (data)
-        return data->value();
-    else
-        return -1;
+    for (int i=0; i<m_parameters.size(); i++)
+    {
+        if (QString::compare(m_parameters[i].id(), id, Qt::CaseInsensitive)==0)
+            return m_parameters[i].description();
+    }
+    return NULL;
 }
 
-const QString ParameterList::getDescription(const QString &id)
+Parameters &ParameterDB::parameters()
 {
-    Value *data;
-
-    data = getData(id);
-
-    if (data)
-        return data->description();
-    else
-        return "";
+    return m_parameters;
 }
 
-int ParameterList::set(const QString &id, const QString &desc)
+int ParameterDB::set(const QString &id, const QVariant &value)
 {
-    Parameter *list = getValues(id);
-    if (list)
-        return list->setValue(desc);
-    else
-        return -1;
+    for (int i=0; i<m_parameters.size(); i++)
+    {
+        if (QString::compare(m_parameters[i].id(), id, Qt::CaseInsensitive)==0)
+            return m_parameters[i].set(value);
+    }
+    return -1;
 }
 
-int ParameterList::set(const QString &id, int value)
+int ParameterDB::set(const QString &id, const QString &description)
 {
-    Parameter *list = getValues(id);
-    if (list)
-        return list->setValue(value);
-    else
-        return -1;
+    for (int i=0; i<m_parameters.size(); i++)
+    {
+        if (QString::compare(m_parameters[i].id(), id, Qt::CaseInsensitive)==0)
+            return m_parameters[i].set(description);
+    }
+    return -1;
 }
 
-
-void ParameterList::add(const Parameter &data)
+void ParameterDB::add(const Parameter &parameter)
 {
-    m_values.push_back(data);
+    m_parameters.push_back(parameter);
 }
-
-void ParameterList::add(const QString &id, const QString &desc)
-{
-    Parameter data(id, true);
-    data.setValue(desc);
-    m_values.push_back(data);
-}
-
 
 

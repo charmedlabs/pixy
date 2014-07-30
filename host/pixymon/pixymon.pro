@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui widgets
+QT       += core gui widgets xml
 
 TARGET = PixyMon
 TEMPLATE = app
@@ -31,7 +31,8 @@ SOURCES += main.cpp\
     ../../common/qqueue.cpp \
     configdialog.cpp \
     aboutdialog.cpp \
-    parameters.cpp
+    parameters.cpp \
+    paramfile.cpp
 
 HEADERS  += mainwindow.h \
     videowidget.h \
@@ -61,7 +62,8 @@ HEADERS  += mainwindow.h \
     ../../common/link.h \
     sleeper.h \
     aboutdialog.h \
-    parameters.h
+    parameters.h \
+    paramfile.h
 
 INCLUDEPATH += ../../common
 

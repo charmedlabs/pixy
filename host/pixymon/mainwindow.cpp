@@ -20,6 +20,9 @@
 #include <QMetaType>
 #include <QSettings>
 #include <QDesktopServices>
+#if QT_VERSION>QT_VERSION_CHECK(5,0,0)
+#include <QStandardPaths>
+#endif
 #include <QUrl>
 #include "mainwindow.h"
 #include "pixymon.h"
@@ -33,6 +36,9 @@
 #include "configdialog.h"
 #include "sleeper.h"
 #include "aboutdialog.h"
+
+#include "parameters.h"
+#include "paramfile.h"
 
 extern ChirpProc c_grabFrame;
 
@@ -85,6 +91,55 @@ MainWindow::MainWindow(int argc, char *argv[], QWidget *parent) :
     m_connect = new ConnectEvent(this);
     if (m_connect->getConnected()==NONE)
         m_console->error("No Pixy devices have been detected.\n");
+
+#if 0
+    ParameterDB db;
+
+    Parameter picOrder("Picture Order");
+    picOrder.add(Value("Column-right", 1));
+    picOrder.add(Value("Column-left", 2));
+    picOrder.add(Value("Row-down", 3));
+    picOrder.add(Value("Row-up", 4));
+    db.add(picOrder);
+
+    Parameter outputFormat("Debug output format");
+    outputFormat.add(Value("Matlab", 1));
+    outputFormat.add(Value("Python", 2));
+    outputFormat.add(Value("R", 3));
+    outputFormat.add(Value("Octave", 4));
+    db.add(outputFormat);
+#endif
+#if 0
+    ParameterDB db2;
+
+    Parameter a("a param");
+    a.add(Value("aa", 1));
+    a.add(Value("bb", 2));
+    db2.add(a);
+
+    Parameter b("b param");
+    b.add(Value("cc", 1));
+    b.add(Value("dd", 2));
+    db2.add(b);
+
+
+    ParamFile pfile;
+
+    pfile.open("out.param", false);
+    pfile.write("pixymon", &db);
+    //pfile.write("blah", &db2);
+    pfile.close();
+
+    db.set("Picture Order", "Row-up");
+    db.set("Debug output format", "R");
+    db2.set("a param", "bb");
+    db2.set("b param", "dd");
+
+    pfile.open("out.param", true);
+    //pfile.read("blah", &db2);
+    pfile.read("pixymon", &db);
+    pfile.close();
+#endif
 }
 
 MainWindow::~MainWindow()
@@ -538,7 +593,11 @@ void MainWindow::on_actionSave_Image_triggered()
 
     if (m_interpreter)
     {
+#if QT_VERSION>QT_VERSION_CHECK(5,0,0)
+        docPath = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+#else
         docPath = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation);
+#endif
         QDir dir(docPath);
 
         if (!dir.exists(PM_DEFAULT_DATA_DIR))
