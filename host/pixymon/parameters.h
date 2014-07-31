@@ -4,7 +4,11 @@
 #include <QString>
 #include <QVariant>
 #include <QList>
-#include <vector>
+
+#define PP_DESCRIPTION  "description"
+#define PP_CATEGORY     "category"
+#define PP_WIDGET       "widget"
+#define PP_FLAGS        "flags"
 
 struct RadioValue
 {
@@ -21,8 +25,10 @@ struct RadioValue
 
 typedef QList<RadioValue> RadioValues;
 
-class Parameter
+class Parameter : public QObject
 {
+    Q_OBJECT
+
 public:
     Parameter(const QString &id);
     ~Parameter();
@@ -32,7 +38,7 @@ public:
     const QString *description();
 
     int set(const QVariant &value);
-    int set(const QString &description);
+    int setRadio(const QString &description);
 
     void addRadioValue(const RadioValue &value);
     void onOff();
@@ -47,7 +53,7 @@ private:
 };
 
 
-typedef QList<Parameter> Parameters;
+typedef QList<Parameter *> Parameters;
 
 class ParameterDB
 {
@@ -63,7 +69,7 @@ public:
     int set(const QString &id, const QVariant &value);
     int set(const QString &id, const QString &description);
 
-    void add(const Parameter &parameter);
+    void add(Parameter *parameter);
 
 private:
     Parameters m_parameters;

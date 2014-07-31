@@ -22,6 +22,7 @@
 #include <QThread>
 #include <QTableWidget>
 #include "chirpmon.h"
+#include "parameters.h"
 #include "ui_configdialog.h"
 #include <vector>
 
@@ -121,6 +122,8 @@ private:
     bool m_loading;
     bool m_rejecting;
     bool m_applying;
+
+    ParameterDB m_parameters;
 
     QThread m_thread;
 };

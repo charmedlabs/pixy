@@ -49,10 +49,10 @@ int ParamFile::write(const QString &tag, ParameterDB *data)
         for (i=0; i<parameters.size(); i++)
         {
             QDomElement item = m_doc->createElement("data");
-            item.setAttribute("key", parameters[i].id());
-            if (parameters[i].description())
+            item.setAttribute("key", parameters[i]->id());
+            if (parameters[i]->description())
             {
-                item.setAttribute("value", *parameters[i].description());
+                item.setAttribute("value", *parameters[i]->description());
                 element.appendChild(item);
             }
         }

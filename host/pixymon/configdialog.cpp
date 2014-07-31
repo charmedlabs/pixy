@@ -74,13 +74,10 @@ void ConfigWorker::load()
         if (res<0)
             break;
 
-        QString sdesc(desc);
-
         if (response<0)
             break;
 
-        if (flags&PRM_FLAG_INTERNAL)
-            continue;
+        QString sdesc(desc);
 
         // deal with param category
         QStringList words = QString(desc).split(QRegExp("\\s+"));
@@ -95,7 +92,43 @@ void ConfigWorker::load()
         else
             category = CD_GENERAL;
 
-        m_dialog->m_paramList.push_back(Param(id, category, "("+typeString(argList[0])+") "+sdesc, argList[0], flags, len, data));
+        Parameter *parameter = new Parameter(id);
+        parameter->setProperty(PP_CATEGORY, category);
+        parameter->setProperty(PP_DESCRIPTION, "("+typeString(argList[0])+") "+sdesc);
+        parameter->setProperty(PP_FLAGS, flags);
+        if (strlen((char *)argList)>1)
+        {
+            QByteArray dataArray((char *)data, len);
+            parameter->set(dataArray);
+        }
+        else
+        {
+            if (argList[0]==CRP_INT8)
+            {
+                int8_t val;
+                Chirp::deserialize(data, len, &val, END);
+                parameter->set(QVariant(QMetaType::Char, &val));
+            }
+            else if (argList[0]==CRP_INT16)
+            {
+                int16_t val;
+                Chirp::deserialize(data, len, &val, END);
+                parameter->set(QVariant(QMetaType::Short, &val));
+            }
+            else if (argList[0]==CRP_INT32)
+            {
+                int32_t val;
+                Chirp::deserialize(data, len, &val, END);
+                parameter->set(QVariant(QMetaType::Long, &val));
+            }
+            else if (argList[0]==CRP_FLT32)
+            {
+                float val;
+                Chirp::deserialize(data, len, &val, END);
+                parameter->set(QVariant(QMetaType::Float, &val));
+            }
+        }
+        m_dialog->m_parameters.add(parameter);
     }
 
     qDebug("loaded");
@@ -231,97 +264,59 @@ QWidget *ConfigDialog::findCategory(const QString &category)
 
 void ConfigDialog::loaded()
 {
-    uint i;
+    int i;
     QWidget *tab;
     QGridLayout *layout;
 
     qDebug("rendering config...");
-    for (i=0; i<m_paramList.size(); i++)
+    Parameters &parameters = m_parameters.parameters();
+
+    for (i=0; i<parameters.size(); i++)
     {
-        Param &param = m_paramList[i];
+        Parameter *parameter = parameters[i];
+        uint flags = parameter->property(PP_FLAGS).toInt();
 
-        param.m_line = new QLineEdit();
-        param.m_label = new QLabel(param.m_id);
-        param.m_label->setToolTip(param.m_desc);
-        param.m_label->setAlignment(Qt::AlignRight);
+        if (flags&PRM_FLAG_INTERNAL) // don't render!
+            continue;
 
-        if (param.m_type==CRP_INT8)
+        QLineEdit *line = new QLineEdit();
+        QLabel *label = new QLabel(parameter->id());
+        label->setToolTip(parameter->property(PP_DESCRIPTION).toString());
+        label->setAlignment(Qt::AlignRight);
+
+        if ((QMetaType::Type)parameter->value().type()!=QMetaType::QByteArray) // make sure it's a scalar type
         {
-            int8_t val;
-            Chirp::deserialize(param.m_data, param.m_len, &val, END);
-            if (param.m_flags&PRM_FLAG_SIGNED)
+            if ((QMetaType::Type)parameter->value().type()==QMetaType::Float)
             {
-                if (param.m_flags&PRM_FLAG_HEX_FORMAT)
-                    param.m_line->setText("0x" + QString::number(val, 16));
+                float val = parameter->value().toFloat();
+                line->setText(QString::number(val, 'f', 3));
+            }
+            else if (!(flags&PRM_FLAG_SIGNED))
+            {
+                uint val = parameter->value().toUInt();
+                if (flags&PRM_FLAG_HEX_FORMAT)
+                    line->setText("0x" + QString::number(val, 16));
                 else
-                    param.m_line->setText(QString::number(val));
+                    line->setText(QString::number(val));
             }
             else
-            {
-                if (param.m_flags&PRM_FLAG_HEX_FORMAT)
-                    param.m_line->setText("0x" + QString::number((uint8_t)val, 16));
-                else
-                    param.m_line->setText(QString::number((uint8_t)val));
-            }
-        }
-        else if (param.m_type==CRP_INT16)
-        {
-            int16_t val;
-            Chirp::deserialize(param.m_data, param.m_len, &val, END);
-            if (param.m_flags&PRM_FLAG_SIGNED)
-            {
-                if (param.m_flags&PRM_FLAG_HEX_FORMAT)
-                    param.m_line->setText("0x" + QString::number(val, 16));
-                else
-                    param.m_line->setText(QString::number(val));
-            }
-            else
-            {
-                if (param.m_flags&PRM_FLAG_HEX_FORMAT)
-                    param.m_line->setText("0x" + QString::number((uint16_t)val, 16));
-                else
-                    param.m_line->setText(QString::number((uint16_t)val));
-            }
-        }
-        else if (param.m_type==CRP_INT32)
-        {
-            int32_t val;
-            Chirp::deserialize(param.m_data, param.m_len, &val, END);
-            if (param.m_flags&PRM_FLAG_SIGNED)
-            {
-                if (param.m_flags&PRM_FLAG_HEX_FORMAT)
-                    param.m_line->setText("0x" + QString::number(val, 16));
-                else
-                    param.m_line->setText(QString::number(val));
-            }
-            else
-            {
-                if (param.m_flags&PRM_FLAG_HEX_FORMAT)
-                    param.m_line->setText("0x" + QString::number((uint32_t)val, 16));
-                else
-                    param.m_line->setText(QString::number((uint32_t)val));
-            }
-        }
-        else if (param.m_type==CRP_FLT32)
-        {
-            float val;
-            Chirp::deserialize(param.m_data, param.m_len, &val, END);
-            param.m_line->setText(QString::number(val, 'f', 3));
-        }
+                line->setText(parameter->value().toString());
 
-        // deal with categories-- create category tab if needed
-        tab = findCategory(param.m_category);
-        if (tab==NULL)
-        {
-            tab = new QWidget();
-            layout = new QGridLayout(tab);
-            m_tabs->addTab(tab, param.m_category);
+            // deal with categories-- create category tab if needed
+            QString category = parameter->property(PP_CATEGORY).toString();
+            tab = findCategory(category);
+            if (tab==NULL)
+            {
+                tab = new QWidget();
+                layout = new QGridLayout(tab);
+                m_tabs->addTab(tab, category);
+            }
+            else
+                layout = (QGridLayout *)tab->layout();
+            line->setMaximumWidth(75);
+            layout->addWidget(label, i, 0);
+            layout->addWidget(line, i, 1);
         }
-        else
-            layout = (QGridLayout *)tab->layout();
-        param.m_line->setMaximumWidth(75);
-        layout->addWidget(param.m_label, i, 0);
-        layout->addWidget(param.m_line, i, 1);
     }
     m_loading = false;
 
