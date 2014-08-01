@@ -2,9 +2,10 @@
 #include "parameters.h"
 
 
-Parameter::Parameter(const QString &id)
+Parameter::Parameter(const QString &id, const QString &help)
 {
     m_id = id;
+    m_help = help;
     m_radioValue = 0;
     m_dirty = false;
 }
@@ -95,6 +96,11 @@ void Parameter::setDirty(bool dirty)
 bool Parameter::dirty()
 {
     return m_dirty;
+}
+
+const QString &Parameter::help()
+{
+    return m_help;
 }
 
 void Parameter::setProperty(const QString &label, const QVariant &val)

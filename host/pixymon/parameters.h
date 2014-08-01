@@ -5,7 +5,6 @@
 #include <QVariant>
 #include <QList>
 
-#define PP_DESCRIPTION  "description"
 #define PP_CATEGORY     "category"
 #define PP_WIDGET       "widget"
 #define PP_FLAGS        "flags"
@@ -29,7 +28,7 @@ typedef QList<RadioValue> RadioValues;
 class Parameter
 {
 public:
-    Parameter(const QString &id);
+    Parameter(const QString &id, const QString &help="");
     ~Parameter();
 
     const QString &id();
@@ -45,6 +44,8 @@ public:
     void onOff();
     void trueFalse();
 
+    const QString &help();
+
     void setProperty(const QString &label, const QVariant &val);
     QVariant property(const QString &label);
 
@@ -54,6 +55,7 @@ private:
     QVariant m_value; // else we're just a regular parameter with value in m_value.
 
     QString m_id;
+    QString m_help;
     bool m_dirty;
     QList<QPair<QString, QVariant> > m_properties;
 };

@@ -16,6 +16,7 @@
 #include "interpreter.h"
 #include "configdialog.h"
 #include "pixytypes.h"
+#include "paramfile.h"
 #include <QLabel>
 #include <QMessageBox>
 #include <QDebug>
@@ -33,16 +34,16 @@ ConfigWorker::~ConfigWorker()
 {
 }
 
-QString typeString(uint8_t type)
+QString typeString(uint8_t type, uint32_t flags)
 {
     switch(type)
     {
     case CRP_INT8:
-        return "INT8";
+        return flags&PRM_FLAG_SIGNED ? "INT8" : "UINT8";
     case CRP_INT16:
-        return "INT16";
+        return flags&PRM_FLAG_SIGNED ? "INT16" : "UINT16";
     case CRP_INT32:
-        return "INT32";
+        return flags&PRM_FLAG_SIGNED ? "INT32" : "UINT32";
     case CRP_FLT32:
         return "FLOAT32";
     default:
@@ -92,15 +93,15 @@ void ConfigWorker::load()
         else
             category = CD_GENERAL;
 
-        Parameter parameter(id);
+        Parameter parameter(id, "("+typeString(argList[0], flags)+") "+sdesc);
         parameter.setProperty(PP_CATEGORY, category);
-        parameter.setProperty(PP_DESCRIPTION, "("+typeString(argList[0])+") "+sdesc);
         parameter.setProperty(PP_FLAGS, flags);
         if (strlen((char *)argList)>1)
         {
-            QByteArray dataArray((char *)data, len);
-            parameter.set(dataArray);
-        }        else
+            QByteArray a((char *)data, len);
+            parameter.set(a);
+        }
+        else
         {
             // save off type
             parameter.setProperty(PP_TYPE, QVariant(QMetaType::UChar, argList));
@@ -116,6 +117,11 @@ void ConfigWorker::load()
                 float val;
                 Chirp::deserialize(data, len, &val, END);
                 parameter.set(val);
+            }
+            else // not sure what to do with it, so we'll save it as binary
+            {
+                QByteArray a((char *)data, len);
+                parameter.set(a);
             }
         }
         m_dialog->m_parameters.add(parameter);
@@ -160,7 +166,7 @@ void ConfigWorker::save()
                 len = Chirp::serialize(NULL, buf, 0x100, type, val, END);
             }
             else
-                continue; // don't know what to do
+                continue; // don't know what to do!
 
             res = m_dialog->m_interpreter->m_chirp->callSync(prm_set, STRING(id), UINTS8(len, buf), END_OUT_ARGS, &response, END_IN_ARGS);
             if (res<0 || response<0)
@@ -334,7 +340,7 @@ void ConfigDialog::loaded()
 
         QLineEdit *line = new QLineEdit();
         QLabel *label = new QLabel(parameter.id());
-        label->setToolTip(parameter.property(PP_DESCRIPTION).toString());
+        label->setToolTip(parameter.help());
         label->setAlignment(Qt::AlignRight);
         qlonglong lline = (qlonglong)line;
         parameter.setProperty(PP_WIDGET, lline);
@@ -390,6 +396,12 @@ void ConfigDialog::loaded()
     }
     m_loading = false;
 
+    ParamFile pfile;
+
+    pfile.open("pixyparameters.xml", false);
+    pfile.write("Pixyparams", &m_parameters);
+    pfile.close();
+
     // set stretch on all tabs
     for (i=0; true; i++)
     {
@@ -413,6 +425,12 @@ void ConfigDialog::loaded()
 
 void ConfigDialog::saved()
 {
+    ParamFile pf;
+    pf.open("pixyparameters.xml", true);
+    m_parameters.set("signature1", QVariant(0));
+    pf.read("Pixyparams", &m_parameters);
+    pf.close();
+
     if (!m_applying)
     {
         emit done();
