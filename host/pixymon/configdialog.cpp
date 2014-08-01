@@ -92,40 +92,30 @@ void ConfigWorker::load()
         else
             category = CD_GENERAL;
 
-        Parameter *parameter = new Parameter(id);
-        parameter->setProperty(PP_CATEGORY, category);
-        parameter->setProperty(PP_DESCRIPTION, "("+typeString(argList[0])+") "+sdesc);
-        parameter->setProperty(PP_FLAGS, flags);
+        Parameter parameter(id);
+        parameter.setProperty(PP_CATEGORY, category);
+        parameter.setProperty(PP_DESCRIPTION, "("+typeString(argList[0])+") "+sdesc);
+        parameter.setProperty(PP_FLAGS, flags);
         if (strlen((char *)argList)>1)
         {
             QByteArray dataArray((char *)data, len);
-            parameter->set(dataArray);
-        }
-        else
+            parameter.set(dataArray);
+        }        else
         {
-            if (argList[0]==CRP_INT8)
+            // save off type
+            parameter.setProperty(PP_TYPE, QVariant(QMetaType::UChar, argList));
+
+            if (argList[0]==CRP_INT8 || argList[0]==CRP_INT16 || argList[0]==CRP_INT32)
             {
-                int8_t val;
+                int32_t val = 0;
                 Chirp::deserialize(data, len, &val, END);
-                parameter->set(QVariant(QMetaType::Char, &val));
-            }
-            else if (argList[0]==CRP_INT16)
-            {
-                int16_t val;
-                Chirp::deserialize(data, len, &val, END);
-                parameter->set(QVariant(QMetaType::Short, &val));
-            }
-            else if (argList[0]==CRP_INT32)
-            {
-                int32_t val;
-                Chirp::deserialize(data, len, &val, END);
-                parameter->set(QVariant(QMetaType::Long, &val));
+                parameter.set(QVariant(val));
             }
             else if (argList[0]==CRP_FLT32)
             {
                 float val;
                 Chirp::deserialize(data, len, &val, END);
-                parameter->set(QVariant(QMetaType::Float, &val));
+                parameter.set(val);
             }
         }
         m_dialog->m_parameters.add(parameter);
@@ -135,61 +125,49 @@ void ConfigWorker::load()
     emit loaded();
 }
 
+
 void ConfigWorker::save()
 {
     QMutexLocker locker(&m_dialog->m_interpreter->m_chirp->m_mutex);
-    uint i;
+    int i;
     int res, response;
 
     ChirpProc prm_set = m_dialog->m_interpreter->m_chirp->getProc("prm_set");
     if (prm_set<0)
         return;
 
-    for (i=0; i<m_dialog->m_paramList.size(); i++)
+    Parameters &parameters = m_dialog->m_parameters.parameters();
+
+    for (i=0; i<parameters.size(); i++)
     {
         uint8_t buf[0x100];
-        Param &param = m_dialog->m_paramList[i];
-        QByteArray str = param.m_id.toUtf8();
-        const char *id = str.constData();
-        if (param.m_type==CRP_INT8 || param.m_type==CRP_INT16 || param.m_type==CRP_INT32)
+
+        if (parameters[i].dirty())
         {
-            int val, base;
-            bool ok;
-            if (param.m_line->text().left(2)=="0x")
-                base = 16;
+            int len;
+            QByteArray str = parameters[i].id().toUtf8();
+            const char *id = str.constData();
+            QChar type = parameters[i].property(PP_TYPE).toChar();
+
+            if (type==CRP_INT8 || type==CRP_INT16 || type==CRP_INT32)
+            {
+                int val = parameters[i].value().toInt();
+                len = Chirp::serialize(NULL, buf, 0x100, type, val, END);
+            }
+            else if (type==CRP_FLT32)
+            {
+                float val = parameters[i].value().toFloat();
+                len = Chirp::serialize(NULL, buf, 0x100, type, val, END);
+            }
             else
-                base = 10;
-            val = param.m_line->text().toInt(&ok, base);
-            if (!ok)
-            {
-                emit error(param.m_id + " needs to be an integer!");
-                return;
-            }
-            Chirp::serialize(NULL, buf, 0x100, param.m_type, val, END);
-        }
-        else if (param.m_type==CRP_FLT32)
-        {
-            bool ok;
-            float val;
-            val = param.m_line->text().toFloat(&ok);
-            if (!ok)
-            {
-                emit error(param.m_id + " needs to be a floating point number!");
-                return;
-            }
-            Chirp::serialize(NULL, buf, 0x100, param.m_type, val, END);
-        }
-        if (memcmp(buf, param.m_data, param.m_len)) // only write those that have changed to save the flash sector
-        {
-            qDebug("saving config params");
-            res = m_dialog->m_interpreter->m_chirp->callSync(prm_set, STRING(id), UINTS8(param.m_len, buf), END_OUT_ARGS, &response, END_IN_ARGS);
+                continue; // don't know what to do
+
+            res = m_dialog->m_interpreter->m_chirp->callSync(prm_set, STRING(id), UINTS8(len, buf), END_OUT_ARGS, &response, END_IN_ARGS);
             if (res<0 || response<0)
             {
                 emit error("There was a problem setting a parameter.");
                 return;
             }
-            // copy into param
-            memcpy(param.m_data, buf, param.m_len);
         }
     }
 
@@ -262,6 +240,81 @@ QWidget *ConfigDialog::findCategory(const QString &category)
     return NULL;
 }
 
+int ConfigDialog::updateDB()
+{
+    Parameters &parameters = m_parameters.parameters();
+
+    for (int i=0; i<parameters.size(); i++)
+    {
+        Parameter &parameter = parameters[i];
+        int type = parameter.value().type();
+        uint flags = parameter.property(PP_FLAGS).toInt();
+
+        if (flags&PRM_FLAG_INTERNAL) // don't render!
+            continue;
+
+        QLineEdit *line = (QLineEdit *)parameter.property(PP_WIDGET).toLongLong();
+
+        if (type==QMetaType::Float)
+        {
+            bool ok;
+            float val;
+            val = line->text().toFloat(&ok);
+            if (!ok)
+            {
+                QMessageBox::critical(NULL, "Error", parameter.id() + " needs to be a floating point number!");
+                return -1;
+            }
+            if (val!=parameter.value().toFloat())
+            {
+                parameter.set(QVariant(QMetaType::Float, &val));
+                parameter.setDirty(true);
+            }
+        }
+        else if (type==QMetaType::QString)
+        {
+        }
+        else // must be int type
+        {
+            int base;
+            bool ok;
+            if (line->text().left(2)=="0x")
+                base = 16;
+            else
+                base = 10;
+            if (flags&PRM_FLAG_SIGNED)
+            {
+                int val = line->text().toInt(&ok, base);
+                if (!ok)
+                {
+                    QMessageBox::critical(NULL, "Error", parameter.id() + " needs to be an integer!");
+                    return -1;
+                }
+                if (val!=parameter.value().toInt())
+                {
+                    parameter.set(QVariant(parameter.value().type(), &val));
+                    parameter.setDirty(true);
+                }
+            }
+            else
+            {
+                uint val = line->text().toUInt(&ok, base);
+                if (!ok)
+                {
+                    QMessageBox::critical(NULL, "Error", parameter.id() + " needs to be an unsigned integer!");
+                    return -1;
+                }
+                if (val!=parameter.value().toUInt())
+                {
+                    parameter.set(QVariant(parameter.value().type(), &val));
+                    parameter.setDirty(true);
+                }
+           }
+        }
+    }
+    return 0;
+}
+
 void ConfigDialog::loaded()
 {
     int i;
@@ -273,37 +326,54 @@ void ConfigDialog::loaded()
 
     for (i=0; i<parameters.size(); i++)
     {
-        Parameter *parameter = parameters[i];
-        uint flags = parameter->property(PP_FLAGS).toInt();
+        Parameter &parameter = parameters[i];
+        uint flags = parameter.property(PP_FLAGS).toInt();
 
         if (flags&PRM_FLAG_INTERNAL) // don't render!
             continue;
 
         QLineEdit *line = new QLineEdit();
-        QLabel *label = new QLabel(parameter->id());
-        label->setToolTip(parameter->property(PP_DESCRIPTION).toString());
+        QLabel *label = new QLabel(parameter.id());
+        label->setToolTip(parameter.property(PP_DESCRIPTION).toString());
         label->setAlignment(Qt::AlignRight);
+        qlonglong lline = (qlonglong)line;
+        parameter.setProperty(PP_WIDGET, lline);
 
-        if ((QMetaType::Type)parameter->value().type()!=QMetaType::QByteArray) // make sure it's a scalar type
+        if ((QMetaType::Type)parameter.value().type()!=QMetaType::QByteArray) // make sure it's a scalar type
         {
-            if ((QMetaType::Type)parameter->value().type()==QMetaType::Float)
+            QChar type = parameter.property(PP_TYPE).toChar();
+            if (type==CRP_FLT32)
             {
-                float val = parameter->value().toFloat();
+                float val = parameter.value().toFloat();
                 line->setText(QString::number(val, 'f', 3));
             }
             else if (!(flags&PRM_FLAG_SIGNED))
             {
-                uint val = parameter->value().toUInt();
+                uint val = parameter.value().toUInt();
                 if (flags&PRM_FLAG_HEX_FORMAT)
                     line->setText("0x" + QString::number(val, 16));
                 else
                     line->setText(QString::number(val));
             }
             else
-                line->setText(parameter->value().toString());
+            {
+                int val = parameter.value().toInt();
+                if (type==CRP_INT16) // sign extend
+                {
+                    val <<= 16;
+                    val >>= 16;
+                }
+                else if (type==CRP_INT8) // sign extend
+                {
+                    val <<= 24;
+                    val >>= 24;
+                }
+
+                line->setText(QString::number(val));
+            }
 
             // deal with categories-- create category tab if needed
-            QString category = parameter->property(PP_CATEGORY).toString();
+            QString category = parameter.property(PP_CATEGORY).toString();
             tab = findCategory(category);
             if (tab==NULL)
             {
@@ -361,6 +431,8 @@ void ConfigDialog::error(QString message)
 
 void ConfigDialog::accept()
 {
+    if (updateDB()<0)
+        return;
     emit save();
     QDialog::accept();
 }
@@ -381,6 +453,8 @@ void ConfigDialog::apply(QAbstractButton *button)
 {
     if (button->text()=="Apply")
     {
+        if (updateDB()<0)
+            return;
         m_applying = true;
         emit save();
     }

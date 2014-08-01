@@ -6,6 +6,7 @@ Parameter::Parameter(const QString &id)
 {
     m_id = id;
     m_radioValue = 0;
+    m_dirty = false;
 }
 
 Parameter::~Parameter()
@@ -86,7 +87,38 @@ void Parameter::trueFalse()
     addRadioValue(RadioValue("False", 1));
 }
 
+void Parameter::setDirty(bool dirty)
+{
+    m_dirty = dirty;
+}
 
+bool Parameter::dirty()
+{
+    return m_dirty;
+}
+
+void Parameter::setProperty(const QString &label, const QVariant &val)
+{
+    for (int i=0; i<m_properties.size(); i++)
+    {
+        if (m_properties[i].first==label)
+        {
+            m_properties[i].second = val;
+            return;
+        }
+    }
+    m_properties.push_back(QPair<QString, QVariant>(label, val));
+}
+
+QVariant Parameter::property(const QString &label)
+{
+    for (int i=0; i<m_properties.size(); i++)
+    {
+        if (m_properties[i].first==label)
+            return m_properties[i].second;
+    }
+    return QVariant();
+}
 
 
 ParameterDB::ParameterDB()
@@ -95,16 +127,14 @@ ParameterDB::ParameterDB()
 
 ParameterDB::~ParameterDB()
 {
-    for (int i; i<m_parameters.size(); i++)
-        delete m_parameters[i];
 }
 
 const QVariant *ParameterDB::value(const QString &id)
 {
     for (int i=0; i<m_parameters.size(); i++)
     {
-        if (QString::compare(m_parameters[i]->id(), id, Qt::CaseInsensitive)==0)
-            return &m_parameters[i]->value();
+        if (QString::compare(m_parameters[i].id(), id, Qt::CaseInsensitive)==0)
+            return &m_parameters[i].value();
     }
     return NULL;
 }
@@ -113,8 +143,8 @@ Parameter *ParameterDB::parameter(const QString &id)
 {
     for (int i=0; i<m_parameters.size(); i++)
     {
-        if (QString::compare(m_parameters[i]->id(), id, Qt::CaseInsensitive)==0)
-            return m_parameters[i];
+        if (QString::compare(m_parameters[i].id(), id, Qt::CaseInsensitive)==0)
+            return &m_parameters[i];
     }
     return NULL;
 }
@@ -123,8 +153,8 @@ const QString *ParameterDB::description(const QString &id)
 {
     for (int i=0; i<m_parameters.size(); i++)
     {
-        if (QString::compare(m_parameters[i]->id(), id, Qt::CaseInsensitive)==0)
-            return m_parameters[i]->description();
+        if (QString::compare(m_parameters[i].id(), id, Qt::CaseInsensitive)==0)
+            return m_parameters[i].description();
     }
     return NULL;
 }
@@ -138,8 +168,8 @@ int ParameterDB::set(const QString &id, const QVariant &value)
 {
     for (int i=0; i<m_parameters.size(); i++)
     {
-        if (QString::compare(m_parameters[i]->id(), id, Qt::CaseInsensitive)==0)
-            return m_parameters[i]->set(value);
+        if (QString::compare(m_parameters[i].id(), id, Qt::CaseInsensitive)==0)
+            return m_parameters[i].set(value);
     }
     return -1;
 }
@@ -148,13 +178,13 @@ int ParameterDB::set(const QString &id, const QString &description)
 {
     for (int i=0; i<m_parameters.size(); i++)
     {
-        if (QString::compare(m_parameters[i]->id(), id, Qt::CaseInsensitive)==0)
-            return m_parameters[i]->set(description);
+        if (QString::compare(m_parameters[i].id(), id, Qt::CaseInsensitive)==0)
+            return m_parameters[i].set(description);
     }
     return -1;
 }
 
-void ParameterDB::add(Parameter *parameter)
+void ParameterDB::add(const Parameter &parameter)
 {
     m_parameters.push_back(parameter);
 }

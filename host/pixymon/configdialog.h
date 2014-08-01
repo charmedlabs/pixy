@@ -24,39 +24,12 @@
 #include "chirpmon.h"
 #include "parameters.h"
 #include "ui_configdialog.h"
-#include <vector>
 
 #define CD_GENERAL     "General"
 
 class Interpreter;
 class ConfigDialog;
 
-// struct to store parameter values
-struct Param
-{
-    Param(QString id, QString category, QString desc, uint8_t type, uint32_t flags, uint32_t len, uint8_t *data)
-    {
-        m_id = id;
-        m_category = category;
-        m_desc = desc;
-        m_type = type;
-        m_flags = flags;
-        m_len = len;
-        memcpy(m_data, data, len);
-        m_line = NULL;
-        m_label = NULL;
-    }
-
-    QString m_id;
-    QString m_category;
-    QString m_desc;
-    uint8_t m_type;
-    uint32_t m_flags;
-    uint32_t m_len;
-    uint8_t m_data[0x100];
-    QLineEdit *m_line;
-    QLabel *m_label;
-};
 
 // need worker thread because worker thread in Interpreter is calling chirp-- and we don't want gui thread to block,
 // which is what would happen if another thread isn't created.
@@ -113,12 +86,13 @@ protected slots:
 protected:
 
 private:
+    int updateDB();
+
     QWidget *findCategory(const QString &category);
 
     Ui::ConfigDialog *m_ui;
     QTabWidget *m_tabs;
     Interpreter *m_interpreter;
-    std::vector<Param> m_paramList;
     bool m_loading;
     bool m_rejecting;
     bool m_applying;

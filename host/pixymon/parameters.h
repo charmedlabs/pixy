@@ -9,6 +9,7 @@
 #define PP_CATEGORY     "category"
 #define PP_WIDGET       "widget"
 #define PP_FLAGS        "flags"
+#define PP_TYPE         "type"
 
 struct RadioValue
 {
@@ -25,10 +26,8 @@ struct RadioValue
 
 typedef QList<RadioValue> RadioValues;
 
-class Parameter : public QObject
+class Parameter
 {
-    Q_OBJECT
-
 public:
     Parameter(const QString &id);
     ~Parameter();
@@ -39,10 +38,15 @@ public:
 
     int set(const QVariant &value);
     int setRadio(const QString &description);
+    void setDirty(bool dirty);
+    bool dirty();
 
     void addRadioValue(const RadioValue &value);
     void onOff();
     void trueFalse();
+
+    void setProperty(const QString &label, const QVariant &val);
+    QVariant property(const QString &label);
 
 private:
     RadioValues m_radioValues; // m_radioValues.size()>0 we're a radio parameter
@@ -50,10 +54,12 @@ private:
     QVariant m_value; // else we're just a regular parameter with value in m_value.
 
     QString m_id;
+    bool m_dirty;
+    QList<QPair<QString, QVariant> > m_properties;
 };
 
 
-typedef QList<Parameter *> Parameters;
+typedef QList<Parameter> Parameters;
 
 class ParameterDB
 {
@@ -69,7 +75,7 @@ public:
     int set(const QString &id, const QVariant &value);
     int set(const QString &id, const QString &description);
 
-    void add(Parameter *parameter);
+    void add(const Parameter &parameter);
 
 private:
     Parameters m_parameters;
