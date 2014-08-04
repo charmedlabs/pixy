@@ -404,18 +404,21 @@ int Chirp::call(uint8_t service, ChirpProc proc, va_list args)
 {
     int res, i;
     uint8_t type;
+    va_list arguments;
+
+    va_copy(arguments, args);
 
     // if it's just a regular call (not init or enumerate), we need to be connected
     if (!(service&CRP_CALL) && !m_connected)
         return CRP_RES_ERROR_NOT_CONNECTED;
 
-    // parse args and assemble in m_buf
+    // parse arguments and assemble in m_buf
     m_len = 0;
     // restore buffer in case it was changed
     restoreBuffer();
-    if ((res=vassemble(&args))<0)
+    if ((res=vassemble(&arguments))<0)
     {
-        va_end(args);
+        va_end(arguments);
         return res;
     }
 
@@ -430,7 +433,7 @@ int Chirp::call(uint8_t service, ChirpProc proc, va_list args)
     // send call data
     if ((res=sendChirpRetry(type, proc))!=CRP_RES_OK) // convert call into response
     {
-        va_end(args);
+        va_end(arguments);
         return res;
     }
 
@@ -453,20 +456,20 @@ int Chirp::call(uint8_t service, ChirpProc proc, va_list args)
             }
             else
             {
-                va_end(args);
+                va_end(arguments);
                 return res;
             }
             if (m_link->getTimer()>m_headerTimeout) // we could receive XDATA (for example) and never exit this while loop
                 return CRP_RES_ERROR_RECV_TIMEOUT;
         }
 
-        // deal with args
-        if (service&RETURN_ARRAY) // copy array of args
+        // deal with arguments
+        if (service&RETURN_ARRAY) // copy array of arguments
         {
             void **recvArray;
             while(1)
             {
-                recvArray = va_arg(args, void **);
+                recvArray = va_arg(arguments, void **);
                 if (recvArray!=NULL)
                     break;
             }
@@ -474,15 +477,15 @@ int Chirp::call(uint8_t service, ChirpProc proc, va_list args)
                 recvArray[i] = recvArgs[i];
             recvArray[i] = NULL;
         }
-        else if ((res=loadArgs(&args, recvArgs))<0)
+        else if ((res=loadArgs(&arguments, recvArgs))<0)
         {
-            va_end(args);
+            va_end(arguments);
             return res;
         }
     }
 
 
-    va_end(args);
+    va_end(arguments);
     return CRP_RES_OK;
 }
 
