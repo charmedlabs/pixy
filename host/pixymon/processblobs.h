@@ -34,7 +34,6 @@ public:
     Blobs *m_blobs;
 
 private slots:
-    void handleParameter(QString id, QByteArray data);
     void handleParamChange();
 
 private:
@@ -45,7 +44,6 @@ private:
     uint32_t m_numQvals;
     Qqueue *m_qq;
 
-    int m_paramResponses;
     uint16_t m_maxBlobs;
     uint16_t m_maxBlobsPerModel;
     uint32_t m_minArea;

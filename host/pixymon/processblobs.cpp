@@ -23,11 +23,7 @@ ProcessBlobs::ProcessBlobs(Interpreter *interpreter)
     m_blobs = new Blobs(m_qq);
     m_qMem = new uint32_t[0x10000];
 
-    connect(m_interpreter, SIGNAL(parameter(QString,QByteArray)), this, SLOT(handleParameter(QString,QByteArray)));
     connect(m_interpreter, SIGNAL(paramChange()), this, SLOT(handleParamChange()));
-
-    // force loading of parameters
-    handleParamChange();
 }
 
 ProcessBlobs::~ProcessBlobs()
@@ -184,43 +180,21 @@ void ProcessBlobs::rls(const Frame8 &frame)
     m_qMem[m_numQvals++] = 0xffffffff;
 }
 
-void ProcessBlobs::handleParameter(QString id, QByteArray data)
-{
-    uint8_t *data2;
-    uint32_t len;
-
-    data2 = (uint8_t *)data.constData();
-    len = data.size();
-
-    if (id=="Max blocks")
-    {
-        Chirp::deserialize(data2, len, &m_maxBlobs, END);
-        m_paramResponses++;
-    }
-    else if(id=="Max blocks per signature")
-    {
-        Chirp::deserialize(data2, len, &m_maxBlobsPerModel, END);
-        m_paramResponses++;
-    }
-    else if(id=="Min block area")
-    {
-        Chirp::deserialize(data2, len, &m_minArea, END);
-        m_paramResponses++;
-    }
-    else if(id=="Color code mode")
-    {
-        Chirp::deserialize(data2, len, &m_ccMode, END);
-        m_paramResponses++;
-    }
-
-    if (m_paramResponses==4)
-        m_blobs->setParams(m_maxBlobs, m_maxBlobsPerModel, m_minArea, (ColorCodeMode)m_ccMode);
-}
-
 void ProcessBlobs::handleParamChange()
 {
-    m_paramResponses = 0;
-    // get parameters
-    // todo: get parameters
+    const QVariant *variant;
+
+    // read from parameter database
+    if ((variant=m_interpreter->m_pixyParameters.value("Max blocks")))
+        m_maxBlobs = variant->toUInt();
+    if ((variant=m_interpreter->m_pixyParameters.value("Max blocks per signature")))
+        m_maxBlobsPerModel = variant->toUInt();
+    if ((variant=m_interpreter->m_pixyParameters.value("Min block area")))
+        m_minArea = variant->toUInt();
+    if ((variant=m_interpreter->m_pixyParameters.value("Color code mode")))
+        m_ccMode = variant->toUInt();
+
+    // update
+    m_blobs->setParams(m_maxBlobs, m_maxBlobsPerModel, m_minArea, (ColorCodeMode)m_ccMode);
 }
 

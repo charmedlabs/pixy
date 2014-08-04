@@ -554,6 +554,8 @@ void Interpreter::run()
     time.start();
     getRunning();
 
+    handleLoadParams(); // load params upon initialization
+
     while(m_run)
     {
         if (!m_programming &&

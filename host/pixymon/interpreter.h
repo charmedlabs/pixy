@@ -81,7 +81,7 @@ public:
 
     ChirpMon *m_chirp;
     ParameterDB m_pixyParameters;
-    ParameterDB m_pixymonParamters;
+    ParameterDB m_pixymonParameters;
 
     friend class ChirpMon;
 
