@@ -27,6 +27,28 @@ const QVariant &Parameter::value()
         return m_value;
 }
 
+int Parameter::valueInt() // deal with signed and less than 32 bit integers
+{
+    QChar type;
+
+    int val = m_value.toInt();
+    if (property(PP_TYPE).isNull())
+        type = 0;
+    else
+        type = property(PP_TYPE).toChar();
+    if (type==PRM_INT16)
+    {
+        val <<= 16;
+        val >>= 16; // sign extend
+    }
+    if (type==PRM_INT8)
+    {
+        val <<= 24;
+        val >>= 24; // sign extend
+    }
+    return val;
+}
+
 const QString *Parameter::description()
 {
     if (m_radioValues.size()>0)

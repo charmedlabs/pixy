@@ -29,15 +29,17 @@
 #include "connectevent.h"
 #include "disconnectevent.h"
 #include "usblink.h"
+#include "parameters.h"
 
 #define PROMPT  ">"
 #define RUN_POLL_PERIOD_SLOW   500 // msecs
 #define RUN_POLL_PERIOD_FAST   10  // msecs
+#define CD_GENERAL             "General"
 
 class ConsoleWidget;
 class Renderer;
 
-enum CommandType {STOP, RUN, GET_ACTION, GET_PARAM};
+enum CommandType {STOP, RUN, GET_ACTION, LOAD_PARAMS, SAVE_PARAMS};
 
 typedef std::pair<CommandType,QVariant> Command;
 typedef std::queue<Command> CommandQueue;
@@ -67,7 +69,8 @@ public:
     void execute(const QString &command);
     void execute(QStringList commandList);
     void getAction(int index);
-    void getParam(const QString &id);
+    void loadParams();
+    void saveParams();
     int saveImage(const QString &filename);
     void printHelp();
 
@@ -77,6 +80,9 @@ public:
     uint16_t *getVersion();
 
     ChirpMon *m_chirp;
+    ParameterDB m_pixyParameters;
+    ParameterDB m_pixymonParamters;
+
     friend class ChirpMon;
 
 signals:
@@ -89,10 +95,10 @@ signals:
     void connected(Device device, bool state);
     void actionScriptlet(int index, QString action, QStringList scriptlet);
     void parameter(QString id, QByteArray data);
+    void paramLoaded();
     void paramChange();
 
 public slots:
-    void handleParamChange();
 
 private slots:
     void controlKey(Qt::Key key);
@@ -118,15 +124,20 @@ private:
     int sendRun();
     int sendStop();
     int sendGetAction(int index);
-    int sendGetParam(const QString &id);
     void queueCommand(CommandType type, QVariant arg=QVariant(0));
     void handlePendingCommand();
 
     void prompt();
+
+    void handleSaveParams(); // save to Pixy
+    void handleLoadParams(); // load from Pixy
+
     QStringList getSections(const QString &id, const QString &string);
     int getArgs(const ProcInfo *info, ArgList *argList);
     QString printProc(const ProcInfo *info,  int level=0);
     QString printArgType(uint8_t *type, int &index);
+    QString printArgType(uint8_t type, uint32_t flags);
+
     void augmentProcInfo(ProcInfo *info);
 
     ConsoleWidget *m_console;
@@ -148,6 +159,8 @@ private:
     ChirpProc m_exec_stop;
     ChirpProc m_exec_get_action;
     ChirpProc m_get_param;
+    ChirpProc m_getAll_param;
+    ChirpProc m_set_param;
 
     // for program
     bool m_programming;
@@ -156,6 +169,7 @@ private:
     bool m_run;
     bool m_fastPoll;
     bool m_notified;
+    bool m_paramDirty;
     int m_running;
 
     std::vector<ChirpCallData> m_program;

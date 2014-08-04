@@ -50,7 +50,7 @@ private slots:
     void handleConnected(Device device, bool state);
     void handleActions();
     void handleActionScriptlet(int index, QString action, QStringList scriptlet);
-    void configFinished();
+    void handleConfigDialogFinished();
     void interpreterFinished();
     void on_actionAbout_triggered();
     void on_actionPlay_Pause_triggered();

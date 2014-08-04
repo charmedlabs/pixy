@@ -221,9 +221,6 @@ void ProcessBlobs::handleParamChange()
 {
     m_paramResponses = 0;
     // get parameters
-    m_interpreter->getParam("Max blocks");
-    m_interpreter->getParam("Max blocks per signature");
-    m_interpreter->getParam("Min block area");
-    m_interpreter->getParam("Color code mode");
+    // todo: get parameters
 }
 

@@ -41,6 +41,7 @@ Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video) : m_mutexPr
     m_waiting = false;
     m_fastPoll = true;
     m_notified = false;
+    m_paramDirty = true;
     m_running = -1; // set to bogus value to force update
     m_chirp = NULL;
 
@@ -115,16 +116,26 @@ end:
     return res;
 }
 
+QString Interpreter::printArgType(uint8_t type, uint32_t flags)
+{
+    switch(type)
+    {
+    case CRP_INT8:
+        return flags&PRM_FLAG_SIGNED ? "INT8" : "UINT8";
+    case CRP_INT16:
+        return flags&PRM_FLAG_SIGNED ? "INT16" : "UINT16";
+    case CRP_INT32:
+        return flags&PRM_FLAG_SIGNED ? "INT32" : "UINT32";
+    case CRP_FLT32:
+        return "FLOAT32";
+    default:
+        return "?";
+    }
+}
 
 QString Interpreter::printArgType(uint8_t *type, int &index)
 {
-    if (*type==CRP_INT8)
-        return "INT8";
-    else if (*type==CRP_INT16)
-        return "INT16";
-    else if (*type==CRP_INT32)
-        return "INT32";
-    else if (*type==CRP_TYPE_HINT)
+    if (*type==CRP_TYPE_HINT)
     {
         int n = strlen((char *)type);
         QString print = "HINT(";
@@ -141,7 +152,7 @@ QString Interpreter::printArgType(uint8_t *type, int &index)
         return print;
     }
     else
-        return "?";
+        return printArgType(*type, PRM_FLAG_SIGNED);
 }
 
 QString Interpreter::printProc(const ProcInfo *info, int level)
@@ -439,28 +450,6 @@ int Interpreter::sendGetAction(int index)
     return response;
 }
 
-int Interpreter::sendGetParam(const QString &id)
-{
-    QMutexLocker locker(&m_chirp->m_mutex);
-    int res, response, len;
-    const char *data;
-    QByteArray data2, str = id.toUtf8();
-    const char *id2 = str.constData();
-
-    res = m_chirp->callSync(m_get_param, STRING(id2), END_OUT_ARGS, &response, &len, &data, END_IN_ARGS);
-
-    if (res<0)
-        return res;
-
-    if (response<0)
-        return response;
-
-    data2 = QByteArray(data, len);
-
-    emit parameter(id, data2);
-    return response;
-}
-
 
 void Interpreter::handlePendingCommand()
 {
@@ -485,8 +474,12 @@ void Interpreter::handlePendingCommand()
         sendGetAction(command.second.toInt());
         break;
 
-    case GET_PARAM:
-        sendGetParam(command.second.toString());
+    case LOAD_PARAMS:
+        handleLoadParams();
+        break;
+
+    case SAVE_PARAMS:
+        handleSaveParams();
         break;
     }
 
@@ -544,7 +537,11 @@ void Interpreter::run()
         m_exec_stop = m_chirp->getProc("stop");
         m_exec_get_action = m_chirp->getProc("getAction");
         m_get_param = m_chirp->getProc("prm_get");
-        if (m_exec_run<0 || m_exec_running<0 || m_exec_stop<0 || m_exec_get_action<0 || m_get_param<0)
+        m_getAll_param = m_chirp->getProc("prm_getAll");
+        m_set_param = m_chirp->getProc("prm_set");
+
+        if (m_exec_run<0 || m_exec_running<0 || m_exec_stop<0 || m_exec_get_action<0 ||
+                m_get_param<0 || m_getAll_param<0 || m_set_param<0)
             throw std::runtime_error("Communication error with Pixy.");
     }
     catch (std::runtime_error &exception)
@@ -866,27 +863,15 @@ void Interpreter::getAction(int index)
     queueCommand(GET_ACTION, index);
 }
 
-void Interpreter::getParam(const QString &id)
+void Interpreter::loadParams()
 {
-    queueCommand(GET_PARAM, id);
+    queueCommand(LOAD_PARAMS);
 }
 
-#if 0
-int Interpreter::uploadLut()
+void Interpreter::saveParams()
 {
-    uint32_t i, sum;
-    uint32_t responseInt;
-
-    for (i=0, sum=0; i<LUT_SIZE; i++)
-        sum += m_lut[i];
-    qDebug() << sum;
-    ChirpProc setmem = m_chirp->getProc("cc_setMemory");
-    for (i=0; i<LUT_SIZE; i+=0x100)
-        m_chirp->callSync(setmem, UINT32(0x10082000+i), UINTS8(0x100, m_lut+i), END_OUT_ARGS, &responseInt, END_IN_ARGS);
-
-    return 0;
+    queueCommand(SAVE_PARAMS);
 }
-#endif
 
 void Interpreter::handleSelection(int x0, int y0, int width, int height)
 {
@@ -905,11 +890,6 @@ void Interpreter::handleSelection(int x0, int y0, int width, int height)
         m_renderer->regionCommand(x0, y0, width, height, m_argvHost);
     }
 
-}
-
-void Interpreter::handleParamChange()
-{
-    emit paramChange();  // re-emit
 }
 
 void Interpreter::unwait()
@@ -1122,3 +1102,161 @@ void Interpreter::augmentProcInfo(ProcInfo *info)
     }
 }
 
+
+void Interpreter::handleLoadParams()
+{
+    qDebug("loading...");
+    uint i;
+    char *id, *desc;
+    uint32_t len;
+    uint32_t flags;
+    int response, res;
+    uint8_t *data, *argList;
+    bool running;
+    m_pixyParameters.parameters().clear();
+
+    // if we're running, stop so this doesn't take too long....
+    // (ie it would proceed with 1 property to returned frame, which could take 1 second or 2)
+    running = m_running;
+    if (running)
+        sendStop();
+
+    for (i=0; true; i++)
+    {
+        QString category;
+
+        res = m_chirp->callSync(m_getAll_param, UINT16(i), END_OUT_ARGS, &response, &flags, &argList, &id, &desc, &len, &data, END_IN_ARGS);
+        if (res<0)
+            break;
+
+        if (response<0)
+            break;
+
+        QString sdesc(desc);
+
+        // deal with param category
+        QStringList words = QString(desc).split(QRegExp("\\s+"));
+        int i = words.indexOf("@c");
+        if (i>=0 && words.size()>i+1)
+        {
+            category = words[i+1];
+            sdesc = sdesc.remove("@c "); // remove form description
+            sdesc = sdesc.remove(category + " "); // remove from description
+            category = category.replace('_', ' '); // make it look prettier
+        }
+        else
+            category = CD_GENERAL;
+
+        Parameter parameter(id, "("+printArgType(argList[0], flags)+") "+sdesc);
+        parameter.setProperty(PP_CATEGORY, category);
+        parameter.setProperty(PP_FLAGS, flags);
+        if (strlen((char *)argList)>1)
+        {
+            QByteArray a((char *)data, len);
+            parameter.set(a);
+        }
+        else
+        {
+            // save off type
+            parameter.setProperty(PP_TYPE, QVariant(QMetaType::UChar, argList));
+
+            if (argList[0]==CRP_INT8 || argList[0]==CRP_INT16 || argList[0]==CRP_INT32)
+            {
+                int32_t val = 0;
+                Chirp::deserialize(data, len, &val, END);
+                parameter.set(QVariant(val));
+            }
+            else if (argList[0]==CRP_FLT32)
+            {
+                float val;
+                Chirp::deserialize(data, len, &val, END);
+                parameter.set(val);
+            }
+            else // not sure what to do with it, so we'll save it as binary
+            {
+                QByteArray a((char *)data, len);
+                parameter.set(a);
+            }
+        }
+        m_pixyParameters.add(parameter);
+    }
+
+    // if we're running, we've stopped, now resume
+    if (running)
+    {
+        sendRun();
+        m_fastPoll = false; // turn off fast polling...
+    }
+
+    qDebug("loaded");
+    emit paramLoaded();
+    if (m_paramDirty) // emit first time to update any modules waiting to get paramter info
+    {
+        m_paramDirty = false;
+        emit paramChange();
+    }
+}
+
+
+void Interpreter::handleSaveParams()
+{
+    int i;
+    int res, response;
+    bool dirty, running;
+
+    // if we're running, stop so this doesn't take too long....
+    // (ie it would proceed with 1 property to returned frame, which could take 1 second or 2)
+    running = m_running;
+    if (running)
+        sendStop();
+
+    Parameters &parameters = m_pixyParameters.parameters();
+
+    for (i=0, dirty=false; i<parameters.size(); i++)
+    {
+        uint8_t buf[0x100];
+
+        if (parameters[i].dirty())
+        {
+            int len;
+            QByteArray str = parameters[i].id().toUtf8();
+            const char *id = str.constData();
+            QChar type = parameters[i].property(PP_TYPE).toChar();
+            parameters[i].setDirty(false); // reset
+            dirty = true; // keep track for sending signal
+
+            qDebug("%s\n", id);
+
+            if (type==CRP_INT8 || type==CRP_INT16 || type==CRP_INT32)
+            {
+                int val = parameters[i].value().toInt();
+                len = Chirp::serialize(NULL, buf, 0x100, type, val, END);
+            }
+            else if (type==CRP_FLT32)
+            {
+                float val = parameters[i].value().toFloat();
+                len = Chirp::serialize(NULL, buf, 0x100, type, val, END);
+            }
+            else
+                continue; // don't know what to do!
+
+            res = m_chirp->callSync(m_set_param, STRING(id), UINTS8(len, buf), END_OUT_ARGS, &response, END_IN_ARGS);
+            if (res<0 || response<0)
+            {
+                emit error("There was a problem setting a parameter.");
+                break;
+            }
+        }
+    }
+
+    // if we're running, we've stopped, now resume
+    if (running)
+    {
+        sendRun();
+        m_fastPoll = false; // turn off fast polling...
+    }
+
+    if (dirty)  // if we updated any parameters, output paramChange signal
+        emit paramChange();
+
+}

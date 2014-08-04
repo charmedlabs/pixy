@@ -81,17 +81,7 @@ int ParamFile::write(const QString &tag, ParameterDB *data)
                 {
                     if (flags&PRM_FLAG_SIGNED)
                     {
-                        int val = parameters[i].value().toInt();
-                        if (etype==PRM_INT16)
-                        {
-                            val <<= 16;
-                            val >>= 16; // sign extend
-                        }
-                        if (etype==PRM_INT8)
-                        {
-                            val <<= 24;
-                            val >>= 24; // sign extend
-                        }
+                        int val = parameters[i].valueInt();
                         item.setAttribute("value", QString::number(val));
                     }
                     else

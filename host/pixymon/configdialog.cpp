@@ -25,161 +25,6 @@
 #include <stdexcept>
 
 
-ConfigWorker::ConfigWorker(ConfigDialog *dialog)
-{
-    m_dialog = dialog;
-}
-
-ConfigWorker::~ConfigWorker()
-{
-}
-
-QString typeString(uint8_t type, uint32_t flags)
-{
-    switch(type)
-    {
-    case CRP_INT8:
-        return flags&PRM_FLAG_SIGNED ? "INT8" : "UINT8";
-    case CRP_INT16:
-        return flags&PRM_FLAG_SIGNED ? "INT16" : "UINT16";
-    case CRP_INT32:
-        return flags&PRM_FLAG_SIGNED ? "INT32" : "UINT32";
-    case CRP_FLT32:
-        return "FLOAT32";
-    default:
-        return "?";
-    }
-}
-
-void ConfigWorker::load()
-{
-    qDebug("loading...");
-    QMutexLocker locker(&m_dialog->m_interpreter->m_chirp->m_mutex);
-    uint i;
-    char *id, *desc;
-    uint32_t len;
-    uint32_t flags;
-    int response;
-    uint8_t *data, *argList;
-
-    ChirpProc prm_getAll = m_dialog->m_interpreter->m_chirp->getProc("prm_getAll");
-    if (prm_getAll<0)
-        return;
-
-    int res;
-    for (i=0; true; i++)
-    {
-        QString category;
-
-        res = m_dialog->m_interpreter->m_chirp->callSync(prm_getAll, UINT16(i), END_OUT_ARGS, &response, &flags, &argList, &id, &desc, &len, &data, END_IN_ARGS);
-        if (res<0)
-            break;
-
-        if (response<0)
-            break;
-
-        QString sdesc(desc);
-
-        // deal with param category
-        QStringList words = QString(desc).split(QRegExp("\\s+"));
-        int i = words.indexOf("@c");
-        if (i>=0 && words.size()>i+1)
-        {
-            category = words[i+1];
-            sdesc = sdesc.remove("@c "); // remove form description
-            sdesc = sdesc.remove(category + " "); // remove from description
-            category = category.replace('_', ' '); // make it look prettier
-        }
-        else
-            category = CD_GENERAL;
-
-        Parameter parameter(id, "("+typeString(argList[0], flags)+") "+sdesc);
-        parameter.setProperty(PP_CATEGORY, category);
-        parameter.setProperty(PP_FLAGS, flags);
-        if (strlen((char *)argList)>1)
-        {
-            QByteArray a((char *)data, len);
-            parameter.set(a);
-        }
-        else
-        {
-            // save off type
-            parameter.setProperty(PP_TYPE, QVariant(QMetaType::UChar, argList));
-
-            if (argList[0]==CRP_INT8 || argList[0]==CRP_INT16 || argList[0]==CRP_INT32)
-            {
-                int32_t val = 0;
-                Chirp::deserialize(data, len, &val, END);
-                parameter.set(QVariant(val));
-            }
-            else if (argList[0]==CRP_FLT32)
-            {
-                float val;
-                Chirp::deserialize(data, len, &val, END);
-                parameter.set(val);
-            }
-            else // not sure what to do with it, so we'll save it as binary
-            {
-                QByteArray a((char *)data, len);
-                parameter.set(a);
-            }
-        }
-        m_dialog->m_parameters.add(parameter);
-    }
-
-    qDebug("loaded");
-    emit loaded();
-}
-
-
-void ConfigWorker::save()
-{
-    QMutexLocker locker(&m_dialog->m_interpreter->m_chirp->m_mutex);
-    int i;
-    int res, response;
-
-    ChirpProc prm_set = m_dialog->m_interpreter->m_chirp->getProc("prm_set");
-    if (prm_set<0)
-        return;
-
-    Parameters &parameters = m_dialog->m_parameters.parameters();
-
-    for (i=0; i<parameters.size(); i++)
-    {
-        uint8_t buf[0x100];
-
-        if (parameters[i].dirty())
-        {
-            int len;
-            QByteArray str = parameters[i].id().toUtf8();
-            const char *id = str.constData();
-            QChar type = parameters[i].property(PP_TYPE).toChar();
-
-            if (type==CRP_INT8 || type==CRP_INT16 || type==CRP_INT32)
-            {
-                int val = parameters[i].value().toInt();
-                len = Chirp::serialize(NULL, buf, 0x100, type, val, END);
-            }
-            else if (type==CRP_FLT32)
-            {
-                float val = parameters[i].value().toFloat();
-                len = Chirp::serialize(NULL, buf, 0x100, type, val, END);
-            }
-            else
-                continue; // don't know what to do!
-
-            res = m_dialog->m_interpreter->m_chirp->callSync(prm_set, STRING(id), UINTS8(len, buf), END_OUT_ARGS, &response, END_IN_ARGS);
-            if (res<0 || response<0)
-            {
-                emit error("There was a problem setting a parameter.");
-                return;
-            }
-        }
-    }
-
-    emit saved();
-}
-
 
 ConfigDialog::ConfigDialog(QWidget *parent, Interpreter *interpreter) : QDialog(parent), m_ui(new Ui::ConfigDialog)
 {
@@ -191,22 +36,10 @@ ConfigDialog::ConfigDialog(QWidget *parent, Interpreter *interpreter) : QDialog(
     m_tabs = new QTabWidget(this);
     m_ui->gridLayout->addWidget(m_tabs);
 
-    ConfigWorker *worker = new ConfigWorker(this);
-
-    worker->moveToThread(&m_thread);
-    connect(this, SIGNAL(load()), worker, SLOT(load()));
-    connect(this, SIGNAL(save()), worker, SLOT(save()));
-    connect(worker, SIGNAL(loaded()), this, SLOT(loaded()));
-    connect(worker, SIGNAL(saved()), this, SLOT(saved()));
-    connect(worker, SIGNAL(error(QString)), this, SLOT(error(QString)));
+    connect(interpreter, SIGNAL(paramLoaded()), this, SLOT(loaded()));
     connect(m_ui->buttonBox, SIGNAL(clicked(QAbstractButton*)), this, SLOT(apply(QAbstractButton*)));
-    connect(this, SIGNAL(change()), m_interpreter, SLOT(handleParamChange()));
 
-    m_thread.start();
-    m_rejecting = false;
-    m_loading = true;
-    m_applying = false;
-    emit load();
+    m_interpreter->loadParams();
 
 #ifdef __MACOS__
     setMinimumWidth(550);
@@ -222,12 +55,6 @@ ConfigDialog::ConfigDialog(QWidget *parent, Interpreter *interpreter) : QDialog(
 
 ConfigDialog::~ConfigDialog()
 {
-    qDebug("destroying config dialog...");
-    m_thread.quit();
-    m_thread.wait();
-    // we don't delete any of the widgets because the parent deletes its children
-
-    qDebug("done");
 }
 
 QWidget *ConfigDialog::findCategory(const QString &category)
@@ -248,7 +75,7 @@ QWidget *ConfigDialog::findCategory(const QString &category)
 
 int ConfigDialog::updateDB()
 {
-    Parameters &parameters = m_parameters.parameters();
+    Parameters &parameters = m_interpreter->m_pixyParameters.parameters();
 
     for (int i=0; i<parameters.size(); i++)
     {
@@ -296,7 +123,7 @@ int ConfigDialog::updateDB()
                     QMessageBox::critical(NULL, "Error", parameter.id() + " needs to be an integer!");
                     return -1;
                 }
-                if (val!=parameter.value().toInt())
+                if (val!=parameter.valueInt())
                 {
                     parameter.set(QVariant(parameter.value().type(), &val));
                     parameter.setDirty(true);
@@ -328,7 +155,7 @@ void ConfigDialog::loaded()
     QGridLayout *layout;
 
     qDebug("rendering config...");
-    Parameters &parameters = m_parameters.parameters();
+    Parameters &parameters = m_interpreter->m_pixyParameters.parameters();
 
     for (i=0; i<parameters.size(); i++)
     {
@@ -363,18 +190,7 @@ void ConfigDialog::loaded()
             }
             else
             {
-                int val = parameter.value().toInt();
-                if (type==CRP_INT16) // sign extend
-                {
-                    val <<= 16;
-                    val >>= 16;
-                }
-                else if (type==CRP_INT8) // sign extend
-                {
-                    val <<= 24;
-                    val >>= 24;
-                }
-
+                int val = parameter.valueInt();
                 line->setText(QString::number(val));
             }
 
@@ -394,13 +210,14 @@ void ConfigDialog::loaded()
             layout->addWidget(line, i, 1);
         }
     }
-    m_loading = false;
 
+#if 0
     ParamFile pfile;
 
     pfile.open("pixyparameters.xml", false);
     pfile.write("Pixyparams", &m_parameters);
     pfile.close();
+#endif
 
     // set stretch on all tabs
     for (i=0; true; i++)
@@ -415,56 +232,23 @@ void ConfigDialog::loaded()
             break;
     }
 
-    if (m_rejecting) // resume reject
-    {
-        emit done();
-        QDialog::reject();
-    }
+    show();
+
     qDebug("rendering config done");
 }
-
-void ConfigDialog::saved()
-{
-    ParamFile pf;
-    pf.open("pixyparameters.xml", true);
-    m_parameters.set("signature1", QVariant(0));
-    pf.read("Pixyparams", &m_parameters);
-    pf.close();
-
-    if (!m_applying)
-    {
-        emit done();
-        QDialog::accept();
-    }
-    m_applying = false;
-
-    emit change(); // signal other folks
-}
-
-void ConfigDialog::error(QString message)
-{
-    QMessageBox::critical(NULL, "Error", message);
-}
-
 
 void ConfigDialog::accept()
 {
     if (updateDB()<0)
         return;
-    emit save();
+    m_interpreter->saveParams();
     QDialog::accept();
 }
 
 void ConfigDialog::reject()
 {
     qDebug("reject called");
-    if (!m_loading) // if we're in the middle of loading, defer rejection
-    {
-        QDialog::reject();
-        emit done();
-    }
-    else
-        m_rejecting = true; // defer reject
+    QDialog::reject();
 }
 
 void ConfigDialog::apply(QAbstractButton *button)
@@ -473,8 +257,7 @@ void ConfigDialog::apply(QAbstractButton *button)
     {
         if (updateDB()<0)
             return;
-        m_applying = true;
-        emit save();
+        m_interpreter->saveParams();
     }
 }
 

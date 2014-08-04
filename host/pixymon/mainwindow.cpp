@@ -252,12 +252,10 @@ void MainWindow::closeEvent(QCloseEvent *event)
     // delete interpreter
     if (m_configDialog)
     {
-        m_exitting = true;
-        event->ignore(); // ignore event
-        qDebug("closing dialog");
         m_configDialog->close();
+        m_configDialog = NULL;
     }
-    else if (m_interpreter)
+    if (m_interpreter)
     {
         m_exitting = true;
         event->ignore(); // ignore event
@@ -429,7 +427,10 @@ void MainWindow::handleActionScriptlet(int index, QString action, QStringList sc
 void MainWindow::handleConnected(Device device, bool state)
 {
     if (m_configDialog)
+    {
         m_configDialog->close();
+        m_configDialog = NULL;
+    }
 
     // kill connect thread
     if (m_connect)
@@ -441,6 +442,15 @@ void MainWindow::handleConnected(Device device, bool state)
         connectPixy(state);
     else if (device==PIXY_DFU)
         connectPixyDFU(state);
+}
+
+void MainWindow::handleConfigDialogFinished()
+{
+    if (m_configDialog)
+    {
+        m_configDialog = NULL;
+        updateButtons();
+    }
 }
 
 void MainWindow::on_actionAbout_triggered()
@@ -513,8 +523,8 @@ void MainWindow::on_actionConfigure_triggered()
     if (m_interpreter)
     {
         m_configDialog = new ConfigDialog(this, m_interpreter);
-        connect(m_configDialog, SIGNAL(done()), this, SLOT(configFinished()));
-        m_configDialog->show();
+        connect(m_configDialog, SIGNAL(finished(int)), this, SLOT(handleConfigDialogFinished()));
+        m_configDialog->setAttribute(Qt::WA_DeleteOnClose);
         updateButtons();
     }
 }
@@ -531,20 +541,6 @@ void MainWindow::on_actionCooked_video_triggered()
         m_interpreter->execute("runprogArg 8 1");
 }
 
-
-void MainWindow::configFinished()
-{
-    qDebug("config finished");
-    m_configDialog->deleteLater();
-    m_configDialog = NULL;
-    updateButtons();
-    // if we're exitting, close interpreter (handin it down the chain...)
-    if (m_exitting)
-    {
-        qDebug("closing interpreter");
-        m_interpreter->close();
-    }
-}
 
 void MainWindow::interpreterFinished()
 {

@@ -10,6 +10,15 @@
 #define PP_FLAGS        "flags"
 #define PP_TYPE         "type"
 
+#define PRM_FLAG_INTERNAL            0x01
+#define PRM_FLAG_ADVANCED            0x02
+#define PRM_FLAG_HEX_FORMAT          0x10
+#define PRM_FLAG_SIGNED              0x80
+
+#define PRM_INT8                     1
+#define PRM_INT16                    2
+#define PRM_INT32                    4
+
 struct RadioValue
 {
     RadioValue(const QString &description,  const QVariant &value)
@@ -33,6 +42,7 @@ public:
 
     const QString &id();
     const QVariant &value();
+    int valueInt();
     const QString *description();
 
     int set(const QVariant &value);

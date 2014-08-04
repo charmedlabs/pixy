@@ -20,15 +20,6 @@
 #define RENDER_FLAG_FLUSH            0x01
 #define RENDER_FLAG_BLEND_BG         0x02
 
-#define PRM_FLAG_INTERNAL            0x01
-#define PRM_FLAG_ADVANCED            0x02
-#define PRM_FLAG_HEX_FORMAT          0x10
-#define PRM_FLAG_SIGNED              0x80
-
-#define PRM_INT8                     1
-#define PRM_INT16                    2
-#define PRM_INT32                    4
-
 typedef uint32_t Qval;
 
 struct Point16
