@@ -200,7 +200,6 @@ void Interpreter::printHelp()
 {
     ProcInfo info;
     ChirpProc p;
-    QMutexLocker locker(&m_chirp->m_mutex);
 
     for (p=0; true; p++)
     {
@@ -373,7 +372,6 @@ int Interpreter::addProgram(const QStringList &argv)
 
 void Interpreter::getRunning()
 {
-    QMutexLocker locker(&m_chirp->m_mutex);
     int res, running;
 
     res = m_chirp->callSync(m_exec_running, END_OUT_ARGS, &running, END_IN_ARGS);
@@ -402,7 +400,6 @@ void Interpreter::getRunning()
 
 int Interpreter::sendRun()
 {
-    QMutexLocker locker(&m_chirp->m_mutex);
     int res, response;
 
     m_fastPoll = true;
@@ -415,7 +412,6 @@ int Interpreter::sendRun()
 
 int Interpreter::sendStop()
 {
-    QMutexLocker locker(&m_chirp->m_mutex);
     int res, response;
 
     m_fastPoll = true;
@@ -429,7 +425,6 @@ int Interpreter::sendStop()
 
 int Interpreter::sendGetAction(int index)
 {
-    QMutexLocker locker(&m_chirp->m_mutex);
     int res, response;
     char *action, *scriptlet;
     QStringList scriptlet2;
@@ -567,12 +562,8 @@ void Interpreter::run()
         }
         else
         {
-            if (m_running && m_chirp->m_mutex.tryLock())
-            {
-                m_chirp->service(false);
-                m_chirp->m_mutex.unlock();
-                msleep(1); // give config thread time to run
-            }
+            m_chirp->service(false);
+            msleep(1); // give config thread time to run
         }
         handlePendingCommand();
         if (!m_running)
@@ -810,7 +801,6 @@ void Interpreter::controlKey(Qt::Key key)
 
 void Interpreter::handleHelp()
 {
-    QMutexLocker locker(&m_chirp->m_mutex);
     ChirpProc proc;
     ProcInfo info;
 
@@ -912,7 +902,6 @@ uint16_t *Interpreter::getVersion()
 
 int Interpreter::call(const QStringList &argv, bool interactive)
 {
-    QMutexLocker locker(&m_chirp->m_mutex);
     ChirpProc proc;
     ProcInfo info;
     int args[20];

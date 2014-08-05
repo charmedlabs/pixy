@@ -19,7 +19,7 @@
 #include "chirpmon.h"
 #include "interpreter.h"
 
-ChirpMon::ChirpMon(Interpreter *interpreter, USBLink *link) : m_mutex(QMutex::Recursive)
+ChirpMon::ChirpMon(Interpreter *interpreter, USBLink *link)
 {
     m_hinterested = true;
     m_client = true;
@@ -92,7 +92,6 @@ int ChirpMon::sendChirp(uint8_t type, ChirpProc proc)
 
 int ChirpMon::execute(const ChirpCallData &data)
 {
-    QMutexLocker locker(&m_mutex);
     int res;
 
     // copy into chirp buffer-- remember to skip the header space

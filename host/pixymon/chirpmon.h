@@ -16,7 +16,6 @@
 #ifndef CHIRPTHREAD_H
 #define CHIRPTHREAD_H
 
-#include <QMutex>
 #include <chirp.hpp>
 
 class Interpreter;
@@ -50,8 +49,6 @@ public:
     virtual ~ChirpMon();
 
     int serviceChirp();
-
-    QMutex m_mutex;
 
     friend class Interpreter;
 
