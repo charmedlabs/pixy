@@ -34,7 +34,7 @@ ConfigDialog::ConfigDialog(QWidget *parent, Interpreter *interpreter) : QDialog(
     m_interpreter->unwait(); // unhang interpreter if it's waiting
 
     m_tabs = new QTabWidget(this);
-    m_ui->gridLayout->addWidget(m_tabs);
+    m_ui->pixyLayout->addWidget(m_tabs);
 
     connect(interpreter, SIGNAL(paramLoaded()), this, SLOT(loaded()));
     connect(m_ui->buttonBox, SIGNAL(clicked(QAbstractButton*)), this, SLOT(apply(QAbstractButton*)));
@@ -42,13 +42,13 @@ ConfigDialog::ConfigDialog(QWidget *parent, Interpreter *interpreter) : QDialog(
     m_interpreter->loadParams();
 
 #ifdef __MACOS__
-    setMinimumWidth(550);
+    setMinimumWidth(650);
 #endif
 #ifdef __LINUX__
-    setMinimumWidth(500);
+    setMinimumWidth(600);
 #endif
 #ifdef __WINDOWS__
-    setMinimumWidth(420);
+    setMinimumWidth(550);
 #endif
 }
 

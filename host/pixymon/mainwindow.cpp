@@ -575,6 +575,8 @@ void MainWindow::on_actionHelp_triggered()
 
 void MainWindow::handleLoadParams()
 {
+    // we're done loading now we can save to a file (gotta load before we save because
+    // parameters can change on the pixy side without us knowing (e.g. signatures)
     if (m_paramsLoading)
     {
         QString dir;

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>255</width>
-    <height>61</height>
+    <width>288</width>
+    <height>211</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -25,7 +25,35 @@
     </widget>
    </item>
    <item row="0" column="0">
-    <layout class="QGridLayout" name="gridLayout"/>
+    <layout class="QGridLayout" name="gridLayout">
+     <item row="0" column="0">
+      <widget class="QTabWidget" name="tabWidget">
+       <property name="currentIndex">
+        <number>0</number>
+       </property>
+       <widget class="QWidget" name="pixyParameters">
+        <attribute name="title">
+         <string>Pixy Parameters (queried)</string>
+        </attribute>
+        <layout class="QGridLayout" name="gridLayout_5">
+         <item row="0" column="0">
+          <layout class="QGridLayout" name="pixyLayout"/>
+         </item>
+        </layout>
+       </widget>
+       <widget class="QWidget" name="pixymonTab">
+        <attribute name="title">
+         <string>PixyMon Parameters</string>
+        </attribute>
+        <layout class="QGridLayout" name="gridLayout_4">
+         <item row="0" column="0">
+          <layout class="QGridLayout" name="pixymonLayout"/>
+         </item>
+        </layout>
+       </widget>
+      </widget>
+     </item>
+    </layout>
    </item>
   </layout>
  </widget>
