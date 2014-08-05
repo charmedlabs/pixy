@@ -1104,6 +1104,7 @@ void Interpreter::handleLoadParams()
     int response, res;
     uint8_t *data, *argList;
     bool running;
+
     m_pixyParameters.parameters().clear();
 
     // if we're running, stop so this doesn't take too long....
@@ -1138,7 +1139,7 @@ void Interpreter::handleLoadParams()
         else
             category = CD_GENERAL;
 
-        Parameter parameter(id, "("+printArgType(argList[0], flags)+") "+sdesc);
+        Parameter parameter(id, (PType)argList[0], "("+printArgType(argList[0], flags)+") "+sdesc);
         parameter.setProperty(PP_CATEGORY, category);
         parameter.setProperty(PP_FLAGS, flags);
         if (strlen((char *)argList)>1)
@@ -1148,14 +1149,11 @@ void Interpreter::handleLoadParams()
         }
         else
         {
-            // save off type
-            parameter.setProperty(PP_TYPE, QVariant(QMetaType::UChar, argList));
-
             if (argList[0]==CRP_INT8 || argList[0]==CRP_INT16 || argList[0]==CRP_INT32)
             {
                 int32_t val = 0;
                 Chirp::deserialize(data, len, &val, END);
-                parameter.set(QVariant(val));
+                parameter.set(val);
             }
             else if (argList[0]==CRP_FLT32)
             {
@@ -1212,21 +1210,27 @@ void Interpreter::handleSaveParams()
             int len;
             QByteArray str = parameters[i].id().toUtf8();
             const char *id = str.constData();
-            QChar type = parameters[i].property(PP_TYPE).toChar();
+            PType type = parameters[i].type();
             parameters[i].setDirty(false); // reset
             dirty = true; // keep track for sending signal
 
-            qDebug("%s\n", id);
+            qDebug() << id;
 
-            if (type==CRP_INT8 || type==CRP_INT16 || type==CRP_INT32)
+            if (type==PT_INT8 || type==PT_INT16 || type==PT_INT32)
             {
                 int val = parameters[i].value().toInt();
                 len = Chirp::serialize(NULL, buf, 0x100, type, val, END);
             }
-            else if (type==CRP_FLT32)
+            else if (type==PT_FLT32)
             {
                 float val = parameters[i].value().toFloat();
                 len = Chirp::serialize(NULL, buf, 0x100, type, val, END);
+            }
+            else if (type==PT_INTS8)
+            {
+                QByteArray a = parameters[i].value().toByteArray();
+                len = a.size();
+                memcpy(buf, a.constData(), len);
             }
             else
                 continue; // don't know what to do!

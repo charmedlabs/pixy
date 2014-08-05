@@ -8,16 +8,12 @@
 #define PP_CATEGORY     "category"
 #define PP_WIDGET       "widget"
 #define PP_FLAGS        "flags"
-#define PP_TYPE         "type"
 
 #define PRM_FLAG_INTERNAL            0x01
 #define PRM_FLAG_ADVANCED            0x02
 #define PRM_FLAG_HEX_FORMAT          0x10
 #define PRM_FLAG_SIGNED              0x80
 
-#define PRM_INT8                     1
-#define PRM_INT16                    2
-#define PRM_INT32                    4
 
 struct RadioValue
 {
@@ -31,14 +27,29 @@ struct RadioValue
     QVariant m_value;
 };
 
+enum PType // values copied from Chirp (and assumed they are consistent)
+{
+    PT_UNKNOWN = 0x00,
+    PT_INT8 = 0x01,
+    PT_INT16 = 0x02,
+    PT_INT32 = 0x04,
+    PT_FLT32 = 0x14,
+    PT_INTS8 = 0x81,
+    PT_STRING = 0xa1,
+    PT_RADIO = 0x100 // not a chirp type
+};
 
 typedef QList<RadioValue> RadioValues;
 
 class Parameter
 {
 public:
-    Parameter(const QString &id, const QString &help="");
+    Parameter(const QString &id, PType type, const QString &help="");
     ~Parameter();
+
+    QString typeName();
+    static PType typeLookup(const QString &name);
+    PType type();
 
     const QString &id();
     const QVariant &value();
@@ -62,7 +73,9 @@ public:
 private:
     RadioValues m_radioValues; // m_radioValues.size()>0 we're a radio parameter
     int m_radioValue;
+
     QVariant m_value; // else we're just a regular parameter with value in m_value.
+    PType m_type; // only applies to m_value
 
     QString m_id;
     QString m_help;
@@ -87,7 +100,7 @@ public:
     int set(const QString &id, const QVariant &value);
     int set(const QString &id, const QString &description);
 
-    void add(const Parameter &parameter);
+    void add(Parameter &parameter);
 
 private:
     Parameters m_parameters;

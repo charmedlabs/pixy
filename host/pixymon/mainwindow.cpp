@@ -60,6 +60,7 @@ MainWindow::MainWindow(int argc, char *argv[], QWidget *parent) :
     m_flash = NULL;
     m_pixyConnected = false;
     m_pixyDFUConnected = false;
+    m_paramsLoading = false;
     m_exitting = false;
     m_configDialog = NULL;
     m_initScriptExecuted = false;
@@ -350,6 +351,7 @@ void MainWindow::connectPixy(bool state)
                 connect(m_interpreter, SIGNAL(finished()), this, SLOT(interpreterFinished()));
                 connect(m_interpreter, SIGNAL(connected(Device,bool)), this, SLOT(handleConnected(Device,bool)));
                 connect(m_interpreter, SIGNAL(actionScriptlet(int,QString,QStringList)), this, SLOT(handleActionScriptlet(int,QString,QStringList)));
+                connect(m_interpreter, SIGNAL(paramLoaded()), this, SLOT(handleLoadParams()));
                 clearActions();
                 m_interpreter->getAction(0);  // start action query process
             }
@@ -571,6 +573,35 @@ void MainWindow::on_actionHelp_triggered()
     QDesktopServices::openUrl(QUrl("http://charmedlabs.com/pixymonhelp"));
 }
 
+void MainWindow::handleLoadParams()
+{
+    if (m_paramsLoading)
+    {
+        QString dir;
+        QFileDialog fd(this);
+        fd.setWindowTitle("Please provide a filename for the parameter file");
+        dir = docPath();
+        fd.setDirectory(QDir(dir));
+        fd.setNameFilter("XML file (*.xml)");
+        fd.setAcceptMode(QFileDialog::AcceptSave);
+        if (fd.exec())
+        {
+            QStringList flist = fd.selectedFiles();
+            if (flist.size()==1)
+            {
+                ParamFile pf;
+                if (pf.open(flist[0], false)>=0)
+                {
+                    pf.write("Pixy_parameters", &m_interpreter->m_pixyParameters);
+                    pf.close();
+                }
+            }
+        }
+
+        m_paramsLoading = false;
+    }
+}
+
 const QString uniqueFilename(const QDir &dir, const QString &filebase, const QString &extension)
 {
     int i;
@@ -583,25 +614,71 @@ const QString uniqueFilename(const QDir &dir, const QString &filebase, const QSt
     }
 }
 
+QString MainWindow::docPath()
+{
+    QString path;
+#if QT_VERSION>QT_VERSION_CHECK(5,0,0)
+    path = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+#else
+    path = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation);
+#endif
+    QDir dir(path);
+
+    if (!dir.exists(PM_DEFAULT_DATA_DIR))
+        dir.mkdir(PM_DEFAULT_DATA_DIR);
+    dir.cd(PM_DEFAULT_DATA_DIR);
+
+    return dir.absolutePath();
+}
+
 void MainWindow::on_actionSave_Image_triggered()
 {
-    QString filename, docPath;
+    QString filename;
 
     if (m_interpreter)
     {
-#if QT_VERSION>QT_VERSION_CHECK(5,0,0)
-        docPath = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
-#else
-        docPath = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation);
-#endif
-        QDir dir(docPath);
-
-        if (!dir.exists(PM_DEFAULT_DATA_DIR))
-            dir.mkdir(PM_DEFAULT_DATA_DIR);
-        dir.cd(PM_DEFAULT_DATA_DIR);
-        filename = uniqueFilename(dir, "image", "png");
+        filename = uniqueFilename(docPath(), "image", "png");
         m_interpreter->saveImage(filename);
     }
-
-
 }
+
+void MainWindow::on_actionSave_Pixy_parameters_triggered()
+{
+    if (m_interpreter)
+    {
+        m_interpreter->loadParams();
+        m_paramsLoading = true;
+    }
+}
+
+void MainWindow::on_actionLoad_Pixy_parameters_triggered()
+{
+    int res;
+
+    if (m_interpreter)
+    {
+        QString dir;
+        QFileDialog fd(this);
+        fd.setWindowTitle("Please choose a parameter file");
+        dir = docPath();
+        fd.setDirectory(QDir(dir));
+        fd.setNameFilter("XML file (*.xml)");
+        if (fd.exec())
+        {
+            m_interpreter->m_pixyParameters.parameters().clear();
+            QStringList flist = fd.selectedFiles();
+            if (flist.size()==1)
+            {
+                ParamFile pf;
+                pf.open(flist[0], true);
+                res = pf.read("Pixy_parameters", &m_interpreter->m_pixyParameters);
+                pf.close();
+
+                if (res>=0)
+                    m_interpreter->saveParams();
+            }
+        }
+    }
+}
+
+

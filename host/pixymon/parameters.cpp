@@ -2,11 +2,12 @@
 #include "parameters.h"
 
 
-Parameter::Parameter(const QString &id, const QString &help)
+Parameter::Parameter(const QString &id, PType type, const QString &help)
 {
     m_id = id;
     m_help = help;
     m_radioValue = 0;
+    m_type = type;
     m_dirty = false;
 }
 
@@ -19,29 +20,71 @@ const QString &Parameter::id()
     return m_id;
 }
 
+QString Parameter::typeName()
+{
+    if (m_type==PT_INT8)
+        return "INT8";
+    else if (m_type==PT_INT16)
+        return "INT16";
+    else if (m_type==PT_INT32)
+        return "INT32";
+    else if (m_type==PT_FLT32)
+        return "FLOAT32";
+    else if (m_type==PT_INTS8)
+        return "INT8_ARRAY";
+    else if (m_type==PT_STRING)
+        return "STRING";
+    else if (m_type==PT_RADIO)
+        return "RADIO";
+    else
+        return "?";
+}
+
+PType Parameter::typeLookup(const QString &name)
+{
+    if (name=="INT8")
+        return PT_INT8;
+    else if (name=="INT16")
+        return PT_INT16;
+    else if (name=="INT32")
+        return PT_INT32;
+    else if (name=="FLOAT32")
+        return PT_FLT32;
+    else if (name=="INT8_ARRAY")
+        return PT_INTS8;
+    else if (name=="STRING")
+        return PT_STRING;
+    else if (name=="RADIO")
+        return PT_RADIO;
+    else
+        return PT_UNKNOWN;
+}
+
+PType Parameter::type()
+{
+    return m_type;
+}
+
 const QVariant &Parameter::value()
 {
-    if (m_radioValues.size()>0)
+    if (m_type==PT_RADIO)
         return m_radioValues[m_radioValue].m_value;
     else
         return m_value;
 }
 
-int Parameter::valueInt() // deal with signed and less than 32 bit integers
+// deal with signed and less than 32 bit integers
+// These need to be treated special because a 16-bit negative integer
+// treated as an unsigned 32-bit integer won't translate correctly
+int Parameter::valueInt()
 {
-    QChar type;
-
     int val = m_value.toInt();
-    if (property(PP_TYPE).isNull())
-        type = 0;
-    else
-        type = property(PP_TYPE).toChar();
-    if (type==PRM_INT16)
+    if (m_type==PT_INT16)
     {
         val <<= 16;
         val >>= 16; // sign extend
     }
-    if (type==PRM_INT8)
+    if (m_type==PT_INT8)
     {
         val <<= 24;
         val >>= 24; // sign extend
@@ -51,14 +94,14 @@ int Parameter::valueInt() // deal with signed and less than 32 bit integers
 
 const QString *Parameter::description()
 {
-    if (m_radioValues.size()>0)
+    if (m_type==PT_RADIO)
         return &m_radioValues[m_radioValue].m_description;
     return NULL;
 }
 
 int Parameter::set(const QVariant &value)
 {
-    if (m_radioValues.size()>0)
+    if (m_type==PT_RADIO)
     {
         for (int i=0; i<m_radioValues.size(); i++)
         {
@@ -78,7 +121,7 @@ int Parameter::set(const QVariant &value)
 
 int Parameter::setRadio(const QString &description)
 {
-    if (m_radioValues.size()>0)
+    if (m_type==PT_RADIO)
     {
         for (int i=0; i<m_radioValues.size(); i++)
         {
@@ -212,8 +255,17 @@ int ParameterDB::set(const QString &id, const QString &description)
     return -1;
 }
 
-void ParameterDB::add(const Parameter &parameter)
+void ParameterDB::add(Parameter &parameter)
 {
+    for (int i=0; i<m_parameters.size(); i++)
+    {
+        if (QString::compare(m_parameters[i].id(), parameter.id(), Qt::CaseInsensitive)==0)
+        {
+            m_parameters[i].set(parameter.value());
+            return;
+        }
+    }
+    // else put in list
     m_parameters.push_back(parameter);
 }
 

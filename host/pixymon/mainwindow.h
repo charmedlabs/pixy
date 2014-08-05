@@ -50,6 +50,7 @@ private slots:
     void handleConnected(Device device, bool state);
     void handleActions();
     void handleActionScriptlet(int index, QString action, QStringList scriptlet);
+    void handleLoadParams();
     void handleConfigDialogFinished();
     void interpreterFinished();
     void on_actionAbout_triggered();
@@ -58,6 +59,8 @@ private slots:
     void on_actionConfigure_triggered();
     void on_actionHelp_triggered();
     void on_actionSave_Image_triggered();
+    void on_actionSave_Pixy_parameters_triggered();
+    void on_actionLoad_Pixy_parameters_triggered();
     void on_actionExit_triggered();
     void on_actionRaw_video_triggered();
     void on_actionCooked_video_triggered();
@@ -72,12 +75,14 @@ private:
     void addAction(const QString &label, const QStringList &command);
     void clearActions();
     void setEnabledActions(bool enable);
+    QString docPath();
     void close();
     void parseCommandline(int argc, char *argv[]);
     void program(const QString &file);
 
     bool m_pixyConnected;
     bool m_pixyDFUConnected;
+    bool m_paramsLoading;
     bool m_exitting;
     VideoWidget *m_video;
     ConsoleWidget *m_console;

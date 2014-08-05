@@ -50,49 +50,38 @@ int ParamFile::write(const QString &tag, ParameterDB *data)
         for (i=0; i<parameters.size(); i++)
         {
             QDomElement item = m_doc->createElement("data");
-            QMetaType::Type type = (QMetaType::Type)parameters[i].value().type();
-            QChar etype;
+            PType type = parameters[i].type();
             uint flags;
-            if (parameters[i].property(PP_TYPE).isNull())
-                etype = 0;
-            else
-                etype = parameters[i].property(PP_TYPE).toChar(); // embedded type
             if (parameters[i].property(PP_FLAGS).isNull())
                 flags = 0;
             else
                 flags = parameters[i].property(PP_FLAGS).toUInt(); // embedded flags
 
             item.setAttribute("key", parameters[i].id());
-            if (parameters[i].description())
-            {
-                item.setAttribute("type", "Radio");
+            item.setAttribute("type", parameters[i].typeName());
+            if (type==PT_RADIO)
                 item.setAttribute("value", *parameters[i].description());
-            }
-            else
+            if (type==PT_INTS8)
             {
-                item.setAttribute("type", QMetaType::typeName(type));
-                if (type==QMetaType::QByteArray)
+                QByteArray a = parameters[i].value().toByteArray();
+                a = a.toBase64();
+                item.setAttribute("value", QString(a));
+            }
+            else if (type==PT_INT32 || type==PT_INT16 || type==PT_INT8)
+            {
+                if (flags&PRM_FLAG_SIGNED)
                 {
-                    QByteArray a = parameters[i].value().toByteArray();
-                    a = a.toBase64();
-                    item.setAttribute("value", QString(a));
-                }
-                else if (etype==PRM_INT32 || etype==PRM_INT16 || etype==PRM_INT8)
-                {
-                    if (flags&PRM_FLAG_SIGNED)
-                    {
-                        int val = parameters[i].valueInt();
-                        item.setAttribute("value", QString::number(val));
-                    }
-                    else
-                    {
-                        int val = parameters[i].value().toUInt();
-                        item.setAttribute("value", QString::number(val));
-                    }
+                    int val = parameters[i].valueInt();
+                    item.setAttribute("value", QString::number(val));
                 }
                 else
-                    item.setAttribute("value", parameters[i].value().toString());
+                {
+                    uint val = parameters[i].value().toUInt();
+                    item.setAttribute("value", QString::number(val));
+                }
             }
+            else // handle string and float
+                item.setAttribute("value", parameters[i].value().toString());
             element.appendChild(item);
         }
     }
@@ -115,32 +104,43 @@ int ParamFile::read(const QString &tag, ParameterDB *data)
         QString key;
         QString type;
         QString value;
+
         key = nextElement.attribute("key");
         type = nextElement.attribute("type");
         value = nextElement.attribute("value");
-        if (type=="Radio")
-            data->set(key, value);
+
+        Parameter parameter(key, Parameter::typeLookup(type));
+
+        // always set dirty state
+        parameter.setDirty(true);
+
+        PType ptype = Parameter::typeLookup(type);
+
+        if (ptype==PT_RADIO)
+            parameter.setRadio(value);
         else
         {
-            if (type=="float")
+            if (ptype==PT_FLT32)
             {
                 float val = value.toFloat();
-                data->set(key, val);
+                parameter.set(val);
             }
-            else if (type=="QString")
-                data->set(key, QVariant(value));
-            else if (type=="QByteArray")
+            else if (ptype==PT_INTS8)
             {
                 QByteArray a = value.toUtf8();
                 a = QByteArray::fromBase64(a);
-                data->set(key, QVariant(a));
+                parameter.set(QVariant(a));
             }
-            else // must be integer type
+            else if (ptype==PT_INT8 || ptype==PT_INT16 || ptype==PT_INT32)
             {
                 int val = value.toInt();
-                data->set(key, val);
+                parameter.set(val);
             }
+            else // all other cases (STRING)
+                parameter.set(value);
         }
+        data->add(parameter);
+
         node = nextElement.nextSibling();
         nextElement = node.toElement();
     }

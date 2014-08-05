@@ -165,6 +165,7 @@ void ConfigDialog::loaded()
         if (flags&PRM_FLAG_INTERNAL) // don't render!
             continue;
 
+        PType type = parameter.type();
         QLineEdit *line = new QLineEdit();
         QLabel *label = new QLabel(parameter.id());
         label->setToolTip(parameter.help());
@@ -172,13 +173,12 @@ void ConfigDialog::loaded()
         qlonglong lline = (qlonglong)line;
         parameter.setProperty(PP_WIDGET, lline);
 
-        if ((QMetaType::Type)parameter.value().type()!=QMetaType::QByteArray) // make sure it's a scalar type
+        if (type!=PT_INTS8) // make sure it's a scalar type
         {
-            QChar type = parameter.property(PP_TYPE).toChar();
-            if (type==CRP_FLT32)
+            if (type==PT_FLT32)
             {
                 float val = parameter.value().toFloat();
-                line->setText(QString::number(val, 'f', 3));
+                line->setText(QString::number(val, 'f', 6));
             }
             else if (!(flags&PRM_FLAG_SIGNED))
             {
@@ -210,14 +210,6 @@ void ConfigDialog::loaded()
             layout->addWidget(line, i, 1);
         }
     }
-
-#if 0
-    ParamFile pfile;
-
-    pfile.open("pixyparameters.xml", false);
-    pfile.write("Pixyparams", &m_parameters);
-    pfile.close();
-#endif
 
     // set stretch on all tabs
     for (i=0; true; i++)
