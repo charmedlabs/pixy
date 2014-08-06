@@ -270,11 +270,10 @@ Parameter *ParameterDB::parameter(const QString &id)
 
 const QString *ParameterDB::description(const QString &id)
 {
-    for (int i=0; i<m_parameters.size(); i++)
-    {
-        if (QString::compare(m_parameters[i].id(), id, Qt::CaseInsensitive)==0)
-            return m_parameters[i].description();
-    }
+    Parameter *param = parameter(id);
+
+    if (param)
+        return param->description();
     return NULL;
 }
 
@@ -285,36 +284,32 @@ Parameters &ParameterDB::parameters()
 
 int ParameterDB::set(const QString &id, const QVariant &value)
 {
-    for (int i=0; i<m_parameters.size(); i++)
-    {
-        if (QString::compare(m_parameters[i].id(), id, Qt::CaseInsensitive)==0)
-            return m_parameters[i].set(value);
-    }
+    Parameter *param = parameter(id);
+
+    if (param)
+        return param->set(value);
+
     return -1;
 }
 
 int ParameterDB::set(const QString &id, const QString &description)
 {
-    for (int i=0; i<m_parameters.size(); i++)
-    {
-        if (QString::compare(m_parameters[i].id(), id, Qt::CaseInsensitive)==0)
-            return m_parameters[i].set(description);
-    }
+    Parameter *param = parameter(id);
+
+    if (param)
+        return param->set(description);
+
     return -1;
 }
 
-void ParameterDB::add(Parameter parameter)
+void ParameterDB::add(Parameter param)
 {
-    for (int i=0; i<m_parameters.size(); i++)
-    {
-        if (QString::compare(m_parameters[i].id(), parameter.id(), Qt::CaseInsensitive)==0)
-        {
-            m_parameters[i].set(parameter.value());
-            return;
-        }
-    }
-    // else put in list
-    m_parameters.push_back(parameter);
+    Parameter *pparam = parameter(param.id());
+
+    if (pparam)
+        *pparam = param;
+    else  // else put in list
+        m_parameters.push_back(param);
 }
 
 

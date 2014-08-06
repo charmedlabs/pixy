@@ -504,7 +504,7 @@ void MainWindow::loadParameters()
     // initialize paramters
     QString dp = docPath();
 
-    m_parameters.add(Parameter("Document directory", dp, PT_PATH,
+    m_parameters.add(Parameter("Document folder", dp, PT_PATH,
                                "The directory where images and other data files are saved"));
 
     // now see if config file exists
@@ -639,7 +639,7 @@ void MainWindow::on_actionSave_Image_triggered()
 
     if (m_interpreter)
     {
-        filename = uniqueFilename(docPath(), "image", "png");
+        filename = uniqueFilename(m_parameters.value("Document folder")->toString(), "image", "png");
         m_interpreter->saveImage(filename);
     }
 }
@@ -667,7 +667,6 @@ void MainWindow::on_actionLoad_Pixy_parameters_triggered()
         fd.setNameFilter("XML file (*.xml)");
         if (fd.exec())
         {
-            m_interpreter->m_pixyParameters.parameters().clear();
             QStringList flist = fd.selectedFiles();
             if (flist.size()==1)
             {

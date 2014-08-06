@@ -28,7 +28,7 @@ public:
 
     int open(const QString &filename, bool read);
     int write(const QString &tag, ParameterDB *data);
-    int read(const QString &tag, ParameterDB *data);
+    int read(const QString &tag, ParameterDB *data, bool create=false);
 
     void close();
 

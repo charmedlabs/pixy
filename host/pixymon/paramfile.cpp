@@ -114,7 +114,7 @@ int ParamFile::write(const QString &tag, ParameterDB *data)
     return 0;
 }
 
-int ParamFile::read(const QString &tag, ParameterDB *data)
+int ParamFile::read(const QString &tag, ParameterDB *data, bool create)
 {
     QDomElement element, nextElement;
     QDomNode node;
@@ -133,37 +133,42 @@ int ParamFile::read(const QString &tag, ParameterDB *data)
         type = nextElement.attribute("type");
         value = nextElement.attribute("value");
 
-        Parameter parameter(key, Parameter::typeLookup(type));
-
-        // always set dirty state
-        parameter.setDirty(true);
-
-        PType ptype = Parameter::typeLookup(type);
-
-        if (ptype&PT_RADIO_MASK)
-            parameter.setRadio(value);
-        else
+        // if we aren't creating the database and the key doesn't exist, skip
+        if (create || data->value(key))
         {
-            if (ptype==PT_FLT32)
+
+            Parameter parameter(key, Parameter::typeLookup(type));
+
+            // always set dirty state
+            parameter.setDirty(true);
+
+            PType ptype = Parameter::typeLookup(type);
+
+            if (ptype&PT_RADIO_MASK)
+                parameter.setRadio(value);
+            else
             {
-                float val = value.toFloat();
-                parameter.set(val);
+                if (ptype==PT_FLT32)
+                {
+                    float val = value.toFloat();
+                    parameter.set(val);
+                }
+                else if (ptype==PT_INTS8)
+                {
+                    QByteArray a = value.toUtf8();
+                    a = QByteArray::fromBase64(a);
+                    parameter.set(QVariant(a));
+                }
+                else if (ptype==PT_INT8 || ptype==PT_INT16 || ptype==PT_INT32)
+                {
+                    int val = value.toInt();
+                    parameter.set(val);
+                }
+                else // all other cases (STRING)
+                    parameter.set(value);
             }
-            else if (ptype==PT_INTS8)
-            {
-                QByteArray a = value.toUtf8();
-                a = QByteArray::fromBase64(a);
-                parameter.set(QVariant(a));
-            }
-            else if (ptype==PT_INT8 || ptype==PT_INT16 || ptype==PT_INT32)
-            {
-                int val = value.toInt();
-                parameter.set(val);
-            }
-            else // all other cases (STRING)
-                parameter.set(value);
+            data->add(parameter);
         }
-        data->add(parameter);
 
         node = nextElement.nextSibling();
         nextElement = node.toElement();
