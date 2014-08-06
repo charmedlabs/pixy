@@ -40,14 +40,23 @@ int ParamFile::open(const QString &filename, bool read)
         QString error;
         int line, col;
         if (!m_file->open(QIODevice::ReadOnly | QIODevice::Text))
+        {
+            close();
             return -1;
+        }
         if (!m_doc->setContent(m_file, &error, &line, &col))
+        {
+            close();
             return -2;
+        }
     }
     else // write
     {
         if (!m_file->open(QIODevice::WriteOnly | QIODevice::Text))
+        {
+            close();
             return -1;
+        }
     }
 
     return 0;
@@ -74,7 +83,7 @@ int ParamFile::write(const QString &tag, ParameterDB *data)
 
             item.setAttribute("key", parameters[i].id());
             item.setAttribute("type", parameters[i].typeName());
-            if (type==PT_RADIO)
+            if (type&PT_RADIO_MASK)
                 item.setAttribute("value", *parameters[i].description());
             if (type==PT_INTS8)
             {
@@ -131,7 +140,7 @@ int ParamFile::read(const QString &tag, ParameterDB *data)
 
         PType ptype = Parameter::typeLookup(type);
 
-        if (ptype==PT_RADIO)
+        if (ptype&PT_RADIO_MASK)
             parameter.setRadio(value);
         else
         {

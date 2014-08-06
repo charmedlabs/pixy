@@ -18,6 +18,11 @@
 
 #include <QMainWindow>
 #include <vector>
+#include "parameters.h"
+
+#define CONFIGFILE_FILENAME     "config.xml"
+#define CONFIGFILE_TAG          "PixyMon_parameters"
+#define PIXY_PARAMFILE_TAG      "Pixy_parameters"
 
 namespace Ui {
     class MainWindow;
@@ -79,6 +84,8 @@ private:
     void close();
     void parseCommandline(int argc, char *argv[]);
     void program(const QString &file);
+    void loadParameters();
+    void saveParameters();
 
     bool m_pixyConnected;
     bool m_pixyDFUConnected;
@@ -97,6 +104,8 @@ private:
     QStringList m_initScript;
     bool m_initScriptExecuted;
     QSettings *m_settings;
+
+    ParameterDB m_parameters;
 };
 
 #endif // MAINWINDOW_H

@@ -21,7 +21,9 @@
 #include <QMessageBox>
 #include <QDebug>
 #include <QTableWidget>
+#include <QPushButton>
 #include <QAbstractButton>
+#include <QFileDialog>
 #include <stdexcept>
 
 
@@ -41,6 +43,8 @@ ConfigDialog::ConfigDialog(QWidget *parent, Interpreter *interpreter) : QDialog(
 
     m_interpreter->loadParams();
 
+    render(m_interpreter->m_pixymonParameters, m_ui->pixymonLayout, NULL);
+
 #ifdef __MACOS__
     setMinimumWidth(650);
 #endif
@@ -57,30 +61,44 @@ ConfigDialog::~ConfigDialog()
 {
 }
 
-QWidget *ConfigDialog::findCategory(const QString &category)
+QWidget *ConfigDialog::findCategory(const QString &category, QTabWidget *tabs)
 {
     int i;
     QString tabText;
 
     for (i=0; true; i++)
     {
-        tabText = m_tabs->tabText(i);
+        tabText = tabs->tabText(i);
         if (tabText=="")
             break;
         else if (tabText==category)
-            return m_tabs->widget(i);
+            return tabs->widget(i);
     }
     return NULL;
 }
 
 int ConfigDialog::updateDB()
 {
-    Parameters &parameters = m_interpreter->m_pixyParameters.parameters();
+    int res1, res2;
+
+    res1 = updateDB(&m_interpreter->m_pixyParameters);
+    res2 = updateDB(m_interpreter->m_pixymonParameters);
+
+    if (res1<0)
+        return res1;
+    if (res2<0)
+        return res2;
+    return 0;
+}
+
+int ConfigDialog::updateDB(ParameterDB *data)
+{
+    Parameters &parameters = data->parameters();
 
     for (int i=0; i<parameters.size(); i++)
     {
         Parameter &parameter = parameters[i];
-        int type = parameter.value().type();
+        int type = parameter.type();
         uint flags = parameter.property(PP_FLAGS).toInt();
 
         if (flags&PRM_FLAG_INTERNAL) // don't render!
@@ -88,7 +106,7 @@ int ConfigDialog::updateDB()
 
         QLineEdit *line = (QLineEdit *)parameter.property(PP_WIDGET).toLongLong();
 
-        if (type==QMetaType::Float)
+        if (type==PT_FLT32)
         {
             bool ok;
             float val;
@@ -100,12 +118,22 @@ int ConfigDialog::updateDB()
             }
             if (val!=parameter.value().toFloat())
             {
-                parameter.set(QVariant(QMetaType::Float, &val));
+                parameter.set(val);
                 parameter.setDirty(true);
             }
         }
-        else if (type==QMetaType::QString)
+        else if (type==PT_STRING)
+            parameter.set(line->text());
+        else if (type==PT_PATH)
         {
+            QDir dir(line->text());
+
+            if (!dir.exists())
+            {
+                QMessageBox::critical(NULL, "Error", parameter.id() + " \"" + line->text() + "\" is not a valid directory!");
+                return -1;
+            }
+            parameter.set(line->text());
         }
         else // must be int type
         {
@@ -125,7 +153,7 @@ int ConfigDialog::updateDB()
                 }
                 if (val!=parameter.valueInt())
                 {
-                    parameter.set(QVariant(parameter.value().type(), &val));
+                    parameter.set(val);
                     parameter.setDirty(true);
                 }
             }
@@ -139,7 +167,7 @@ int ConfigDialog::updateDB()
                 }
                 if (val!=parameter.value().toUInt())
                 {
-                    parameter.set(QVariant(parameter.value().type(), &val));
+                    parameter.set(val);
                     parameter.setDirty(true);
                 }
            }
@@ -150,12 +178,17 @@ int ConfigDialog::updateDB()
 
 void ConfigDialog::loaded()
 {
+    render(&m_interpreter->m_pixyParameters, NULL, m_tabs);
+    show();
+}
+
+void ConfigDialog::render(ParameterDB *data, QGridLayout *layout, QTabWidget *tabs)
+{
     int i;
     QWidget *tab;
-    QGridLayout *layout;
 
     qDebug("rendering config...");
-    Parameters &parameters = m_interpreter->m_pixyParameters.parameters();
+    Parameters &parameters = data->parameters();
 
     for (i=0; i<parameters.size(); i++)
     {
@@ -166,16 +199,31 @@ void ConfigDialog::loaded()
             continue;
 
         PType type = parameter.type();
+        QPushButton *button = NULL;
         QLineEdit *line = new QLineEdit();
         QLabel *label = new QLabel(parameter.id());
         label->setToolTip(parameter.help());
         label->setAlignment(Qt::AlignRight);
-        qlonglong lline = (qlonglong)line;
-        parameter.setProperty(PP_WIDGET, lline);
+        qlonglong temp64 = (qlonglong)line;
+        parameter.setProperty(PP_WIDGET, temp64);
+        line->setMinimumWidth(50);
+        line->setMaximumWidth(75);
+        line->setToolTip(parameter.help());
 
         if (type!=PT_INTS8) // make sure it's a scalar type
         {
-            if (type==PT_FLT32)
+            if (type==PT_PATH)
+            {
+                button = new QPushButton("Change...");
+                temp64 = (qlonglong)&parameter;
+                button->setProperty("Parameter", temp64);
+                connect(button, SIGNAL(clicked()), this, SLOT(handleChangeClicked()));
+                button->setToolTip("Select a new path");
+                line->setMinimumWidth(200);
+                line->setMaximumWidth(300);
+                line->setText(parameter.value().toString());
+            }
+            else if (type==PT_FLT32)
             {
                 float val = parameter.value().toFloat();
                 line->setText(QString::number(val, 'f', 6));
@@ -195,19 +243,23 @@ void ConfigDialog::loaded()
             }
 
             // deal with categories-- create category tab if needed
-            QString category = parameter.property(PP_CATEGORY).toString();
-            tab = findCategory(category);
-            if (tab==NULL)
+            if (tabs)
             {
-                tab = new QWidget();
-                layout = new QGridLayout(tab);
-                m_tabs->addTab(tab, category);
+                QString category = parameter.property(PP_CATEGORY).toString();
+                tab = findCategory(category, tabs);
+                if (tab==NULL)
+                {
+                    tab = new QWidget();
+                    layout = new QGridLayout(tab);
+                    tabs->addTab(tab, category);
+                }
+                else
+                    layout = (QGridLayout *)tab->layout();
             }
-            else
-                layout = (QGridLayout *)tab->layout();
-            line->setMaximumWidth(75);
             layout->addWidget(label, i, 0);
             layout->addWidget(line, i, 1);
+            if (button)
+                layout->addWidget(button, i, 2);
         }
     }
 
@@ -223,8 +275,11 @@ void ConfigDialog::loaded()
         else
             break;
     }
-
-    show();
+    if (layout)
+    {
+        layout->setRowStretch(100, 1);
+        layout->setColumnStretch(100, 1);
+    }
 
     qDebug("rendering config done");
 }
@@ -253,6 +308,28 @@ void ConfigDialog::apply(QAbstractButton *button)
     }
 }
 
+void ConfigDialog::handleChangeClicked()
+{
+    // get button that was clicked
+    QPushButton *button = (QPushButton *)sender();
+    // then grab parameter associated with the button
+    Parameter *parameter = (Parameter *)button->property("Parameter").toLongLong();
+
+    // bring up file dialog
+    QFileDialog fd(this);
+    fd.setWindowTitle("Please choose a folder");
+    fd.setDirectory(parameter->value().toString());
+    fd.setFileMode(QFileDialog::Directory);
+    fd.setOption(QFileDialog::ShowDirsOnly);
+
+    if (fd.exec())
+    {
+        QStringList dir = fd.selectedFiles();
+        // update text box
+        QLineEdit *line = (QLineEdit *)parameter->property(PP_WIDGET).toLongLong();
+        line->setText(dir[0]);
+    }
+}
 
 
 

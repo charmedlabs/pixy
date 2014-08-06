@@ -25,6 +25,16 @@ Parameter::Parameter(const QString &id, PType type, const QString &help)
     m_dirty = false;
 }
 
+Parameter::Parameter(const QString &id, const QVariant &value, PType type, const QString &help)
+{
+   m_value = value;
+   m_id = id;
+   m_help = help;
+   m_radioValue = 0;
+   m_type = type;
+   m_dirty = false;
+}
+
 Parameter::~Parameter()
 {
 }
@@ -48,8 +58,20 @@ QString Parameter::typeName()
         return "INT8_ARRAY";
     else if (m_type==PT_STRING)
         return "STRING";
-    else if (m_type==PT_RADIO)
-        return "RADIO";
+    else if (m_type==PT_INT8_RADIO)
+        return "INT8_RADIO";
+    else if (m_type==PT_INT16_RADIO)
+        return "INT16_RADIO";
+    else if (m_type==PT_INT32_RADIO)
+        return "INT32_RADIO";
+    else if (m_type==PT_FLT32_RADIO)
+        return "FLOAT32_RADIO";
+    else if (m_type==PT_INTS8_RADIO)
+        return "INT8_ARRAY_RADIO";
+    else if (m_type==PT_STRING_RADIO)
+        return "STRING_RADIO";
+    else if (m_type==PT_PATH)
+        return "PATH";
     else
         return "?";
 }
@@ -68,8 +90,20 @@ PType Parameter::typeLookup(const QString &name)
         return PT_INTS8;
     else if (name=="STRING")
         return PT_STRING;
-    else if (name=="RADIO")
-        return PT_RADIO;
+    else if (name=="INT8_RADIO")
+        return PT_INT8_RADIO;
+    else if (name=="INT16_RADIO")
+        return PT_INT16_RADIO;
+    else if (name=="INT32_RADIO")
+        return PT_INT32_RADIO;
+    else if (name=="FLOAT32_RADIO")
+        return PT_FLT32_RADIO;
+    else if (name=="INT8_ARRAY_RADIO")
+        return PT_INTS8_RADIO;
+    else if (name=="STRING_RADIO")
+        return PT_STRING_RADIO;
+    else if (name=="PATH")
+        return PT_PATH;
     else
         return PT_UNKNOWN;
 }
@@ -81,7 +115,7 @@ PType Parameter::type()
 
 const QVariant &Parameter::value()
 {
-    if (m_type==PT_RADIO)
+    if (m_type&PT_RADIO_MASK)
         return m_radioValues[m_radioValue].m_value;
     else
         return m_value;
@@ -108,14 +142,14 @@ int Parameter::valueInt()
 
 const QString *Parameter::description()
 {
-    if (m_type==PT_RADIO)
+    if (m_type&PT_RADIO_MASK)
         return &m_radioValues[m_radioValue].m_description;
     return NULL;
 }
 
 int Parameter::set(const QVariant &value)
 {
-    if (m_type==PT_RADIO)
+    if (m_type&PT_RADIO_MASK)
     {
         for (int i=0; i<m_radioValues.size(); i++)
         {
@@ -135,7 +169,7 @@ int Parameter::set(const QVariant &value)
 
 int Parameter::setRadio(const QString &description)
 {
-    if (m_type==PT_RADIO)
+    if (m_type&PT_RADIO_MASK)
     {
         for (int i=0; i<m_radioValues.size(); i++)
         {
@@ -269,7 +303,7 @@ int ParameterDB::set(const QString &id, const QString &description)
     return -1;
 }
 
-void ParameterDB::add(Parameter &parameter)
+void ParameterDB::add(Parameter parameter)
 {
     for (int i=0; i<m_parameters.size(); i++)
     {

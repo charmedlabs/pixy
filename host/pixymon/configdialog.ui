@@ -33,7 +33,7 @@
        </property>
        <widget class="QWidget" name="pixyParameters">
         <attribute name="title">
-         <string>Pixy Parameters (queried)</string>
+         <string>Pixy Parameters</string>
         </attribute>
         <layout class="QGridLayout" name="gridLayout_5">
          <item row="0" column="0">

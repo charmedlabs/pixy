@@ -30,10 +30,11 @@
 
 QString printType(uint32_t val, bool parens=false);
 
-Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video) : m_mutexProg(QMutex::Recursive)
+Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, ParameterDB *data) : m_mutexProg(QMutex::Recursive)
 {
     m_console = console;
     m_video = video;
+    m_pixymonParameters = data;
     m_pc = 0;
     m_programming = false;
     m_localProgramRunning = false;
@@ -1103,14 +1104,14 @@ void Interpreter::handleLoadParams()
     uint32_t flags;
     int response, res;
     uint8_t *data, *argList;
-    bool running;
+    int running;
 
-    m_pixyParameters.parameters().clear();
+    m_pixyParameters.parameters().clear(); // reset database
 
     // if we're running, stop so this doesn't take too long....
     // (ie it would proceed with 1 property to returned frame, which could take 1 second or 2)
     running = m_running;
-    if (running)
+    if (running==1) // only if we're running and not in forced state (running==2)
         sendStop();
 
     for (i=0; true; i++)
@@ -1171,7 +1172,7 @@ void Interpreter::handleLoadParams()
     }
 
     // if we're running, we've stopped, now resume
-    if (running)
+    if (running==1)
     {
         sendRun();
         m_fastPoll = false; // turn off fast polling...
@@ -1196,7 +1197,7 @@ void Interpreter::handleSaveParams()
     // if we're running, stop so this doesn't take too long....
     // (ie it would proceed with 1 property to returned frame, which could take 1 second or 2)
     running = m_running;
-    if (running)
+    if (running==1) // only if we're running and not in forced state (running==2)
         sendStop();
 
     Parameters &parameters = m_pixyParameters.parameters();
@@ -1245,7 +1246,7 @@ void Interpreter::handleSaveParams()
     }
 
     // if we're running, we've stopped, now resume
-    if (running)
+    if (running==1)
     {
         sendRun();
         m_fastPoll = false; // turn off fast polling...

@@ -51,16 +51,30 @@ struct RadioValue
     QVariant m_value;
 };
 
-enum PType // values copied from Chirp (and assumed they are consistent)
+#define  PT_RADIO_MASK  0x8000
+
+enum PType
 {
     PT_UNKNOWN = 0x00,
+
+    // type values copied from Chirp and are Chirp-compatible
     PT_INT8 = 0x01,
     PT_INT16 = 0x02,
     PT_INT32 = 0x04,
     PT_FLT32 = 0x14,
     PT_INTS8 = 0x81,
     PT_STRING = 0xa1,
-    PT_RADIO = 0x100 // not a chirp type
+
+    // radio types
+    PT_INT8_RADIO = PT_INT8 | PT_RADIO_MASK,
+    PT_INT16_RADIO = PT_INT16 | PT_RADIO_MASK,
+    PT_INT32_RADIO = PT_INT32 | PT_RADIO_MASK,
+    PT_FLT32_RADIO = PT_FLT32 | PT_RADIO_MASK,
+    PT_INTS8_RADIO = PT_INTS8 | PT_RADIO_MASK,
+    PT_STRING_RADIO = PT_STRING | PT_RADIO_MASK,
+
+    // other types
+    PT_PATH = 0x100
 };
 
 typedef QList<RadioValue> RadioValues;
@@ -69,6 +83,7 @@ class Parameter
 {
 public:
     Parameter(const QString &id, PType type, const QString &help="");
+    Parameter(const QString &id, const QVariant &value, PType type, const QString &help="");
     ~Parameter();
 
     QString typeName();
@@ -124,7 +139,7 @@ public:
     int set(const QString &id, const QVariant &value);
     int set(const QString &id, const QString &description);
 
-    void add(Parameter &parameter);
+    void add(Parameter parameter);
 
 private:
     Parameters m_parameters;

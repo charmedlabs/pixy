@@ -50,6 +50,7 @@ MainWindow::MainWindow(int argc, char *argv[], QWidget *parent) :
     QCoreApplication::setApplicationName(PIXYMON_TITLE);
 
     parseCommandline(argc, argv);
+    loadParameters();
 
     qRegisterMetaType<Device>("Device");
 
@@ -92,55 +93,6 @@ MainWindow::MainWindow(int argc, char *argv[], QWidget *parent) :
     m_connect = new ConnectEvent(this);
     if (m_connect->getConnected()==NONE)
         m_console->error("No Pixy devices have been detected.\n");
-
-#if 0
-    ParameterDB db;
-
-    Parameter picOrder("Picture Order");
-    picOrder.add(Value("Column-right", 1));
-    picOrder.add(Value("Column-left", 2));
-    picOrder.add(Value("Row-down", 3));
-    picOrder.add(Value("Row-up", 4));
-    db.add(picOrder);
-
-    Parameter outputFormat("Debug output format");
-    outputFormat.add(Value("Matlab", 1));
-    outputFormat.add(Value("Python", 2));
-    outputFormat.add(Value("R", 3));
-    outputFormat.add(Value("Octave", 4));
-    db.add(outputFormat);
-#endif
-#if 0
-    ParameterDB db2;
-
-    Parameter a("a param");
-    a.add(Value("aa", 1));
-    a.add(Value("bb", 2));
-    db2.add(a);
-
-    Parameter b("b param");
-    b.add(Value("cc", 1));
-    b.add(Value("dd", 2));
-    db2.add(b);
-
-
-    ParamFile pfile;
-
-    pfile.open("out.param", false);
-    pfile.write("pixymon", &db);
-    //pfile.write("blah", &db2);
-    pfile.close();
-
-    db.set("Picture Order", "Row-up");
-    db.set("Debug output format", "R");
-    db2.set("a param", "bb");
-    db2.set("b param", "dd");
-
-    pfile.open("out.param", true);
-    //pfile.read("blah", &db2);
-    pfile.read("pixymon", &db);
-    pfile.close();
-#endif
 }
 
 MainWindow::~MainWindow()
@@ -152,6 +104,8 @@ MainWindow::~MainWindow()
     // we don't delete any of the widgets because the parent deletes it's children upon deletion
 
     delete m_settings;
+
+    saveParameters();
 }
 
 void MainWindow::parseCommandline(int argc, char *argv[])
@@ -200,6 +154,9 @@ void MainWindow::updateButtons()
         m_ui->actionRaw_video->setEnabled(false);
         m_ui->actionCooked_video->setEnabled(false);
         m_ui->actionConfigure->setEnabled(false);
+        m_ui->actionLoad_Pixy_parameters->setEnabled(false);
+        m_ui->actionSave_Pixy_parameters->setEnabled(false);
+        m_ui->actionSave_Image->setEnabled(false);
         setEnabledActions(false);
     }
     else if (runstate==2) // we're in forced runstate
@@ -209,6 +166,9 @@ void MainWindow::updateButtons()
         m_ui->actionRaw_video->setEnabled(false);
         m_ui->actionCooked_video->setEnabled(false);
         m_ui->actionConfigure->setEnabled(true);
+        m_ui->actionLoad_Pixy_parameters->setEnabled(true);
+        m_ui->actionSave_Pixy_parameters->setEnabled(true);
+        m_ui->actionSave_Image->setEnabled(true);
         setEnabledActions(false);
     }
     else if (runstate) // runstate==1
@@ -218,6 +178,9 @@ void MainWindow::updateButtons()
         m_ui->actionRaw_video->setEnabled(true);
         m_ui->actionCooked_video->setEnabled(true);
         m_ui->actionConfigure->setEnabled(true);
+        m_ui->actionLoad_Pixy_parameters->setEnabled(true);
+        m_ui->actionSave_Pixy_parameters->setEnabled(true);
+        m_ui->actionSave_Image->setEnabled(true);
         setEnabledActions(true);
     }
     else if (m_pixyConnected) // runstate==0
@@ -227,6 +190,9 @@ void MainWindow::updateButtons()
         m_ui->actionRaw_video->setEnabled(true);
         m_ui->actionCooked_video->setEnabled(true);
         m_ui->actionConfigure->setEnabled(true);
+        m_ui->actionLoad_Pixy_parameters->setEnabled(true);
+        m_ui->actionSave_Pixy_parameters->setEnabled(true);
+        m_ui->actionSave_Image->setEnabled(true);
         setEnabledActions(true);
     }
     else // nothing connected
@@ -236,6 +202,9 @@ void MainWindow::updateButtons()
         m_ui->actionRaw_video->setEnabled(false);
         m_ui->actionCooked_video->setEnabled(false);
         m_ui->actionConfigure->setEnabled(false);
+        m_ui->actionLoad_Pixy_parameters->setEnabled(false);
+        m_ui->actionSave_Pixy_parameters->setEnabled(false);
+        m_ui->actionSave_Image->setEnabled(false);
         setEnabledActions(false);
     }
 
@@ -344,7 +313,7 @@ void MainWindow::connectPixy(bool state)
             else
             {
                 m_console->print("Pixy detected.\n");
-                m_interpreter = new Interpreter(m_console, m_video);
+                m_interpreter = new Interpreter(m_console, m_video, &m_parameters);
 
                 m_initScriptExecuted = false; // reset so we'll execute for this instance
                 connect(m_interpreter, SIGNAL(runState(uint)), this, SLOT(handleRunState(uint)));
@@ -520,6 +489,36 @@ void MainWindow::program(const QString &file)
 
 }
 
+void MainWindow::saveParameters()
+{
+    ParamFile pf;
+    QFileInfo fi(docPath(), CONFIGFILE_FILENAME);
+
+    pf.open(fi.absoluteFilePath(), false);
+    pf.write(CONFIGFILE_TAG, &m_parameters);
+    pf.close();
+}
+
+void MainWindow::loadParameters()
+{
+    // initialize paramters
+    QString dp = docPath();
+
+    m_parameters.add(Parameter("Document directory", dp, PT_PATH,
+                               "The directory where images and other data files are saved"));
+
+    // now see if config file exists
+    QFileInfo fi(dp, CONFIGFILE_FILENAME);
+    ParamFile pf;
+    if (pf.open(fi.absoluteFilePath(), true)>=0)
+    {
+        pf.read(CONFIGFILE_TAG, &m_parameters);
+        pf.close();
+    }
+    else // there was an error, so write (or rewrite) config file
+        saveParameters();
+}
+
 void MainWindow::on_actionConfigure_triggered()
 {
     if (m_interpreter)
@@ -594,7 +593,7 @@ void MainWindow::handleLoadParams()
                 ParamFile pf;
                 if (pf.open(flist[0], false)>=0)
                 {
-                    pf.write("Pixy_parameters", &m_interpreter->m_pixyParameters);
+                    pf.write(PIXY_PARAMFILE_TAG, &m_interpreter->m_pixyParameters);
                     pf.close();
                 }
             }
@@ -619,6 +618,7 @@ const QString uniqueFilename(const QDir &dir, const QString &filebase, const QSt
 QString MainWindow::docPath()
 {
     QString path;
+
 #if QT_VERSION>QT_VERSION_CHECK(5,0,0)
     path = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
 #else
@@ -673,7 +673,7 @@ void MainWindow::on_actionLoad_Pixy_parameters_triggered()
             {
                 ParamFile pf;
                 pf.open(flist[0], true);
-                res = pf.read("Pixy_parameters", &m_interpreter->m_pixyParameters);
+                res = pf.read(PIXY_PARAMFILE_TAG, &m_interpreter->m_pixyParameters);
                 pf.close();
 
                 if (res>=0)

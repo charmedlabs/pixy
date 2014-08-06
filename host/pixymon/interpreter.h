@@ -53,7 +53,7 @@ class Interpreter : public QThread
     Q_OBJECT
 
 public:
-    Interpreter(ConsoleWidget *console, VideoWidget *video);
+    Interpreter(ConsoleWidget *console, VideoWidget *video, ParameterDB *data);
     ~Interpreter();
 
     // local program business
@@ -81,7 +81,7 @@ public:
 
     ChirpMon *m_chirp;
     ParameterDB m_pixyParameters;
-    ParameterDB m_pixymonParameters;
+    ParameterDB *m_pixymonParameters;
 
     friend class ChirpMon;
 

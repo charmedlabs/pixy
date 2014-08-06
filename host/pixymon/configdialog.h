@@ -41,6 +41,7 @@ public slots:
 protected slots:
     void loaded();
     void apply(QAbstractButton *button);
+    void handleChangeClicked();
     virtual void accept();
     virtual void reject();
 
@@ -48,8 +49,11 @@ protected:
 
 private:
     int updateDB();
+    int updateDB(ParameterDB *data);
 
-    QWidget *findCategory(const QString &category);
+    void render(ParameterDB *data, QGridLayout *layout, QTabWidget *tabs);
+
+    QWidget *findCategory(const QString &category, QTabWidget *tabs);
 
     Ui::ConfigDialog *m_ui;
     QTabWidget *m_tabs;
