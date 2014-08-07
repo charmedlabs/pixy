@@ -130,7 +130,7 @@ int ConfigDialog::updateDB(ParameterDB *data)
 
             if (!dir.exists())
             {
-                QMessageBox::critical(NULL, "Error", parameter.id() + " \"" + line->text() + "\" is not a valid directory!");
+                QMessageBox::critical(NULL, "Error", parameter.id() + " \"" + line->text() + "\" is not a valid folder!");
                 return -1;
             }
             parameter.set(line->text());

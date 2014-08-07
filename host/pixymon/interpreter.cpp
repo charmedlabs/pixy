@@ -1106,8 +1106,6 @@ void Interpreter::handleLoadParams()
     uint8_t *data, *argList;
     int running;
 
-    m_pixyParameters.parameters().clear(); // reset database
-
     // if we're running, stop so this doesn't take too long....
     // (ie it would proceed with 1 property to returned frame, which could take 1 second or 2)
     running = m_running;

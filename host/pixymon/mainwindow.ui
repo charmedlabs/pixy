@@ -33,8 +33,8 @@
     <property name="title">
      <string>File</string>
     </property>
-    <addaction name="actionSave_Image"/>
     <addaction name="actionConfigure"/>
+    <addaction name="actionSave_Image"/>
     <addaction name="actionSave_Pixy_parameters"/>
     <addaction name="actionLoad_Pixy_parameters"/>
     <addaction name="actionExit"/>

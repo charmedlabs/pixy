@@ -61,10 +61,10 @@ MainWindow::MainWindow(int argc, char *argv[], QWidget *parent) :
     m_flash = NULL;
     m_pixyConnected = false;
     m_pixyDFUConnected = false;
-    m_paramsLoading = false;
-    m_exitting = false;
     m_configDialog = NULL;
     m_initScriptExecuted = false;
+
+    m_waiting = WAIT_NONE;
 
     m_settings = new QSettings(QSettings::NativeFormat, QSettings::UserScope, PIXYMON_COMPANY, PIXYMON_TITLE);
     m_console = new ConsoleWidget(this);
@@ -227,7 +227,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
     }
     if (m_interpreter)
     {
-        m_exitting = true;
+        m_waiting = WAIT_EXITTING;
         event->ignore(); // ignore event
         qDebug("closing interpreter");
         m_interpreter->close();
@@ -548,7 +548,7 @@ void MainWindow::interpreterFinished()
     qDebug("interpreter finished");
     m_interpreter->deleteLater();
     m_interpreter = NULL;
-    if (m_exitting) // if we're exitting, shut down
+    if (m_waiting==WAIT_EXITTING) // if we're exitting, shut down
     {
         close();
         return;
@@ -574,10 +574,11 @@ void MainWindow::on_actionHelp_triggered()
 
 void MainWindow::handleLoadParams()
 {
-    // we're done loading now we can save to a file (gotta load before we save because
-    // parameters can change on the pixy side without us knowing (e.g. signatures)
-    if (m_paramsLoading)
+    int res;
+
+    if (m_waiting==WAIT_SAVING_PARAMS)
     {
+        m_waiting = WAIT_NONE;
         QString dir;
         QFileDialog fd(this);
         fd.setWindowTitle("Please provide a filename for the parameter file");
@@ -598,8 +599,30 @@ void MainWindow::handleLoadParams()
                 }
             }
         }
+    }
+    else if (m_waiting==WAIT_LOADING_PARAMS)
+    {
+        m_waiting = WAIT_NONE;
+        QString dir;
+        QFileDialog fd(this);
+        fd.setWindowTitle("Please choose a parameter file");
+        dir = docPath();
+        fd.setDirectory(QDir(dir));
+        fd.setNameFilter("XML file (*.xml)");
+        if (fd.exec())
+        {
+            QStringList flist = fd.selectedFiles();
+            if (flist.size()==1)
+            {
+                ParamFile pf;
+                pf.open(flist[0], true);
+                res = pf.read(PIXY_PARAMFILE_TAG, &m_interpreter->m_pixyParameters);
+                pf.close();
 
-        m_paramsLoading = false;
+                if (res>=0)
+                    m_interpreter->saveParams();
+            }
+        }
     }
 }
 
@@ -649,36 +672,17 @@ void MainWindow::on_actionSave_Pixy_parameters_triggered()
     if (m_interpreter)
     {
         m_interpreter->loadParams();
-        m_paramsLoading = true;
+        m_waiting = WAIT_SAVING_PARAMS;
     }
 }
 
 void MainWindow::on_actionLoad_Pixy_parameters_triggered()
 {
-    int res;
-
     if (m_interpreter)
     {
-        QString dir;
-        QFileDialog fd(this);
-        fd.setWindowTitle("Please choose a parameter file");
-        dir = docPath();
-        fd.setDirectory(QDir(dir));
-        fd.setNameFilter("XML file (*.xml)");
-        if (fd.exec())
-        {
-            QStringList flist = fd.selectedFiles();
-            if (flist.size()==1)
-            {
-                ParamFile pf;
-                pf.open(flist[0], true);
-                res = pf.read(PIXY_PARAMFILE_TAG, &m_interpreter->m_pixyParameters);
-                pf.close();
-
-                if (res>=0)
-                    m_interpreter->saveParams();
-            }
-        }
+        // we need to load recent params from Pixy to compare to the params file
+        m_interpreter->loadParams();
+        m_waiting = WAIT_LOADING_PARAMS;
     }
 }
 

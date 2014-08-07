@@ -89,8 +89,7 @@ private:
 
     bool m_pixyConnected;
     bool m_pixyDFUConnected;
-    bool m_paramsLoading;
-    bool m_exitting;
+    enum {WAIT_NONE, WAIT_EXITTING, WAIT_SAVING_PARAMS, WAIT_LOADING_PARAMS} m_waiting;
     VideoWidget *m_video;
     ConsoleWidget *m_console;
     Interpreter *m_interpreter;

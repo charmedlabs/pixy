@@ -132,12 +132,15 @@ int ParamFile::read(const QString &tag, ParameterDB *data, bool create)
         key = nextElement.attribute("key");
         type = nextElement.attribute("type");
         value = nextElement.attribute("value");
+        Parameter *pp = data->parameter(key);
 
         // if we aren't creating the database and the key doesn't exist, skip
-        if (create || data->value(key))
+        if (create || pp)
         {
-
             Parameter parameter(key, Parameter::typeLookup(type));
+
+            if (pp)
+                parameter = *pp;
 
             // always set dirty state
             parameter.setDirty(true);
@@ -145,27 +148,41 @@ int ParamFile::read(const QString &tag, ParameterDB *data, bool create)
             PType ptype = Parameter::typeLookup(type);
 
             if (ptype&PT_RADIO_MASK)
+            {
+                if (*parameter.description()==value)
+                    parameter.setDirty(false);
                 parameter.setRadio(value);
+            }
             else
             {
                 if (ptype==PT_FLT32)
                 {
                     float val = value.toFloat();
+                    if (parameter.value().toFloat()==val)
+                        parameter.setDirty(false);
                     parameter.set(val);
                 }
                 else if (ptype==PT_INTS8)
                 {
                     QByteArray a = value.toUtf8();
+                    if (parameter.value().toByteArray().toBase64()==value)
+                        parameter.setDirty(false);
                     a = QByteArray::fromBase64(a);
                     parameter.set(QVariant(a));
                 }
                 else if (ptype==PT_INT8 || ptype==PT_INT16 || ptype==PT_INT32)
                 {
                     int val = value.toInt();
+                    if (parameter.valueInt()==val)
+                        parameter.setDirty(false);
                     parameter.set(val);
                 }
                 else // all other cases (STRING)
+                {
+                    if (parameter.value().toString()==value)
+                        parameter.setDirty(false);
                     parameter.set(value);
+                }
             }
             data->add(parameter);
         }
