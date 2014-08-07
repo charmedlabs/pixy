@@ -232,7 +232,6 @@ void MainWindow::closeEvent(QCloseEvent *event)
         qDebug("closing interpreter");
         m_interpreter->close();
     }
-    // let gui thread run some more, wait for finished() event
 }
 
 void MainWindow::handleRunState(uint state)
@@ -564,7 +563,19 @@ void MainWindow::interpreterFinished()
 
 void MainWindow::on_actionExit_triggered()
 {
-    close();
+    if (m_configDialog)
+    {
+        m_configDialog->close();
+        m_configDialog = NULL;
+    }
+    if (m_interpreter)
+    {
+        m_waiting = WAIT_EXITTING;
+        qDebug("closing interpreter");
+        m_interpreter->close();
+    }
+    else
+        close();
 }
 
 void MainWindow::on_actionHelp_triggered()
