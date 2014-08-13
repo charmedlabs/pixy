@@ -1,0 +1,30 @@
+19:38:12 **** Incremental Build of configuration Release for project video ****
+make all 
+Building target: video.axf
+Invoking: MCU C++ Linker
+arm-none-eabi-c++ -nostdlib -L"C:\CharmedLabs\cmucam\lpcxpresso\video\src" -L"C:\CharmedLabs\cmucam\lpcxpresso\pixy_m4\Release" -Xlinker -Map="video.map" -Xlinker --gc-sections -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=softfp -mthumb -T ../linkscripts/link_template.ld -o "video.axf"  ./src/analogdig.o ./src/blob.o ./src/blobs.o ./src/button.o ./src/colorlut.o ./src/conncomp.o ./src/cr_cpp_config.o ./src/cr_start_m0.o ./src/cr_startup_lpc43xx.o ./src/crp.o ./src/exec.o ./src/flash.o ./src/i2c.o ./src/lpc43xx_i2c.o ./src/main_m4.o ./src/progblobs.o ./src/progpt.o ./src/progvideo.o ./src/qqueue.o ./src/serial.o ./src/spi.o ./src/system_LPC43xx.o ./src/uart.o  C:/CharmedLabs/cmucam/lpcxpresso/m0/Release/m0.axf.o -lfalcon_m4_spifi_drv -lpixy_m4
+c:/nxp/lpcxpresso_7.3.0_186/lpcxpresso/tools/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/bin/ld.exe: warning: C:\CharmedLabs\cmucam\lpcxpresso\video\src\libfalcon_m4_spifi_drv.a(spifi_rom_api.o) uses 2-byte wchar_t yet the output is to use 4-byte wchar_t; use of wchar_t values across objects may fail
+c:/nxp/lpcxpresso_7.3.0_186/lpcxpresso/tools/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/bin/ld.exe: warning: C:\CharmedLabs\cmucam\lpcxpresso\video\src\libfalcon_m4_spifi_drv.a(falcon_details.o) uses 2-byte wchar_t yet the output is to use 4-byte wchar_t; use of wchar_t values across objects may fail
+c:/nxp/lpcxpresso_7.3.0_186/lpcxpresso/tools/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/bin/ld.exe: warning: C:\CharmedLabs\cmucam\lpcxpresso\video\src\libfalcon_m4_spifi_drv.a(amic.o) uses 2-byte wchar_t yet the output is to use 4-byte wchar_t; use of wchar_t values across objects may fail
+c:/nxp/lpcxpresso_7.3.0_186/lpcxpresso/tools/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/bin/ld.exe: warning: C:\CharmedLabs\cmucam\lpcxpresso\video\src\libfalcon_m4_spifi_drv.a(atmel.o) uses 2-byte wchar_t yet the output is to use 4-byte wchar_t; use of wchar_t values across objects may fail
+c:/nxp/lpcxpresso_7.3.0_186/lpcxpresso/tools/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/bin/ld.exe: warning: C:\CharmedLabs\cmucam\lpcxpresso\video\src\libfalcon_m4_spifi_drv.a(chi.o) uses 2-byte wchar_t yet the output is to use 4-byte wchar_t; use of wchar_t values across objects may fail
+c:/nxp/lpcxpresso_7.3.0_186/lpcxpresso/tools/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/bin/ld.exe: warning: C:\CharmedLabs\cmucam\lpcxpresso\video\src\libfalcon_m4_spifi_drv.a(eon.o) uses 2-byte wchar_t yet the output is to use 4-byte wchar_t; use of wchar_t values across objects may fail
+c:/nxp/lpcxpresso_7.3.0_186/lpcxpresso/tools/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/bin/ld.exe: warning: C:\CharmedLabs\cmucam\lpcxpresso\video\src\libfalcon_m4_spifi_drv.a(esmt.o) uses 2-byte wchar_t yet the output is to use 4-byte wchar_t; use of wchar_t values across objects may fail
+c:/nxp/lpcxpresso_7.3.0_186/lpcxpresso/tools/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/bin/ld.exe: warning: C:\CharmedLabs\cmucam\lpcxpresso\video\src\libfalcon_m4_spifi_drv.a(giga.o) uses 2-byte wchar_t yet the output is to use 4-byte wchar_t; use of wchar_t values across objects may fail
+c:/nxp/lpcxpresso_7.3.0_186/lpcxpresso/tools/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/bin/ld.exe: warning: C:\CharmedLabs\cmucam\lpcxpresso\video\src\libfalcon_m4_spifi_drv.a(macronix.o) uses 2-byte wchar_t yet the output is to use 4-byte wchar_t; use of wchar_t values across objects may fail
+c:/nxp/lpcxpresso_7.3.0_186/lpcxpresso/tools/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/bin/ld.exe: warning: C:\CharmedLabs\cmucam\lpcxpresso\video\src\libfalcon_m4_spifi_drv.a(numonyx.o) uses 2-byte wchar_t yet the output is to use 4-byte wchar_t; use of wchar_t values across objects may fail
+c:/nxp/lpcxpresso_7.3.0_186/lpcxpresso/tools/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/bin/ld.exe: warning: C:\CharmedLabs\cmucam\lpcxpresso\video\src\libfalcon_m4_spifi_drv.a(spansion.o) uses 2-byte wchar_t yet the output is to use 4-byte wchar_t; use of wchar_t values across objects may fail
+c:/nxp/lpcxpresso_7.3.0_186/lpcxpresso/tools/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/bin/ld.exe: warning: C:\CharmedLabs\cmucam\lpcxpresso\video\src\libfalcon_m4_spifi_drv.a(sst.o) uses 2-byte wchar_t yet the output is to use 4-byte wchar_t; use of wchar_t values across objects may fail
+c:/nxp/lpcxpresso_7.3.0_186/lpcxpresso/tools/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/bin/ld.exe: warning: C:\CharmedLabs\cmucam\lpcxpresso\video\src\libfalcon_m4_spifi_drv.a(winbond.o) uses 2-byte wchar_t yet the output is to use 4-byte wchar_t; use of wchar_t values across objects may fail
+Finished building target: video.axf
+ 
+make --no-print-directory post-build
+Performing post-build steps
+arm-none-eabi-size "video.axf" ; arm-none-eabi-objcopy -v -O binary "video.axf" "video.bin" ; checksum -p LPC4330 -d "video.bin" ; arm-none-eabi-objcopy -I binary -O ihex video.bin video.hex
+   text	   data	    bss	    dec	    hex	filename
+ 100316	   2320	   4988	 107624	  1a468	video.axf
+copy from `video.axf' [elf32-littlearm] to `video.bin' [binary]
+Created checksum 0x8ffdd3de at offset 0x1c in file video.bin 
+
+19:38:17 Build Finished (took 5s.145ms)
+

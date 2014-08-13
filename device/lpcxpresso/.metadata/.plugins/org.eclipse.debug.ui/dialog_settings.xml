@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section name="Workbench">
+	<section name="org.eclipse.debug.ui.LAUNCH_CONFIGURATION_PROPERTIES_DIALOG_SECTION">
+		<item value="1108" key="DIALOG_WIDTH"/>
+		<item value="1080" key="DIALOG_HEIGHT"/>
+		<item value="1|Segoe UI|9.0|0|WINDOWS|1|-12|0|0|0|400|0|0|0|1|0|0|0|0|Segoe UI" key="DIALOG_FONT_NAME"/>
+	</section>
+	<section name="org.eclipse.debug.ui.LAUNCH_CONFIGURATIONS_DIALOG_SECTION">
+		<item value="1083" key="DIALOG_WIDTH"/>
+		<item value=", com.crt.dsfdebug.crtmcu.launchType, " key="org.eclipse.debug.ui.EXPANDED_NODES"/>
+		<item value="1080" key="DIALOG_HEIGHT"/>
+		<item value="449" key="org.eclipse.debug.ui.DIALOG_SASH_WEIGHTS_1"/>
+		<item value="1|Segoe UI|9.0|0|WINDOWS|1|-12|0|0|0|400|0|0|0|1|0|0|0|0|Segoe UI" key="DIALOG_FONT_NAME"/>
+		<item value="550" key="org.eclipse.debug.ui.DIALOG_SASH_WEIGHTS_2"/>
+	</section>
+</section>

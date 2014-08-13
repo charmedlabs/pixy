@@ -1,0 +1,46 @@
+19:47:22 **** Incremental Build of configuration Release for project m0 ****
+make all 
+Building file: ../src/exec_m0.c
+Invoking: MCU C Compiler
+arm-none-eabi-gcc -DIPC_SLAVE -DPIXY -D__REDLIB__ -D__MULTICORE_M0APP -DNDEBUG -D__CODE_RED -DCORE_M0 -D__LPC43XX__ -DCORE_M0APP -I"C:\CharmedLabs\cmucam\git\device\lpcxpresso\m0\inc" -I"C:\CharmedLabs\cmucam\git\device\lpcxpresso\pixy_m0\inc" -Os -g -Wall -c -fmessage-length=0 -fno-builtin -ffunction-sections -fdata-sections -mcpu=cortex-m0 -mthumb -D__REDLIB__ -MMD -MP -MF"src/exec_m0.d" -MT"src/exec_m0.o" -MT"src/exec_m0.d" -o "src/exec_m0.o" "../src/exec_m0.c"
+Finished building: ../src/exec_m0.c
+ 
+Building file: ../src/frame_m0.c
+Invoking: MCU C Compiler
+arm-none-eabi-gcc -DIPC_SLAVE -DPIXY -D__REDLIB__ -D__MULTICORE_M0APP -DNDEBUG -D__CODE_RED -DCORE_M0 -D__LPC43XX__ -DCORE_M0APP -I"C:\CharmedLabs\cmucam\git\device\lpcxpresso\m0\inc" -I"C:\CharmedLabs\cmucam\git\device\lpcxpresso\pixy_m0\inc" -Os -g -Wall -c -fmessage-length=0 -fno-builtin -ffunction-sections -fdata-sections -mcpu=cortex-m0 -mthumb -D__REDLIB__ -MMD -MP -MF"src/frame_m0.d" -MT"src/frame_m0.o" -MT"src/frame_m0.d" -o "src/frame_m0.o" "../src/frame_m0.c"
+Finished building: ../src/frame_m0.c
+ 
+Building file: ../src/main_m0.c
+Invoking: MCU C Compiler
+arm-none-eabi-gcc -DIPC_SLAVE -DPIXY -D__REDLIB__ -D__MULTICORE_M0APP -DNDEBUG -D__CODE_RED -DCORE_M0 -D__LPC43XX__ -DCORE_M0APP -I"C:\CharmedLabs\cmucam\git\device\lpcxpresso\m0\inc" -I"C:\CharmedLabs\cmucam\git\device\lpcxpresso\pixy_m0\inc" -Os -g -Wall -c -fmessage-length=0 -fno-builtin -ffunction-sections -fdata-sections -mcpu=cortex-m0 -mthumb -D__REDLIB__ -MMD -MP -MF"src/main_m0.d" -MT"src/main_m0.o" -MT"src/main_m0.d" -o "src/main_m0.o" "../src/main_m0.c"
+Finished building: ../src/main_m0.c
+ 
+Building file: ../src/qqueue.c
+Invoking: MCU C Compiler
+arm-none-eabi-gcc -DIPC_SLAVE -DPIXY -D__REDLIB__ -D__MULTICORE_M0APP -DNDEBUG -D__CODE_RED -DCORE_M0 -D__LPC43XX__ -DCORE_M0APP -I"C:\CharmedLabs\cmucam\git\device\lpcxpresso\m0\inc" -I"C:\CharmedLabs\cmucam\git\device\lpcxpresso\pixy_m0\inc" -Os -g -Wall -c -fmessage-length=0 -fno-builtin -ffunction-sections -fdata-sections -mcpu=cortex-m0 -mthumb -D__REDLIB__ -MMD -MP -MF"src/qqueue.d" -MT"src/qqueue.o" -MT"src/qqueue.d" -o "src/qqueue.o" "../src/qqueue.c"
+Finished building: ../src/qqueue.c
+ 
+Building file: ../src/rls_m0.c
+Invoking: MCU C Compiler
+arm-none-eabi-gcc -DIPC_SLAVE -DPIXY -D__REDLIB__ -D__MULTICORE_M0APP -DNDEBUG -D__CODE_RED -DCORE_M0 -D__LPC43XX__ -DCORE_M0APP -I"C:\CharmedLabs\cmucam\git\device\lpcxpresso\m0\inc" -I"C:\CharmedLabs\cmucam\git\device\lpcxpresso\pixy_m0\inc" -Os -g -Wall -c -fmessage-length=0 -fno-builtin -ffunction-sections -fdata-sections -mcpu=cortex-m0 -mthumb -D__REDLIB__ -MMD -MP -MF"src/rls_m0.d" -MT"src/rls_m0.o" -MT"src/rls_m0.d" -o "src/rls_m0.o" "../src/rls_m0.c"
+../src/rls_m0.c: In function 'lineProcessedRL1A':
+../src/rls_m0.c:531:1: warning: control reaches end of non-void function [-Wreturn-type]
+ }
+ ^
+Finished building: ../src/rls_m0.c
+ 
+Building target: m0.axf
+Invoking: MCU Linker
+arm-none-eabi-gcc -nostdlib -L"C:\CharmedLabs\cmucam\git\device\lpcxpresso\pixy_m0\Release" -Xlinker -Map="m0.map" -Xlinker --gc-sections -mcpu=cortex-m0 -mthumb -T "m0_Release.ld" -o "m0.axf"  ./src/cr_startup_lpc43xx-m0app.o ./src/exec_m0.o ./src/frame_m0.o ./src/main_m0.o ./src/qqueue.o ./src/rls_m0.o   -lpixy_m0 && arm-none-eabi-objcopy --target elf32-littlearm --verbose --strip-all --redefine-sym __vectors_start__=__vectors_start___core_m0app --keep-symbol __vectors_start___core_m0app --rename-section .text=".core_m0app" --rename-section .data=".core_m0app.data" --rename-section .data_RAM2=".core_m0app.data_RAM2" --rename-section .data_RAM3=".core_m0app.data_RAM3" --rename-section .data_RAM4=".core_m0app.data_RAM4" --rename-section .data_RAM5=".core_m0app.data_RAM5" "m0.axf" "m0.axf.o"
+copy from `m0.axf' [elf32-littlearm] to `m0.axf.o' [elf32-littlearm]
+Finished building target: m0.axf
+ 
+make --no-print-directory post-build
+Performing post-build steps
+arm-none-eabi-size "m0.axf"; # arm-none-eabi-objcopy -v -O binary "m0.axf" "m0.bin" ; # checksum -p LPC4330_M0 -d "m0.bin";
+   text	   data	    bss	    dec	    hex	filename
+   5024	     16	     56	   5096	   13e8	m0.axf
+ 
+
+19:47:25 Build Finished (took 3s.348ms)
+
