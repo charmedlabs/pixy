@@ -1,9 +1,5 @@
-.*.swp
-.*.swo
-.*.*.swp
-.*.*.swo
-*.o
 *.exe
+*.o
 *.a
 *.d
 *.mk
