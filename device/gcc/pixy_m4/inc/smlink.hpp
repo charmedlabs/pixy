@@ -13,10 +13,10 @@
 
 struct SmMap
 {
-	uint16_t recvStatus;
-	uint16_t sendStatus;
+	volatile uint16_t recvStatus;
+	volatile uint16_t sendStatus;
 
-	uint8_t buf[SM_BUFSIZE];
+	volatile uint8_t buf[SM_BUFSIZE];
 };
 
 #define SM_OBJECT       ((SmMap *)SM_LOC)

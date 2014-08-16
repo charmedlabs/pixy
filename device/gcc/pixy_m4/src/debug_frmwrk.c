@@ -56,17 +56,6 @@
 #endif
 /* Debug framework */
 
-void (*_db_msg)(LPC_USARTn_Type *UARTx, const void *s);
-void (*_db_msg_)(LPC_USARTn_Type *UARTx, const void *s);
-void (*_db_char)(LPC_USARTn_Type *UARTx, uint8_t ch);
-void (*_db_dec)(LPC_USARTn_Type *UARTx, uint8_t decn);
-void (*_db_dec_16)(LPC_USARTn_Type *UARTx, uint16_t decn);
-void (*_db_dec_32)(LPC_USARTn_Type *UARTx, uint32_t decn);
-void (*_db_hex)(LPC_USARTn_Type *UARTx, uint8_t hexn);
-void (*_db_hex_16)(LPC_USARTn_Type *UARTx, uint16_t hexn);
-void (*_db_hex_32)(LPC_USARTn_Type *UARTx, uint32_t hexn);
-uint8_t (*_db_get_char)(LPC_USARTn_Type *UARTx);
-
 #if defined(HITEX_LCD_TERM)
 SSP_DATA_SETUP_Type *xferConfig;
 #endif
@@ -294,16 +283,6 @@ void debug_frmwrk_init_clk(uint32_t Clock_Speed)
 	// Enable UART Transmit
 	UART_TxCmd((LPC_USARTn_Type*)DEBUG_UART_PORT, ENABLE);
 
-	_db_msg	= UARTPuts;
-	_db_msg_ = UARTPuts_;
-	_db_char = UARTPutChar;
-	_db_hex = UARTPutHex;
-	_db_hex_16 = UARTPutHex16;
-	_db_hex_32 = UARTPutHex32;
-	_db_dec = UARTPutDec;
-	_db_dec_16 = UARTPutDec16;
-	_db_dec_32 = UARTPutDec32;
-	_db_get_char = UARTGetChar;
 #if defined(HITEX_LCD_TERM)
 	xferConfig = InitLCDTerm();
 #endif

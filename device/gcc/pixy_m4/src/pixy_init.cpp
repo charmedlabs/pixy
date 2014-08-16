@@ -163,8 +163,8 @@ void handleAWB(void)
 void periodic(void)
 {
 	// check to see if guard data still there
-	if (STACK_GUARD != STACK_GUARD_WORD)
-		showError(1, 0xffff00, "stack corruption\n");
+//	if (STACK_GUARD != STACK_GUARD_WORD)
+//		showError(1, 0xffff00, "stack corruption\n");
 
 	while(g_chirpUsb->service());
 	handleAWB();
@@ -174,7 +174,7 @@ void periodic(void)
 void pixyInit(void)
 {
 	// write stack guard word
- 	STACK_GUARD = STACK_GUARD_WORD;
+ //	STACK_GUARD = STACK_GUARD_WORD;
 
 	commonInit();
 
@@ -191,12 +191,15 @@ void pixyInit(void)
 
 	} */
 
+	// initialize shared memory interface before running M0
+	SMLink *smLink = new SMLink;
+
+	// run M0
     cr_start_m0(SLAVE_M0APP,&__core_m0app_START__);
 
 	// initialize chirp objects
 	USBLink *usbLink = new USBLink;
 	g_chirpUsb = new Chirp(false, false, usbLink);
-	SMLink *smLink = new SMLink;
   	g_chirpM0 = new Chirp(false, true, smLink);
 
 	// initialize devices/modules

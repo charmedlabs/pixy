@@ -118,8 +118,8 @@ void led_setPWM(uint8_t led, uint16_t pwm)
 	}
 	else
 	{
-		LPC_SCT->MATCH[led+1].H = pwm;
 		LPC_SCT->MATCHREL[led+1].H = pwm;
+		LPC_SCT->MATCH[led+1].H = pwm;
 		LPC_SCT->OUT[led].SET = 1<<3;
 		LPC_SCT->OUT[led].CLR = 1<<(led+4);
 	}	

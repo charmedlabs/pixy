@@ -60,16 +60,18 @@
 #define DEBUG_UART_PORT	LPC_UART1
 #endif
 
-#define _DBG(x)	 	_db_msg((LPC_USARTn_Type*)DEBUG_UART_PORT, x)
-#define _DBG_(x)	_db_msg_((LPC_USARTn_Type*)DEBUG_UART_PORT, x)
-#define _DBC(x)	 	_db_char((LPC_USARTn_Type*)DEBUG_UART_PORT, x)
-#define _DBD(x)	 	_db_dec((LPC_USARTn_Type*)DEBUG_UART_PORT, x)
-#define _DBD16(x)	 _db_dec_16((LPC_USARTn_Type*)DEBUG_UART_PORT, x)
-#define _DBD32(x)	 _db_dec_32((LPC_USARTn_Type*)DEBUG_UART_PORT, x)
-#define _DBH(x)	 	_db_hex((LPC_USARTn_Type*)DEBUG_UART_PORT, x)
-#define _DBH16(x)	 _db_hex_16((LPC_USARTn_Type*)DEBUG_UART_PORT, x)
-#define _DBH32(x)	 _db_hex_32((LPC_USARTn_Type*)DEBUG_UART_PORT, x)
-#define _DG			_db_get_char((LPC_USARTn_Type*)DEBUG_UART_PORT)
+#define _DBG(x)	 	UARTPuts((LPC_USARTn_Type*)DEBUG_UART_PORT, x)
+#define _DBG_(x)	UARTPuts_((LPC_USARTn_Type*)DEBUG_UART_PORT, x)
+#define _DBC(x)	 	UARTPutChar((LPC_USARTn_Type*)DEBUG_UART_PORT, x)
+#define _DBD(x)	 	UARTPutDec((LPC_USARTn_Type*)DEBUG_UART_PORT, x)
+#define _DBD16(x)	UARTPutDec16((LPC_USARTn_Type*)DEBUG_UART_PORT, x)
+#define _DBD32(x)	UARTPutDec32((LPC_USARTn_Type*)DEBUG_UART_PORT, x)
+#define _DBH(x)	 	UARTPutHex((LPC_USARTn_Type*)DEBUG_UART_PORT, x)
+#define _DBH16(x)	UARTPutHex16((LPC_USARTn_Type*)DEBUG_UART_PORT, x)
+#define _DBH32(x)	UARTPutHex32((LPC_USARTn_Type*)DEBUG_UART_PORT, x)
+#define _DG			UARTGetChar((LPC_USARTn_Type*)DEBUG_UART_PORT)
+#define _CR()       _DBG("\n\r")
+
 
 #ifdef __cplusplus
 extern "C"
@@ -78,16 +80,6 @@ extern "C"
 
 void  lpc_printf (const  char *format, ...);
 
-extern void (*_db_msg)(LPC_USARTn_Type *UARTx, const void *s);
-extern void (*_db_msg_)(LPC_USARTn_Type *UARTx, const void *s);
-extern void (*_db_char)(LPC_USARTn_Type *UARTx, uint8_t ch);
-extern void (*_db_dec)(LPC_USARTn_Type *UARTx, uint8_t decn);
-extern void (*_db_dec_16)(LPC_USARTn_Type *UARTx, uint16_t decn);
-extern void (*_db_dec_32)(LPC_USARTn_Type *UARTx, uint32_t decn);
-extern void (*_db_hex)(LPC_USARTn_Type *UARTx, uint8_t hexn);
-extern void (*_db_hex_16)(LPC_USARTn_Type *UARTx, uint16_t hexn);
-extern void (*_db_hex_32)(LPC_USARTn_Type *UARTx, uint32_t hexn);
-extern uint8_t (*_db_get_char)(LPC_USARTn_Type *UARTx);
 
 void UARTPutChar (LPC_USARTn_Type *UARTx, uint8_t ch);
 void UARTPuts(LPC_USARTn_Type *UARTx, const void *str);
