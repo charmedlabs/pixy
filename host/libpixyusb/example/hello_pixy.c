@@ -39,6 +39,7 @@ int main(int argc, char * argv[])
 {
   int      index;
   uint16_t blocks_copied;
+  int      pixy_init_status;
 
   // Catch CTRL+C (SIGINT) signals //
   signal(SIGINT, handle_SIGINT);
@@ -46,7 +47,14 @@ int main(int argc, char * argv[])
   printf("Hello Pixy: libpixyusb Version: %s\n", __LIBPIXY_VERSION__);
   
   // Connect to Pixy //
-  pixy_init();
+  pixy_init_status = pixy_init();
+
+  // Was there an error initializing pixy? //
+  if(!pixy_init_status == 0)
+  {
+    // Error initializing Pixy //
+    return;
+  }
 
   // Request Pixy firmware version //
   {
@@ -88,8 +96,6 @@ int main(int argc, char * argv[])
     // Enable auto white balance //
     return_value = pixy_command("cam_setAWB", 0x01, 1, 0, &response, 0);
 
-    printf("Enabling auto white balance... Pixy Response: [%d]\n", response);
-
     // Execute remote procedure call "cam_getAWB" with no output (host->pixy) parameters 
     //
     //   Parameters:                 Notes:
@@ -103,8 +109,8 @@ int main(int argc, char * argv[])
     // Get auto white balance //
     return_value = pixy_command("cam_getAWB", 0, &response, 0);
 
-    printf("Requesting auto white balance value... Response: %s\n",
-           (response == 1 ? "Enabled" : "Disabled"));
+    // Set auto white balance back to disabled //
+    pixy_command("cam_setAWB", 0x01, 0, 0, &response, 0);
   }
 
   for(;;)

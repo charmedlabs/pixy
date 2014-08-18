@@ -40,8 +40,11 @@ class PixyInterpreter : public Interpreter
               capture and store Pixy 'block' object data 
               which can be retreived using the getBlocks()
               method.
+       @return   0    Success
+       @return  -1    Error: Unable to open pixy USB device
+
     */
-    void init();
+    int init();
     
     /**
       @brief  Terminates the USB connection to Pixy and
