@@ -28,6 +28,9 @@
 // copyright, permission, and disclaimer notice must appear in all copies of
 // this code.
 //*****************************************************************************
+
+#include "debug_frmwrk.h"
+
 #if defined (__cplusplus)
 #ifdef __REDLIB__
 #error Redlib does not support C++
@@ -412,7 +415,9 @@ void HardFault_Handler(void)
 #else
 void M0_HardFault_Handler(void)
 #endif
-{   while(1) { }
+{
+	_DBG("HardFault\n");
+	while(1) { }
 }
 
 __attribute__ ((section(".after_vectors")))

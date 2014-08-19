@@ -75,11 +75,30 @@ int main(void)
 	int i = 0;
 	pixyInit();
 	exec_init(g_chirpUsb);
+#if 0
+	cam_setMode(1);
 	while(1)
 	{
+		//uint8_t reg = cam_getRegister(0x0a);
 		g_chirpUsb->service();
-		cprintf("hello world %d!\n", i++);
+		cprintf("hello world %d\n", i++);
 	}
+#endif
+#if 0
+	while(1)
+	{
+		uint8_t *frame = (uint8_t *)SRAM1_LOC;
+		int res;
+
+		res = cam_getFrame(frame, SRAM1_SIZE, CAM_GRAB_M1R2, 0, 0, CAM_RES2_WIDTH, CAM_RES2_HEIGHT);
+		i++;
+		if (i%50==0)
+		{
+			lpc_printf("%d\n", i);
+		}
+
+	}
+#endif
 #endif
 
 #if 1

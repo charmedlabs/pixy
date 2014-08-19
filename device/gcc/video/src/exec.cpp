@@ -270,6 +270,8 @@ void exec_loop()
 
 	exec_select();
 
+	g_program = 7;
+
 	while(1)
 	{
 		connected = g_chirpUsb->connected();
