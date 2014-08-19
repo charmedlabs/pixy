@@ -72,10 +72,10 @@ int main(void)
 #endif
 
 #if 1		/* test loop */
-	int i = 0;
 	pixyInit();
 	exec_init(g_chirpUsb);
 #if 0
+	int i = 0;
 	cam_setMode(1);
 	while(1)
 	{

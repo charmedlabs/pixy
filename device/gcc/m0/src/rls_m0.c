@@ -193,7 +193,7 @@ void lineProcessedRL0A(uint32_t *gpio, uint8_t *memory, uint32_t width) // width
 
 	asm(".syntax unified");
 
-		asm("PUSH	{r4-r5, lr}");
+		asm("PUSH	{r4-r5}");
 
 		// add width to memory pointer so we can compare
 		asm("ADDS	r2, r1");
@@ -248,7 +248,7 @@ asm("dest11A:");
 		asm("TST	r3, r5");		// 1
 		asm("BNE	dest11A");		// 3
 
-		asm("POP	{r4-r5, pc}");
+		asm("POP	{r4-r5}");
 
 		asm(".syntax divided");
 }
@@ -297,7 +297,7 @@ uint32_t lineProcessedRL1A(uint32_t *gpio, Qval *memory, uint8_t *lut, uint8_t *
 //		PRESERVE8
 
 asm(".syntax unified");
-	asm("PUSH	{r1-r7, lr}");
+	asm("PUSH	{r1-r7}");
 	// bring in ending column
 	asm("LDR	r4, [sp, #0x20]");
 	asm("MOV	r9, r4");
@@ -524,7 +524,7 @@ asm("wrap:");
 
 asm("ecpy:");
 	asm("LSRS   r0, #2"); // return number of qvals
-	asm("POP	{r1-r7, pc}");
+	asm("POP	{r1-r7}");
 
 	asm(".syntax divided");
 

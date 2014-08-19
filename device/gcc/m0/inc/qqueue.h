@@ -25,14 +25,14 @@ struct QqueueFields;
 
 struct QqueueFields
 {
-    uint16_t readIndex;
-    uint16_t writeIndex;
+    volatile uint16_t readIndex;
+    volatile uint16_t writeIndex;
 
-    uint16_t produced;
-    uint16_t consumed;
+    volatile uint16_t produced;
+    volatile uint16_t consumed;
 
     // (array size below doesn't matter-- we're just going to cast a pointer to this struct)
-    Qval data[1]; // data
+    volatile Qval data[1]; // data
 };
 
 #ifdef __cplusplus  // M4 is C++ and the "consumer" of data
