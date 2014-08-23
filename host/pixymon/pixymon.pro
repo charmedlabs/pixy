@@ -32,7 +32,8 @@ SOURCES += main.cpp\
     configdialog.cpp \
     aboutdialog.cpp \
     parameters.cpp \
-    paramfile.cpp
+    paramfile.cpp \
+    dataexport.cpp
 
 HEADERS  += mainwindow.h \
     videowidget.h \
@@ -63,7 +64,8 @@ HEADERS  += mainwindow.h \
     sleeper.h \
     aboutdialog.h \
     parameters.h \
-    paramfile.h
+    paramfile.h \
+    dataexport.h
 
 INCLUDEPATH += ../../common
 

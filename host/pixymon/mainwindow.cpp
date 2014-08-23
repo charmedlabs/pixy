@@ -34,6 +34,7 @@
 #include "flash.h"
 #include "ui_mainwindow.h"
 #include "configdialog.h"
+#include "dataexport.h"
 #include "sleeper.h"
 #include "aboutdialog.h"
 
@@ -634,18 +635,6 @@ void MainWindow::handleLoadParams()
                     m_interpreter->saveParams();
             }
         }
-    }
-}
-
-const QString uniqueFilename(const QDir &dir, const QString &filebase, const QString &extension)
-{
-    int i;
-
-    for (i=1; true; i++)
-    {
-        QFileInfo testFile(dir, filebase + QString::number(i) + "." + extension);
-        if (!testFile.exists())
-            return testFile.absoluteFilePath();
     }
 }
 

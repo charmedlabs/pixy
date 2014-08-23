@@ -19,6 +19,8 @@
 #include <QFile>
 #include "renderer.h"
 #include "videowidget.h"
+#include "interpreter.h"
+#include "dataexport.h"
 #include <chirp.hpp>
 #include "calc.h"
 #include <math.h>
@@ -501,7 +503,7 @@ int Renderer::render(uint32_t type, void *args[])
     return res;
 }
 
-#if 0
+#if 1
 void matlabArrayOut(QFile *file, const QString &name, float *data, int width, int height)
 {
     int i, j;
@@ -529,18 +531,12 @@ void matlabArrayOut(QFile *file, const QString &name, float *data, int width, in
 void Renderer::pixelsOut(int x0, int y0, int width, int height)
 {
     uint pixel, *line;
-    int u, v;
     uint r, g, b;
-    int x, y, n = width*height;
-    float uvals[n], vvals[n];
-    //QString str, name = "pixels";
-    //QFile file(name + QString::number(index) + ".m");
-    QFile file("pixels.m");
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
-        return;
+    int x, y;
 
-    QTextStream out(&file);
+    DataExport dx(m_interpreter->m_pixymonParameters->value("Document folder")->toString(), "pixels", ET_MATLAB);
 
+    dx.startArray(3, "pixels");
 
     for (y=0; y<height; y++)
     {
@@ -553,22 +549,12 @@ void Renderer::pixelsOut(int x0, int y0, int width, int height)
             g = pixel&0xff;
             pixel >>= 8;
             r = pixel&0xff;
-            qDebug("%d: %d %d %d", y*width+x, r, g, b);
-            u = r-g;
-            v = b-g;
-            u >>= 1;
-            v >>= 1;
 
-            uvals[y*width+x] = u;
-            vvals[y*width+x] = v;
+            dx.addElement(r);
+            dx.addElement(g);
+            dx.addElement(b);
         }
     }
-#ifdef MATLAB
-    matlabArrayOut(&file, "u", uvals, 1, n);
-    matlabArrayOut(&file, "v", vvals, 1, n);
-#endif
-
-    file.close();
 }
 
 
@@ -579,7 +565,7 @@ void Renderer::regionCommand(int x0, int y0, int width, int height, const QStrin
     if (m_background.width()==0)
         return;
 
-#ifdef MATLAB
+#if 1 // #ifdef MATLAB
     pixelsOut(x0, y0, width, height);
 #endif
 }

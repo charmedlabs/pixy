@@ -65,7 +65,7 @@ int main(void)
 	exec_addProg(&g_progBlobs);
 	ptLoadParams();
 	exec_addProg(&g_progPt);
-#if 0
+#if 1
 	chaseLoadParams();
 	exec_addProg(&g_progChase);
 #endif
