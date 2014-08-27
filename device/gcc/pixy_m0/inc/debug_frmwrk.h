@@ -70,7 +70,7 @@
 #define _DBH16(x)	UARTPutHex16((LPC_USARTn_Type*)DEBUG_UART_PORT, x)
 #define _DBH32(x)	UARTPutHex32((LPC_USARTn_Type*)DEBUG_UART_PORT, x)
 #define _DG			UARTGetChar((LPC_USARTn_Type*)DEBUG_UART_PORT)
-#define _CR()       _DBG("\n\r")
+#define _CR()       _DBG("\n")
 
 
 #ifdef __cplusplus

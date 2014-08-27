@@ -21,6 +21,7 @@
 #include "frame_m0.h"
 #include "rls_m0.h"
 
+volatile uint8_t g_loop = 1;
 
 int main(void)
 {
@@ -39,12 +40,35 @@ int main(void)
  		getRLSFrame(&memory, &lut); 
 #endif
 	//printf("M0 start\n");
+ 	int i = 0;
 
+ 	_DBG("M0 start\n");
 	chirpOpen();
 	exec_init();
 	frame_init();
 	rls_init();
 
+#if 0
+	vsync();
+#endif
+#if 0
+	//while(g_loop);
+	uint8_t type = CAM_GRAB_M1R2;
+	uint32_t memory = SRAM1_LOC;
+	uint16_t offset = 0;
+	uint16_t width = 320;
+	uint16_t height = 200;
+	while(1)
+	{
+		 getFrame(&type, &memory, &offset, &offset, &width, &height);
+		 i++;
+
+		 if (i%50==0)
+		 {
+			 _DBD32(i), _CR();
+		 }
+	}
+#endif
 	//printf("M0 ready\n");
 	exec_loop();
 

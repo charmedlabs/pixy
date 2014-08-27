@@ -43,8 +43,10 @@ extern "C"
 
   /**
     @brief Creates a connection with Pixy and listens for Pixy messages.
+    @return   0   Success
+    @return  -1   Error
   */
-  void     pixy_init();
+  int     pixy_init();
 
   /**
     @brief      Copies up to 'max_blocks' number of Blocks to the address pointed

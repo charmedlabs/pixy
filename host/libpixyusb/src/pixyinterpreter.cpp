@@ -24,18 +24,18 @@ PixyInterpreter::PixyInterpreter()
   receiver_    = 0;
 }
 
-void PixyInterpreter::init()
+int PixyInterpreter::init()
 {
 
   if(thread_dead_ == false) 
   {
     fprintf(stderr, "libpixy: Already initialized.");
-    return;
+    return 0;
   }
 
   if(link_.open() < 0) {
     fprintf(stderr, "libpixy: Error: Unable to open USB device.\n");
-    return;
+    return -1;
   }
 
   receiver_ = new ChirpReceiver(&link_, this);

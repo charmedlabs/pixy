@@ -7,13 +7,24 @@ PixyInterpreter interpreter;
 
 extern "C" 
 {
- void pixy_init()
+  static int pixy_initialized = false;
+
+  int pixy_init()
   {
-    interpreter.init();
+    int return_value;
+
+    return_value = interpreter.init();
+
+    if(return_value == 0) 
+    {
+      pixy_initialized = true;
+    }
   }
 
   void pixy_close()
   {
+    if(!pixy_initialized) return;
+
     interpreter.close();
   }
 
@@ -22,6 +33,8 @@ extern "C"
     va_list arguments;
     int     return_value;
     
+    if(!pixy_initialized) return -1;
+
     va_start(arguments, name);
     return_value = interpreter.send_command(name, arguments);
     va_end(arguments);

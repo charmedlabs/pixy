@@ -13,6 +13,7 @@
 // end license header
 //
 
+#include "debug_frmwrk.h"
 #include "chirp.h"
 #include "frame_m0.h"
 
@@ -32,8 +33,8 @@ void vsync()
 		{
 			while(CAM_HSYNC()==0)
 			{
-				if (CAM_VSYNC()!=0)
-					goto end;
+			if (CAM_VSYNC()!=0)
+				goto end;
 			}
 			while(CAM_HSYNC()!=0); //grab data
 			h++;
@@ -142,7 +143,6 @@ asm("startSyncM1:");
 
 
 	asm("POP   	{r4}");
-//	asm("BX 	lr");
 
 	asm(".syntax divided");
 }
@@ -154,7 +154,7 @@ void lineM0(uint32_t *gpio, uint8_t *memory, uint32_t xoffset, uint32_t xwidth)
 //	asm("IMPORT callSyncM0");
 asm(".syntax unified");
 
-	asm("PUSH	{r4-r5, lr}");
+	asm("PUSH	{r4-r5}");
 
 	// add width to memory pointer so we can compare
 	asm("ADDS	r3, r1");
@@ -226,7 +226,7 @@ asm("dest13:");
 	asm("TST	r5, r4");		// 1
 	asm("BNE	dest13");		// 3
 
-	asm("POP	{r4-r5, pc}");
+	asm("POP	{r4-r5}");
 
 	asm(".syntax divided");
 }
@@ -238,7 +238,7 @@ void lineM1R1(uint32_t *gpio, uint8_t *memory, uint32_t xoffset, uint32_t xwidth
 //	asm("IMPORT	callSyncM1");
 asm(".syntax unified");
 
-	asm("PUSH	{r4-r5, lr}");
+	asm("PUSH	{r4-r5}");
 
 	// add width to memory pointer so we can compare
 	asm("ADDS	r3, r1");
@@ -247,7 +247,6 @@ asm(".syntax unified");
 	asm("LSLS	r4, #11");
 
 	asm("PUSH	{r0-r3}"); // save args
-//	asm("BL.W	callSyncM1"); // get pixel sync
 	asm("BL 	callSyncM1"); // get pixel sync
 	asm("POP	{r0-r3}");	// restore args
 	   
@@ -304,7 +303,7 @@ asm("dest3:");
 	asm("TST	r5, r4");		// 1
 	asm("BNE	dest3");		// 3
 
-	asm("POP	{r4-r5, pc}");
+	asm("POP	{r4-r5}");
 
 	asm(".syntax divided");
 }
@@ -316,7 +315,7 @@ void lineM1R2(uint32_t *gpio, uint16_t *memory, uint32_t xoffset, uint32_t xwidt
 //	asm("IMPORT callSyncM1");
 asm(".syntax unified");
 
-	asm("PUSH	{r4-r6, lr}");
+	asm("PUSH	{r4-r6}");
 
 	// add width to memory pointer so we can compare
 	asm("LSLS	r3, #1");
@@ -326,7 +325,6 @@ asm(".syntax unified");
 	asm("LSLS	r4, #11");
 
 	asm("PUSH	{r0-r3}"); // save args
-//	asm("BL.W	callSyncM1"); // get pixel sync
 	asm("BL		callSyncM1"); // get pixel sync
 	asm("POP	{r0-r3}");	// restore args
 	   
@@ -416,7 +414,7 @@ asm("dest9:");
 	asm("TST	r5, r4");		// 1
 	asm("BNE	dest9");		// 3
 
-	asm("POP	{r4-r6, pc}");
+	asm("POP	{r4-r6}");
 
 	asm(".syntax divided");
 }
@@ -428,8 +426,8 @@ void lineM1R2Merge(uint32_t *gpio, uint16_t *lineMemory, uint8_t *memory, uint32
 //	asm("IMPORT callSyncM1");
 asm(".syntax unified");
 
-	asm("PUSH	{r4-r7, lr}");
-	asm("LDR	r4, [sp, #0x14]");
+	asm("PUSH	{r4-r7}");
+	asm("LDR	r4, [sp, #0x28]"); // *** keil
 
    	// add width to memory pointer so we can compare
 	asm("ADDS	r4, r2");
@@ -527,7 +525,7 @@ asm("dest6:");
 	asm("TST	r6, r5");		// 1
 	asm("BNE	dest6");		// 3
 
-	asm("POP	{r4-r7, pc}");
+	asm("POP	{r4-r7}");
 
 	asm(".syntax divided");
 }
@@ -603,7 +601,8 @@ void grabM1R2(uint32_t xoffset, uint32_t yoffset, uint32_t xwidth, uint32_t ywid
 		lineM1R2((uint32_t *)&CAM_PORT, lineStore, xoffset, xwidth); // wait, grab, wait
 		lineM1R2((uint32_t *)&CAM_PORT, lineStore+xwidth, xoffset, xwidth); // wait, grab, wait
 		lineM1R2Merge((uint32_t *)&CAM_PORT, lineStore, memory, xoffset, xwidth); // wait, grab, wait
-		lineM1R2Merge((uint32_t *)&CAM_PORT, lineStore+xwidth, memory+xwidth, xoffset, xwidth); // wait, grab, wait
+		if (line<CAM_RES2_HEIGHT-2)
+			lineM1R2Merge((uint32_t *)&CAM_PORT, lineStore+xwidth, memory+xwidth, xoffset, xwidth); // wait, grab, wait
 	}					
 }
 

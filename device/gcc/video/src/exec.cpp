@@ -270,6 +270,8 @@ void exec_loop()
 
 	exec_select();
 
+	g_program = 7;
+
 	while(1)
 	{
 		connected = g_chirpUsb->connected();
@@ -297,11 +299,13 @@ void exec_loop()
 			}
 			else if (!g_run  || (*g_progTable[g_program]->loop)()<0)
 				state = 3; // stop state
+#if 0 // ***keil
 			else if (prevConnected && !connected) // if we disconnect from pixymon, revert back to default program
 			{
 				exec_runprog(0); // run default program
 				state = 0; // setup state
 			}
+#endif
 			break;
 
 		case 2:	// override state
@@ -324,11 +328,13 @@ void exec_loop()
 				exec_run();
 				state = 0; // back to setup state
 			}
+#if 0 // ***keil
 			else if (!connected || !USB_Configuration) // if we disconnect from pixy or unplug cable, revert back to default program
 			{
 				exec_runprog(0); // run default program
 				state = 0;	// back to setup state
 			}
+#endif
 			break;
 
 		default:
