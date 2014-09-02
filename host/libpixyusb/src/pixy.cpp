@@ -19,6 +19,8 @@ extern "C"
     {
       pixy_initialized = true;
     }
+
+    return return_value;
   }
 
   void pixy_close()
