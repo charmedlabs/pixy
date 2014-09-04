@@ -1,7 +1,6 @@
-%function script3(drc, pfile)
+function script3(drc, pfile)
 
-drc = '..\data\green_ball';
-pfile = 'pixels1';
+close;
 
 addpath(pwd);
 cd(drc);
@@ -11,13 +10,12 @@ eval(pfile);
 [L, LX, LY] = plotcluster(pixels);
 C1 = map(pixels);
 
-meanx = mean(C1(:, 1))
-meany = mean(C1(:, 2))
-
-pause
+meanx = mean(C1(:, 1));
+meany = mean(C1(:, 2));
 
 [LUT1 LUT2]= generatelut(L, [meanx meany]);
-
+hold on;
+plotlut(L, LUT1);
 if 0
 	for i=1:size(pixels, 1)
 		r = pixels(i, 1);

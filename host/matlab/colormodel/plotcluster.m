@@ -4,7 +4,7 @@ e =.95;
 d = 1.0;
 d2 = 2.0;
 d3 = 2.0;
-minsat = .17;
+minsat = .15;
 
 pp = plotpix(Pixels);
 %pp = [pp(1:end, 1), -pp(1:end, 2)+mean(pp(1:end, 2)), -pp(1:end, 3)];
@@ -82,7 +82,7 @@ if size(pp, 1)>0
 	if ll(2) > lr(2)
 		L = [lu; ld; ll; lr; ltu; ltd];
 	else
-		L = [lu; ld; lr; ll, ltu; ltd];
+		L = [lu; ld; lr; ll; ltu; ltd];
 	end
 	
 	LX = [lux; ldx; llx; lrx];

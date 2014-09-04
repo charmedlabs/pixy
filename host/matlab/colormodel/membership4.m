@@ -1,4 +1,4 @@
-function MI=membership3(LUT1, LUT2, I)
+function MI=membership4(x0, x1, y0, y1, LUT1, I)
 
 
 for x = 1:size(I, 1)
@@ -18,23 +18,20 @@ for x = 1:size(I, 1)
 		
 		if LUT1(bin) 
 			if 1
-				cs1 = typecast(c1, 'int8');
-				cs2 = typecast(c2, 'int8');
-				v = double(r)+double(g)+double(b);
-				v = v/(3*255);
-				if abs(cs1)>abs(cs2)
-					i = uint32(c1)+1;
-				else
-					i = uint32(c2)+1;
-				end
-				if (LUT2(i, 1)<v) & (v<LUT2(i, 2))
+				r = double(r);
+				g = double(g);
+				b = double(b);
+				v = r+g+b;
+				cb1 = (r-g)/v;
+				cb2 = (b-g)/v;
+				if (x0<cb1) & (cb1<x1) & (y0<cb2) & (cb2<y1)
 					MI(x, y) = 1;
 				else
 					MI(x, y) = 0;
 				end
 			else
 				MI(x, y) = 1;
-			end			
+			end
 		else
 			MI(x, y) = 0;
 		end

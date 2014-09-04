@@ -5,8 +5,8 @@ function [min max bin]=generatelut2(c, mean, miny, factor)
 	y = 2*c/mean; % mean = c1/y  --- 2 because we have the difference /2
 			
 	y = y/(3*255);
-	min = y*1/(1+factor);
-	max = y*(1+factor);
+	min = y*1/(1+factor(1));
+	max = y*(1+factor(2));
 	
 	if min<miny
 		min = miny;
