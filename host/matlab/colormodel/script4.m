@@ -1,4 +1,4 @@
-function LUT1=script4(drc, pfile, delta, tol, scale)
+function LUT1=script4(drc, pfile, delta, tol, scale, miny, bits)
 
 addpath(pwd);
 cd(drc);
@@ -42,7 +42,9 @@ for r=0:255
 end
 end
 
-LUT2 = generatelut3(x0, x1, y0, y1);
+LUT2 = generatelut3(x0, x1, y0, y1, miny, bits);
+
+size(LUT2)
 
 if 0
 close
@@ -51,14 +53,14 @@ plotlut2(LUT1, 'g');
 end
 
 LUT1 = LUT2;		
-pixfilter4(x0, x1, y0, y1, LUT1, 'image1.png');
-pixfilter4(x0, x1, y0, y1, LUT1, 'image2.png');
-pixfilter4(x0, x1, y0, y1, LUT1, 'image2.png');
-pixfilter4(x0, x1, y0, y1, LUT1, 'image3.png');
-pixfilter4(x0, x1, y0, y1, LUT1, 'image4.png');
-pixfilter4(x0, x1, y0, y1, LUT1, 'image5.png');
-pixfilter4(x0, x1, y0, y1, LUT1, 'image6.png');
-pixfilter4(x0, x1, y0, y1, LUT1, 'image7.png');
-pixfilter4(x0, x1, y0, y1, LUT1, 'image8.png');
+pixfilter4(x0, x1, y0, y1, LUT1, bits, 'image1.png');
+pixfilter4(x0, x1, y0, y1, LUT1, bits, 'image2.png');
+pixfilter4(x0, x1, y0, y1, LUT1, bits, 'image2.png');
+pixfilter4(x0, x1, y0, y1, LUT1, bits, 'image3.png');
+pixfilter4(x0, x1, y0, y1, LUT1, bits, 'image4.png');
+pixfilter4(x0, x1, y0, y1, LUT1, bits, 'image5.png');
+pixfilter4(x0, x1, y0, y1, LUT1, bits, 'image6.png');
+pixfilter4(x0, x1, y0, y1, LUT1, bits, 'image7.png');
+pixfilter4(x0, x1, y0, y1, LUT1, bits, 'image8.png');
 
 cd '../../colormodel'
