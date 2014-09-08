@@ -87,12 +87,14 @@ struct ParamRecord
 int prm_init(Chirp *chirp)
 {
 	// check integrity
+#if 0
 	if (!prm_verifyAll())
 	{
 		// if we're corrupt, format, start over
 		prm_format();
 		return -1;
 	} 
+#endif
 
 	chirp->registerModule(g_module);
 		

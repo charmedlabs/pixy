@@ -33,7 +33,9 @@ SOURCES += main.cpp\
     aboutdialog.cpp \
     parameters.cpp \
     paramfile.cpp \
-    dataexport.cpp
+    dataexport.cpp \
+    monmodule.cpp \
+    cblobmodule.cpp
 
 HEADERS  += mainwindow.h \
     videowidget.h \
@@ -65,7 +67,9 @@ HEADERS  += mainwindow.h \
     aboutdialog.h \
     parameters.h \
     paramfile.h \
-    dataexport.h
+    dataexport.h \
+    monmodule.h \
+    cblobmodule.h
 
 INCLUDEPATH += ../../common
 

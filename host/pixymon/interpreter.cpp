@@ -27,6 +27,7 @@
 #include "renderer.h"
 #include "sleeper.h"
 #include "pixymon.h"
+#include "monmodule.h"
 
 QString printType(uint32_t val, bool parens=false);
 
@@ -57,6 +58,8 @@ Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, ParameterDB
     connect(this, SIGNAL(videoInput(VideoWidget::InputMode)), m_video, SLOT(acceptInput(VideoWidget::InputMode)));
     connect(m_video, SIGNAL(selection(int,int,int,int)), this, SLOT(handleSelection(int,int,int,int)));
 
+    MonModuleUtil::createModules(&m_modules, this);
+
     m_run = true;
     start();
 }
@@ -67,6 +70,7 @@ Interpreter::~Interpreter()
     close();
     wait();
     clearLocalProgram();
+    MonModuleUtil::destroyModules(&m_modules);
     if (m_chirp)
         delete m_chirp;
     delete m_renderer;

@@ -21,6 +21,7 @@
 #include <QStringList>
 #include <QColor>
 #include <QVariant>
+#include <QList>
 #include <vector>
 #include <queue>
 #include <utility>
@@ -38,6 +39,7 @@
 
 class ConsoleWidget;
 class Renderer;
+class MonModule;
 
 enum CommandType {STOP, RUN, GET_ACTION, LOAD_PARAMS, SAVE_PARAMS};
 
@@ -183,6 +185,8 @@ private:
     QStringList m_argv; // executed on Pixy
     QStringList m_argvHost;  // executed on host
     QStringList m_commandList;
+
+    QList <MonModule *> m_modules;
 
     uint8_t m_argTypes[0x100];
     uint16_t m_version[3];

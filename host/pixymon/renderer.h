@@ -67,8 +67,6 @@ private:
 
     void emitImage(const QImage &image);
 
-    int renderBA81Filter(uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame);
-
     void handleRL(QImage *image, uint color, uint row, uint startCol, uint len);
 
     void pixelsOut(int x0, int y0, int width, int height);
