@@ -28,8 +28,8 @@ public:
     virtual ~MonModule();
 
     virtual void selection(int x0, int y0, int width, int height);
-    virtual bool render(uint32_t fourcc, void *args[]);
-    virtual bool command(QStringList argv);
+    virtual bool render(uint32_t fourcc, const void *args[]);
+    virtual bool command(const QStringList &argv);
 
 protected:
     Interpreter *m_interpreter;

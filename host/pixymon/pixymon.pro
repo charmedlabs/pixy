@@ -35,7 +35,8 @@ SOURCES += main.cpp\
     paramfile.cpp \
     dataexport.cpp \
     monmodule.cpp \
-    cblobmodule.cpp
+    cblobmodule.cpp \
+    colorblob.cpp
 
 HEADERS  += mainwindow.h \
     videowidget.h \
@@ -69,7 +70,8 @@ HEADERS  += mainwindow.h \
     paramfile.h \
     dataexport.h \
     monmodule.h \
-    cblobmodule.h
+    cblobmodule.h \
+    colorblob.h
 
 INCLUDEPATH += ../../common
 

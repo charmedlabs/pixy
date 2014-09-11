@@ -30,9 +30,11 @@ Renderer::Renderer(VideoWidget *video, Interpreter *interpreter) : m_blobs(inter
     m_video = video;
     m_interpreter = interpreter;
 
-    m_rawFrame.m_pixels = new uint8_t[0x10000];
+    m_rawFrame.m_pixels = new uint8_t[RAWFRAME_SIZE];
+    m_rawFrame.m_height = 0;
+    m_rawFrame.m_width = 0;
 
-    m_backgroundFrame = true;
+    m_firstFrame = true;
 
     m_mode = 3;
 
@@ -187,9 +189,17 @@ int Renderer::renderBA81(uint8_t renderFlags, uint16_t width, uint16_t height, u
     uint32_t *line;
     uint32_t r, g, b;
 
-    memcpy(m_rawFrame.m_pixels, frame, width*height);
-    m_rawFrame.m_width = width;
-    m_rawFrame.m_height = height;
+    if (width*height>RAWFRAME_SIZE)
+    {
+        m_rawFrame.m_width = 0;
+        m_rawFrame.m_height = 0;
+    }
+    else
+    {
+        memcpy(m_rawFrame.m_pixels, frame, width*height);
+        m_rawFrame.m_width = width;
+        m_rawFrame.m_height = height;
+    }
 
     // skip first line
     frame += width;
@@ -320,7 +330,7 @@ int Renderer::renderCCB2(uint8_t renderFlags, uint16_t width, uint16_t height, u
     if (renderFlags&RENDER_FLAG_BLEND_BG)
         renderBackground();
 
-    if (m_backgroundFrame) // if we're the background, we should be opaque
+    if (m_firstFrame) // if we're the background, we should be opaque
         img.fill(0xff000000);
     else
         img.fill(0x00000000); // otherwise, we're transparent
@@ -346,7 +356,7 @@ int Renderer::renderCCB1(uint8_t renderFlags, uint16_t width, uint16_t height, u
     if (renderFlags&RENDER_FLAG_BLEND_BG)
         renderBackground();
 
-    if (m_backgroundFrame) // if we're the background, we should be opaque
+    if (m_firstFrame) // if we're the background, we should be opaque
         img.fill(0xff000000);
     else
         img.fill(0x00000000); // otherwise, we're transparent
@@ -409,7 +419,7 @@ int Renderer::renderCCQ1(uint8_t renderFlags, uint16_t width, uint16_t height, u
     };
 
     // if we're a background frame, set alpha to 1.0
-    if (m_backgroundFrame)
+    if (m_firstFrame)
     {
         for (i=0; i<sizeof(palette)/sizeof(unsigned int); i++)
             palette[i] |= 0xff000000;
@@ -471,14 +481,14 @@ int Renderer::renderCMV1(uint8_t renderFlags, uint32_t cmodelsLen, float *cmodel
 // need this because we need synchronized knowledge of whether we're the background image or not
 void Renderer::emitImage(const QImage &img)
 {
-    m_backgroundFrame = false;
+    m_firstFrame = false;
     emit image(img);
 }
 
 void Renderer::emitFlushImage()
 {
     emit flushImage();
-    m_backgroundFrame = true;
+    m_firstFrame = true;
 }
 
 
@@ -503,30 +513,6 @@ int Renderer::render(uint32_t type, void *args[])
     return res;
 }
 
-#if 1
-void matlabArrayOut(QFile *file, const QString &name, float *data, int width, int height)
-{
-    int i, j;
-    float (&array)[height][width] = *reinterpret_cast<float (*)[height][width]>(data);
-
-    QTextStream out(file);
-
-    out << name << "=[\n";
-
-    for (i=0; i<height; i++)
-    {
-        if (i!=0)
-            out << "\n";
-        for(j=0; j<width; j++)
-        {
-            if (j!=0)
-                out << ", ";
-            out << array[i][j];
-        }
-    }
-    out << "];\n";
-}
-#endif
 
 void Renderer::pixelsOut(int x0, int y0, int width, int height)
 {
@@ -558,18 +544,6 @@ void Renderer::pixelsOut(int x0, int y0, int width, int height)
 }
 
 
-void Renderer::regionCommand(int x0, int y0, int width, int height, const QStringList &argv)
-{
-    qDebug("%d %d %d %d", x0, y0, width, height);
-
-    if (m_background.width()==0)
-        return;
-
-#if 1 // #ifdef MATLAB
-    pixelsOut(x0, y0, width, height);
-#endif
-}
-
 
 int Renderer::renderBackground()
 {
@@ -582,5 +556,21 @@ int Renderer::renderBackground()
 int Renderer::saveImage(const QString &filename)
 {
     return m_background.save(filename);
+}
+
+
+QImage *Renderer::backgroundImage()
+{
+    return &m_background;
+}
+
+Frame8 *Renderer::backgroundRaw()
+{
+    return &m_rawFrame;
+}
+
+bool Renderer::firstFrame()
+{
+    return m_firstFrame;
 }
 

@@ -19,12 +19,12 @@ void MonModule::selection(int x0, int y0, int width, int height)
 {
 }
 
-bool MonModule::render(uint32_t fourcc, void *args[])
+bool MonModule::render(uint32_t fourcc, const void *args[])
 {
     return false;
 }
 
-bool MonModule::command(QStringList argv)
+bool MonModule::command(const QStringList &argv)
 {
     return false;
 }

@@ -15,10 +15,13 @@
 
 #ifndef RENDERER_H
 #define RENDERER_H
+
 #include <QObject>
 #include <QImage>
 #include "pixytypes.h"
 #include "processblobs.h"
+
+#define RAWFRAME_SIZE    0x10000
 
 class Interpreter;
 
@@ -36,7 +39,10 @@ public:
     int renderBackground();
     int renderRect(uint16_t width, uint16_t height, const RectA &rect);
     void emitFlushImage();
-    void regionCommand(int x0, int y0, int width, int height, const QStringList &argv);
+    void emitImage(const QImage &image);
+    QImage *backgroundImage(); // get background from BA81 formatted image data
+    Frame8 *backgroundRaw();
+    bool firstFrame(); // are we the first frame (default background) between flushes
 
     void setMode(uint32_t mode)
     {
@@ -44,6 +50,7 @@ public:
     }
 
     int saveImage(const QString &filename);
+    void pixelsOut(int x0, int y0, int width, int height);
 
     Frame8 m_rawFrame;
     ProcessBlobs m_blobs;
@@ -65,16 +72,12 @@ private:
     void renderBlobsB(QImage *image, float scale, BlobB *blobs, uint32_t numBlobs);
     void renderBlobsA(QImage *image, float scale, BlobA *blobs, uint32_t numBlobs);
 
-    void emitImage(const QImage &image);
-
     void handleRL(QImage *image, uint color, uint row, uint startCol, uint len);
-
-    void pixelsOut(int x0, int y0, int width, int height);
 
     VideoWidget *m_video;
     Interpreter *m_interpreter;
 
-    bool m_backgroundFrame; // our own copy because we're in a different thread (not gui thread)
+    bool m_firstFrame;
     QImage m_background;
 
     uint32_t m_mode;

@@ -291,7 +291,7 @@ int32_t cc_setSigPoint(const uint32_t &type, const uint8_t &model, const uint16_
 	if (chirp)
 	{
 		BlobA blob(model, region.m_xOffset, region.m_xOffset+region.m_width, region.m_yOffset, region.m_yOffset+region.m_height);
-		cc_sendBlobs(chirp, &blob, 1, RENDER_FLAG_FLUSH | RENDER_FLAG_BLEND_BG);
+		cc_sendBlobs(chirp, &blob, 1, RENDER_FLAG_FLUSH | RENDER_FLAG_BLEND_BG); // draw final rectangle around grown region
 	}
 
 	cmodel.m_type = type;

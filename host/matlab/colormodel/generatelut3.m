@@ -16,19 +16,22 @@ for i=1:2^bits
 		if sqrt(c1^2+c2^2)<miny
 			LUT1 = [LUT1; 0];
 		else	
-		
-			if sign(x0)==sign(x1)
-				if (s0 < c2/c1) & (c2/c1 < s1) & (sign(c1)==sign(x0))
-					LUT1 = [LUT1; 1];
+			if (s0 < c2/c1) & (c2/c1 < s1) 
+				if sign(x0)==sign(x1)
+					if sign(c1)==sign(x0)
+						LUT1 = [LUT1; 1];
+					else
+						LUT1 = [LUT1; 0];
+					end
 				else
-					LUT1 = [LUT1; 0];
+					if sign(c2)==sign(y0)
+						LUT1 = [LUT1; 1];
+					else
+						LUT1 = [LUT1; 0];
+					end		
 				end
 			else
-				if (s0 < c2/c1) & (c2/c1 < s1) & (sign(c2)==sign(y0))
-					LUT1 = [LUT1; 1];
-				else
-					LUT1 = [LUT1; 0];
-				end		
+				LUT1 = [LUT1; 0];
 			end
 		end
 	end

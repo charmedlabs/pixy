@@ -46,6 +46,7 @@ Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, ParameterDB
     m_paramDirty = true;
     m_running = -1; // set to bogus value to force update
     m_chirp = NULL;
+    m_videoInputModule = NULL;
 
     m_renderer = new Renderer(m_video, this);
 
@@ -724,6 +725,7 @@ void Interpreter::prompt()
 void Interpreter::command(const QString &command)
 {
     QMutexLocker locker(&m_mutexInput);
+    int i;
 
     if (m_localProgramRunning)
         return;
@@ -741,6 +743,13 @@ void Interpreter::command(const QString &command)
 
     if (words.size()==0)
         goto end;
+
+    // check modules to see if they handle this command, if so, skip to end
+    for (i=0; i<m_modules.size(); i++)
+    {
+        if (m_modules[i]->command(words))
+            goto end;
+    }
 
     if (words[0]=="do")
     {
@@ -760,6 +769,7 @@ void Interpreter::command(const QString &command)
         if (runLocalProgram()>=0)
             return;
     }
+#if 0
     else if (words[0]=="rendermode")
     {
         if (words.size()>1)
@@ -772,7 +782,6 @@ void Interpreter::command(const QString &command)
         emit videoInput(VideoWidget::REGION);
         m_argvHost = words;
     }
-#if 0
     else if (words[0]=="set")
     {
         if (words.size()==3)
@@ -872,19 +881,15 @@ void Interpreter::saveParams()
 
 void Interpreter::handleSelection(int x0, int y0, int width, int height)
 {
-    if (m_argvHost.size()>0 && m_argvHost[0]=="region")
-    {
-        m_renderer->regionCommand(x0, y0, width, height, m_argvHost);
-        m_argvHost.clear();
-    }
-    else
+    if (m_videoInputModule) // module is waiting for input
+        m_videoInputModule->selection(x0, y0, width, height);
+    else // pixy command is waiting for input
     {
         m_mutexInput.lock();
         m_command = QString::number(x0) + " " + QString::number(y0) +  " " + QString::number(width) +  " " + QString::number(height);
         m_key = (Qt::Key)0;
         m_waitInput.wakeAll();
         m_mutexInput.unlock();
-        m_renderer->regionCommand(x0, y0, width, height, m_argvHost);
     }
 
 }
@@ -1257,6 +1262,13 @@ void Interpreter::handleSaveParams()
     if (dirty)  // if we updated any parameters, output paramChange signal
         emit paramChange();
 
+}
+
+
+void Interpreter::emitVideoInput(MonModule *module, VideoWidget::InputMode mode)
+{
+    m_videoInputModule = module;
+    emit videoInput(mode);
 }
 
 

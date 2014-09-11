@@ -79,16 +79,20 @@ public:
     void close();
     void unwait();
 
+    // for MonModules
+    void emitVideoInput(MonModule *module, VideoWidget::InputMode mode);
+
     uint16_t *getVersion();
 
     ChirpMon *m_chirp;
+    Renderer *m_renderer;
     ParameterDB m_pixyParameters;
     ParameterDB *m_pixymonParameters;
 
     friend class ChirpMon;
 
 signals:
-    void runState(uint state);
+    void runState(uint sFtate);
     void textOut(QString text, QColor color=Qt::black);
     void error(QString text);
     void prompt(QString text);
@@ -144,7 +148,6 @@ private:
 
     ConsoleWidget *m_console;
     VideoWidget *m_video;
-    Renderer *m_renderer;
 
     USBLink m_link;
 
@@ -187,6 +190,7 @@ private:
     QStringList m_commandList;
 
     QList <MonModule *> m_modules;
+    MonModule *m_videoInputModule;
 
     uint8_t m_argTypes[0x100];
     uint16_t m_version[3];
