@@ -2,6 +2,7 @@
 #include "interpreter.h"
 #include "renderer.h"
 #include "cblobmodule.h"
+#include "dataexport.h"
 
 // declare module
 MON_MODULE(CBlobModule);
@@ -31,6 +32,14 @@ void CBlobModule::selection(int x0, int y0, int width, int height)
     m_cblob->generateSignature(frame, &region, &sig);
     qDebug("sig: %d %d %d %d", sig.m_uMin, sig.m_uMax, sig.m_vMin, sig.m_vMax);
 
+    m_cblob->generateLUT(&sig, 1);
+
+    DataExport dx(m_interpreter->m_pixymonParameters->value("Document folder")->toString(), "lut", ET_MATLAB);
+
+    dx.startArray(1, "lut");
+
+    for (int i=0; i<LUT_SIZE; i++)
+        dx.addElement(m_lut[i]);
 }
 
 bool CBlobModule::render(uint32_t fourcc, const void *args[])
