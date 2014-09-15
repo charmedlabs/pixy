@@ -213,7 +213,7 @@ public:
 
     int call(uint8_t service, ChirpProc proc, ...);
     int call(uint8_t service, ChirpProc proc, va_list args);
-    static uint8_t getType(void *arg);
+    static uint8_t getType(const void *arg);
     int service(bool all=true);
     int assemble(uint8_t type, ...);
     bool connected();
@@ -231,8 +231,8 @@ public:
 protected:
     int remoteInit(bool connect);
     int recvChirp(uint8_t *type, ChirpProc *proc, void *args[], bool wait=false); // null pointer terminates
-    virtual int handleChirp(uint8_t type, ChirpProc proc, void *args[]); // null pointer terminates
-    virtual void handleXdata(void *data[]) {}
+    virtual int handleChirp(uint8_t type, ChirpProc proc, const void *args[]); // null pointer terminates
+    virtual void handleXdata(const void *data[]) {}
     virtual int sendChirp(uint8_t type, ChirpProc proc);
 
     uint8_t *m_buf;

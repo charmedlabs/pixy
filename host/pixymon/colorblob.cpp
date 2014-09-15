@@ -7,7 +7,7 @@ ColorBlob::ColorBlob(uint8_t *lut)
     m_tol = DEFAULT_TOL;
     m_lut = lut;
     m_minSat = 2.0;
-    m_acqRange = 2.0;
+    m_acqRange = 4.0;
     m_trackRange = 1.0;
     clearLUT();
 }
@@ -105,23 +105,26 @@ int ColorBlob::generateSignature(const Frame8 *frame, const Point16 *point, Colo
 void ColorBlob::generateLUT(const ColorSignature *signature, uint8_t signum)
 {
     int32_t u, v, i, j, bin;
-    bool u0, v0;
+    bool u0, v0, lutVal;
     float bratios[4], c, umin, umax, vmin, vmax, ratio, sat, minRatio, maxRatio;
 
     clearLUT(signum);
 
-
+    // scale up
     c = ((float)signature->m_uMax + signature->m_uMin)/2.0f;
     umin = c + (signature->m_uMin - c)*m_acqRange*m_trackRange;
     umax = c + (signature->m_uMax - c)*m_acqRange*m_trackRange;
     c = ((float)signature->m_vMax + signature->m_vMin)/2.0f;
     vmin = c + (signature->m_vMin - c)*m_acqRange*m_trackRange;
     vmax = c + (signature->m_vMax - c)*m_acqRange*m_trackRange;
+
+    // calculate ratios
     bratios[0] = vmin/umin;
     bratios[1] = vmin/umax;
     bratios[2] = vmax/umin;
     bratios[3] = vmax/umax;
 
+    // find max/min ratio values
     for (i=0, maxRatio=-10000.0f, minRatio=10000.0f; i<4; i++)
     {
         if (bratios[i]>maxRatio)
@@ -145,16 +148,15 @@ void ColorBlob::generateLUT(const ColorSignature *signature, uint8_t signum)
             if (sat<m_minSat)
                 continue;
 
+            // knock off upper bits
             u &= (1<<LUT_COMPONENT_SCALE)-1;
             v &= (1<<LUT_COMPONENT_SCALE)-1;
 
+            lutVal = false;
             if ((umin>0.0f)==(umax>0.0f)) // left or right half of hue plane
             {
                 if (u0==(umin>0.0f) && minRatio<ratio && ratio<maxRatio) // make sure sign of u is the same is umin
-                {
-                    if (m_lut[bin]==0 || m_lut[bin]>signum)
-                        m_lut[bin] = signum;
-                }
+                    lutVal = true;
             }
             else // top or bottom
             {
@@ -163,21 +165,19 @@ void ColorBlob::generateLUT(const ColorSignature *signature, uint8_t signum)
                     if ((minRatio>0.0f)==(maxRatio>0.0f)) // check if signs of min and maxRatio are the same
                     {
                         if (minRatio<ratio && ratio<maxRatio) // if so, do a normal check
-                        {
-                            if (m_lut[bin]==0 || m_lut[bin]>signum)
-                                m_lut[bin] = signum;
-                        }
+                            lutVal = true;
                     }
                     else // min and maxRatio signs are different--- special case
                     {
                         if (maxRatio<ratio || ratio<minRatio) // in this region, the ratio signs change based on which half of the hue plane you're on
-                        {
-                            if (m_lut[bin]==0 || m_lut[bin]>signum)
-                                m_lut[bin] = signum;
-                        }
+                            lutVal = true;
                     }
                 }
             }
+
+            if (lutVal && (m_lut[bin]==0 || m_lut[bin]>signum))
+                m_lut[bin] = signum;
+
         }
     }
 }

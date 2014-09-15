@@ -33,13 +33,14 @@ y1 = c + (y1-c)*scale;
 
 LUT = generatelut3(x0, x1, y0, y1, miny, bits);
 
-plotlut3(LUT, 6, 'b');
-
-pause;
-
 file = newfile('lut')
 eval(file); 
 
 plotlut3(lut, 6, 'g');
+
+pause;
+
+plotlut3(LUT, 6, 'b');
+
 
 cd('..\colormodel');

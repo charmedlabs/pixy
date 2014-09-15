@@ -309,7 +309,7 @@ QString printType(uint32_t val, bool parens)
     return res;
 }
 
-void Interpreter::handleResponse(void *args[])
+void Interpreter::handleResponse(const void *args[])
 {
     // strip off response, add to print string
     //    m_print = "response " + QString::number(m_rcount++) + ": " +
@@ -320,7 +320,7 @@ void Interpreter::handleResponse(void *args[])
     handleData(args+1);
 }
 
-void Interpreter::handleData(void *args[])
+void Interpreter::handleData(const void *args[])
 {
     uint8_t type;
     QColor color = CW_DEFAULT_COLOR;

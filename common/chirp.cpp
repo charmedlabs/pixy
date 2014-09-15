@@ -452,7 +452,7 @@ int Chirp::call(uint8_t service, ChirpProc proc, va_list args)
                 if (type&CRP_RESPONSE)
                     break;
                 else // handle calls as they come in
-                    handleChirp(type, recvProc, recvArgs);
+                    handleChirp(type, recvProc, (const void **)recvArgs);
             }
             else
             {
@@ -545,7 +545,7 @@ int Chirp::sendChirp(uint8_t type, ChirpProc proc)
     return CRP_RES_OK;
 }
 
-int Chirp::handleChirp(uint8_t type, ChirpProc proc, void *args[])
+int Chirp::handleChirp(uint8_t type, ChirpProc proc, const void *args[])
 {
     int res;
     int32_t responseInt = 0;
@@ -590,25 +590,25 @@ int Chirp::handleChirp(uint8_t type, ChirpProc proc, void *args[])
         if (n==0)
             responseInt = (*ptr)(this);
         else if (n==1)
-            responseInt = (*(uint32_t(*)(void*,Chirp*))ptr)(args[0],this);
+            responseInt = (*(uint32_t(*)(const void*,Chirp*))ptr)(args[0],this);
         else if (n==2)
-            responseInt = (*(uint32_t(*)(void*,void*,Chirp*))ptr)(args[0],args[1],this);
+            responseInt = (*(uint32_t(*)(const void*,const void*,Chirp*))ptr)(args[0],args[1],this);
         else if (n==3)
-            responseInt = (*(uint32_t(*)(void*,void*,void*,Chirp*))ptr)(args[0],args[1],args[2],this);
+            responseInt = (*(uint32_t(*)(const void*,const void*,const void*,Chirp*))ptr)(args[0],args[1],args[2],this);
         else if (n==4)
-            responseInt = (*(uint32_t(*)(void*,void*,void*,void*,Chirp*))ptr)(args[0],args[1],args[2],args[3],this);
+            responseInt = (*(uint32_t(*)(const void*,const void*,const void*,const void*,Chirp*))ptr)(args[0],args[1],args[2],args[3],this);
         else if (n==5)
-            responseInt = (*(uint32_t(*)(void*,void*,void*,void*,void*,Chirp*))ptr)(args[0],args[1],args[2],args[3],args[4],this);
+            responseInt = (*(uint32_t(*)(const void*,const void*,const void*,const void*,const void*,Chirp*))ptr)(args[0],args[1],args[2],args[3],args[4],this);
         else if (n==6)
-            responseInt = (*(uint32_t(*)(void*,void*,void*,void*,void*,void*,Chirp*))ptr)(args[0],args[1],args[2],args[3],args[4],args[5],this);
+            responseInt = (*(uint32_t(*)(const void*,const void*,const void*,const void*,const void*,const void*,Chirp*))ptr)(args[0],args[1],args[2],args[3],args[4],args[5],this);
         else if (n==7)
-            responseInt = (*(uint32_t(*)(void*,void*,void*,void*,void*,void*,void*,Chirp*))ptr)(args[0],args[1],args[2],args[3],args[4],args[5],args[6],this);
+            responseInt = (*(uint32_t(*)(const void*,const void*,const void*,const void*,const void*,const void*,const void*,Chirp*))ptr)(args[0],args[1],args[2],args[3],args[4],args[5],args[6],this);
         else if (n==8)
-            responseInt = (*(uint32_t(*)(void*,void*,void*,void*,void*,void*,void*,void*,Chirp*))ptr)(args[0],args[1],args[2],args[3],args[4],args[5],args[6],args[7],this);
+            responseInt = (*(uint32_t(*)(const void*,const void*,const void*,const void*,const void*,const void*,const void*,const void*,Chirp*))ptr)(args[0],args[1],args[2],args[3],args[4],args[5],args[6],args[7],this);
         else if (n==9)
-            responseInt = (*(uint32_t(*)(void*,void*,void*,void*,void*,void*,void*,void*,void*,Chirp*))ptr)(args[0],args[1],args[2],args[3],args[4],args[5],args[6],args[7],args[8],this);
+            responseInt = (*(uint32_t(*)(const void*,const void*,const void*,const void*,const void*,const void*,const void*,const void*,const void*,Chirp*))ptr)(args[0],args[1],args[2],args[3],args[4],args[5],args[6],args[7],args[8],this);
         else if (n==10)
-            responseInt = (*(uint32_t(*)(void*,void*,void*,void*,void*,void*,void*,void*,void*,void*,Chirp*))ptr)(args[0],args[1],args[2],args[3],args[4],args[5],args[6],args[7],args[8],args[9],this);
+            responseInt = (*(uint32_t(*)(const void*,const void*,const void*,const void*,const void*,const void*,const void*,const void*,const void*,const void*,Chirp*))ptr)(args[0],args[1],args[2],args[3],args[4],args[5],args[6],args[7],args[8],args[9],this);
         else
             responseInt = CRP_RES_ERROR;
         m_call = false;
@@ -855,7 +855,7 @@ int Chirp::service(bool all)
     for (i=0; true; i++)
     {
         if (recvChirp(&type, &recvProc, args)==CRP_RES_OK)
-            handleChirp(type, recvProc, args);
+            handleChirp(type, recvProc, (const void **)args);
         else
             break;
         if (!all)
@@ -1020,7 +1020,7 @@ int Chirp::deserializeParse(uint8_t *buf, uint32_t len, void *args[])
     return CRP_RES_OK;
 }
 
-uint8_t Chirp::getType(void *arg)
+uint8_t Chirp::getType(const void *arg)
 {
     return *((uint8_t *)arg - 1);
 }

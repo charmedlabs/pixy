@@ -483,7 +483,6 @@ int ColorLUT::growRegion(RectA *result, const Frame8 &frame, const Point16 &seed
 #ifndef PIXY
 void ColorLUT::matlabOut(const ColorModel *model, uint8_t index)
 {
-    unsigned int i;
     QString str, name = "lutinfo";
     QFile file(name + QString::number(index) + ".m");
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text))

@@ -50,7 +50,6 @@ public:
 private:
     float calcRatio(const int32_t *uvPixels, uint32_t numuv, int32_t line, bool lt);
     int32_t iterate(const int32_t *uvPixels, uint32_t numuv, float ratio, bool pos);
-    ColorSignature m_signatures[NUM_SIGNATURES];
     uint8_t *m_lut;
 
     int32_t m_delta;

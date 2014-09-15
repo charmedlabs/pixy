@@ -45,7 +45,7 @@ int ChirpMon::serviceChirp()
     {
         if ((res=recvChirp(&type, &recvProc, args, true))<0)
             return res;
-        handleChirp(type, recvProc, args);
+        handleChirp(type, recvProc, (const void **)args);
         if (type&CRP_RESPONSE)
             break;
     }
@@ -53,7 +53,7 @@ int ChirpMon::serviceChirp()
 }
 
 
-int ChirpMon::handleChirp(uint8_t type, ChirpProc proc, void *args[])
+int ChirpMon::handleChirp(uint8_t type, ChirpProc proc, const void *args[])
 {
     if (type==CRP_RESPONSE)
     {
@@ -64,7 +64,7 @@ int ChirpMon::handleChirp(uint8_t type, ChirpProc proc, void *args[])
     return Chirp::handleChirp(type, proc, args);
 }
 
-void ChirpMon::handleXdata(void *data[])
+void ChirpMon::handleXdata(const void *data[])
 {
     m_interpreter->handleData(data);
 }

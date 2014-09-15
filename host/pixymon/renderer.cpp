@@ -21,6 +21,7 @@
 #include "videowidget.h"
 #include "interpreter.h"
 #include "dataexport.h"
+#include "monmodule.h"
 #include <chirp.hpp>
 #include "calc.h"
 #include <math.h>
@@ -389,7 +390,7 @@ int Renderer::renderRect(uint16_t width, uint16_t height, const RectA &rect)
     return 0;
 }
 
-void Renderer::handleRL(QImage *image, uint color, uint row, uint startCol, uint len)
+void Renderer::renderRL(QImage *image, uint color, uint row, uint startCol, uint len)
 {
     uint *line;
     uint col;
@@ -444,7 +445,7 @@ int Renderer::renderCCQ1(uint8_t renderFlags, uint16_t width, uint16_t height, u
         startCol = qVals[i]&0x1ff;
         qVals[i] >>= 9;
         length = qVals[i]&0x1ff;
-        handleRL(&img, palette[model], row, startCol, length);
+        renderRL(&img, palette[model], row, startCol, length);
     }
     emitImage(img);
     if (renderFlags&RENDER_FLAG_FLUSH)
@@ -492,9 +493,16 @@ void Renderer::emitFlushImage()
 }
 
 
-int Renderer::render(uint32_t type, void *args[])
+int Renderer::render(uint32_t type, const void *args[])
 {
     int res;
+    int i;
+
+    for (i=0; i<m_interpreter->m_modules.size(); i++)
+    {
+        if (m_interpreter->m_modules[i]->render(type, args))
+            return 0;
+    }
 
     // choose fourcc for representing formats fourcc.org
     if (type==FOURCC('B','A','8','1'))

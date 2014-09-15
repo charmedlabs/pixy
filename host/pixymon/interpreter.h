@@ -90,6 +90,7 @@ public:
     ParameterDB *m_pixymonParameters;
 
     friend class ChirpMon;
+    friend class Renderer;
 
 signals:
     void runState(uint sFtate);
@@ -119,8 +120,8 @@ private:
     void handleCall(const QStringList &argv);
     void listProgram();
     int call(const QStringList &argv, bool interactive=false);
-    void handleResponse(void *args[]);
-    void handleData(void *args[]);
+    void handleResponse(const void *args[]);
+    void handleData(const void *args[]);
 
     int addProgram(ChirpCallData data);
     int addProgram(const QStringList &argv);
