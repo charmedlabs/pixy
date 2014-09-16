@@ -54,7 +54,7 @@ private slots:
     void handleRunState(uint state);
     void handleConnected(Device device, bool state);
     void handleActions();
-    void handleActionScriptlet(int index, QString action, QStringList scriptlet);
+    void handleActionScriptlet(QString action, QStringList scriptlet);
     void handleLoadParams();
     void handleConfigDialogFinished();
     void interpreterFinished();

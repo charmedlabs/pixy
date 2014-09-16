@@ -15,10 +15,6 @@ MonModule::~MonModule()
 {
 }
 
-void MonModule::selection(int x0, int y0, int width, int height)
-{
-}
-
 bool MonModule::render(uint32_t fourcc, const void *args[])
 {
     return false;

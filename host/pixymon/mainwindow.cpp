@@ -313,16 +313,16 @@ void MainWindow::connectPixy(bool state)
             else
             {
                 m_console->print("Pixy detected.\n");
+                clearActions();
                 m_interpreter = new Interpreter(m_console, m_video, &m_parameters);
 
                 m_initScriptExecuted = false; // reset so we'll execute for this instance
                 connect(m_interpreter, SIGNAL(runState(uint)), this, SLOT(handleRunState(uint)));
                 connect(m_interpreter, SIGNAL(finished()), this, SLOT(interpreterFinished()));
                 connect(m_interpreter, SIGNAL(connected(Device,bool)), this, SLOT(handleConnected(Device,bool)));
-                connect(m_interpreter, SIGNAL(actionScriptlet(int,QString,QStringList)), this, SLOT(handleActionScriptlet(int,QString,QStringList)));
+                connect(m_interpreter, SIGNAL(actionScriptlet(QString,QStringList)), this, SLOT(handleActionScriptlet(QString,QStringList)));
                 connect(m_interpreter, SIGNAL(paramLoaded()), this, SLOT(handleLoadParams()));
-                clearActions();
-                m_interpreter->getAction(0);  // start action query process
+                m_interpreter->start();
             }
             m_pixyConnected = true;
         }
@@ -386,13 +386,10 @@ void MainWindow::handleActions()
 }
 
 
-void MainWindow::handleActionScriptlet(int index, QString action, QStringList scriptlet)
+
+void MainWindow::handleActionScriptlet(QString action, QStringList scriptlet)
 {
-    if (m_interpreter)
-    {
-        m_interpreter->getAction(index+1);  // get next action, we'll stop getting called back when there are no more actions
-        addAction(action, scriptlet);
-    }
+    addAction(action, scriptlet);
 }
 
 void MainWindow::handleConnected(Device device, bool state)

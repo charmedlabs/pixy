@@ -27,7 +27,6 @@ public:
     MonModule(Interpreter *interpreter);
     virtual ~MonModule();
 
-    virtual void selection(int x0, int y0, int width, int height);
     virtual bool render(uint32_t fourcc, const void *args[]);
     virtual bool command(const QStringList &argv);
 

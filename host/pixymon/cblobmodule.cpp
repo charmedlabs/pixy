@@ -10,9 +10,16 @@ MON_MODULE(CBlobModule);
 
 CBlobModule::CBlobModule(Interpreter *interpreter) : MonModule(interpreter)
 {
+    QStringList scriptlet;
+
     m_qq = new Qqueue();
     m_lut = new uint8_t[LUT_SIZE];
     m_cblob = new ColorBlob(m_lut);
+
+    scriptlet << "cam_getFrame 0x21 0 0 320 200";
+    scriptlet << "cb_region";
+    scriptlet << "runprogArg 8 100";
+    m_interpreter->emit actionScriptlet("Create new signature...", scriptlet);
 
     memset(m_signatures, 0, sizeof(ColorSignature)*NUM_SIGNATURES);
 }
@@ -20,28 +27,6 @@ CBlobModule::CBlobModule(Interpreter *interpreter) : MonModule(interpreter)
 CBlobModule::~CBlobModule()
 {
     delete [] m_lut;
-}
-
-void CBlobModule::selection(int x0, int y0, int width, int height)
-{
-    ColorSignature sig;
-
-    Frame8 *frame = m_interpreter->m_renderer->backgroundRaw();
-    RectA region(x0, y0, width, height);
-    m_interpreter->m_renderer->pixelsOut(x0, y0, width, height);
-    m_cblob->generateSignature(frame, &region, &sig);
-    qDebug("sig: %d %d %d %d", sig.m_uMin, sig.m_uMax, sig.m_vMin, sig.m_vMax);
-
-    m_cblob->generateLUT(&sig, 1);
-    m_signatures[0] = sig;
-
-
-    DataExport dx(m_interpreter->m_pixymonParameters->value("Document folder")->toString(), "lut", ET_MATLAB);
-
-    dx.startArray(1, "lut");
-
-    for (int i=0; i<LUT_SIZE; i++)
-        dx.addElement(m_lut[i]);
 }
 
 bool CBlobModule::render(uint32_t fourcc, const void *args[])
@@ -58,7 +43,27 @@ bool CBlobModule::command(const QStringList &argv)
 {
     if (argv[0]=="cb_region")
     {
-        m_interpreter->emitVideoInput(this, VideoWidget::REGION);
+        RectA region;
+        m_interpreter->getSelection(VideoWidget::REGION, &region);
+
+        ColorSignature sig;
+
+        Frame8 *frame = m_interpreter->m_renderer->backgroundRaw();
+        m_interpreter->m_renderer->pixelsOut(region.m_xOffset, region.m_yOffset, region.m_width, region.m_height);
+        m_cblob->generateSignature(frame, &region, &sig);
+        qDebug("sig: %d %d %d %d", sig.m_uMin, sig.m_uMax, sig.m_vMin, sig.m_vMax);
+
+        m_cblob->generateLUT(&sig, 1);
+        m_signatures[0] = sig;
+
+
+        DataExport dx(m_interpreter->m_pixymonParameters->value("Document folder")->toString(), "lut", ET_MATLAB);
+
+        dx.startArray(1, "lut");
+
+        for (int i=0; i<LUT_SIZE; i++)
+            dx.addElement(m_lut[i]);
+
         return true;
     }
     return false;

@@ -498,6 +498,7 @@ int Renderer::render(uint32_t type, const void *args[])
     int res;
     int i;
 
+    // check modules, see if they handle the fourcc
     for (i=0; i<m_interpreter->m_modules.size(); i++)
     {
         if (m_interpreter->m_modules[i]->render(type, args))

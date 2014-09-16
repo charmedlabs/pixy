@@ -131,7 +131,7 @@ void ConsoleWidget::keyPressEvent(QKeyEvent *event)
             QTextCursor cursor = textCursor();
             line = cursor.block().text();
 
-            line.remove(0, m_prompt.size()); // get rid of prompt (assume it's just the first character)
+            line.remove(0, m_prompt.size()); // get rid of prompt
             // propagate newline before we send text
             QPlainTextEdit::keyPressEvent(event);
             // send text

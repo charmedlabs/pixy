@@ -25,6 +25,7 @@
 #include <vector>
 #include <queue>
 #include <utility>
+#include "pixytypes.h"
 #include "chirpmon.h"
 #include "videowidget.h"
 #include "connectevent.h"
@@ -41,7 +42,7 @@ class ConsoleWidget;
 class Renderer;
 class MonModule;
 
-enum CommandType {STOP, RUN, GET_ACTION, LOAD_PARAMS, SAVE_PARAMS};
+enum CommandType {STOP, RUN, LOAD_PARAMS, SAVE_PARAMS};
 
 typedef std::pair<CommandType,QVariant> Command;
 typedef std::queue<Command> CommandQueue;
@@ -70,7 +71,6 @@ public:
 
     void execute(const QString &command);
     void execute(QStringList commandList);
-    void getAction(int index);
     void loadParams();
     void saveParams();
     int saveImage(const QString &filename);
@@ -79,10 +79,9 @@ public:
     void close();
     void unwait();
 
-    // for MonModules
-    void emitVideoInput(MonModule *module, VideoWidget::InputMode mode);
-
     uint16_t *getVersion();
+
+    void getSelection(VideoWidget::InputMode mode, RectA *rect);
 
     ChirpMon *m_chirp;
     Renderer *m_renderer;
@@ -101,6 +100,7 @@ signals:
     void enableConsole(bool enable);
     void connected(Device device, bool state);
     void actionScriptlet(int index, QString action, QStringList scriptlet);
+    void actionScriptlet(QString action, QStringList scriptlet);
     void parameter(QString id, QByteArray data);
     void paramLoaded();
     void paramChange();
@@ -189,9 +189,9 @@ private:
     QStringList m_argv; // executed on Pixy
     QStringList m_argvHost;  // executed on host
     QStringList m_commandList;
+    RectA m_selection;
 
     QList <MonModule *> m_modules;
-    MonModule *m_videoInputModule;
 
     uint8_t m_argTypes[0x100];
     uint16_t m_version[3];

@@ -46,7 +46,6 @@ Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, ParameterDB
     m_paramDirty = true;
     m_running = -1; // set to bogus value to force update
     m_chirp = NULL;
-    m_videoInputModule = NULL;
 
     m_renderer = new Renderer(m_video, this);
 
@@ -59,10 +58,8 @@ Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, ParameterDB
     connect(this, SIGNAL(videoInput(VideoWidget::InputMode)), m_video, SLOT(acceptInput(VideoWidget::InputMode)));
     connect(m_video, SIGNAL(selection(int,int,int,int)), this, SLOT(handleSelection(int,int,int,int)));
 
-    MonModuleUtil::createModules(&m_modules, this);
 
     m_run = true;
-    start();
 }
 
 Interpreter::~Interpreter()
@@ -447,7 +444,7 @@ int Interpreter::sendGetAction(int index)
     action2 = QString(action);
     scriptlet2 = QString(scriptlet).split(QRegExp("[\\n]"), QString::SkipEmptyParts);
 
-    emit actionScriptlet(index, action2, scriptlet2);
+    emit actionScriptlet(action2, scriptlet2);
     return response;
 }
 
@@ -469,10 +466,6 @@ void Interpreter::handlePendingCommand()
 
     case RUN:
         sendRun();
-        break;
-
-    case GET_ACTION:
-        sendGetAction(command.second.toInt());
         break;
 
     case LOAD_PARAMS:
@@ -509,6 +502,7 @@ void Interpreter::run()
     // init
     try
     {
+        int i;
         ChirpProc versionProc;
         uint16_t *version;
         uint32_t verLen, responseInt;
@@ -544,6 +538,12 @@ void Interpreter::run()
         if (m_exec_run<0 || m_exec_running<0 || m_exec_stop<0 || m_exec_get_action<0 ||
                 m_get_param<0 || m_getAll_param<0 || m_set_param<0)
             throw std::runtime_error("Communication error with Pixy.");
+
+        // create pixymon modules
+        MonModuleUtil::createModules(&m_modules, this);
+
+        // get all actions
+        for (i=0; sendGetAction(i)>=0; i++);
     }
     catch (std::runtime_error &exception)
     {
@@ -725,7 +725,6 @@ void Interpreter::prompt()
 void Interpreter::command(const QString &command)
 {
     QMutexLocker locker(&m_mutexInput);
-    int i;
 
     if (m_localProgramRunning)
         return;
@@ -743,13 +742,6 @@ void Interpreter::command(const QString &command)
 
     if (words.size()==0)
         goto end;
-
-    // check modules to see if they handle this command, if so, skip to end
-    for (i=0; i<m_modules.size(); i++)
-    {
-        if (m_modules[i]->command(words))
-            goto end;
-    }
 
     if (words[0]=="do")
     {
@@ -864,11 +856,6 @@ void Interpreter::execute(QStringList commandList)
 }
 
 
-void Interpreter::getAction(int index)
-{
-    queueCommand(GET_ACTION, index);
-}
-
 void Interpreter::loadParams()
 {
     queueCommand(LOAD_PARAMS);
@@ -881,17 +868,12 @@ void Interpreter::saveParams()
 
 void Interpreter::handleSelection(int x0, int y0, int width, int height)
 {
-    if (m_videoInputModule) // module is waiting for input
-        m_videoInputModule->selection(x0, y0, width, height);
-    else // pixy command is waiting for input
-    {
-        m_mutexInput.lock();
-        m_command = QString::number(x0) + " " + QString::number(y0) +  " " + QString::number(width) +  " " + QString::number(height);
-        m_key = (Qt::Key)0;
-        m_waitInput.wakeAll();
-        m_mutexInput.unlock();
-    }
-
+    m_mutexInput.lock();
+    m_command = QString::number(x0) + " " + QString::number(y0) +  " " + QString::number(width) +  " " + QString::number(height);
+    m_selection = RectA(x0, y0, width, height);
+    m_key = (Qt::Key)0;
+    m_waitInput.wakeAll();
+    m_mutexInput.unlock();
 }
 
 void Interpreter::unwait()
@@ -923,6 +905,13 @@ int Interpreter::call(const QStringList &argv, bool interactive)
     // not allowed
     if (argv.size()<1)
         return -1;
+
+    // check modules to see if they handle this command, if so, skip to end
+    for (i=0; i<m_modules.size(); i++)
+    {
+        if (m_modules[i]->command(argv))
+            return 0;
+    }
 
     // a procedure needs extension info (arg info, etc) in order for us to call...
     if ((proc=m_chirp->getProc(argv[0].toLocal8Bit()))>=0 &&
@@ -1264,12 +1253,20 @@ void Interpreter::handleSaveParams()
 
 }
 
-
-void Interpreter::emitVideoInput(MonModule *module, VideoWidget::InputMode mode)
+void Interpreter::getSelection(VideoWidget::InputMode mode, RectA *rect)
 {
-    m_videoInputModule = module;
     emit videoInput(mode);
+
+    m_mutexInput.lock();
+    m_waiting = true;
+    m_waitInput.wait(&m_mutexInput);
+    m_waiting = false;
+    *rect = m_selection;
+    m_mutexInput.unlock();
 }
+
+
+
 
 
 
