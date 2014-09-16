@@ -60,24 +60,29 @@ class PixyInterpreter : public Interpreter
       @param[out] blocks     Address of an array in which to copy the blocks to.
                              The array must be large enough to write 'max_blocks' number
                              of Blocks to.
-      @return     Number of blocks copied.
-      */
-      uint16_t get_blocks(uint16_t max_blocks, Block * blocks);
+      @return  Non-negative                  Success: Number of blocks copied
+      @return  PIXY_ERROR_USB_IO             USB Error: I/O
+      @return  PIXY_ERROR_NOT_FOUND          USB Error: Pixy not found
+      @return  PIXY_ERROR_USB_BUSY           USB Error: Busy
+      @return  PIXY_ERROR_USB_NO_DEVICE      USB Error: No device
+      @return  PIXY_ERROR_INVALID_PARAMETER  Invalid pararmeter specified
+    */
+    int get_blocks(int max_blocks, Block * blocks);
 
-      /** 
-        @brief         Sends a command to Pixy. 
-        @param[in]     name       Remote procedure call identifier string.
-        @param[in,out] arguments  Argument list to function call.
-        @return        -1         Error
-      */
-      int send_command(const char * name, va_list arguments);
-      
-      /** 
-        @brief         Sends a command to Pixy. 
-        @param[in]     name       Remote procedure call identifier string.
-        @return        -1         Error
-      */
-      int send_command(const char * name, ...);
+    /**
+      @brief         Sends a command to Pixy.
+      @param[in]     name       Remote procedure call identifier string.
+      @param[in,out] arguments  Argument list to function call.
+      @return        -1         Error
+    */
+    int send_command(const char * name, va_list arguments);
+
+    /**
+      @brief         Sends a command to Pixy.
+      @param[in]     name       Remote procedure call identifier string.
+      @return        -1         Error
+    */
+    int send_command(const char * name, ...);
 
   private:
     
@@ -91,8 +96,8 @@ class PixyInterpreter : public Interpreter
     boost::mutex       chirp_access_mutex_;
 
     /**
-      @brief  Interpreter thread entry point. 
-       
+      @brief  Interpreter thread entry point.
+
               Performs the following operations:
 
               1. Connect to Pixy.
@@ -114,7 +119,7 @@ class PixyInterpreter : public Interpreter
       @param[in] data  Incoming Chirp protocol data from Pixy.
     */
     void interpret_CCB1(void * data[]);
-    
+
     /**
       @brief Interprets CCB2 messages sent from Pixy.
 
@@ -130,7 +135,7 @@ class PixyInterpreter : public Interpreter
       @param[in] count   Size of the 'blocks' array.
     */
     void add_normal_blocks(BlobA * blocks, uint32_t count);
-    
+
     /**
       @brief Adds blocks with color code signatures to the PixyInterpreter
              'blocks_' buffer.

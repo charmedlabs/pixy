@@ -38,27 +38,33 @@ USBLink::~USBLink()
 
 int USBLink::open()
 {
+    int set_config_return_value;
+    int claim_interface_return_value;
+
     libusb_init(&m_context);
 
     m_handle = libusb_open_device_with_vid_pid(m_context, PIXY_VID, PIXY_DID);
     if (m_handle==NULL)
-        return -1;
+        return PIXY_ERROR_USB_NOT_FOUND;
 #ifdef __MACOS__
     const unsigned int MILLISECONDS_TO_SLEEP = 100;
     libusb_reset_device(m_handle);
     usleep(MILLISECONDS_TO_SLEEP * 1000);
 #endif
-    if (libusb_set_configuration(m_handle, 1)<0)
+    set_config_return_value = libusb_set_configuration(m_handle, 1);
+    if (set_config_return_value < 0)
     {
         libusb_close(m_handle);
         m_handle = 0;
-        return -1;
+        return set_config_return_value;
     }
-    if (libusb_claim_interface(m_handle, 1)<0)
+
+    claim_interface_return_value = libusb_claim_interface(m_handle, 1);
+    if (claim_interface_return_value < 0)
     {
         libusb_close(m_handle);
         m_handle = 0;
-        return -1;
+        return claim_interface_return_value;
     }
 #ifdef __LINUX__
     libusb_reset_device(m_handle);

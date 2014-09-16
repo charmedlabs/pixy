@@ -26,6 +26,7 @@ PixyInterpreter::PixyInterpreter()
 
 int PixyInterpreter::init()
 {
+  int USB_return_value;
 
   if(thread_dead_ == false) 
   {
@@ -33,9 +34,10 @@ int PixyInterpreter::init()
     return 0;
   }
 
-  if(link_.open() < 0) {
-    fprintf(stderr, "libpixy: Error: Unable to open USB device.\n");
-    return -1;
+  USB_return_value = link_.open();
+
+  if(USB_return_value < 0) {
+    return USB_return_value;
   }
 
   receiver_ = new ChirpReceiver(&link_, this);
@@ -44,6 +46,8 @@ int PixyInterpreter::init()
 
   thread_dead_ = false;
   thread_      = boost::thread(&PixyInterpreter::interpreter_thread, this);
+
+  return 0;
 }
 
 void PixyInterpreter::close()
@@ -54,15 +58,21 @@ void PixyInterpreter::close()
     // Thread is running, tell the interpreter thread to die. //
     thread_die_ = true;
     thread_.join();
-  } 
+  }
     
   delete receiver_;
 }
 
-uint16_t PixyInterpreter::get_blocks(uint16_t max_blocks, Block * blocks)
+int PixyInterpreter::get_blocks(int max_blocks, Block * blocks)
 {
   uint16_t number_of_blocks_to_copy;
   uint16_t index;
+
+  // Check parameters //
+
+  if(max_blocks < 0 || blocks == 0) {
+    return PIXY_ERROR_INVALID_PARAMETER;
+  }
     
   // Prevent other thread from accessing 'blocks_' while we're using it. //
 
@@ -112,7 +122,7 @@ int PixyInterpreter::send_command(const char * name, va_list args)
   if (procedure_id == -1) {
     // Request error //
     va_end(arguments);
-    return -1;
+    return PIXY_ERROR_INVALID_COMMAND;
   }
 
   // Execute chirp synchronous remote procedure call //
@@ -131,15 +141,17 @@ void PixyInterpreter::interpreter_thread()
 
   // Read from Pixy USB connection using the Chirp //
   // protocol until we're told to stop.            //
-
   while(!thread_die_) {
-  // Mutual exclusion for receiver_ object (Lock) //
+    // Mutual exclusion for receiver_ object (Lock) //
     chirp_access_mutex_.lock();
 
     receiver_->service(false);
 
     // Mutual exclusion for receiver_ object (Unlock) //
     chirp_access_mutex_.unlock();
+
+    // Take a break, don't starve other send_command calls. //
+    usleep(50000);
   }
 
   thread_dead_ = true;
@@ -178,7 +190,6 @@ void PixyInterpreter::interpret_data(void * chirp_data[])
           default:
             printf("libpixy: Chirp hint [%u] not recognized.\n", chirp_type);
             break;
-
         }
 
         break;
