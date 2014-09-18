@@ -20,8 +20,10 @@ y1 = y1 + (y1-meany)*scale;
 [x0 x1 y0 y1]
 
 LUT1 = generatelut4(x0, x1, y0, y1, miny, bits);
+if 1
 close;
 plotlut3(LUT1, bits, 'b');
+end
 
 pixfilter5(x0, x1, y0, y1, LUT1, bits, 'image1.png');
 pixfilter5(x0, x1, y0, y1, LUT1, bits, 'image2.png');

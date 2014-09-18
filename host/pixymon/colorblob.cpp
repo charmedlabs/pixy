@@ -7,6 +7,7 @@ ColorBlob::ColorBlob(uint8_t *lut)
     m_tol = DEFAULT_TOL;
     m_lut = lut;
     m_minSat = 2.0;
+    m_miny = 0.1;
     m_acqRange = 2.0;
     m_trackRange = 1.0;
     clearLUT();
@@ -94,6 +95,7 @@ int ColorBlob::generateSignature(const Frame8 *frame, const RectA *region, Color
     delete [] uPixels;
     delete [] vPixels;
 
+#if 0
     // if signs of u's and v's are *both* different, our envelope is greater than 90 degrees and it's an indication
     // that we don't have much of a lock
     if ((signature->m_uMin>0)!=(signature->m_uMax>0) && (signature->m_vMin>0)!=(signature->m_vMax>0))
@@ -104,6 +106,8 @@ int ColorBlob::generateSignature(const Frame8 *frame, const RectA *region, Color
         signature->m_vMax = 0;
         return -1;
     }
+#endif
+
     return 0;
 }
 
@@ -112,6 +116,7 @@ int ColorBlob::generateSignature(const Frame8 *frame, const Point16 *point, Colo
     return 0;
 }
 
+#if 0
 int ColorBlob::generateLUT(const ColorSignature *signature, uint8_t signum)
 {
     int32_t u, v, i, j, bin, signChange=0;
@@ -210,7 +215,57 @@ int ColorBlob::generateLUT(const ColorSignature *signature, uint8_t signum)
     }
     return 0;
 }
+#else
+int ColorBlob::generateLUT(const ColorSignature *signature, uint8_t signum)
+{
+    int32_t r, g, b, u, v, y, bin, miny;
+    float c, umin, umax, vmin, vmax;
 
+    clearLUT(signum);
+
+    // scale up
+    c = ((float)signature->m_uMax + signature->m_uMin)/2.0f;
+    umin = c + (signature->m_uMin - c)*m_acqRange*m_trackRange;
+    umax = c + (signature->m_uMax - c)*m_acqRange*m_trackRange;
+    c = ((float)signature->m_vMax + signature->m_vMin)/2.0f;
+    vmin = c + (signature->m_vMin - c)*m_acqRange*m_trackRange;
+    vmax = c + (signature->m_vMax - c)*m_acqRange*m_trackRange;
+
+    miny = (3*(1<<8)-1)*m_miny;
+
+    for (r=0; r<1<<8; r+=1<<(8-LUT_COMPONENT_SCALE))
+    {
+        for (g=0; g<1<<8; g+=1<<(8-LUT_COMPONENT_SCALE))
+        {
+            for (b=0; b<1<<8; b+=1<<(8-LUT_COMPONENT_SCALE))
+            {
+                y = r+g+b;
+
+                if (y<miny)
+                    continue;
+                u = ((r-g)<<LUT_ENTRY_SCALE)/y;
+                v = ((b-g)<<LUT_ENTRY_SCALE)/y;
+
+                if ((umin<u) && (u<umax) && (vmin<v) && (v<vmax))
+                {
+                    u = r-g;
+                    u >>= 9-LUT_COMPONENT_SCALE;
+                    u &= (1<<LUT_COMPONENT_SCALE)-1;
+                    v = b-g;
+                    v >>= 9-LUT_COMPONENT_SCALE;
+                    v &= (1<<LUT_COMPONENT_SCALE)-1;
+
+                    bin = (u<<LUT_COMPONENT_SCALE)+ v;
+
+                    if (m_lut[bin]==0 || m_lut[bin]>signum)
+                        m_lut[bin] = signum;
+                }
+            }
+        }
+    }
+    return 0;
+}
+#endif
 
 void ColorBlob::clearLUT(uint8_t signum)
 {

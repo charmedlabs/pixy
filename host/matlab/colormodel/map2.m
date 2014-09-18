@@ -14,9 +14,9 @@ for i = 1:N
 	B = double(pixels(i, 3));
 	L = R+G+B;
 
-	C1 = [C1; (R-G)*m/L];
+	C1 = [C1; fix((R-G)*m/L)];
 	%C2 = [C2; (B-(G+R)/2)/L];
-	C2 = [C2; (B-G)*m/L];
+	C2 = [C2; fix((B-G)*m/L)];
 end
 	
 C = [C1, C2];

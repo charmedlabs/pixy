@@ -55,6 +55,7 @@ private:
     int32_t m_delta;
     float m_tol;
     float m_minSat;
+    float m_miny;
     float m_acqRange;
     float m_trackRange;
 };

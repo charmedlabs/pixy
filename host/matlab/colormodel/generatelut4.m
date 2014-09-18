@@ -2,13 +2,15 @@ function LUT=generatelut4(x0, x1, y0, y1, miny, bits)
 
 LUT = zeros(2^(2*bits), 1);
 
-for r=0:2^bits-1
+pbits = bits;
+
+for r=0:2^pbits-1
 	r
-	for g=0:2^bits-1
-		for b=0:2^bits-1
-			rp = r * 2^(8-bits);
-			gp = g * 2^(8-bits);
-			bp = b * 2^(8-bits);
+	for g=0:2^pbits-1
+		for b=0:2^pbits-1
+			rp = r * 2^(8-pbits);
+			gp = g * 2^(8-pbits);
+			bp = b * 2^(8-pbits);
 			y = (rp + gp + bp)/(3*255);
 			P = [rp gp bp];
 			C = map2(P);
