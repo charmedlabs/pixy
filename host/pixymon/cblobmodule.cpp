@@ -21,6 +21,8 @@ CBlobModule::CBlobModule(Interpreter *interpreter) : MonModule(interpreter)
     scriptlet << "runprogArg 8 100";
     m_interpreter->emit actionScriptlet("Create new signature...", scriptlet);
 
+    m_interpreter->m_pixymonParameters->add(Parameter("Gain", 2.0, PT_FLT32, "The gain..."), false);
+
     memset(m_signatures, 0, sizeof(ColorSignature)*NUM_SIGNATURES);
 }
 

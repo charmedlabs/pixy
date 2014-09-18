@@ -509,7 +509,7 @@ void MainWindow::loadParameters()
     ParamFile pf;
     if (pf.open(fi.absoluteFilePath(), true)>=0)
     {
-        pf.read(CONFIGFILE_TAG, &m_parameters);
+        pf.read(CONFIGFILE_TAG, &m_parameters, true);
         pf.close();
     }
     else // there was an error, so write (or rewrite) config file

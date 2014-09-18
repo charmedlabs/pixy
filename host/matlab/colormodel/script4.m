@@ -6,8 +6,8 @@ cd(drc);
 eval(pfile);
 C1 = map(pixels);
 
-meanx = mean(C1(:, 1));
-meany = mean(C1(:, 2));
+meanx = mean(C1(:, 1))
+meany = mean(C1(:, 2))
 x0 = iterate(C1(:, 1), meanx, -delta, tol);
 x0 = x0 + (x0-meanx)*scale;
 x1 = iterate(C1(:, 1), meanx, delta, tol);
@@ -16,6 +16,8 @@ y0 = iterate(C1(:, 2), meany, -delta, tol);
 y0 = y0 + (y0-meany)*scale;
 y1 = iterate(C1(:, 2), meany, delta, tol);
 y1 = y1 + (y1-meany)*scale;
+
+[x0 x1 y0 y1]
 
 if 0
 LUT1 = zeros(2^16, 1);
@@ -50,6 +52,7 @@ if 0
 close
 plotlut2(LUT2, 'b');
 plotlut2(LUT1, 'g');
+pause;
 end
 
 LUT1 = LUT2;		

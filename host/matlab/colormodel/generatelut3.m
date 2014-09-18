@@ -3,10 +3,24 @@ function LUT1=generatelut2(x0, x1, y0, y1, miny, bits)
 C2 = [0:2^(bits-1)-1, -2^(bits-1):-1];
 LUT1 = [];
 
-S = [y0/x0 y0/x1 y1/x0 y1/x1];
+S = [y0/x0 y0 x0 
+	y0/x1 y0 x1
+	y1/x0 y1 x0
+	y1/x1 y1 x1];
+S(:, 1);
 
-s0 = min(S);
-s1 = max(S);
+[s0 rmin] = min(S(:,1));
+[s1 rmax] = max(S(:,1));
+
+%if (sign(y0)==sign(y1)) & (sign(x0)~=sign(x1))
+if sign(x0)~=sign(x1)
+	'special case'
+	S(rmin, 1) = 0;
+	S(rmax, 1) = 0;
+	[s0 rmin] = min(S(:,1));
+	[s1 rmax] = max(S(:,1));
+end
+
 
 for i=1:2^bits
 	for j=1:2^bits
@@ -24,7 +38,7 @@ for i=1:2^bits
 				end
 			else
 				if sign(c2)==sign(y0) 
-					if sign(s0)==sign(s1)
+					if 0 %sign(x0)==sign(x1)
 						if (s0 < c2/c1) & (c2/c1 < s1)
 							LUT1 = [LUT1; 1];
 						else

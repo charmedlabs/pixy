@@ -44,7 +44,7 @@ public:
     int generateSignature(const Frame8 *frame, const RectA *region, ColorSignature *signature);
     int generateSignature(const Frame8 *frame, const Point16 *point, ColorSignature *signature);
 
-    void generateLUT(const ColorSignature *signature, uint8_t signum);
+    int generateLUT(const ColorSignature *signature, uint8_t signum);
     void clearLUT(uint8_t signum=0);
 
 private:

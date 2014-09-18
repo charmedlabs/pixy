@@ -302,12 +302,16 @@ int ParameterDB::set(const QString &id, const QString &description)
     return -1;
 }
 
-void ParameterDB::add(Parameter param)
+void ParameterDB::add(Parameter param, bool overwrite)
 {
     Parameter *pparam = parameter(param.id());
 
-    if (pparam)
+    if (pparam) // if it's in the database, we don't want to add another values
+    {
+        if (!overwrite)
+            param.set(pparam->value());
         *pparam = param;
+    }
     else  // else put in list
         m_parameters.push_back(param);
 }

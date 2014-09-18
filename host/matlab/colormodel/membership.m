@@ -1,6 +1,6 @@
 function MI=membership(x0, x1, y0, y1, I)
 
-minv = .1;
+minv = .12;
 
 for x = 1:size(I, 1)
 	for y = 1:size(I, 2)

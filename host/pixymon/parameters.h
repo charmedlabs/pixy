@@ -139,7 +139,7 @@ public:
     int set(const QString &id, const QVariant &value);
     int set(const QString &id, const QString &description);
 
-    void add(Parameter param);
+    void add(Parameter param, bool overwrite=true);
 
 private:
     Parameters m_parameters;

@@ -7,7 +7,7 @@ ColorBlob::ColorBlob(uint8_t *lut)
     m_tol = DEFAULT_TOL;
     m_lut = lut;
     m_minSat = 2.0;
-    m_acqRange = 4.0;
+    m_acqRange = 2.0;
     m_trackRange = 1.0;
     clearLUT();
 }
@@ -94,6 +94,16 @@ int ColorBlob::generateSignature(const Frame8 *frame, const RectA *region, Color
     delete [] uPixels;
     delete [] vPixels;
 
+    // if signs of u's and v's are *both* different, our envelope is greater than 90 degrees and it's an indication
+    // that we don't have much of a lock
+    if ((signature->m_uMin>0)!=(signature->m_uMax>0) && (signature->m_vMin>0)!=(signature->m_vMax>0))
+    {
+        signature->m_uMin = 0;
+        signature->m_uMax = 0;
+        signature->m_vMin = 0;
+        signature->m_vMax = 0;
+        return -1;
+    }
     return 0;
 }
 
@@ -102,9 +112,9 @@ int ColorBlob::generateSignature(const Frame8 *frame, const Point16 *point, Colo
     return 0;
 }
 
-void ColorBlob::generateLUT(const ColorSignature *signature, uint8_t signum)
+int ColorBlob::generateLUT(const ColorSignature *signature, uint8_t signum)
 {
-    int32_t u, v, i, j, bin;
+    int32_t u, v, i, j, bin, signChange=0;
     bool u0, v0, lutVal;
     float bratios[4], c, umin, umax, vmin, vmax, ratio, sat, minRatio, maxRatio;
 
@@ -118,6 +128,20 @@ void ColorBlob::generateLUT(const ColorSignature *signature, uint8_t signum)
     vmin = c + (signature->m_vMin - c)*m_acqRange*m_trackRange;
     vmax = c + (signature->m_vMax - c)*m_acqRange*m_trackRange;
 
+    // count the sign changes
+    if ((umin>0.0f)!=(signature->m_uMin>0))
+        signChange++;
+    if ((umax>0.0f)!=(signature->m_uMax>0))
+        signChange++;
+    if ((vmin>0.0f)!=(signature->m_vMin>0))
+        signChange++;
+    if ((vmax>0.0f)!=(signature->m_vMax>0))
+        signChange++;
+
+    // if we've changed signs more than once, we've overflowed
+    if (signChange>1)
+        return -1; // overflow
+
     // calculate ratios
     bratios[0] = vmin/umin;
     bratios[1] = vmin/umax;
@@ -125,12 +149,27 @@ void ColorBlob::generateLUT(const ColorSignature *signature, uint8_t signum)
     bratios[3] = vmax/umax;
 
     // find max/min ratio values
-    for (i=0, maxRatio=-10000.0f, minRatio=10000.0f; i<4; i++)
+    if ((umin>0.0f)==(umax>0.0f))
     {
-        if (bratios[i]>maxRatio)
-            maxRatio = bratios[i];
-        if (bratios[i]<minRatio)
-            minRatio = bratios[i];
+        // find normal max and min
+        for (i=0, maxRatio=-10000.0f, minRatio=10000.0f; i<4; i++)
+        {
+            if (bratios[i]>maxRatio)
+                maxRatio = bratios[i];
+            if (bratios[i]<minRatio)
+                minRatio = bratios[i];
+        }
+    }
+    else // special case where lines straddle the y axis
+    {
+        // find smallest positive and largest negative
+        for (i=0, maxRatio=10000.0f, minRatio=-10000.0f; i<4; i++)
+        {
+            if (bratios[i]>0 && bratios[i]<maxRatio) // positive and less than
+                maxRatio = bratios[i];
+            if (bratios[i]<0 && bratios[i]>minRatio) // negative and greater than
+                minRatio = bratios[i];
+        }
     }
 
     for (i=0, bin=0; i<(1<<LUT_COMPONENT_SCALE); i++)
@@ -158,21 +197,10 @@ void ColorBlob::generateLUT(const ColorSignature *signature, uint8_t signum)
                 if (u0==(umin>0.0f) && minRatio<ratio && ratio<maxRatio) // make sure sign of u is the same is umin
                     lutVal = true;
             }
-            else // top or bottom
+            else if (v0==(vmin>0.0f)) // make sure signe of v is the same as vmin  top or bottom
             {
-                if (v0==(vmin>0.0f)) // make sure signe of v is the same as vmin
-                {
-                    if ((minRatio>0.0f)==(maxRatio>0.0f)) // check if signs of min and maxRatio are the same
-                    {
-                        if (minRatio<ratio && ratio<maxRatio) // if so, do a normal check
-                            lutVal = true;
-                    }
-                    else // min and maxRatio signs are different--- special case
-                    {
-                        if (maxRatio<ratio || ratio<minRatio) // in this region, the ratio signs change based on which half of the hue plane you're on
-                            lutVal = true;
-                    }
-                }
+                if (maxRatio<ratio || ratio<minRatio) // in this region, the ratio signs change based on which half of the hue plane you're on
+                    lutVal = true;
             }
 
             if (lutVal && (m_lut[bin]==0 || m_lut[bin]>signum))
@@ -180,6 +208,7 @@ void ColorBlob::generateLUT(const ColorSignature *signature, uint8_t signum)
 
         }
     }
+    return 0;
 }
 
 
