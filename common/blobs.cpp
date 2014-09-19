@@ -210,7 +210,9 @@ void Blobs::unpack()
             if (m_assembler[s.model-1].Add(s)<0)
             {
                 memfull = true;
+#ifdef PIXY
                 cprintf("heap full %d\n", i);
+#endif
             }
         }
     }

@@ -18,7 +18,7 @@
 #include <QFile>
 #include <QDebug>
 #include <QTime>
-
+#include <stdarg.h>
 #include "interpreter.h"
 #include "disconnectevent.h"
 #include "videowidget.h"
@@ -1128,19 +1128,18 @@ void Interpreter::handleLoadParams()
         // deal with param category
         QStringList words = QString(desc).split(QRegExp("\\s+"));
         int i = words.indexOf("@c");
+        Parameter parameter(id, (PType)argList[0], "("+printArgType(argList[0], flags)+") "+sdesc);
+        parameter.setProperty(PP_FLAGS, flags);
+
         if (i>=0 && words.size()>i+1)
         {
             category = words[i+1];
             sdesc = sdesc.remove("@c "); // remove form description
             sdesc = sdesc.remove(category + " "); // remove from description
             category = category.replace('_', ' '); // make it look prettier
+            parameter.setProperty(PP_CATEGORY, category);
         }
-        else
-            category = CD_GENERAL;
 
-        Parameter parameter(id, (PType)argList[0], "("+printArgType(argList[0], flags)+") "+sdesc);
-        parameter.setProperty(PP_CATEGORY, category);
-        parameter.setProperty(PP_FLAGS, flags);
         if (strlen((char *)argList)>1)
         {
             QByteArray a((char *)data, len);
@@ -1268,6 +1267,14 @@ void Interpreter::getSelection(VideoWidget::InputMode mode, RectA *rect)
 }
 
 
+void Interpreter::cprintf(const char *format, ...)
+{
+    char buffer[256];
+    va_list args;
+    va_start (args, format);
+    vsprintf (buffer, format, args);
+    emit textOut(buffer, Qt::blue);
+}
 
 
 

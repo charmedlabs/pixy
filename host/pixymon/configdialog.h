@@ -56,7 +56,8 @@ private:
     QWidget *findCategory(const QString &category, QTabWidget *tabs);
 
     Ui::ConfigDialog *m_ui;
-    QTabWidget *m_tabs;
+    QTabWidget *m_pixyTabs;
+    QTabWidget *m_pixymonTabs;
     Interpreter *m_interpreter;
 };
 

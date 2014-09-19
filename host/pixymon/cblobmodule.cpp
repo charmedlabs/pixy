@@ -21,7 +21,7 @@ CBlobModule::CBlobModule(Interpreter *interpreter) : MonModule(interpreter)
     scriptlet << "runprogArg 8 100";
     m_interpreter->emit actionScriptlet("Create new signature...", scriptlet);
 
-    m_interpreter->m_pixymonParameters->add(Parameter("Gain", 2.0, PT_FLT32, "The gain..."), false);
+    m_interpreter->m_pixymonParameters->add("Gain", PT_FLT32, 2.0, "The gain...", "New filtering");
 
     memset(m_signatures, 0, sizeof(ColorSignature)*NUM_SIGNATURES);
 }
@@ -52,8 +52,8 @@ bool CBlobModule::command(const QStringList &argv)
 
         Frame8 *frame = m_interpreter->m_renderer->backgroundRaw();
         m_interpreter->m_renderer->pixelsOut(region.m_xOffset, region.m_yOffset, region.m_width, region.m_height);
-        m_cblob->generateSignature(frame, &region, &sig);
-        qDebug("sig: %d %d %d %d", sig.m_uMin, sig.m_uMax, sig.m_vMin, sig.m_vMax);
+        if (m_cblob->generateSignature(frame, &region, &sig)<0)
+            m_interpreter->cprintf("Warning: signature may be poorly defined.");
 
         m_cblob->generateLUT(&sig, 1);
         m_signatures[0] = sig;

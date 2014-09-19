@@ -27,7 +27,7 @@ Parameter::Parameter(const QString &id, PType type, const QString &help)
     m_dirty = false;
 }
 
-Parameter::Parameter(const QString &id, const QVariant &value, PType type, const QString &help)
+Parameter::Parameter(const QString &id, PType type, const QVariant &value, const QString &help)
 {
    m_value = value;
    m_id = id;
@@ -310,20 +310,23 @@ int ParameterDB::set(const QString &id, const QString &description)
     return -1;
 }
 
-void ParameterDB::add(Parameter param, bool overwrite)
+void ParameterDB::add(Parameter param)
 {
     QMutexLocker locker(&m_mutex);
 
     Parameter *pparam = parameter(param.id());
 
     if (pparam) // if it's in the database, we don't want to add another values
-    {
-        if (!overwrite)
-            param.set(pparam->value());
         *pparam = param;
-    }
     else  // else put in list
         m_parameters.push_back(param);
+}
+
+void ParameterDB::add(const QString &id, PType type, const QVariant &value, const QString &help, const QString &category)
+{
+    Parameter param(id, type, value, help);
+    param.setProperty(PP_CATEGORY, category);
+    add(param);
 }
 
 

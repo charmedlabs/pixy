@@ -9,8 +9,8 @@
 
 MonParameterDB::MonParameterDB() : ParameterDB()
 {
-    add(Parameter("Document folder", docPath(), PT_PATH,
-                               "The directory where images and other data files are saved"));
+    add("Document folder", PT_PATH, docPath(),
+        "The directory where images and other data files are saved");
     load();
 }
 

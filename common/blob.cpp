@@ -319,7 +319,9 @@ int CBlobAssembler::Add(const SSegment &segment) {
     CBlob *newBlob= new (std::nothrow) CBlob();
     if (newBlob==NULL)
     {
+#ifdef PIXY
         cprintf("blobs %d\n", m_blobCount);
+#endif
         return -1;
     }
     m_blobCount++;

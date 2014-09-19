@@ -82,6 +82,7 @@ public:
     uint16_t *getVersion();
 
     void getSelection(VideoWidget::InputMode mode, RectA *rect);
+    void cprintf(const char *format, ...);
 
     ChirpMon *m_chirp;
     Renderer *m_renderer;

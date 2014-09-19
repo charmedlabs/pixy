@@ -95,18 +95,10 @@ int ColorBlob::generateSignature(const Frame8 *frame, const RectA *region, Color
     delete [] uPixels;
     delete [] vPixels;
 
-#if 0
     // if signs of u's and v's are *both* different, our envelope is greater than 90 degrees and it's an indication
     // that we don't have much of a lock
     if ((signature->m_uMin>0)!=(signature->m_uMax>0) && (signature->m_vMin>0)!=(signature->m_vMax>0))
-    {
-        signature->m_uMin = 0;
-        signature->m_uMax = 0;
-        signature->m_vMin = 0;
-        signature->m_vMax = 0;
         return -1;
-    }
-#endif
 
     return 0;
 }

@@ -18,8 +18,6 @@
 
 #include <QDebug>
 
-#define cprintf qDebug
-
 #define PIXYMON_TITLE   "PixyMon"
 #define PIXYMON_COMPANY "Charmed Labs"
 

@@ -84,7 +84,7 @@ class Parameter
 {
 public:
     Parameter(const QString &id, PType type, const QString &help="");
-    Parameter(const QString &id, const QVariant &value, PType type, const QString &help="");
+    Parameter(const QString &id, PType type, const QVariant &value, const QString &help="");
     ~Parameter();
 
     QString typeName();
@@ -140,7 +140,8 @@ public:
     int set(const QString &id, const QVariant &value);
     int set(const QString &id, const QString &description);
 
-    void add(Parameter param, bool overwrite=true);
+    void add(Parameter param);
+    void add(const QString &id, PType type, const QVariant &value, const QString &help="", const QString &category="");
 
     QMutex *mutex()
     {

@@ -35,15 +35,16 @@ ConfigDialog::ConfigDialog(QWidget *parent, Interpreter *interpreter) : QDialog(
     m_interpreter = interpreter;
     m_interpreter->unwait(); // unhang interpreter if it's waiting
 
-    m_tabs = new QTabWidget(this);
-    m_ui->pixyLayout->addWidget(m_tabs);
-
+    m_pixyTabs = new QTabWidget(this);
+    m_ui->pixyLayout->addWidget(m_pixyTabs);
+    m_pixymonTabs = new QTabWidget(this);
+    m_ui->pixymonLayout->addWidget(m_pixymonTabs);
     connect(interpreter, SIGNAL(paramLoaded()), this, SLOT(loaded()));
     connect(m_ui->buttonBox, SIGNAL(clicked(QAbstractButton*)), this, SLOT(apply(QAbstractButton*)));
 
     m_interpreter->loadParams();
 
-    render(m_interpreter->m_pixymonParameters, m_ui->pixymonLayout, NULL);
+    render(m_interpreter->m_pixymonParameters, m_ui->pixymonLayout, m_pixymonTabs);
 
 #ifdef __MACOS__
     setMinimumWidth(650);
@@ -178,7 +179,7 @@ int ConfigDialog::updateDB(ParameterDB *data)
 
 void ConfigDialog::loaded()
 {
-    render(&m_interpreter->m_pixyParameters, NULL, m_tabs);
+    render(&m_interpreter->m_pixyParameters, NULL, m_pixyTabs);
     show();
 }
 
@@ -246,6 +247,8 @@ void ConfigDialog::render(ParameterDB *data, QGridLayout *layout, QTabWidget *ta
             if (tabs)
             {
                 QString category = parameter.property(PP_CATEGORY).toString();
+                if (category=="")
+                    category = CD_GENERAL;
                 tab = findCategory(category, tabs);
                 if (tab==NULL)
                 {
@@ -263,17 +266,20 @@ void ConfigDialog::render(ParameterDB *data, QGridLayout *layout, QTabWidget *ta
         }
     }
 
-    // set stretch on all tabs
-    for (i=0; true; i++)
+    if (tabs)
     {
-        QWidget *tab = m_tabs->widget(i);
-        if (tab)
+        // set stretch on all tabs
+        for (i=0; true; i++)
         {
-            ((QGridLayout *)tab->layout())->setRowStretch(100, 1);
-            ((QGridLayout *)tab->layout())->setColumnStretch(100, 1);
+            QWidget *tab = tabs->widget(i);
+            if (tab)
+            {
+                ((QGridLayout *)tab->layout())->setRowStretch(100, 1);
+                ((QGridLayout *)tab->layout())->setColumnStretch(100, 1);
+            }
+            else
+                break;
         }
-        else
-            break;
     }
     if (layout)
     {
