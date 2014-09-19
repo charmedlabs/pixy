@@ -31,7 +31,7 @@
 
 QString printType(uint32_t val, bool parens=false);
 
-Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, ParameterDB *data) : m_mutexProg(QMutex::Recursive)
+Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, MonParameterDB *data) : m_mutexProg(QMutex::Recursive)
 {
     m_console = console;
     m_video = video;
@@ -541,6 +541,8 @@ void Interpreter::run()
 
         // create pixymon modules
         MonModuleUtil::createModules(&m_modules, this);
+        // reload any parameters that the modules might have created
+        m_pixymonParameters->load();
 
         // get all actions
         for (i=0; sendGetAction(i)>=0; i++);

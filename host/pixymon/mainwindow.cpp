@@ -19,11 +19,8 @@
 #include <QFileDialog>
 #include <QMetaType>
 #include <QSettings>
-#include <QDesktopServices>
-#if QT_VERSION>QT_VERSION_CHECK(5,0,0)
-#include <QStandardPaths>
-#endif
 #include <QUrl>
+#include <QDesktopServices>
 #include "mainwindow.h"
 #include "pixymon.h"
 #include "videowidget.h"
@@ -51,7 +48,6 @@ MainWindow::MainWindow(int argc, char *argv[], QWidget *parent) :
     QCoreApplication::setApplicationName(PIXYMON_TITLE);
 
     parseCommandline(argc, argv);
-    loadParameters();
 
     qRegisterMetaType<Device>("Device");
 
@@ -105,8 +101,6 @@ MainWindow::~MainWindow()
     // we don't delete any of the widgets because the parent deletes it's children upon deletion
 
     delete m_settings;
-
-    saveParameters();
 }
 
 void MainWindow::parseCommandline(int argc, char *argv[])
@@ -486,35 +480,6 @@ void MainWindow::program(const QString &file)
 
 }
 
-void MainWindow::saveParameters()
-{
-    ParamFile pf;
-    QFileInfo fi(docPath(), CONFIGFILE_FILENAME);
-
-    pf.open(fi.absoluteFilePath(), false);
-    pf.write(CONFIGFILE_TAG, &m_parameters);
-    pf.close();
-}
-
-void MainWindow::loadParameters()
-{
-    // initialize paramters
-    QString dp = docPath();
-
-    m_parameters.add(Parameter("Document folder", dp, PT_PATH,
-                               "The directory where images and other data files are saved"));
-
-    // now see if config file exists
-    QFileInfo fi(dp, CONFIGFILE_FILENAME);
-    ParamFile pf;
-    if (pf.open(fi.absoluteFilePath(), true)>=0)
-    {
-        pf.read(CONFIGFILE_TAG, &m_parameters, true);
-        pf.close();
-    }
-    else // there was an error, so write (or rewrite) config file
-        saveParameters();
-}
 
 void MainWindow::on_actionConfigure_triggered()
 {
@@ -591,7 +556,7 @@ void MainWindow::handleLoadParams()
         QString dir;
         QFileDialog fd(this);
         fd.setWindowTitle("Please provide a filename for the parameter file");
-        dir = docPath();
+        dir = MonParameterDB::docPath();
         fd.setDirectory(QDir(dir));
         fd.setNameFilter("XML file (*.xml)");
         fd.setAcceptMode(QFileDialog::AcceptSave);
@@ -615,7 +580,7 @@ void MainWindow::handleLoadParams()
         QString dir;
         QFileDialog fd(this);
         fd.setWindowTitle("Please choose a parameter file");
-        dir = docPath();
+        dir = MonParameterDB::docPath();
         fd.setDirectory(QDir(dir));
         fd.setNameFilter("XML file (*.xml)");
         if (fd.exec())
@@ -635,23 +600,7 @@ void MainWindow::handleLoadParams()
     }
 }
 
-QString MainWindow::docPath()
-{
-    QString path;
 
-#if QT_VERSION>QT_VERSION_CHECK(5,0,0)
-    path = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
-#else
-    path = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation);
-#endif
-    QDir dir(path);
-
-    if (!dir.exists(PM_DEFAULT_DATA_DIR))
-        dir.mkdir(PM_DEFAULT_DATA_DIR);
-    dir.cd(PM_DEFAULT_DATA_DIR);
-
-    return dir.absolutePath();
-}
 
 void MainWindow::on_actionSave_Image_triggered()
 {

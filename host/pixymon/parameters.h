@@ -28,6 +28,7 @@
 #include <QString>
 #include <QVariant>
 #include <QList>
+#include <QMutex>
 
 #define PP_CATEGORY     "category"
 #define PP_WIDGET       "widget"
@@ -141,7 +142,13 @@ public:
 
     void add(Parameter param, bool overwrite=true);
 
-private:
+    QMutex *mutex()
+    {
+        return &m_mutex;
+    }
+
+protected:
+    QMutex m_mutex;
     Parameters m_parameters;
 };
 

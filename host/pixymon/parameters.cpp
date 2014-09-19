@@ -12,6 +12,8 @@
 //
 // end license header
 //
+
+#include <QMutexLocker>
 #include <stdexcept>
 #include "parameters.h"
 
@@ -240,7 +242,7 @@ QVariant Parameter::property(const QString &label)
 }
 
 
-ParameterDB::ParameterDB()
+ParameterDB::ParameterDB() : m_mutex(QMutex::Recursive)
 {
 }
 
@@ -250,6 +252,8 @@ ParameterDB::~ParameterDB()
 
 const QVariant *ParameterDB::value(const QString &id)
 {
+    QMutexLocker locker(&m_mutex);
+
     for (int i=0; i<m_parameters.size(); i++)
     {
         if (QString::compare(m_parameters[i].id(), id, Qt::CaseInsensitive)==0)
@@ -260,6 +264,7 @@ const QVariant *ParameterDB::value(const QString &id)
 
 Parameter *ParameterDB::parameter(const QString &id)
 {
+    QMutexLocker locker(&m_mutex);
     for (int i=0; i<m_parameters.size(); i++)
     {
         if (QString::compare(m_parameters[i].id(), id, Qt::CaseInsensitive)==0)
@@ -270,6 +275,7 @@ Parameter *ParameterDB::parameter(const QString &id)
 
 const QString *ParameterDB::description(const QString &id)
 {
+    QMutexLocker locker(&m_mutex);
     Parameter *param = parameter(id);
 
     if (param)
@@ -284,6 +290,7 @@ Parameters &ParameterDB::parameters()
 
 int ParameterDB::set(const QString &id, const QVariant &value)
 {
+    QMutexLocker locker(&m_mutex);
     Parameter *param = parameter(id);
 
     if (param)
@@ -294,6 +301,7 @@ int ParameterDB::set(const QString &id, const QVariant &value)
 
 int ParameterDB::set(const QString &id, const QString &description)
 {
+    QMutexLocker locker(&m_mutex);
     Parameter *param = parameter(id);
 
     if (param)
@@ -304,6 +312,8 @@ int ParameterDB::set(const QString &id, const QString &description)
 
 void ParameterDB::add(Parameter param, bool overwrite)
 {
+    QMutexLocker locker(&m_mutex);
+
     Parameter *pparam = parameter(param.id());
 
     if (pparam) // if it's in the database, we don't want to add another values

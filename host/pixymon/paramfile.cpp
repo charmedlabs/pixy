@@ -14,6 +14,7 @@
 //
 
 #include <QTextStream>
+#include <QMutexLocker>
 #include <QDebug>
 #include "paramfile.h"
 #include "pixytypes.h"
@@ -70,6 +71,7 @@ int ParamFile::write(const QString &tag, ParameterDB *data)
 
     if (data)
     {
+        QMutexLocker(data->mutex());
         Parameters &parameters = data->parameters();
         for (i=0; i<parameters.size(); i++)
         {

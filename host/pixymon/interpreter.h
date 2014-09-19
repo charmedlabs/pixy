@@ -31,7 +31,7 @@
 #include "connectevent.h"
 #include "disconnectevent.h"
 #include "usblink.h"
-#include "parameters.h"
+#include "monparameterdb.h"
 
 #define PROMPT  ">"
 #define RUN_POLL_PERIOD_SLOW   500 // msecs
@@ -56,7 +56,7 @@ class Interpreter : public QThread
     Q_OBJECT
 
 public:
-    Interpreter(ConsoleWidget *console, VideoWidget *video, ParameterDB *data);
+    Interpreter(ConsoleWidget *console, VideoWidget *video, MonParameterDB *data);
     ~Interpreter();
 
     // local program business
@@ -86,7 +86,7 @@ public:
     ChirpMon *m_chirp;
     Renderer *m_renderer;
     ParameterDB m_pixyParameters;
-    ParameterDB *m_pixymonParameters;
+    MonParameterDB *m_pixymonParameters;
 
     friend class ChirpMon;
     friend class Renderer;
