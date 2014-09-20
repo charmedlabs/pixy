@@ -25,4 +25,7 @@ bool MonModule::command(const QStringList &argv)
     return false;
 }
 
+void MonModule::paramChange()
+{
+}
 

@@ -47,6 +47,8 @@ public:
     int generateLUT(const ColorSignature *signature, uint8_t signum);
     void clearLUT(uint8_t signum=0);
 
+    void setParameters(float range);
+
 private:
     float calcRatio(const int32_t *uvPixels, uint32_t numuv, int32_t line, bool lt);
     int32_t iterate(const int32_t *uvPixels, uint32_t numuv, float ratio, bool pos);

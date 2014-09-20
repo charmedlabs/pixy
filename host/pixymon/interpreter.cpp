@@ -84,6 +84,9 @@ void Interpreter::close()
     unwait(); // if we're waiting for input, unhang ourselves
 
     m_run = false;
+
+    // save any parameters
+    m_pixymonParameters->save();
 }
 
 int Interpreter::execute()
@@ -541,8 +544,10 @@ void Interpreter::run()
 
         // create pixymon modules
         MonModuleUtil::createModules(&m_modules, this);
-        // reload any parameters that the modules might have created
+        // reload any parameters that the mon modules might have created
         m_pixymonParameters->load();
+        // notify mon modules of parameter changes
+        sendMonModulesParamChange(false);
 
         // get all actions
         for (i=0; sendGetAction(i)>=0; i++);
@@ -1177,11 +1182,8 @@ void Interpreter::handleLoadParams()
 
     qDebug("loaded");
     emit paramLoaded();
-    if (m_paramDirty) // emit first time to update any modules waiting to get paramter info
-    {
-        m_paramDirty = false;
-        emit paramChange();
-    }
+    sendMonModulesParamChange(m_paramDirty);
+    m_paramDirty = false;
 }
 
 
@@ -1197,36 +1199,36 @@ void Interpreter::handleSaveParams()
     if (running==1) // only if we're running and not in forced state (running==2)
         sendStop();
 
-    Parameters &parameters = m_pixyParameters.parameters();
+    Parameters &pixyParameters = m_pixyParameters.parameters();
 
-    for (i=0, dirty=false; i<parameters.size(); i++)
+    for (i=0, dirty=false; i<pixyParameters.size(); i++)
     {
         uint8_t buf[0x100];
 
-        if (parameters[i].dirty())
+        if (pixyParameters[i].dirty())
         {
             int len;
-            QByteArray str = parameters[i].id().toUtf8();
+            QByteArray str = pixyParameters[i].id().toUtf8();
             const char *id = str.constData();
-            PType type = parameters[i].type();
-            parameters[i].setDirty(false); // reset
+            PType type = pixyParameters[i].type();
+            pixyParameters[i].setDirty(false); // reset
             dirty = true; // keep track for sending signal
 
             qDebug() << id;
 
             if (type==PT_INT8 || type==PT_INT16 || type==PT_INT32)
             {
-                int val = parameters[i].value().toInt();
+                int val = pixyParameters[i].value().toInt();
                 len = Chirp::serialize(NULL, buf, 0x100, type, val, END);
             }
             else if (type==PT_FLT32)
             {
-                float val = parameters[i].value().toFloat();
+                float val = pixyParameters[i].value().toFloat();
                 len = Chirp::serialize(NULL, buf, 0x100, type, val, END);
             }
             else if (type==PT_INTS8)
             {
-                QByteArray a = parameters[i].value().toByteArray();
+                QByteArray a = pixyParameters[i].value().toByteArray();
                 len = a.size();
                 memcpy(buf, a.constData(), len);
             }
@@ -1242,15 +1244,15 @@ void Interpreter::handleSaveParams()
         }
     }
 
+    // check pixymon parameters
+    sendMonModulesParamChange(dirty);
+
     // if we're running, we've stopped, now resume
     if (running==1)
     {
         sendRun();
         m_fastPoll = false; // turn off fast polling...
     }
-
-    if (dirty)  // if we updated any parameters, output paramChange signal
-        emit paramChange();
 
 }
 
@@ -1266,6 +1268,30 @@ void Interpreter::getSelection(VideoWidget::InputMode mode, RectA *rect)
     m_mutexInput.unlock();
 }
 
+void Interpreter::sendMonModulesParamChange(bool dirty)
+{
+    int i;
+    // check pixymon parameters
+    Parameters &monParameters = m_pixymonParameters->parameters();
+    if (!dirty)
+    {
+        for (i=0; i<monParameters.size(); i++)
+        {
+            if (monParameters[i].dirty())
+            {
+                dirty = true;
+                monParameters[i].setDirty(false);
+            }
+        }
+    }
+    if (dirty)  // if we updated any parameters, output paramChange signal
+    {
+        // notify monmodules of parameter change
+        for (i=0; i<m_modules.size(); i++)
+            m_modules[i]->paramChange();
+        emit paramChange();
+    }
+}
 
 void Interpreter::cprintf(const char *format, ...)
 {

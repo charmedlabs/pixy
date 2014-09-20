@@ -16,6 +16,7 @@ public:
 
     virtual bool render(uint32_t fourcc, const void *args[]);
     virtual bool command(const QStringList &argv);
+    virtual void paramChange();
 
     void renderEX00(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame);
     void renderCCQ2(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame);

@@ -21,7 +21,7 @@ CBlobModule::CBlobModule(Interpreter *interpreter) : MonModule(interpreter)
     scriptlet << "runprogArg 8 100";
     m_interpreter->emit actionScriptlet("Create new signature...", scriptlet);
 
-    m_interpreter->m_pixymonParameters->add("Gain", PT_FLT32, 2.0, "The gain...", "New filtering");
+    m_interpreter->m_pixymonParameters->add("Range", PT_FLT32, 2.0, "The range for identifying the colors of a signature.", "CBA");
 
     memset(m_signatures, 0, sizeof(ColorSignature)*NUM_SIGNATURES);
 }
@@ -69,6 +69,11 @@ bool CBlobModule::command(const QStringList &argv)
         return true;
     }
     return false;
+}
+
+void CBlobModule::paramChange()
+{
+    m_cblob->setParameters(m_interpreter->m_pixymonParameters->value("Range")->toFloat());
 }
 
 void CBlobModule::rls(const Frame8 *frame)

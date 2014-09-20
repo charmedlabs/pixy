@@ -272,5 +272,9 @@ void ColorBlob::clearLUT(uint8_t signum)
     }
 }
 
+void ColorBlob::setParameters(float range)
+{
+    m_acqRange = range;
+}
 
 

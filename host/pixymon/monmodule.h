@@ -29,6 +29,7 @@ public:
 
     virtual bool render(uint32_t fourcc, const void *args[]);
     virtual bool command(const QStringList &argv);
+    virtual void paramChange();
 
 protected:
     Interpreter *m_interpreter;

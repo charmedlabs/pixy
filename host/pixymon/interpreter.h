@@ -139,6 +139,7 @@ private:
 
     void handleSaveParams(); // save to Pixy
     void handleLoadParams(); // load from Pixy
+    void sendMonModulesParamChange(bool dirty);
 
     QStringList getSections(const QString &id, const QString &string);
     int getArgs(const ProcInfo *info, ArgList *argList);
