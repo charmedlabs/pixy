@@ -1,14 +1,15 @@
 #include <math.h>
 #include <QDebug>
 #include "colorblob.h"
+#include "monmodule.h"
 
 ColorBlob::ColorBlob(uint8_t *lut)
 {
     m_tol = DEFAULT_TOL;
     m_lut = lut;
     m_minSat = 2.0;
-    m_miny = 0.1;
-    m_acqRange = 2.0;
+    m_miny = DEFAULT_MINY;
+    m_acqRange = DEFAULT_RANGE;
     m_trackRange = 1.0;
     clearLUT();
 }
@@ -65,7 +66,7 @@ int32_t ColorBlob::iterate(const int32_t *uvPixels, uint32_t numuv, float ratio,
 
 int ColorBlob::generateSignature(const Frame8 *frame, const RectA *region, ColorSignature *signature)
 {
-    int32_t x, y, r, g1, g2, b, count, u, v;
+    int32_t x, y, r, g1, g2, b, count, u, v, c;
     uint8_t *pixels;
     int32_t numuv = (region->m_width/2 + 1)*(region->m_height/2 + 1);
     int32_t *uPixels = new int32_t[numuv];
@@ -80,8 +81,14 @@ int ColorBlob::generateSignature(const Frame8 *frame, const RectA *region, Color
             g1 = pixels[x - 1];
             g2 = pixels[-frame->m_width + x];
             b = pixels[-frame->m_width + x - 1];
-            u = ((r-g1)<<LUT_ENTRY_SCALE)/(r+g1+b);
-            v = ((b-g2)<<LUT_ENTRY_SCALE)/(r+g2+b);
+            c = r+g1+b;
+            if (c==0)
+                c = 1;
+            u = ((r-g1)<<LUT_ENTRY_SCALE)/c;
+            c = r+g2+b;
+            if (c==0)
+                c = 1;
+            v = ((b-g2)<<LUT_ENTRY_SCALE)/c;
             uPixels[count] = u;
             vPixels[count] = v;
         }
@@ -98,7 +105,7 @@ int ColorBlob::generateSignature(const Frame8 *frame, const RectA *region, Color
     // if signs of u's and v's are *both* different, our envelope is greater than 90 degrees and it's an indication
     // that we don't have much of a lock
     if ((signature->m_uMin>0)!=(signature->m_uMax>0) && (signature->m_vMin>0)!=(signature->m_vMax>0))
-        return -1;
+        cprintf("Warning: signature may be poorly defined.");
 
     return 0;
 }
@@ -223,7 +230,10 @@ int ColorBlob::generateLUT(const ColorSignature *signature, uint8_t signum)
     vmin = c + (signature->m_vMin - c)*m_acqRange*m_trackRange;
     vmax = c + (signature->m_vMax - c)*m_acqRange*m_trackRange;
 
+    qDebug("%f %f %f %f", umin, umax, vmin, vmax);
     miny = (3*(1<<8)-1)*m_miny;
+    if (miny==0)
+        miny = 1;
 
     for (r=0; r<1<<8; r+=1<<(8-LUT_COMPONENT_SCALE))
     {
@@ -272,9 +282,10 @@ void ColorBlob::clearLUT(uint8_t signum)
     }
 }
 
-void ColorBlob::setParameters(float range)
+void ColorBlob::setParameters(float range, float miny)
 {
     m_acqRange = range;
+    m_miny = miny;
 }
 
 

@@ -8,7 +8,8 @@
 #define LUT_SIZE                     (1<<(LUT_COMPONENT_SCALE*2))
 #define LUT_ENTRY_SCALE              15
 #define DEFAULT_TOL                  0.9f
-
+#define DEFAULT_RANGE                2.0f
+#define DEFAULT_MINY                 0.1f
 
 struct ColorSignature
 {
@@ -47,7 +48,7 @@ public:
     int generateLUT(const ColorSignature *signature, uint8_t signum);
     void clearLUT(uint8_t signum=0);
 
-    void setParameters(float range);
+    void setParameters(float range, float miny);
 
 private:
     float calcRatio(const int32_t *uvPixels, uint32_t numuv, int32_t line, bool lt);

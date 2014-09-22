@@ -57,7 +57,10 @@ struct MonModuleUtil
 
     static NewMonModuleFunc m_modules[MAX_MONMODULES];
     static uint m_index;
+    static Interpreter *m_interpreter;
 };
+
+void cprintf(const char *format, ...);
 
 
 

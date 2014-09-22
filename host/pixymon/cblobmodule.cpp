@@ -21,7 +21,12 @@ CBlobModule::CBlobModule(Interpreter *interpreter) : MonModule(interpreter)
     scriptlet << "runprogArg 8 100";
     m_interpreter->emit actionScriptlet("Create new signature...", scriptlet);
 
-    m_interpreter->m_pixymonParameters->add("Range", PT_FLT32, 2.0, "The range for identifying the colors of a signature.", "CBA");
+    m_acqRange = DEFAULT_RANGE;
+    m_trackRange = 1.0f;
+    m_miny = DEFAULT_MINY;
+
+    m_interpreter->m_pixymonParameters->add("Range", PT_FLT32, m_acqRange, "The range for identifying the colors of a signature.", "CBA");
+    m_interpreter->m_pixymonParameters->add("Min Y", PT_FLT32, m_miny, "Minimum brightness for a signature.", "CBA");
 
     memset(m_signatures, 0, sizeof(ColorSignature)*NUM_SIGNATURES);
 }
@@ -48,16 +53,11 @@ bool CBlobModule::command(const QStringList &argv)
         RectA region;
         m_interpreter->getSelection(VideoWidget::REGION, &region);
 
-        ColorSignature sig;
-
         Frame8 *frame = m_interpreter->m_renderer->backgroundRaw();
         m_interpreter->m_renderer->pixelsOut(region.m_xOffset, region.m_yOffset, region.m_width, region.m_height);
-        if (m_cblob->generateSignature(frame, &region, &sig)<0)
-            m_interpreter->cprintf("Warning: signature may be poorly defined.");
+        m_cblob->generateSignature(frame, &region, &m_signatures[0]);
 
-        m_cblob->generateLUT(&sig, 1);
-        m_signatures[0] = sig;
-
+        m_cblob->generateLUT(&m_signatures[0], 1);
 
         DataExport dx(m_interpreter->m_pixymonParameters->value("Document folder")->toString(), "lut", ET_MATLAB);
 
@@ -73,7 +73,11 @@ bool CBlobModule::command(const QStringList &argv)
 
 void CBlobModule::paramChange()
 {
-    m_cblob->setParameters(m_interpreter->m_pixymonParameters->value("Range")->toFloat());
+    m_acqRange = m_interpreter->m_pixymonParameters->value("Range")->toFloat();
+    m_miny = m_interpreter->m_pixymonParameters->value("Min Y")->toFloat();
+    m_cblob->setParameters(m_acqRange, m_miny);
+    m_cblob->generateLUT(&m_signatures[0], 1);
+
 }
 
 void CBlobModule::rls(const Frame8 *frame)
@@ -176,7 +180,7 @@ void CBlobModule::renderCCQ2(uint8_t renderFlags, uint16_t width, uint16_t heigh
     img.fill(palette[0]);
 
     uint32_t x, y, index;
-    int32_t r, g1, g2, b, u, v, u0, v0;
+    int32_t r, g1, g2, b, u, v, u0, v0, c;
     uint8_t sig;
 
     for (y=1; y<height; y+=2)
@@ -202,19 +206,22 @@ void CBlobModule::renderCCQ2(uint8_t renderFlags, uint16_t width, uint16_t heigh
                 sig--;
                 u <<= LUT_ENTRY_SCALE;
                 v <<= LUT_ENTRY_SCALE;
-                u /= r+g1+b;
-                v /= r+g1+b;
+                c = r+g1+b;
+                if (c==0)
+                    c = 1;
+                u /= c;
+                v /= c;
 #if 0
                 img.setPixel(x/2, y/2, palette[sig+1]);
 #else
-                float c, umin, umax, vmin, vmax, trackRange = 2.0f;
+                float c, umin, umax, vmin, vmax;
                 // scale up
                 c = ((float)m_signatures[sig].m_uMax + m_signatures[sig].m_uMin)/2.0f;
-                umin = c + (m_signatures[sig].m_uMin - c)*trackRange;
-                umax = c + (m_signatures[sig].m_uMax - c)*trackRange;
+                umin = c + (m_signatures[sig].m_uMin - c)*m_acqRange;
+                umax = c + (m_signatures[sig].m_uMax - c)*m_acqRange;
                 c = ((float)m_signatures[sig].m_vMax + m_signatures[sig].m_vMin)/2.0f;
-                vmin = c + (m_signatures[sig].m_vMin - c)*trackRange;
-                vmax = c + (m_signatures[sig].m_vMax - c)*trackRange;
+                vmin = c + (m_signatures[sig].m_vMin - c)*m_acqRange;
+                vmax = c + (m_signatures[sig].m_vMax - c)*m_acqRange;
 
 
                 if (umin<u && u<umax &&

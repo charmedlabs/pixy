@@ -16,6 +16,7 @@ public:
     int load();
     int save();
 
+    //addSlider(const QString &id, const QVariant &value, const QVariant &min, const QVariant &max, MonModule *mm, const QString &help="");
     static QString docPath();
 };
 

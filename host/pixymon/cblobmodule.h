@@ -29,6 +29,10 @@ private:
     uint8_t *m_lut;
 
     ColorSignature m_signatures[NUM_SIGNATURES];
+    float m_acqRange;
+    float m_trackRange;
+    float m_miny;
+
 };
 
 #endif // CBLOBMODULE_H
