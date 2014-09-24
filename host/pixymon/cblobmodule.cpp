@@ -12,7 +12,7 @@ CBlobModule::CBlobModule(Interpreter *interpreter) : MonModule(interpreter)
 {
     QStringList scriptlet;
 
-    m_qq = new Qqueue();
+    m_qq = new Qqueue2();
     m_lut = new uint8_t[LUT_SIZE];
     m_cblob = new ColorBlob(m_lut);
 
@@ -82,20 +82,17 @@ void CBlobModule::paramChange()
 
 void CBlobModule::rls(const Frame8 *frame)
 {
-    uint32_t x, y, count, index, startCol, model, lutVal;
-    int32_t r, g1, g2, b;
-    int32_t c1, c2;
-    bool stateIn, stateOut;
-    uint32_t prevModel=0;
+    uint32_t x, y, index, sig, startCol, prevSig, qval, rgsum, bsum, count;
+    int32_t r, g1, g2, b, u, v, u0, v0;
+    bool segment;
 
     for (y=1; y<(uint32_t)frame->m_height; y+=2)
     {
         // new lime
-        m_qq->enqueue(0);
+        m_qq->enqueue(Qval2(0, 0, 0));
 
-        stateIn = stateOut = false;
-        count = 0;
-        prevModel = 0;
+        segment = false;
+        prevSig = 0;
         startCol = 0;
         for (x=1; x<(uint32_t)frame->m_width; x+=2)
         {
@@ -103,50 +100,61 @@ void CBlobModule::rls(const Frame8 *frame)
             g1 = frame->m_pixels[y*frame->m_width + x - 1];
             g2 = frame->m_pixels[y*frame->m_width - frame->m_width + x];
             b = frame->m_pixels[y*frame->m_width - frame->m_width + x - 1];
-            c2 = r-g1;
-            c1 = b-g2;
-            c1 >>= 1;
-            c2 >>= 1;
-            index = ((uint8_t)c2<<8) | (uint8_t)c1;
-            lutVal = m_lut[index];
+            u = r-g1;
+            v = b-g2;
 
-            model = lutVal&0x07;
+            u0 = u>>(9-LUT_COMPONENT_SCALE);
+            v0 = v>>(9-LUT_COMPONENT_SCALE);
+            u0 &= (1<<LUT_COMPONENT_SCALE)-1;
+            v0 &=(1<<LUT_COMPONENT_SCALE)-1;
+            index = (u0<<LUT_COMPONENT_SCALE) | v0;
+            sig = m_lut[index];
 
-            if (model && prevModel==0)
+            if (segment==false && sig)
             {
                 startCol = x/2;
+                rgsum = bsum = 0;
+                segment = true;
+                count = 0;
             }
-            if ((model && prevModel && model!=prevModel) ||
-                    (model==0 && prevModel))
+            else if (segment && sig!=prevSig)
             {
-                model = prevModel;
-                model |= startCol<<3;
-                model |= (x/2-startCol)<<12;
-                m_qq->enqueue(model);
-                model = 0;
-                startCol = 0;
+                qval = prevSig;
+                qval |= startCol<<7;
+                qval |= (x/2-startCol)<<(7+9);
+                m_qq->enqueue(Qval2(qval, rgsum, bsum));
+                segment = false;
+                if (count!=x/2-startCol)
+                    qDebug("*** %d %d", count, x/2-startCol);
             }
-            prevModel = model;
+            if (segment)
+            {
+                rgsum += (r<<16) | g1;
+                bsum += b;
+                count++;
+            }
+            prevSig = sig;
         }
 
-        if (startCol)
+        if (segment)
         {
-            model = prevModel;
-            model |= startCol<<3;
-            model |= (x/2-startCol)<<12;
-            m_qq->enqueue(model);
-            model = 0;
+            qval = prevSig;
+            qval |= startCol<<7;
+            qval |= (x/2-startCol)<<(7+9);
+            m_qq->enqueue(Qval2(qval, rgsum, bsum));
         }
 
     }
     // indicate end of frame
-    m_qq->enqueue(0xffffffff);
+    m_qq->enqueue(Qval2(0xffffffff, 0, 0));
 }
 
 void CBlobModule::renderEX00(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame)
 {
     Frame8 frame8(frame, width, height);
-    //rls(&frame8);
+    rls(&frame8);
+    //cprintf("qvals %d", m_qq->m_fields->produced-m_qq->m_fields->consumed);
+    //m_qq->flush();
 
     m_interpreter->m_renderer->renderBA81(0, width, height, frameLen, frame);
     renderCCQ2(RENDER_FLAG_FLUSH, width, height, frameLen, frame);
@@ -155,6 +163,7 @@ void CBlobModule::renderEX00(uint8_t renderFlags, uint16_t width, uint16_t heigh
 
 void CBlobModule::renderCCQ2(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame)
 {
+#if 0
     int32_t row;
     uint32_t i, startCol, length;
     uint8_t model;
@@ -170,6 +179,8 @@ void CBlobModule::renderCCQ2(uint8_t renderFlags, uint16_t width, uint16_t heigh
      0x80ff00ff  // 7 violet
     };
 
+    static int f = 0;
+
     // if we're a background frame, set alpha to 1.0
     if (m_interpreter->m_renderer->firstFrame())
     {
@@ -179,9 +190,8 @@ void CBlobModule::renderCCQ2(uint8_t renderFlags, uint16_t width, uint16_t heigh
 
     img.fill(palette[0]);
 
-    uint32_t x, y, index;
+    uint32_t x, y, index, sig;
     int32_t r, g1, g2, b, u, v, u0, v0, c;
-    uint8_t sig;
 
     for (y=1; y<height; y+=2)
     {
@@ -211,7 +221,7 @@ void CBlobModule::renderCCQ2(uint8_t renderFlags, uint16_t width, uint16_t heigh
                     c = 1;
                 u /= c;
                 v /= c;
-#if 0
+#if 1
                 img.setPixel(x/2, y/2, palette[sig+1]);
 #else
                 float c, umin, umax, vmin, vmax;
@@ -252,7 +262,168 @@ void CBlobModule::renderCCQ2(uint8_t renderFlags, uint16_t width, uint16_t heigh
     m_interpreter->m_renderer->emitImage(img);
     if (renderFlags&RENDER_FLAG_FLUSH)
         m_interpreter->m_renderer->emitFlushImage();
+#else
+    int32_t row;
+    uint32_t i, startCol, length, sig;
+    QImage img(width/2, height/2, QImage::Format_ARGB32);
+    Qval2 qval;
+    unsigned int palette[] =
+    {0x00000000, // 0 no model (transparent)
+     0x80ff0000, // 1 red
+     0x80ff4000, // 2 orange
+     0x80ffff00, // 3 yellow
+     0x8000ff00, // 4 green
+     0x8000ffff, // 5 cyan
+     0x800000ff, // 6 blue
+     0x80ff00ff  // 7 violet
+    };
+
+    // if we're a background frame, set alpha to 1.0
+    if (m_interpreter->m_renderer->firstFrame())
+    {
+        for (i=0; i<sizeof(palette)/sizeof(unsigned int); i++)
+            palette[i] |= 0xff000000;
+    }
+
+    img.fill(palette[0]);
+    int32_t r, g, b, u, v, c;
+    for (i=0, row=-1; m_qq->dequeue(&qval); i++)
+    {
+        if (qval.m_qval==0xffffffff)
+            continue;
+        if (qval.m_qval==0)
+        {
+            row++;
+            continue;
+        }
+
+        sig = qval.m_qval&((1<<7)-1);
+        qval.m_qval >>= 7;
+        startCol = qval.m_qval&((1<<9)-1);
+        qval.m_qval >>= 9;
+        length = qval.m_qval;
+
+        b = qval.m_bsum/length;
+        g = (qval.m_rgsum&((1<<16)-1))/length;
+        r = (qval.m_rgsum>>16)/length;
+        u = r-g;
+        v = b-g;
+
+        u <<= LUT_ENTRY_SCALE;
+        v <<= LUT_ENTRY_SCALE;
+        c = r+g+b;
+        if (c==0)
+            c = 1;
+        u /= c;
+        v /= c;
+#define GAIN 1.0f
+        float c, umin, umax, vmin, vmax;
+        // scale up
+        c = ((float)m_signatures[sig-1].m_uMax + m_signatures[sig-1].m_uMin)/2.0f;
+        umin = c + (m_signatures[sig-1].m_uMin - c)*m_acqRange*GAIN;
+        umax = c + (m_signatures[sig-1].m_uMax - c)*m_acqRange*GAIN;
+        c = ((float)m_signatures[sig-1].m_vMax + m_signatures[sig-1].m_vMin)/2.0f;
+        vmin = c + (m_signatures[sig-1].m_vMin - c)*m_acqRange*GAIN;
+        vmax = c + (m_signatures[sig-1].m_vMax - c)*m_acqRange*GAIN;
+
+#if 1
+        if (umin<u && u<umax &&
+                vmin<v && v<vmax)
+#endif
+#if 1
+                    m_interpreter->m_renderer->renderRL(&img, palette[sig], row, startCol, length);
+#else
+                    m_interpreter->m_renderer->renderRL(&img, (0xff<<24) | (b<<16) | (g<<8) | r, row, startCol, length);
+#endif
+    }
+    m_interpreter->m_renderer->emitImage(img);
+    if (renderFlags&RENDER_FLAG_FLUSH)
+        m_interpreter->m_renderer->emitFlushImage();
+
+#endif
 }
+
+
+
+Qqueue2::Qqueue2()
+{
+#ifdef PIXY
+    m_fields = (QqueueFields2 *)QQ_LOC;
+#else
+    m_fields = (QqueueFields2 *)(new uint8_t[QQ_SIZE]);
+#endif
+    memset((void *)m_fields, 0, sizeof(QqueueFields2));
+}
+
+Qqueue2::~Qqueue2()
+{
+#ifdef PIXY
+#else
+    delete [] m_fields;
+#endif
+}
+
+uint32_t Qqueue2::dequeue(Qval2 *val)
+{
+    uint16_t len = m_fields->produced - m_fields->consumed;
+    if (len)
+    {
+        *val = m_fields->data[m_fields->readIndex++];
+        m_fields->consumed++;
+        if (m_fields->readIndex==QQ_MEM_SIZE)
+            m_fields->readIndex = 0;
+        return 1;
+    }
+    return 0;
+}
+
+int Qqueue2::enqueue(const Qval2 &val)
+{
+    uint16_t len = m_fields->produced - m_fields->consumed;
+    uint16_t freeLen = 	QQ_MEM_SIZE-len;
+    if (freeLen>0)
+    {
+        m_fields->data[m_fields->writeIndex++] = val;
+        m_fields->produced++;
+        if (m_fields->writeIndex==QQ_MEM_SIZE)
+            m_fields->writeIndex = 0;
+        return 1;
+    }
+    return 0;
+
+}
+
+
+uint32_t Qqueue2::readAll(Qval2 *mem, uint32_t size)
+{
+    uint16_t len = m_fields->produced - m_fields->consumed;
+    uint16_t i, j;
+
+    for (i=0, j=m_fields->readIndex; i<len && i<size; i++)
+    {
+        mem[i] = m_fields->data[j++];
+        if (j==QQ_MEM_SIZE)
+            j = 0;
+    }
+    // flush the rest
+    m_fields->consumed += len;
+    m_fields->readIndex += len;
+    if (m_fields->readIndex>=QQ_MEM_SIZE)
+        m_fields->readIndex -= QQ_MEM_SIZE;
+
+    return i;
+}
+
+void Qqueue2::flush()
+{
+    uint16_t len = m_fields->produced - m_fields->consumed;
+
+    m_fields->consumed += len;
+    m_fields->readIndex += len;
+    if (m_fields->readIndex>=QQ_MEM_SIZE)
+        m_fields->readIndex -= QQ_MEM_SIZE;
+}
+
 
 
 
