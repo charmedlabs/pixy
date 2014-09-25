@@ -42,9 +42,22 @@ class ConsoleWidget;
 class Renderer;
 class MonModule;
 
-enum CommandType {STOP, RUN, LOAD_PARAMS, SAVE_PARAMS};
+enum CommandType {STOP, RUN, LOAD_PARAMS, SAVE_PARAMS, UPDATE_PARAM};
 
-typedef std::pair<CommandType,QVariant> Command;
+struct Command
+{
+    Command(CommandType type, const QVariant &arg0=0, const QVariant &arg1=0)
+    {
+        m_type = type;
+        m_arg0 = arg0;
+        m_arg1 = arg1;
+    }
+
+    CommandType m_type;
+    QVariant m_arg0;
+    QVariant m_arg1;
+};
+
 typedef std::queue<Command> CommandQueue;
 
 typedef std::pair<QString,QString> Arg;
@@ -73,6 +86,7 @@ public:
     void execute(QStringList commandList);
     void loadParams();
     void saveParams();
+    void updateParam(MonModule *mm);
     int saveImage(const QString &filename);
     void printHelp();
 
@@ -132,13 +146,14 @@ private:
     int sendRun();
     int sendStop();
     int sendGetAction(int index);
-    void queueCommand(CommandType type, QVariant arg=QVariant(0));
+    void queueCommand(CommandType type, const QVariant &arg0=0, const QVariant &arg1=0);
     void handlePendingCommand();
 
     void prompt();
 
     void handleSaveParams(); // save to Pixy
     void handleLoadParams(); // load from Pixy
+    void handleUpdateParam(MonModule *mm);
     void sendMonModulesParamChange(bool dirty);
 
     QStringList getSections(const QString &id, const QString &string);

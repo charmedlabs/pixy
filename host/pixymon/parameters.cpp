@@ -22,7 +22,6 @@ Parameter::Parameter(const QString &id, PType type, const QString &help)
 {
     m_id = id;
     m_help = help;
-    m_radioValue = 0;
     m_type = type;
     m_dirty = false;
 }
@@ -32,7 +31,6 @@ Parameter::Parameter(const QString &id, PType type, const QVariant &value, const
    m_value = value;
    m_id = id;
    m_help = help;
-   m_radioValue = 0;
    m_type = type;
    m_dirty = false;
 }
@@ -118,7 +116,7 @@ PType Parameter::type()
 const QVariant &Parameter::value()
 {
     if (m_type&PT_RADIO_MASK)
-        return m_radioValues[m_radioValue].m_value;
+        return m_radioValues[m_value.toInt()].m_value;
     else
         return m_value;
 }
@@ -145,19 +143,22 @@ int Parameter::valueInt()
 const QString *Parameter::description()
 {
     if (m_type&PT_RADIO_MASK)
-        return &m_radioValues[m_radioValue].m_description;
+        return &m_radioValues[m_value.toInt()].m_description;
     return NULL;
 }
 
-int Parameter::set(const QVariant &value)
+int Parameter::set(const QVariant &value, bool shadow)
 {
+    if (shadow && m_saved.isNull())
+        m_saved = m_value;
+
     if (m_type&PT_RADIO_MASK)
     {
         for (int i=0; i<m_radioValues.size(); i++)
         {
             if (m_radioValues[i].m_value==value)
             {
-                m_radioValue = i;
+                m_value = i;
                 return 0;
             }
         }
@@ -177,7 +178,7 @@ int Parameter::setRadio(const QString &description)
         {
             if (QString::compare(m_radioValues[i].m_description, description, Qt::CaseInsensitive)==0)
             {
-                m_radioValue = i;
+                m_value = i;
                 return 0;
             }
         }
@@ -211,6 +212,15 @@ void Parameter::setDirty(bool dirty)
 bool Parameter::dirty()
 {
     return m_dirty;
+}
+
+void Parameter::clearShadow()
+{
+    if (!m_saved.isNull())
+    {
+        m_value = m_saved;
+        m_saved = QVariant();
+    }
 }
 
 const QString &Parameter::help()
@@ -327,6 +337,13 @@ void ParameterDB::add(const QString &id, PType type, const QVariant &value, cons
     Parameter param(id, type, value, help);
     param.setProperty(PP_CATEGORY, category);
     add(param);
+}
+
+void ParameterDB::clearShadow()
+{
+    QMutexLocker locker(&m_mutex);
+    for (int i=0; i<m_parameters.size(); i++)
+        m_parameters[i].clearShadow();
 }
 
 

@@ -87,7 +87,8 @@ private:
     float m_acqRange;
     float m_trackRange;
     float m_miny;
-
+    bool m_yfilter;
+    bool m_fixedLength;
 };
 
 #endif // CBLOBMODULE_H

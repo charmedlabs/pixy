@@ -23,6 +23,7 @@
 #include <QTableWidget>
 #include <QPushButton>
 #include <QAbstractButton>
+#include <QCheckBox>
 #include <QFileDialog>
 #include <stdexcept>
 
@@ -102,6 +103,8 @@ int ConfigDialog::updateDB(ParameterDB *data)
         int type = parameter.type();
         uint flags = parameter.property(PP_FLAGS).toInt();
 
+        parameter.clearShadow();
+
         if (flags&PRM_FLAG_INTERNAL) // don't render!
             continue;
 
@@ -134,7 +137,21 @@ int ConfigDialog::updateDB(ParameterDB *data)
                 QMessageBox::critical(NULL, "Error", parameter.id() + " \"" + line->text() + "\" is not a valid folder!");
                 return -1;
             }
-            parameter.set(line->text());
+            if (line->text()!=parameter.value().toString())
+            {
+                parameter.set(line->text());
+                parameter.setDirty(true);
+            }
+        }
+        else if (type==PT_BOOL)
+        {
+            QCheckBox *cbox = (QCheckBox *)line;
+
+            if(cbox->isChecked()!=parameter.value().toBool())
+            {
+                parameter.set(cbox->isChecked());
+                parameter.setDirty(true);
+            }
         }
         else // must be int type
         {
@@ -201,12 +218,12 @@ void ConfigDialog::render(ParameterDB *data, QGridLayout *layout, QTabWidget *ta
 
         PType type = parameter.type();
         QPushButton *button = NULL;
+        QCheckBox *cbox = NULL;
         QLineEdit *line = new QLineEdit();
         QLabel *label = new QLabel(parameter.id());
         label->setToolTip(parameter.help());
         label->setAlignment(Qt::AlignRight);
-        qlonglong temp64 = (qlonglong)line;
-        parameter.setProperty(PP_WIDGET, temp64);
+        parameter.setProperty(PP_WIDGET, (qlonglong)line);
         line->setMinimumWidth(50);
         line->setMaximumWidth(75);
         line->setToolTip(parameter.help());
@@ -216,8 +233,7 @@ void ConfigDialog::render(ParameterDB *data, QGridLayout *layout, QTabWidget *ta
             if (type==PT_PATH)
             {
                 button = new QPushButton("Change...");
-                temp64 = (qlonglong)&parameter;
-                button->setProperty("Parameter", temp64);
+                button->setProperty("Parameter", (qlonglong)&parameter);
                 connect(button, SIGNAL(clicked()), this, SLOT(handleChangeClicked()));
                 button->setToolTip("Select a new path");
                 line->setMinimumWidth(200);
@@ -228,6 +244,16 @@ void ConfigDialog::render(ParameterDB *data, QGridLayout *layout, QTabWidget *ta
             {
                 float val = parameter.value().toFloat();
                 line->setText(QString::number(val, 'f', 6));
+            }
+            else if (type==PT_BOOL)
+            {
+                cbox = new QCheckBox();
+                cbox->setProperty("Parameter", (qlonglong)&parameter);
+                cbox->setChecked(parameter.value().toBool());
+                connect(cbox, SIGNAL(clicked()), this, SLOT(handleCheckBox()));
+                parameter.setProperty(PP_WIDGET, (qlonglong)cbox);
+                delete line;
+                line = NULL;
             }
             else if (!(flags&PRM_FLAG_SIGNED))
             {
@@ -260,7 +286,10 @@ void ConfigDialog::render(ParameterDB *data, QGridLayout *layout, QTabWidget *ta
                     layout = (QGridLayout *)tab->layout();
             }
             layout->addWidget(label, i, 0);
-            layout->addWidget(line, i, 1);
+            if (cbox)
+                layout->addWidget(cbox, i, 1);
+            if (line)
+                layout->addWidget(line, i, 1);
             if (button)
                 layout->addWidget(button, i, 2);
         }
@@ -301,6 +330,8 @@ void ConfigDialog::accept()
 void ConfigDialog::reject()
 {
     qDebug("reject called");
+    m_interpreter->m_pixymonParameters->clearShadow();
+    m_interpreter->saveParams();
     QDialog::reject();
 }
 
@@ -338,5 +369,18 @@ void ConfigDialog::handleChangeClicked()
 }
 
 
+void ConfigDialog::handleCheckBox()
+{
+    QCheckBox *cbox = (QCheckBox *)sender();
+    Parameter *parameter = (Parameter *)cbox->property("Parameter").toLongLong();
 
+    MonModule *mm = (MonModule *)parameter->property(PP_MM_CALLBACK).toLongLong();
+    if (mm)
+    {
+        parameter->set(cbox->isChecked(), true);
+        parameter->setDirty(true);
+        m_interpreter->updateParam(mm);
+    }
+
+}
 

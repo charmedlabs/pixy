@@ -24,9 +24,13 @@ CBlobModule::CBlobModule(Interpreter *interpreter) : MonModule(interpreter)
     m_acqRange = DEFAULT_RANGE;
     m_trackRange = 1.0f;
     m_miny = DEFAULT_MINY;
+    m_yfilter = true;
+    m_fixedLength = true;
 
     m_interpreter->m_pixymonParameters->add("Range", PT_FLT32, m_acqRange, "The range for identifying the colors of a signature.", "CBA");
     m_interpreter->m_pixymonParameters->add("Min Y", PT_FLT32, m_miny, "Minimum brightness for a signature.", "CBA");
+    m_interpreter->m_pixymonParameters->addBool("Y filter", true, this, "Enable Y filtering", "CBA");
+    m_interpreter->m_pixymonParameters->addBool("Fixed length", true, this, "Enable fixed length", "CBA");
 
     memset(m_signatures, 0, sizeof(ColorSignature)*NUM_SIGNATURES);
 }
@@ -77,12 +81,15 @@ void CBlobModule::paramChange()
     m_miny = m_interpreter->m_pixymonParameters->value("Min Y")->toFloat();
     m_cblob->setParameters(m_acqRange, m_miny);
     m_cblob->generateLUT(&m_signatures[0], 1);
-
+    m_yfilter = m_interpreter->m_pixymonParameters->value("Y filter")->toBool();
+    m_fixedLength = m_interpreter->m_pixymonParameters->value("Fixed length")->toBool();
 }
+
+#define _LENGTH  2
 
 void CBlobModule::rls(const Frame8 *frame)
 {
-    uint32_t x, y, index, sig, startCol, prevSig, qval, rgsum, bsum, count;
+    uint32_t x, y, index, sig, startCol, prevSig, qval, rgsum, bsum, count, length;
     int32_t r, g1, g2, b, u, v, u0, v0;
     bool segment;
 
@@ -117,14 +124,18 @@ void CBlobModule::rls(const Frame8 *frame)
                 segment = true;
                 count = 0;
             }
-            else if (segment && sig!=prevSig)
+            else if (segment && (sig!=prevSig || (m_fixedLength && count==_LENGTH)))
             {
-                qval = prevSig;
-                qval |= startCol<<7;
-                qval |= (x/2-startCol)<<(7+9);
-                m_qq->enqueue(Qval2(qval, rgsum, bsum));
+                length = x/2-startCol;
+                if (m_fixedLength==false || length==_LENGTH)
+                {
+                    qval = prevSig;
+                    qval |= startCol<<7;
+                    qval |= length<<(7+9);
+                    m_qq->enqueue(Qval2(qval, rgsum, bsum));
+                }
                 segment = false;
-                if (count!=x/2-startCol)
+                if (count!=length)
                     qDebug("*** %d %d", count, x/2-startCol);
             }
             if (segment)
@@ -221,7 +232,7 @@ void CBlobModule::renderCCQ2(uint8_t renderFlags, uint16_t width, uint16_t heigh
                     c = 1;
                 u /= c;
                 v /= c;
-#if 1
+#if 0
                 img.setPixel(x/2, y/2, palette[sig+1]);
 #else
                 float c, umin, umax, vmin, vmax;
@@ -264,7 +275,7 @@ void CBlobModule::renderCCQ2(uint8_t renderFlags, uint16_t width, uint16_t heigh
         m_interpreter->m_renderer->emitFlushImage();
 #else
     int32_t row;
-    uint32_t i, startCol, length, sig;
+    uint32_t i, startCol, length, sig, prevStartCol;
     QImage img(width/2, height/2, QImage::Format_ARGB32);
     Qval2 qval;
     unsigned int palette[] =
@@ -294,6 +305,7 @@ void CBlobModule::renderCCQ2(uint8_t renderFlags, uint16_t width, uint16_t heigh
         if (qval.m_qval==0)
         {
             row++;
+            prevStartCol = 0xffff;
             continue;
         }
 
@@ -326,16 +338,24 @@ void CBlobModule::renderCCQ2(uint8_t renderFlags, uint16_t width, uint16_t heigh
         vmin = c + (m_signatures[sig-1].m_vMin - c)*m_acqRange*GAIN;
         vmax = c + (m_signatures[sig-1].m_vMax - c)*m_acqRange*GAIN;
 
-#if 1
-        if (umin<u && u<umax &&
-                vmin<v && v<vmax)
-#endif
-#if 1
+        if (m_yfilter==false || (umin<u && u<umax && vmin<v && v<vmax))
+        {
+            if (m_fixedLength)
+            {
+                if (startCol==prevStartCol+_LENGTH+1)
+                    m_interpreter->m_renderer->renderRL(&img, palette[sig], row, startCol-1, length+1);
+                //m_interpreter->m_renderer->renderRL(&img, palette[sig], row, prevStartCol, length*2+1);
+                else if (startCol==prevStartCol+_LENGTH+2)
+                    m_interpreter->m_renderer->renderRL(&img, palette[sig], row, startCol-2, length+2);
+                else
                     m_interpreter->m_renderer->renderRL(&img, palette[sig], row, startCol, length);
-#else
-                    m_interpreter->m_renderer->renderRL(&img, (0xff<<24) | (b<<16) | (g<<8) | r, row, startCol, length);
-#endif
+                prevStartCol = startCol;
+            }
+            else
+                m_interpreter->m_renderer->renderRL(&img, palette[sig], row, startCol, length);
+        }
     }
+
     m_interpreter->m_renderer->emitImage(img);
     if (renderFlags&RENDER_FLAG_FLUSH)
         m_interpreter->m_renderer->emitFlushImage();

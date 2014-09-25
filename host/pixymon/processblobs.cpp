@@ -80,7 +80,6 @@ void ProcessBlobs::rls(const Frame8 &frame)
 {
     uint32_t x, y, count, index, startCol, model, lutVal, r, g1, g2, b;
     int32_t c1, c2;
-    bool stateIn, stateOut;
     uint32_t prevModel=0;
 
     for (y=1, m_numQvals=0; y<(uint32_t)frame.m_height; y+=2)
@@ -89,7 +88,6 @@ void ProcessBlobs::rls(const Frame8 &frame)
         m_qq->enqueue(0);
         m_qMem[m_numQvals++] = 0;
 
-        stateIn = stateOut = false;
         count = 0;
         prevModel = 0;
         startCol = 0;

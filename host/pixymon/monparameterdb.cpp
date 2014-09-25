@@ -67,3 +67,17 @@ int MonParameterDB::load()
 
     return 0;
 }
+
+
+void MonParameterDB::addSlider(const QString &id, const QVariant &value, const QVariant &min, const QVariant &max, MonModule *mm,
+                               const QString &help, const QString &category)
+{
+
+}
+
+void MonParameterDB::addBool(const QString &id, bool value, MonModule *mm, const QString &help, const QString &category)
+{
+    add(id, PT_BOOL, value, help, category);
+    Parameter *param = parameter(id);
+    param->setProperty(PP_MM_CALLBACK, (qlonglong)mm);
+}

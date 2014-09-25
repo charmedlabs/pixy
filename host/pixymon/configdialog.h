@@ -42,6 +42,7 @@ protected slots:
     void loaded();
     void apply(QAbstractButton *button);
     void handleChangeClicked();
+    void handleCheckBox();
     virtual void accept();
     virtual void reject();
 

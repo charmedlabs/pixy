@@ -33,12 +33,12 @@
 #define PP_CATEGORY     "category"
 #define PP_WIDGET       "widget"
 #define PP_FLAGS        "flags"
+#define PP_MM_CALLBACK  "mm_callback"
 
 #define PRM_FLAG_INTERNAL            0x01
 #define PRM_FLAG_ADVANCED            0x02
 #define PRM_FLAG_HEX_FORMAT          0x10
 #define PRM_FLAG_SIGNED              0x80
-
 
 struct RadioValue
 {
@@ -75,7 +75,9 @@ enum PType
     PT_STRING_RADIO = PT_STRING | PT_RADIO_MASK,
 
     // other types
-    PT_PATH = 0x100
+    PT_PATH = 0x100,
+    PT_BOOL = 0x101,
+    PT_SLIDER = 0x102
 };
 
 typedef QList<RadioValue> RadioValues;
@@ -96,10 +98,11 @@ public:
     int valueInt();
     const QString *description();
 
-    int set(const QVariant &value);
+    int set(const QVariant &value, bool shadow=false);
     int setRadio(const QString &description);
     void setDirty(bool dirty);
     bool dirty();
+    void clearShadow();
 
     void addRadioValue(const RadioValue &value);
     void onOff();
@@ -112,9 +115,9 @@ public:
 
 private:
     RadioValues m_radioValues; // m_radioValues.size()>0 we're a radio parameter
-    int m_radioValue;
 
-    QVariant m_value; // else we're just a regular parameter with value in m_value.
+    QVariant m_value;
+    QVariant m_saved;
     PType m_type; // only applies to m_value
 
     QString m_id;
@@ -142,6 +145,8 @@ public:
 
     void add(Parameter param);
     void add(const QString &id, PType type, const QVariant &value, const QString &help="", const QString &category="");
+
+    void clearShadow();
 
     QMutex *mutex()
     {

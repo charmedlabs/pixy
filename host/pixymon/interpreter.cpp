@@ -461,7 +461,7 @@ void Interpreter::handlePendingCommand()
     m_commandQueue.pop();
     locker.unlock();
 
-    switch (command.first)
+    switch (command.m_type)
     {
     case STOP:
         sendStop();
@@ -478,14 +478,18 @@ void Interpreter::handlePendingCommand()
     case SAVE_PARAMS:
         handleSaveParams();
         break;
+
+    case UPDATE_PARAM:
+        handleUpdateParam((MonModule *)command.m_arg0.toLongLong());
+        break;
     }
 
 }
 
 
-void Interpreter::queueCommand(CommandType type, QVariant arg)
+void Interpreter::queueCommand(CommandType type, const QVariant &arg0, const QVariant &arg1)
 {
-    Command command(type, arg);
+    Command command(type, arg0, arg1);
     m_mutexQueue.lock();
     m_commandQueue.push(command);
     m_mutexQueue.unlock();
@@ -1302,6 +1306,13 @@ void Interpreter::cprintf(const char *format, ...)
     emit textOut(buffer, Qt::blue);
 }
 
+void Interpreter::updateParam(MonModule *mm)
+{
+    queueCommand(UPDATE_PARAM, (qlonglong)mm);
+}
 
-
+void Interpreter::handleUpdateParam(MonModule *mm)
+{
+    mm->paramChange();
+}
 
