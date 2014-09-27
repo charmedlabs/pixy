@@ -14,6 +14,8 @@ CBlobModule::CBlobModule(Interpreter *interpreter) : MonModule(interpreter)
 
     m_qq = new Qqueue2();
     m_lut = new uint8_t[LUT_SIZE];
+    m_qvals = new uint32_t[320*200/3];
+    m_numQvals = 0;
     m_cblob = new ColorBlob(m_lut);
 
     scriptlet << "cam_getFrame 0x21 0 0 320 200";
@@ -33,11 +35,13 @@ CBlobModule::CBlobModule(Interpreter *interpreter) : MonModule(interpreter)
     m_interpreter->m_pixymonParameters->addBool("Fixed length", true, this, "Enable fixed length", "CBA");
 
     memset(m_signatures, 0, sizeof(ColorSignature)*NUM_SIGNATURES);
+    memset(m_runtimeSigs, 0, sizeof(RuntimeSignature)*NUM_SIGNATURES);
 }
 
 CBlobModule::~CBlobModule()
 {
     delete [] m_lut;
+    delete [] m_qvals;
 }
 
 bool CBlobModule::render(uint32_t fourcc, const void *args[])
@@ -62,6 +66,7 @@ bool CBlobModule::command(const QStringList &argv)
         m_cblob->generateSignature(frame, &region, &m_signatures[0]);
 
         m_cblob->generateLUT(&m_signatures[0], 1);
+        updateSignature(1);
 
         DataExport dx(m_interpreter->m_pixymonParameters->value("Document folder")->toString(), "lut", ET_MATLAB);
 
@@ -83,261 +88,195 @@ void CBlobModule::paramChange()
     m_cblob->generateLUT(&m_signatures[0], 1);
     m_yfilter = m_interpreter->m_pixymonParameters->value("Y filter")->toBool();
     m_fixedLength = m_interpreter->m_pixymonParameters->value("Fixed length")->toBool();
+
+    updateSignature(1);
 }
 
-#define _LENGTH  2
+
+void CBlobModule::handleLine(uint8_t *line, uint16_t width)
+{
+    uint32_t index, sig, sig2, usum, vsum, ysum;
+    int32_t x, r, g1, g2, b, u, v, u0, v0;
+
+    // new line
+    m_qq->enqueue(Qval2());
+    x = 1;
+
+next:
+    usum = vsum = ysum = 0;
+    r = line[x];
+    g1 = line[x-1];
+    g2 = line[x-width];
+    b = line[x-width-1];
+    u = r-g1;
+    v = b-g2;
+    ysum += r + g1 + b;
+    usum += u;
+    vsum += v;
+
+    u0 = u>>(9-LUT_COMPONENT_SCALE);
+    v0 = v>>(9-LUT_COMPONENT_SCALE);
+    u0 &= (1<<LUT_COMPONENT_SCALE)-1;
+    v0 &= (1<<LUT_COMPONENT_SCALE)-1;
+    index = (u0<<LUT_COMPONENT_SCALE) | v0;
+    sig = m_lut[index];
+
+    x += 2;
+    if (x>=width)
+        return;
+
+    if (sig==0)
+        goto next;
+
+    r = line[x];
+    g1 = line[x-1];
+    g2 = line[x-width];
+    b = line[x-width-1];
+    u = r-g1;
+    v = b-g2;
+    ysum += r + g1 + b;
+    usum += u;
+    vsum += v;
+
+    u0 = u>>(9-LUT_COMPONENT_SCALE);
+    v0 = v>>(9-LUT_COMPONENT_SCALE);
+    u0 &= (1<<LUT_COMPONENT_SCALE)-1;
+    v0 &=(1<<LUT_COMPONENT_SCALE)-1;
+    index = (u0<<LUT_COMPONENT_SCALE) | v0;
+    sig2 = m_lut[index];
+
+    x += 2;
+    if (x>=width)
+        return;
+
+    if (sig==sig2)
+        goto save;
+
+    goto next;
+
+save:
+    m_qq->enqueue(Qval2(usum, vsum, ysum, (x/2<<3) | sig));
+    x += 2;
+    if (x>=width)
+        return;
+    goto next;
+}
+
 
 void CBlobModule::rls(const Frame8 *frame)
 {
-    uint32_t x, y, index, sig, startCol, prevSig, qval, rgsum, bsum, count, length;
-    int32_t r, g1, g2, b, u, v, u0, v0;
-    bool segment;
+    uint32_t y;
 
     for (y=1; y<(uint32_t)frame->m_height; y+=2)
-    {
-        // new lime
-        m_qq->enqueue(Qval2(0, 0, 0));
+        handleLine(frame->m_pixels+y*frame->m_width, frame->m_width);
 
-        segment = false;
-        prevSig = 0;
-        startCol = 0;
-        for (x=1; x<(uint32_t)frame->m_width; x+=2)
-        {
-            r = frame->m_pixels[y*frame->m_width + x];
-            g1 = frame->m_pixels[y*frame->m_width + x - 1];
-            g2 = frame->m_pixels[y*frame->m_width - frame->m_width + x];
-            b = frame->m_pixels[y*frame->m_width - frame->m_width + x - 1];
-            u = r-g1;
-            v = b-g2;
-
-            u0 = u>>(9-LUT_COMPONENT_SCALE);
-            v0 = v>>(9-LUT_COMPONENT_SCALE);
-            u0 &= (1<<LUT_COMPONENT_SCALE)-1;
-            v0 &=(1<<LUT_COMPONENT_SCALE)-1;
-            index = (u0<<LUT_COMPONENT_SCALE) | v0;
-            sig = m_lut[index];
-
-            if (segment==false && sig)
-            {
-                startCol = x/2;
-                rgsum = bsum = 0;
-                segment = true;
-                count = 0;
-            }
-            else if (segment && (sig!=prevSig || (m_fixedLength && count==_LENGTH)))
-            {
-                length = x/2-startCol;
-                if (m_fixedLength==false || length==_LENGTH)
-                {
-                    qval = prevSig;
-                    qval |= startCol<<7;
-                    qval |= length<<(7+9);
-                    m_qq->enqueue(Qval2(qval, rgsum, bsum));
-                }
-                segment = false;
-                if (count!=length)
-                    qDebug("*** %d %d", count, x/2-startCol);
-            }
-            if (segment)
-            {
-                rgsum += (r<<16) | g1;
-                bsum += b;
-                count++;
-            }
-            prevSig = sig;
-        }
-
-        if (segment)
-        {
-            qval = prevSig;
-            qval |= startCol<<7;
-            qval |= (x/2-startCol)<<(7+9);
-            m_qq->enqueue(Qval2(qval, rgsum, bsum));
-        }
-
-    }
-    // indicate end of frame
-    m_qq->enqueue(Qval2(0xffffffff, 0, 0));
+     // indicate end of frame
+    m_qq->enqueue(Qval2(0, 0, 0, 0xffff));
 }
 
 void CBlobModule::renderEX00(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame)
 {
     Frame8 frame8(frame, width, height);
     rls(&frame8);
-    //cprintf("qvals %d", m_qq->m_fields->produced-m_qq->m_fields->consumed);
-    //m_qq->flush();
-
     m_interpreter->m_renderer->renderBA81(0, width, height, frameLen, frame);
-    renderCCQ2(RENDER_FLAG_FLUSH, width, height, frameLen, frame);
+    rla();
+    m_interpreter->m_renderer->renderCCQ1(renderFlags, width/2, height/2, m_numQvals, m_qvals);
 
 }
 
-void CBlobModule::renderCCQ2(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame)
+void CBlobModule::handleSegment(uint8_t signature, uint16_t startCol, uint16_t length)
 {
-#if 0
+    uint32_t qval;
+
+    qval = signature;
+    qval |= startCol<<3;
+    qval |= length<<12;
+
+    m_qvals[m_numQvals++] = qval;
+}
+
+void CBlobModule::updateSignature(uint8_t signature)
+{
+    float c;
+
+    c = ((float)m_signatures[signature-1].m_uMax + m_signatures[signature-1].m_uMin)/2.0f;
+    m_runtimeSigs[signature-1].m_uMin = c + (m_signatures[signature-1].m_uMin - c)*m_acqRange;
+    m_runtimeSigs[signature-1].m_uMax = c + (m_signatures[signature-1].m_uMax - c)*m_acqRange;
+    c = ((float)m_signatures[signature-1].m_vMax + m_signatures[signature-1].m_vMin)/2.0f;
+    m_runtimeSigs[signature-1].m_vMin = c + (m_signatures[signature-1].m_vMin - c)*m_acqRange;
+    m_runtimeSigs[signature-1].m_vMax = c + (m_signatures[signature-1].m_vMax - c)*m_acqRange;
+}
+
+void CBlobModule::rla()
+{
     int32_t row;
-    uint32_t i, startCol, length;
-    uint8_t model;
-    QImage img(width/2, height/2, QImage::Format_ARGB32);
-    unsigned int palette[] =
-    {0x00000000, // 0 no model (transparent)
-     0x80ff0000, // 1 red
-     0x80ff4000, // 2 orange
-     0x80ffff00, // 3 yellow
-     0x8000ff00, // 4 green
-     0x8000ffff, // 5 cyan
-     0x800000ff, // 6 blue
-     0x80ff00ff  // 7 violet
-    };
-
-    static int f = 0;
-
-    // if we're a background frame, set alpha to 1.0
-    if (m_interpreter->m_renderer->firstFrame())
-    {
-        for (i=0; i<sizeof(palette)/sizeof(unsigned int); i++)
-            palette[i] |= 0xff000000;
-    }
-
-    img.fill(palette[0]);
-
-    uint32_t x, y, index, sig;
-    int32_t r, g1, g2, b, u, v, u0, v0, c;
-
-    for (y=1; y<height; y+=2)
-    {
-        for (x=1; x<width; x+=2)
-        {
-            r = frame[y*width + x];
-            g1 = frame[y*width + x - 1];
-            g2 = frame[y*width - width + x];
-            b = frame[y*width - width + x - 1];
-            u = r-g1;
-            v = b-g2;
-
-            u0 = u>>(9-LUT_COMPONENT_SCALE);
-            v0 = v>>(9-LUT_COMPONENT_SCALE);
-            u0 &= (1<<LUT_COMPONENT_SCALE)-1;
-            v0 &=(1<<LUT_COMPONENT_SCALE)-1;
-            index = (u0<<LUT_COMPONENT_SCALE) | v0;
-            sig = m_lut[index];
-
-            if (sig)
-            {
-                sig--;
-                u <<= LUT_ENTRY_SCALE;
-                v <<= LUT_ENTRY_SCALE;
-                c = r+g1+b;
-                if (c==0)
-                    c = 1;
-                u /= c;
-                v /= c;
-#if 0
-                img.setPixel(x/2, y/2, palette[sig+1]);
-#else
-                float c, umin, umax, vmin, vmax;
-                // scale up
-                c = ((float)m_signatures[sig].m_uMax + m_signatures[sig].m_uMin)/2.0f;
-                umin = c + (m_signatures[sig].m_uMin - c)*m_acqRange;
-                umax = c + (m_signatures[sig].m_uMax - c)*m_acqRange;
-                c = ((float)m_signatures[sig].m_vMax + m_signatures[sig].m_vMin)/2.0f;
-                vmin = c + (m_signatures[sig].m_vMin - c)*m_acqRange;
-                vmax = c + (m_signatures[sig].m_vMax - c)*m_acqRange;
-
-
-                if (umin<u && u<umax &&
-                        vmin<v && v<vmax)
-                    img.setPixel(x/2, y/2, palette[sig+1]);
-#endif
-            }
-        }
-    }
-#if 0
-    for (i=0, row=-1; i<numVals; i++)
-    {
-        if (qVals[i]==0xffffffff)
-            continue;
-        if (qVals[i]==0)
-        {
-            row++;
-            continue;
-        }
-        model = qVals[i]&0x07;
-        qVals[i] >>= 3;
-        startCol = qVals[i]&0x1ff;
-        qVals[i] >>= 9;
-        length = qVals[i]&0x1ff;
-        handleRL(&img, palette[model], row, startCol, length);
-    }
-#endif
-    m_interpreter->m_renderer->emitImage(img);
-    if (renderFlags&RENDER_FLAG_FLUSH)
-        m_interpreter->m_renderer->emitFlushImage();
-#else
-    int32_t row;
-    uint32_t i, startCol, length, sig, prevStartCol;
-    QImage img(width/2, height/2, QImage::Format_ARGB32);
+    uint32_t i, startCol, sig, prevStartCol, segmentStartCol, segmentEndCol, segmentSig=0;
+    bool merge;
     Qval2 qval;
-    unsigned int palette[] =
-    {0x00000000, // 0 no model (transparent)
-     0x80ff0000, // 1 red
-     0x80ff4000, // 2 orange
-     0x80ffff00, // 3 yellow
-     0x8000ff00, // 4 green
-     0x8000ffff, // 5 cyan
-     0x800000ff, // 6 blue
-     0x80ff00ff  // 7 violet
-    };
+    int32_t u, v, c;
 
-    // if we're a background frame, set alpha to 1.0
-    if (m_interpreter->m_renderer->firstFrame())
-    {
-        for (i=0; i<sizeof(palette)/sizeof(unsigned int); i++)
-            palette[i] |= 0xff000000;
-    }
-
-    img.fill(palette[0]);
-    int32_t r, g, b, u, v, c;
+    m_numQvals = 0;
     for (i=0, row=-1; m_qq->dequeue(&qval); i++)
     {
-        if (qval.m_qval==0xffffffff)
-            continue;
-        if (qval.m_qval==0)
+        if (qval.m_col==0xffff)
         {
-            row++;
+            m_qvals[m_numQvals++] = 0xffffffff;
+            continue;
+        }
+        if (qval.m_col==0)
+        {
             prevStartCol = 0xffff;
+            if (segmentSig)
+            {
+                handleSegment(segmentSig, segmentStartCol-2, segmentEndCol - segmentStartCol+2);
+                segmentSig = 0;
+            }
+            row++;
+            m_qvals[m_numQvals++] = 0;
             continue;
         }
 
-        sig = qval.m_qval&((1<<7)-1);
-        qval.m_qval >>= 7;
-        startCol = qval.m_qval&((1<<9)-1);
-        qval.m_qval >>= 9;
-        length = qval.m_qval;
+        sig = qval.m_col&0x07;
+        qval.m_col >>= 3;
+        startCol = qval.m_col;
 
-        b = qval.m_bsum/length;
-        g = (qval.m_rgsum&((1<<16)-1))/length;
-        r = (qval.m_rgsum>>16)/length;
-        u = r-g;
-        v = b-g;
+        u = qval.m_u;
+        v = qval.m_v;
 
-        u <<= LUT_ENTRY_SCALE;
-        v <<= LUT_ENTRY_SCALE;
-        c = r+g+b;
+        u <<= LUT_ENTRY_SCALE-1;
+        v <<= LUT_ENTRY_SCALE-1;
+        c = qval.m_y>>1;
         if (c==0)
             c = 1;
         u /= c;
         v /= c;
-#define GAIN 1.0f
-        float c, umin, umax, vmin, vmax;
-        // scale up
-        c = ((float)m_signatures[sig-1].m_uMax + m_signatures[sig-1].m_uMin)/2.0f;
-        umin = c + (m_signatures[sig-1].m_uMin - c)*m_acqRange*GAIN;
-        umax = c + (m_signatures[sig-1].m_uMax - c)*m_acqRange*GAIN;
-        c = ((float)m_signatures[sig-1].m_vMax + m_signatures[sig-1].m_vMin)/2.0f;
-        vmin = c + (m_signatures[sig-1].m_vMin - c)*m_acqRange*GAIN;
-        vmax = c + (m_signatures[sig-1].m_vMax - c)*m_acqRange*GAIN;
 
+        if (m_runtimeSigs[sig-1].m_uMin<u && u<m_runtimeSigs[sig-1].m_uMax && m_runtimeSigs[sig-1].m_vMin<v && v<m_runtimeSigs[sig-1].m_vMax)
+        {
+            merge = startCol-prevStartCol<=5;
+            if (segmentSig==0 && merge)
+            {
+                segmentSig = sig;
+                segmentStartCol = prevStartCol;
+            }
+            else if (segmentSig!=0 && (segmentSig!=sig || !merge))
+            {
+                handleSegment(segmentSig, segmentStartCol-2, segmentEndCol - segmentStartCol+2);
+                segmentSig = 0;
+            }
+
+            if (segmentSig!=0 && merge)
+                segmentEndCol = startCol;
+            else if (segmentSig==0 && !merge)
+                handleSegment(sig, startCol-2, 2);
+            prevStartCol = startCol;
+        }
+        else if (segmentSig!=0)
+        {
+            handleSegment(segmentSig, segmentStartCol-2, segmentEndCol - segmentStartCol+2);
+            segmentSig = 0;
+        }
+#if 0
         if (m_yfilter==false || (umin<u && u<umax && vmin<v && v<vmax))
         {
             if (m_fixedLength)
@@ -354,13 +293,9 @@ void CBlobModule::renderCCQ2(uint8_t renderFlags, uint16_t width, uint16_t heigh
             else
                 m_interpreter->m_renderer->renderRL(&img, palette[sig], row, startCol, length);
         }
+#endif
     }
 
-    m_interpreter->m_renderer->emitImage(img);
-    if (renderFlags&RENDER_FLAG_FLUSH)
-        m_interpreter->m_renderer->emitFlushImage();
-
-#endif
 }
 
 

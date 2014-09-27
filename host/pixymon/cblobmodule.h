@@ -4,24 +4,34 @@
 #include "monmodule.h"
 #include "colorblob.h"
 
+struct RuntimeSignature
+{
+    int32_t m_uMin;
+    int32_t m_uMax;
+    int32_t m_vMin;
+    int32_t m_vMax;
+};
+
 
 struct Qval2
 {
     Qval2()
     {
-        m_qval = m_rgsum = m_bsum = 0;
+        m_u = m_v = m_y = m_col = 0;
     }
 
-    Qval2(uint32_t qval, uint32_t rgsum, uint32_t bsum)
+    Qval2(int16_t u, int16_t v, uint16_t y, uint16_t col)
     {
-        m_qval = qval;
-        m_rgsum = rgsum;
-        m_bsum = bsum;
+        m_u = u;
+        m_v = v;
+        m_y = y;
+        m_col = col;
     }
 
-    uint32_t m_qval;
-    uint32_t m_rgsum;
-    uint32_t m_bsum;
+    int16_t m_u;
+    int16_t m_v;
+    uint16_t m_y;
+    uint16_t m_col;
 };
 
 struct QqueueFields2
@@ -74,16 +84,22 @@ public:
     virtual void paramChange();
 
     void renderEX00(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame);
-    void renderCCQ2(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame);
 
 private:
+    void handleLine(uint8_t *line, uint16_t width);
+    void handleSegment(uint8_t signature, uint16_t startCol, uint16_t length);
+    void updateSignature(uint8_t signature);
     void rls(const Frame8 *frame);
+    void rla();
 
     ColorBlob *m_cblob;
     Qqueue2 *m_qq;
     uint8_t *m_lut;
+    uint32_t *m_qvals;
+    uint32_t m_numQvals;
 
     ColorSignature m_signatures[NUM_SIGNATURES];
+    RuntimeSignature m_runtimeSigs[NUM_SIGNATURES];
     float m_acqRange;
     float m_trackRange;
     float m_miny;
