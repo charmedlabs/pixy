@@ -19,9 +19,40 @@ CBlobModule::CBlobModule(Interpreter *interpreter) : MonModule(interpreter)
     m_cblob = new ColorBlob(m_lut);
 
     scriptlet << "cam_getFrame 0x21 0 0 320 200";
-    scriptlet << "cb_region";
+    scriptlet << "newsig 1";
     scriptlet << "runprogArg 8 100";
-    m_interpreter->emit actionScriptlet("Create new signature...", scriptlet);
+    m_interpreter->emit actionScriptlet("Create new signature 1...", scriptlet);
+    scriptlet.clear();
+    scriptlet << "cam_getFrame 0x21 0 0 320 200";
+    scriptlet << "newsig 2";
+    scriptlet << "runprogArg 8 100";
+    m_interpreter->emit actionScriptlet("Create new signature 2...", scriptlet);
+    scriptlet.clear();
+    scriptlet << "cam_getFrame 0x21 0 0 320 200";
+    scriptlet << "newsig 3";
+    scriptlet << "runprogArg 8 100";
+    m_interpreter->emit actionScriptlet("Create new signature 3...", scriptlet);
+    scriptlet.clear();
+    scriptlet << "cam_getFrame 0x21 0 0 320 200";
+    scriptlet << "newsig 4";
+    scriptlet << "runprogArg 8 100";
+    m_interpreter->emit actionScriptlet("Create new signature 4...", scriptlet);
+    scriptlet.clear();
+    scriptlet << "cam_getFrame 0x21 0 0 320 200";
+    scriptlet << "newsig 5";
+    scriptlet << "runprogArg 8 100";
+    m_interpreter->emit actionScriptlet("Create new signature 5...", scriptlet);
+    scriptlet.clear();
+    scriptlet << "cam_getFrame 0x21 0 0 320 200";
+    scriptlet << "newsig 6";
+    scriptlet << "runprogArg 8 100";
+    m_interpreter->emit actionScriptlet("Create new signature 6...", scriptlet);
+    scriptlet.clear();
+    scriptlet << "cam_getFrame 0x21 0 0 320 200";
+    scriptlet << "newsig 7";
+    scriptlet << "runprogArg 8 100";
+    m_interpreter->emit actionScriptlet("Create new signature 7...", scriptlet);
+
 
     m_acqRange = DEFAULT_RANGE;
     m_trackRange = 1.0f;
@@ -55,17 +86,24 @@ bool CBlobModule::render(uint32_t fourcc, const void *args[])
 
 bool CBlobModule::command(const QStringList &argv)
 {
-    if (argv[0]=="cb_region")
+    if (argv.size()==2 && argv[0]=="newsig")
     {
+        uint8_t sig = argv[1].toUInt();
+        if (sig<1 || sig>7)
+        {
+            cprintf("Signature number out of range!");
+            return true;
+        }
+
         RectA region;
         m_interpreter->getSelection(VideoWidget::REGION, &region);
 
         Frame8 *frame = m_interpreter->m_renderer->backgroundRaw();
         m_interpreter->m_renderer->pixelsOut(region.m_xOffset, region.m_yOffset, region.m_width, region.m_height);
-        m_cblob->generateSignature(frame, &region, &m_signatures[0]);
+        m_cblob->generateSignature(frame, &region, &m_signatures[sig-1]);
 
-        m_cblob->generateLUT(&m_signatures[0], 1);
-        updateSignature(1);
+        updateSignatures();
+        m_cblob->generateLUT(m_runtimeSigs);
 
         DataExport dx(m_interpreter->m_pixymonParameters->value("Document folder")->toString(), "lut", ET_MATLAB);
 
@@ -84,11 +122,11 @@ void CBlobModule::paramChange()
     m_acqRange = m_interpreter->m_pixymonParameters->value("Range")->toFloat();
     m_miny = m_interpreter->m_pixymonParameters->value("Min Y")->toFloat();
     m_cblob->setParameters(m_acqRange, m_miny);
-    m_cblob->generateLUT(&m_signatures[0], 1);
     m_yfilter = m_interpreter->m_pixymonParameters->value("Y filter")->toBool();
     m_fixedLength = m_interpreter->m_pixymonParameters->value("Fixed length")->toBool();
 
-    updateSignature(1);
+    m_cblob->generateLUT(m_runtimeSigs);
+    updateSignatures();
 }
 
 
@@ -109,7 +147,7 @@ next:
     b = line[x-width-1];
     u = r-g1;
     v = b-g2;
-    ysum += r + g1 + b;
+    ysum += r + (g1+g2)/2 + b;
     usum += u;
     vsum += v;
 
@@ -133,7 +171,7 @@ next:
     b = line[x-width-1];
     u = r-g1;
     v = b-g2;
-    ysum += r + g1 + b;
+    ysum += r + (g1+g2)/2 + b;
     usum += u;
     vsum += v;
 
@@ -194,16 +232,20 @@ void CBlobModule::handleSegment(uint8_t signature, uint16_t startCol, uint16_t l
     m_qvals[m_numQvals++] = qval;
 }
 
-void CBlobModule::updateSignature(uint8_t signature)
+void CBlobModule::updateSignatures()
 {
+    int signature;
     float c;
 
-    c = ((float)m_signatures[signature-1].m_uMax + m_signatures[signature-1].m_uMin)/2.0f;
-    m_runtimeSigs[signature-1].m_uMin = c + (m_signatures[signature-1].m_uMin - c)*m_acqRange;
-    m_runtimeSigs[signature-1].m_uMax = c + (m_signatures[signature-1].m_uMax - c)*m_acqRange;
-    c = ((float)m_signatures[signature-1].m_vMax + m_signatures[signature-1].m_vMin)/2.0f;
-    m_runtimeSigs[signature-1].m_vMin = c + (m_signatures[signature-1].m_vMin - c)*m_acqRange;
-    m_runtimeSigs[signature-1].m_vMax = c + (m_signatures[signature-1].m_vMax - c)*m_acqRange;
+    for (signature=0; signature<NUM_SIGNATURES; signature++)
+    {
+        c = ((float)m_signatures[signature].m_uMax + m_signatures[signature].m_uMin)/2.0f;
+        m_runtimeSigs[signature].m_uMin = c + (m_signatures[signature].m_uMin - c)*m_acqRange;
+        m_runtimeSigs[signature].m_uMax = c + (m_signatures[signature].m_uMax - c)*m_acqRange;
+        c = ((float)m_signatures[signature].m_vMax + m_signatures[signature].m_vMin)/2.0f;
+        m_runtimeSigs[signature].m_vMin = c + (m_signatures[signature].m_vMin - c)*m_acqRange;
+        m_runtimeSigs[signature].m_vMax = c + (m_signatures[signature].m_vMax - c)*m_acqRange;
+    }
 }
 
 void CBlobModule::rla()
@@ -253,7 +295,7 @@ void CBlobModule::rla()
         if (!m_yfilter ||
                 (m_runtimeSigs[sig-1].m_uMin<u && u<m_runtimeSigs[sig-1].m_uMax && m_runtimeSigs[sig-1].m_vMin<v && v<m_runtimeSigs[sig-1].m_vMax))
         {
-            merge = startCol-prevStartCol<=5;
+            merge = startCol-prevStartCol<=6;
             if (segmentSig==0 && merge)
             {
                 segmentSig = sig;

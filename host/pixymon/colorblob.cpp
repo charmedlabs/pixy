@@ -33,7 +33,7 @@ float ColorBlob::calcRatio(const int32_t *uvPixels, uint32_t numuv, int32_t line
     return (float)count/numuv;
 }
 
-// This is a binary search --- it's guaranteed get to within +/- 1, which is good enough
+// This is a binary search --- it's guaranteed get to within +/-1 of the optimal value, which is good enough!
 int32_t ColorBlob::iterate(const int32_t *uvPixels, uint32_t numuv, float ratio, bool pos)
 {
     int32_t scale, line;
@@ -215,20 +215,11 @@ int ColorBlob::generateLUT(const ColorSignature *signature, uint8_t signum)
     return 0;
 }
 #else
-int ColorBlob::generateLUT(const ColorSignature *signature, uint8_t signum)
+int ColorBlob::generateLUT(const RuntimeSignature signatures[])
 {
-    int32_t r, g, b, u, v, y, bin, miny;
-    float c, umin, umax, vmin, vmax;
+    int32_t r, g, b, u, v, y, bin, miny, sig;
 
-    clearLUT(signum);
-
-    // scale up
-    c = ((float)signature->m_uMax + signature->m_uMin)/2.0f;
-    umin = c + (signature->m_uMin - c)*m_acqRange*m_trackRange;
-    umax = c + (signature->m_uMax - c)*m_acqRange*m_trackRange;
-    c = ((float)signature->m_vMax + signature->m_vMin)/2.0f;
-    vmin = c + (signature->m_vMin - c)*m_acqRange*m_trackRange;
-    vmax = c + (signature->m_vMax - c)*m_acqRange*m_trackRange;
+    clearLUT();
 
     miny = (3*(1<<8)-1)*m_miny;
     if (miny==0)
@@ -247,19 +238,25 @@ int ColorBlob::generateLUT(const ColorSignature *signature, uint8_t signum)
                 u = ((r-g)<<LUT_ENTRY_SCALE)/y;
                 v = ((b-g)<<LUT_ENTRY_SCALE)/y;
 
-                if ((umin<u) && (u<umax) && (vmin<v) && (v<vmax))
+                for (sig=0; sig<NUM_SIGNATURES; sig++)
                 {
-                    u = r-g;
-                    u >>= 9-LUT_COMPONENT_SCALE;
-                    u &= (1<<LUT_COMPONENT_SCALE)-1;
-                    v = b-g;
-                    v >>= 9-LUT_COMPONENT_SCALE;
-                    v &= (1<<LUT_COMPONENT_SCALE)-1;
+                    if (signatures[sig].m_uMin==0 && signatures[sig].m_uMax==0)
+                        continue;
+                    if ((signatures[sig].m_uMin<u) && (u<signatures[sig].m_uMax) &&
+                            (signatures[sig].m_vMin<v) && (v<signatures[sig].m_vMax))
+                    {
+                        u = r-g;
+                        u >>= 9-LUT_COMPONENT_SCALE;
+                        u &= (1<<LUT_COMPONENT_SCALE)-1;
+                        v = b-g;
+                        v >>= 9-LUT_COMPONENT_SCALE;
+                        v &= (1<<LUT_COMPONENT_SCALE)-1;
 
-                    bin = (u<<LUT_COMPONENT_SCALE)+ v;
+                        bin = (u<<LUT_COMPONENT_SCALE)+ v;
 
-                    if (m_lut[bin]==0 || m_lut[bin]>signum)
-                        m_lut[bin] = signum;
+                        if (m_lut[bin]==0)
+                            m_lut[bin] = sig+1;
+                    }
                 }
             }
         }

@@ -4,14 +4,6 @@
 #include "monmodule.h"
 #include "colorblob.h"
 
-struct RuntimeSignature
-{
-    int32_t m_uMin;
-    int32_t m_uMax;
-    int32_t m_vMin;
-    int32_t m_vMax;
-};
-
 
 struct Qval2
 {
@@ -88,7 +80,7 @@ public:
 private:
     void handleLine(uint8_t *line, uint16_t width);
     void handleSegment(uint8_t signature, uint16_t startCol, uint16_t length);
-    void updateSignature(uint8_t signature);
+    void updateSignatures();
     void rls(const Frame8 *frame);
     void rla();
 

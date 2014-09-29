@@ -19,6 +19,15 @@ struct ColorSignature
     int32_t m_vMax;
 };
 
+
+struct RuntimeSignature
+{
+    int32_t m_uMin;
+    int32_t m_uMax;
+    int32_t m_vMin;
+    int32_t m_vMax;
+};
+
 struct UVPixel
 {
     UVPixel()
@@ -45,7 +54,7 @@ public:
     int generateSignature(const Frame8 *frame, const RectA *region, ColorSignature *signature);
     int generateSignature(const Frame8 *frame, const Point16 *point, ColorSignature *signature);
 
-    int generateLUT(const ColorSignature *signature, uint8_t signum);
+    int generateLUT(const RuntimeSignature signatures[]);
     void clearLUT(uint8_t signum=0);
 
     void setParameters(float range, float miny);

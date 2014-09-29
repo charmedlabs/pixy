@@ -162,7 +162,6 @@ int ConfigDialog::updateDB(ParameterDB *data)
 
             // value = min + pos/100(max-min)
             float value;
-            qDebug("*** position %d", slider->sliderPosition());
             value = min.toFloat() + slider->sliderPosition()*(max.toFloat() - min.toFloat())/SLIDER_SIZE;
             if (value!=parameter.value().toFloat())
             {
