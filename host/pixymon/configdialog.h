@@ -24,6 +24,8 @@
 #include "parameters.h"
 #include "ui_configdialog.h"
 
+#define SLIDER_SIZE   125.0f
+
 class Interpreter;
 
 class ConfigDialog : public QDialog
@@ -43,6 +45,7 @@ protected slots:
     void apply(QAbstractButton *button);
     void handleChangeClicked();
     void handleCheckBox();
+    void handleSlider(int position);
     virtual void accept();
     virtual void reject();
 

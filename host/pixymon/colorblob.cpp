@@ -230,7 +230,6 @@ int ColorBlob::generateLUT(const ColorSignature *signature, uint8_t signum)
     vmin = c + (signature->m_vMin - c)*m_acqRange*m_trackRange;
     vmax = c + (signature->m_vMax - c)*m_acqRange*m_trackRange;
 
-    qDebug("%f %f %f %f", umin, umax, vmin, vmax);
     miny = (3*(1<<8)-1)*m_miny;
     if (miny==0)
         miny = 1;

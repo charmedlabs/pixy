@@ -72,7 +72,15 @@ int MonParameterDB::load()
 void MonParameterDB::addSlider(const QString &id, const QVariant &value, const QVariant &min, const QVariant &max, MonModule *mm,
                                const QString &help, const QString &category)
 {
+    if (value.type()==(QVariant::Type)QMetaType::Float || value.type()==QVariant::Double)
+        add(id, PT_SLIDER_FLT32, value, help, category);
+    else
+        add(id, PT_SLIDER_INT32, value, help, category);
 
+    Parameter *param = parameter(id);
+    param->setProperty(PP_MM_CALLBACK, (qlonglong)mm);
+    param->setProperty(PP_MIN, min);
+    param->setProperty(PP_MAX, max);
 }
 
 void MonParameterDB::addBool(const QString &id, bool value, MonModule *mm, const QString &help, const QString &category)

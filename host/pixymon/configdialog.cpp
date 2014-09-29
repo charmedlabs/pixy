@@ -24,6 +24,7 @@
 #include <QPushButton>
 #include <QAbstractButton>
 #include <QCheckBox>
+#include <QSlider>
 #include <QFileDialog>
 #include <stdexcept>
 
@@ -153,6 +154,22 @@ int ConfigDialog::updateDB(ParameterDB *data)
                 parameter.setDirty(true);
             }
         }
+        else if (type==PT_SLIDER_FLT32 || type==PT_SLIDER_INT32)
+        {
+            QSlider *slider = (QSlider *)parameter.property(PP_WIDGET2).toLongLong();
+            QVariant min = parameter.property(PP_MIN);
+            QVariant max = parameter.property(PP_MAX);
+
+            // value = min + pos/100(max-min)
+            float value;
+            qDebug("*** position %d", slider->sliderPosition());
+            value = min.toFloat() + slider->sliderPosition()*(max.toFloat() - min.toFloat())/SLIDER_SIZE;
+            if (value!=parameter.value().toFloat())
+            {
+                parameter.set(value);
+                parameter.setDirty(true);
+            }
+        }
         else // must be int type
         {
             int base;
@@ -219,6 +236,8 @@ void ConfigDialog::render(ParameterDB *data, QGridLayout *layout, QTabWidget *ta
         PType type = parameter.type();
         QPushButton *button = NULL;
         QCheckBox *cbox = NULL;
+        QSlider *slider = NULL;
+
         QLineEdit *line = new QLineEdit();
         QLabel *label = new QLabel(parameter.id());
         label->setToolTip(parameter.help());
@@ -255,6 +274,30 @@ void ConfigDialog::render(ParameterDB *data, QGridLayout *layout, QTabWidget *ta
                 delete line;
                 line = NULL;
             }
+            else if (type==PT_SLIDER_FLT32 || type==PT_SLIDER_INT32)
+            {
+                float min = parameter.property(PP_MIN).toFloat();
+                float max = parameter.property(PP_MAX).toFloat();
+                slider = new QSlider(Qt::Horizontal);
+                slider->setProperty("Parameter", (qlonglong)&parameter);
+                slider->setMinimumWidth(SLIDER_SIZE);
+                slider->setMaximumWidth(SLIDER_SIZE);
+                slider->setRange(0, SLIDER_SIZE);
+                slider->setSingleStep(1);
+                parameter.setProperty(PP_WIDGET2, (qlonglong)slider);
+                float pos;
+                // value = min + pos/100(max-min)
+                //(value - min)100/(max-min) = pos
+                pos = (parameter.value().toFloat() - min)*SLIDER_SIZE/(max - min);
+                slider->setSliderPosition((int)pos);
+                if (type==PT_SLIDER_FLT32)
+                    line->setText(QString::number(parameter.value().toFloat(), 'f', 6));
+                else
+                    line->setText(QString::number(parameter.value().toInt()));
+                line->setReadOnly(true);
+                connect(slider, SIGNAL(sliderMoved(int)), this, SLOT(handleSlider(int)));
+
+            }
             else if (!(flags&PRM_FLAG_SIGNED))
             {
                 uint val = parameter.value().toUInt();
@@ -288,6 +331,8 @@ void ConfigDialog::render(ParameterDB *data, QGridLayout *layout, QTabWidget *ta
             layout->addWidget(label, i, 0);
             if (cbox)
                 layout->addWidget(cbox, i, 1);
+            if (slider)
+                layout->addWidget(slider, i, 2);
             if (line)
                 layout->addWidget(line, i, 1);
             if (button)
@@ -381,6 +426,33 @@ void ConfigDialog::handleCheckBox()
         parameter->setDirty(true);
         m_interpreter->updateParam(mm);
     }
-
 }
 
+void ConfigDialog::handleSlider(int position)
+{
+    QSlider *slider = (QSlider *)sender();
+    Parameter *parameter = (Parameter *)slider->property("Parameter").toLongLong();
+    QLineEdit *line = (QLineEdit *)parameter->property(PP_WIDGET).toLongLong();
+
+    MonModule *mm = (MonModule *)parameter->property(PP_MM_CALLBACK).toLongLong();
+    if (mm)
+    {
+        float value;
+        float min = parameter->property(PP_MIN).toFloat();
+        float max = parameter->property(PP_MAX).toFloat();
+        value = min + slider->sliderPosition()*(max - min)/SLIDER_SIZE;
+        if (parameter->type()==PT_SLIDER_FLT32)
+        {
+            parameter->set(value, true);
+            line->setText(QString::number(value, 'f', 6));
+        }
+        else
+        {
+            parameter->set((int)value, true);
+            line->setText(QString::number((int)value));
+        }
+        parameter->setDirty(true);
+        m_interpreter->updateParam(mm);
+    }
+
+}

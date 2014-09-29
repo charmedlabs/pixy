@@ -46,19 +46,7 @@ const QString &Parameter::id()
 
 QString Parameter::typeName()
 {
-    if (m_type==PT_INT8)
-        return "INT8";
-    else if (m_type==PT_INT16)
-        return "INT16";
-    else if (m_type==PT_INT32)
-        return "INT32";
-    else if (m_type==PT_FLT32)
-        return "FLOAT32";
-    else if (m_type==PT_INTS8)
-        return "INT8_ARRAY";
-    else if (m_type==PT_STRING)
-        return "STRING";
-    else if (m_type==PT_INT8_RADIO)
+    if (m_type==PT_INT8_RADIO)
         return "INT8_RADIO";
     else if (m_type==PT_INT16_RADIO)
         return "INT16_RADIO";
@@ -70,8 +58,18 @@ QString Parameter::typeName()
         return "INT8_ARRAY_RADIO";
     else if (m_type==PT_STRING_RADIO)
         return "STRING_RADIO";
-    else if (m_type==PT_PATH)
-        return "PATH";
+    else if ((m_type&PT_DATATYPE_MASK)==PT_INT8)
+        return "INT8";
+    else if ((m_type&PT_DATATYPE_MASK)==PT_INT16)
+        return "INT16";
+    else if ((m_type&PT_DATATYPE_MASK)==PT_INT32)
+        return "INT32";
+    else if ((m_type&PT_DATATYPE_MASK)==PT_FLT32)
+        return "FLOAT32";
+    else if ((m_type&PT_DATATYPE_MASK)==PT_INTS8)
+        return "INT8_ARRAY";
+    else if ((m_type&PT_DATATYPE_MASK)==PT_STRING)
+        return "STRING";
     else
         return "?";
 }
@@ -102,8 +100,6 @@ PType Parameter::typeLookup(const QString &name)
         return PT_INTS8_RADIO;
     else if (name=="STRING_RADIO")
         return PT_STRING_RADIO;
-    else if (name=="PATH")
-        return PT_PATH;
     else
         return PT_UNKNOWN;
 }

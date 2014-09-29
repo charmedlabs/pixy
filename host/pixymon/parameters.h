@@ -32,8 +32,11 @@
 
 #define PP_CATEGORY     "category"
 #define PP_WIDGET       "widget"
+#define PP_WIDGET2      "widget2"
 #define PP_FLAGS        "flags"
 #define PP_MM_CALLBACK  "mm_callback"
+#define PP_MIN          "min"
+#define PP_MAX          "max"
 
 #define PRM_FLAG_INTERNAL            0x01
 #define PRM_FLAG_ADVANCED            0x02
@@ -52,13 +55,14 @@ struct RadioValue
     QVariant m_value;
 };
 
-#define  PT_RADIO_MASK  0x8000
+#define  PT_RADIO_MASK     0x8000
+#define  PT_DATATYPE_MASK  0xff
 
 enum PType
 {
     PT_UNKNOWN = 0x00,
 
-    // type values copied from Chirp and are Chirp-compatible
+    // core data type values copied from Chirp and are Chirp-compatible
     PT_INT8 = 0x01,
     PT_INT16 = 0x02,
     PT_INT32 = 0x04,
@@ -75,9 +79,10 @@ enum PType
     PT_STRING_RADIO = PT_STRING | PT_RADIO_MASK,
 
     // other types
-    PT_PATH = 0x100,
-    PT_BOOL = 0x101,
-    PT_SLIDER = 0x102
+    PT_PATH = PT_STRING | 0x100<<8,
+    PT_BOOL = PT_INT8 | 0x101<<8,
+    PT_SLIDER_INT32 = PT_INT32 | 0x102<<8,
+    PT_SLIDER_FLT32 = PT_FLT32 | 0x102<<8
 };
 
 typedef QList<RadioValue> RadioValues;

@@ -29,11 +29,10 @@ CBlobModule::CBlobModule(Interpreter *interpreter) : MonModule(interpreter)
     m_yfilter = true;
     m_fixedLength = true;
 
-    m_interpreter->m_pixymonParameters->add("Range", PT_FLT32, m_acqRange, "The range for identifying the colors of a signature.", "CBA");
-    m_interpreter->m_pixymonParameters->add("Min Y", PT_FLT32, m_miny, "Minimum brightness for a signature.", "CBA");
+    m_interpreter->m_pixymonParameters->addSlider("Range", m_acqRange, 0.0f, 10.0f, this, "The range for identifying the colors of a signature.", "CBA");
+    m_interpreter->m_pixymonParameters->addSlider("Min Y", m_miny, 0.0f, 0.5f, this, "Minimum brightness for a signature.", "CBA");
     m_interpreter->m_pixymonParameters->addBool("Y filter", true, this, "Enable Y filtering", "CBA");
     m_interpreter->m_pixymonParameters->addBool("Fixed length", true, this, "Enable fixed length", "CBA");
-
     memset(m_signatures, 0, sizeof(ColorSignature)*NUM_SIGNATURES);
     memset(m_runtimeSigs, 0, sizeof(RuntimeSignature)*NUM_SIGNATURES);
 }
@@ -243,15 +242,16 @@ void CBlobModule::rla()
         u = qval.m_u;
         v = qval.m_v;
 
-        u <<= LUT_ENTRY_SCALE-1;
-        v <<= LUT_ENTRY_SCALE-1;
-        c = qval.m_y>>1;
+        u <<= LUT_ENTRY_SCALE;
+        v <<= LUT_ENTRY_SCALE;
+        c = qval.m_y;
         if (c==0)
             c = 1;
         u /= c;
         v /= c;
 
-        if (m_runtimeSigs[sig-1].m_uMin<u && u<m_runtimeSigs[sig-1].m_uMax && m_runtimeSigs[sig-1].m_vMin<v && v<m_runtimeSigs[sig-1].m_vMax)
+        if (!m_yfilter ||
+                (m_runtimeSigs[sig-1].m_uMin<u && u<m_runtimeSigs[sig-1].m_uMax && m_runtimeSigs[sig-1].m_vMin<v && v<m_runtimeSigs[sig-1].m_vMax))
         {
             merge = startCol-prevStartCol<=5;
             if (segmentSig==0 && merge)
@@ -276,26 +276,7 @@ void CBlobModule::rla()
             handleSegment(segmentSig, segmentStartCol-2, segmentEndCol - segmentStartCol+2);
             segmentSig = 0;
         }
-#if 0
-        if (m_yfilter==false || (umin<u && u<umax && vmin<v && v<vmax))
-        {
-            if (m_fixedLength)
-            {
-                if (startCol==prevStartCol+_LENGTH+1)
-                    m_interpreter->m_renderer->renderRL(&img, palette[sig], row, startCol-1, length+1);
-                //m_interpreter->m_renderer->renderRL(&img, palette[sig], row, prevStartCol, length*2+1);
-                else if (startCol==prevStartCol+_LENGTH+2)
-                    m_interpreter->m_renderer->renderRL(&img, palette[sig], row, startCol-2, length+2);
-                else
-                    m_interpreter->m_renderer->renderRL(&img, palette[sig], row, startCol, length);
-                prevStartCol = startCol;
-            }
-            else
-                m_interpreter->m_renderer->renderRL(&img, palette[sig], row, startCol, length);
-        }
-#endif
     }
-
 }
 
 
