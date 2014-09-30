@@ -3,7 +3,7 @@
 
 #include "monmodule.h"
 #include "colorblob.h"
-
+#include "blobs2.h"
 
 struct Qval2
 {
@@ -79,7 +79,7 @@ public:
 
 private:
     void handleLine(uint8_t *line, uint16_t width);
-    void handleSegment(uint8_t signature, uint16_t startCol, uint16_t length);
+    void handleSegment(uint8_t signature, uint16_t row, uint16_t startCol, uint16_t length);
     void updateSignatures();
     void rls(const Frame8 *frame);
     void rla();
@@ -89,6 +89,8 @@ private:
     uint8_t *m_lut;
     uint32_t *m_qvals;
     uint32_t m_numQvals;
+
+    Blobs2 m_blobs;
 
     ColorSignature m_signatures[NUM_SIGNATURES];
     RuntimeSignature m_runtimeSigs[NUM_SIGNATURES];

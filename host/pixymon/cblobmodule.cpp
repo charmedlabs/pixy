@@ -213,21 +213,29 @@ void CBlobModule::rls(const Frame8 *frame)
 
 void CBlobModule::renderEX00(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame)
 {
+    uint32_t numBlobs, numCCBlobs;
+    BlobA *blobs;
+    BlobB *ccBlobs;
     Frame8 frame8(frame, width, height);
     rls(&frame8);
-    m_interpreter->m_renderer->renderBA81(0, width, height, frameLen, frame);
     rla();
-    m_interpreter->m_renderer->renderCCQ1(renderFlags, width/2, height/2, m_numQvals, m_qvals);
+    m_blobs.blobify();
+    m_blobs.getBlobs(&blobs, &numBlobs, &ccBlobs, &numCCBlobs);
 
+    m_interpreter->m_renderer->renderBA81(0, width, height, frameLen, frame);
+    m_interpreter->m_renderer->renderCCQ1(0, width/2, height/2, m_numQvals, m_qvals);
+    m_interpreter->m_renderer->renderCCB2(renderFlags, width/2, height/2, numBlobs*sizeof(BlobA)/sizeof(uint16_t), (uint16_t *)blobs, numCCBlobs*sizeof(BlobB)/sizeof(uint16_t), (uint16_t *)ccBlobs);
 }
 
-void CBlobModule::handleSegment(uint8_t signature, uint16_t startCol, uint16_t length)
+void CBlobModule::handleSegment(uint8_t signature, uint16_t row, uint16_t startCol, uint16_t length)
 {
     uint32_t qval;
 
     qval = signature;
     qval |= startCol<<3;
     qval |= length<<12;
+
+    m_blobs.addSegment(signature, row, startCol, startCol+length);
 
     m_qvals[m_numQvals++] = qval;
 }
@@ -251,7 +259,7 @@ void CBlobModule::updateSignatures()
 void CBlobModule::rla()
 {
     int32_t row;
-    uint32_t i, startCol, sig, prevStartCol, segmentStartCol, segmentEndCol, segmentSig=0;
+    uint32_t i, startCol, sig, prevSig, prevStartCol, segmentStartCol, segmentEndCol, segmentSig=0;
     bool merge;
     Qval2 qval;
     int32_t u, v, c;
@@ -262,14 +270,16 @@ void CBlobModule::rla()
         if (qval.m_col==0xffff)
         {
             m_qvals[m_numQvals++] = 0xffffffff;
+            m_blobs.endFrame();
             continue;
         }
         if (qval.m_col==0)
         {
             prevStartCol = 0xffff;
+            prevSig = 0;
             if (segmentSig)
             {
-                handleSegment(segmentSig, segmentStartCol-2, segmentEndCol - segmentStartCol+2);
+                handleSegment(segmentSig, row, segmentStartCol-2, segmentEndCol - segmentStartCol+2);
                 segmentSig = 0;
             }
             row++;
@@ -295,7 +305,7 @@ void CBlobModule::rla()
         if (!m_yfilter ||
                 (m_runtimeSigs[sig-1].m_uMin<u && u<m_runtimeSigs[sig-1].m_uMax && m_runtimeSigs[sig-1].m_vMin<v && v<m_runtimeSigs[sig-1].m_vMax))
         {
-            merge = startCol-prevStartCol<=6;
+            merge = startCol-prevStartCol<=6 && prevSig==sig;
             if (segmentSig==0 && merge)
             {
                 segmentSig = sig;
@@ -303,19 +313,20 @@ void CBlobModule::rla()
             }
             else if (segmentSig!=0 && (segmentSig!=sig || !merge))
             {
-                handleSegment(segmentSig, segmentStartCol-2, segmentEndCol - segmentStartCol+2);
+                handleSegment(segmentSig, row, segmentStartCol-2, segmentEndCol - segmentStartCol+2);
                 segmentSig = 0;
             }
 
             if (segmentSig!=0 && merge)
                 segmentEndCol = startCol;
             else if (segmentSig==0 && !merge)
-                handleSegment(sig, startCol-2, 2);
+                handleSegment(sig, row, startCol-2, 2);
+            prevSig = sig;
             prevStartCol = startCol;
         }
         else if (segmentSig!=0)
         {
-            handleSegment(segmentSig, segmentStartCol-2, segmentEndCol - segmentStartCol+2);
+            handleSegment(segmentSig, row, segmentStartCol-2, segmentEndCol - segmentStartCol+2);
             segmentSig = 0;
         }
     }
