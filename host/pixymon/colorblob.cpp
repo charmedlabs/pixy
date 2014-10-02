@@ -18,6 +18,7 @@ ColorBlob::~ColorBlob()
 {
 }
 
+
 // lt==true means number of pixels less than line
 float ColorBlob::calcRatio(const int32_t *uvPixels, uint32_t numuv, int32_t line, bool lt)
 {

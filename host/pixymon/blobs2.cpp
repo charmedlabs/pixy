@@ -23,7 +23,7 @@ Blobs2::Blobs2()
     int i;
 
     m_mutex = false;
-    m_minArea = MIN_AREA;
+    m_minArea = 1;
     m_maxBlobs = MAX_BLOBS;
     m_maxBlobsPerModel = MAX_BLOBS_PER_MODEL;
     m_mergeDist = MAX_MERGE_DIST;
@@ -32,7 +32,7 @@ Blobs2::Blobs2()
 #else
     m_maxCodedDist = MAX_CODED_DIST/2;
 #endif
-    m_ccMode = ENABLED2;
+    m_ccMode = DISABLED2;
 
     m_blobs = new uint16_t[MAX_BLOBS*5];
     m_numBlobs = 0;

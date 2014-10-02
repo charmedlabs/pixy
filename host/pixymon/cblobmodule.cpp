@@ -211,6 +211,49 @@ void CBlobModule::rls(const Frame8 *frame)
     m_qq->enqueue(Qval2(0, 0, 0, 0xffff));
 }
 
+#define m_minArea        25
+#define m_acqCount       3
+#define m_reacqWindow    15
+
+BlobA m_pb;
+
+
+void CBlobModule::processBlobs(BlobA *blobs, uint32_t *numBlobs)
+{
+    uint32_t i, area;
+
+    if (*numBlobs>0)
+    {
+      m_pb = blobs[0];
+      if (m_pb.m_left>m_reacqWindow)
+          m_pb.m_left -= m_reacqWindow;
+      else
+          m_pb.m_left = 0;
+
+      if (m_pb.m_top>m_reacqWindow)
+          m_pb.m_top -= m_reacqWindow;
+      else
+          m_pb.m_top = 0;
+
+      m_pb.m_right += m_reacqWindow;
+      if (m_pb.m_right>320)
+          m_pb.m_right = 320;
+
+      m_pb.m_bottom += m_reacqWindow;
+      if (m_pb.m_bottom>200)
+          m_pb.m_bottom = 200;
+
+    }
+#if 0
+    for (i=0; i<*numBlobs; i++)
+    {
+        area = (blobs[i].m_bottom - blobs[i].m_top + 1)*(blobs[i].m_right - blobs[i].m_left);
+       // if (area>=m_minArea)
+
+    }
+#endif
+}
+
 void CBlobModule::renderEX00(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame)
 {
     uint32_t numBlobs, numCCBlobs;
@@ -221,7 +264,7 @@ void CBlobModule::renderEX00(uint8_t renderFlags, uint16_t width, uint16_t heigh
     rla();
     m_blobs.blobify();
     m_blobs.getBlobs(&blobs, &numBlobs, &ccBlobs, &numCCBlobs);
-
+    processBlobs(blobs, &numBlobs);
     m_interpreter->m_renderer->renderBA81(0, width, height, frameLen, frame);
     m_interpreter->m_renderer->renderCCQ1(0, width/2, height/2, m_numQvals, m_qvals);
     m_interpreter->m_renderer->renderCCB2(renderFlags, width/2, height/2, numBlobs*sizeof(BlobA)/sizeof(uint16_t), (uint16_t *)blobs, numCCBlobs*sizeof(BlobB)/sizeof(uint16_t), (uint16_t *)ccBlobs);
@@ -263,6 +306,10 @@ void CBlobModule::rla()
     bool merge;
     Qval2 qval;
     int32_t u, v, c;
+    qlonglong m_usum, m_vsum;
+    uint32_t m_numuv;
+
+    m_usum = m_vsum = m_numuv = 0;
 
     m_numQvals = 0;
     for (i=0, row=-1; m_qq->dequeue(&qval); i++)
@@ -305,7 +352,15 @@ void CBlobModule::rla()
         if (!m_yfilter ||
                 (m_runtimeSigs[sig-1].m_uMin<u && u<m_runtimeSigs[sig-1].m_uMax && m_runtimeSigs[sig-1].m_vMin<v && v<m_runtimeSigs[sig-1].m_vMax))
         {
-            merge = startCol-prevStartCol<=6 && prevSig==sig;
+            if (m_pb.m_left<startCol && startCol<m_pb.m_right && m_pb.m_top<row && row<m_pb.m_bottom)
+            {
+                m_numuv++;
+                m_usum += u;
+                m_vsum += v;
+            }
+
+
+            merge = startCol-prevStartCol<=4 && prevSig==sig;
             if (segmentSig==0 && merge)
             {
                 segmentSig = sig;
@@ -329,6 +384,24 @@ void CBlobModule::rla()
             handleSegment(segmentSig, row, segmentStartCol-2, segmentEndCol - segmentStartCol+2);
             segmentSig = 0;
         }
+
+    }
+    if (m_numuv && m_fixedLength)
+    {
+        int32_t uavg, vavg;
+        int32_t urange, vrange;
+
+        urange = (m_runtimeSigs[0].m_uMax - m_runtimeSigs[0].m_uMin);
+        vrange = (m_runtimeSigs[0].m_vMax - m_runtimeSigs[0].m_vMin);
+        uavg = m_usum/m_numuv;
+        vavg = m_vsum/m_numuv;
+
+        m_runtimeSigs[0].m_uMax = uavg + urange/2;
+        m_runtimeSigs[0].m_uMin = uavg - urange/2;
+        m_runtimeSigs[0].m_vMax = vavg + vrange/2;
+        m_runtimeSigs[0].m_vMin = vavg - vrange/2;
+
+        qDebug("*** %d %d", uavg, vavg);
     }
 }
 

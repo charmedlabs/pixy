@@ -75,6 +75,7 @@ public:
     virtual bool command(const QStringList &argv);
     virtual void paramChange();
 
+    void processBlobs(BlobA *blobs, uint32_t *numBlobs);
     void renderEX00(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame);
 
 private:
