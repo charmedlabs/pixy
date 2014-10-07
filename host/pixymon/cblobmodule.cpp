@@ -19,40 +19,44 @@ CBlobModule::CBlobModule(Interpreter *interpreter) : MonModule(interpreter)
     m_cblob = new ColorBlob(m_lut);
 
     scriptlet << "cam_getFrame 0x21 0 0 320 200";
-    scriptlet << "newsig 1";
+    scriptlet << "newsigPoint 1";
+    //scriptlet << "runprogArg 8 100";
+    m_interpreter->emit actionScriptlet("Create new signature point 1...", scriptlet);
+    scriptlet.clear();
+    scriptlet << "cam_getFrame 0x21 0 0 320 200";
+    scriptlet << "newsigArea 1";
     scriptlet << "runprogArg 8 100";
     m_interpreter->emit actionScriptlet("Create new signature 1...", scriptlet);
     scriptlet.clear();
     scriptlet << "cam_getFrame 0x21 0 0 320 200";
-    scriptlet << "newsig 2";
+    scriptlet << "newsigArea 2";
     scriptlet << "runprogArg 8 100";
     m_interpreter->emit actionScriptlet("Create new signature 2...", scriptlet);
     scriptlet.clear();
     scriptlet << "cam_getFrame 0x21 0 0 320 200";
-    scriptlet << "newsig 3";
+    scriptlet << "newsigArea 3";
     scriptlet << "runprogArg 8 100";
     m_interpreter->emit actionScriptlet("Create new signature 3...", scriptlet);
     scriptlet.clear();
     scriptlet << "cam_getFrame 0x21 0 0 320 200";
-    scriptlet << "newsig 4";
+    scriptlet << "newsigArea 4";
     scriptlet << "runprogArg 8 100";
     m_interpreter->emit actionScriptlet("Create new signature 4...", scriptlet);
     scriptlet.clear();
     scriptlet << "cam_getFrame 0x21 0 0 320 200";
-    scriptlet << "newsig 5";
+    scriptlet << "newsigArea 5";
     scriptlet << "runprogArg 8 100";
     m_interpreter->emit actionScriptlet("Create new signature 5...", scriptlet);
     scriptlet.clear();
     scriptlet << "cam_getFrame 0x21 0 0 320 200";
-    scriptlet << "newsig 6";
+    scriptlet << "newsigArea 6";
     scriptlet << "runprogArg 8 100";
     m_interpreter->emit actionScriptlet("Create new signature 6...", scriptlet);
     scriptlet.clear();
     scriptlet << "cam_getFrame 0x21 0 0 320 200";
-    scriptlet << "newsig 7";
+    scriptlet << "newsigArea 7";
     scriptlet << "runprogArg 8 100";
     m_interpreter->emit actionScriptlet("Create new signature 7...", scriptlet);
-
 
     m_acqRange = DEFAULT_RANGE;
     m_trackRange = 1.0f;
@@ -84,23 +88,227 @@ bool CBlobModule::render(uint32_t fourcc, const void *args[])
     return false;
 }
 
+#define GROW_INC                  4
+#define MIN_RATIO                 0.25f
+#define MAX_DIST                  2000.0f
+
+bool CBlobModule::growRegion(RectA *region, const Frame8 &frame, uint8_t dir, uint16_t growInc)
+{
+    if (dir==0) // grow left
+    {
+        if (region->m_xOffset>=growInc)
+        {
+            region->m_xOffset -= growInc;
+            region->m_width += growInc;
+        }
+        else
+            return true;
+    }
+    else if (dir==1) // grow top
+    {
+        if (region->m_yOffset>=growInc)
+        {
+            region->m_yOffset -= growInc;
+            region->m_height += growInc;
+        }
+        else
+            return true;
+    }
+    else if (dir==2) // grow right
+    {
+        if (region->m_xOffset+region->m_width+growInc>frame.m_width)
+            return true;
+        region->m_width += growInc;
+    }
+    else if (dir==3) // grow bottom
+    {
+        if (region->m_yOffset+region->m_height+growInc>frame.m_height)
+            return true;
+        region->m_height += growInc;
+    }
+    return false;
+}
+
+float CBlobModule::testRegion(const RectA &region, const Frame8 &frame, uint16_t growInc, Point32 *mean, float maxDist, Points *points)
+{
+    Point32 subMean;
+    float distance;
+    RectA subRegion(0, 0, growInc, growInc);
+    subRegion.m_xOffset = region.m_xOffset;
+    subRegion.m_yOffset = region.m_yOffset;
+    bool horiz = region.m_width>region.m_height;
+    uint32_t i, test, endpoint = horiz ? region.m_width : region.m_height;
+
+    for (i=0, test=0; i<endpoint; i+=growInc)
+    {
+        getMean(subRegion, frame, &subMean);
+        distance = sqrt((mean->m_x-subMean.m_x)*(mean->m_x-subMean.m_x) + (mean->m_y-subMean.m_y)*(mean->m_y-subMean.m_y));
+        if (distance<maxDist)
+        {
+            int32_t n = points->size();
+            mean->m_x = ((qlonglong)mean->m_x*n + subMean.m_x)/(n+1);
+            mean->m_y = ((qlonglong)mean->m_y*n + subMean.m_y)/(n+1);
+            points->push_back(Point16(subRegion.m_xOffset, subRegion.m_yOffset));
+            qDebug("add %d %d %d", subRegion.m_xOffset, subRegion.m_yOffset, points->size());
+            test++;
+        }
+
+        if (horiz)
+            subRegion.m_xOffset += growInc;
+        else
+            subRegion.m_yOffset += growInc;
+    }
+
+    qDebug("return %f", (float)test*growInc/endpoint);
+    return (float)test*growInc/endpoint;
+}
+
+
+void CBlobModule::getMean(const RectA &region ,const Frame8 &frame, Point32 *mean)
+{
+    uint32_t x, y, count;
+    int32_t r, g1, g2, b, u, v, c;
+    uint8_t *pixels;
+    qlonglong usum, vsum;
+
+    pixels = frame.m_pixels + (region.m_yOffset | 1)*frame.m_width + (region.m_xOffset | 1);
+    for (y=0, count=0, usum=0, vsum=0; y<region.m_height; y+=2, pixels+=frame.m_width*2)
+    {
+        for (x=0; x<region.m_width; x+=2, count++)
+        {
+            r = pixels[x];
+            g1 = pixels[x - 1];
+            g2 = pixels[-frame.m_width + x];
+            b = pixels[-frame.m_width + x - 1];
+            c = r+g1+b;
+            if (c==0)
+                c = 1;
+            u = ((r-g1)<<LUT_ENTRY_SCALE)/c;
+            c = r+g2+b;
+            if (c==0)
+                c = 1;
+            v = ((b-g2)<<LUT_ENTRY_SCALE)/c;
+            usum += u;
+            vsum += v;
+        }
+    }
+    mean->m_x = usum/count;
+    mean->m_y = vsum/count;
+}
+
+void CBlobModule::growRegion(const Frame8 &frame, const Point16 &seed, Points *points)
+{
+    uint8_t dir, done;
+    RectA region, newRegion;
+    Point32 mean;
+    float ratio;
+
+    done = 0;
+
+    // create seed 2*GROW_INCx2*GROW_INC region from seed position, make sure it's within the frame
+    region.m_xOffset = seed.m_x;
+    region.m_yOffset = seed.m_y;
+    if (growRegion(&region, frame, 0, GROW_INC))
+        done |= 1<<0;
+    else
+        points->push_back(Point16(region.m_xOffset, region.m_yOffset));
+    if (growRegion(&region, frame, 1, GROW_INC))
+        done |= 1<<1;
+    else
+        points->push_back(Point16(region.m_xOffset, region.m_yOffset));
+    if (growRegion(&region, frame, 2, GROW_INC))
+        done |= 1<<2;
+    else
+        points->push_back(Point16(seed.m_x, region.m_yOffset));
+    if (growRegion(&region, frame, 3, GROW_INC))
+        done |= 1<<3;
+    else
+        points->push_back(seed);
+
+    getMean(region, frame, &mean);
+
+    while(done!=0x0f)
+    {
+        for (dir=0; dir<4; dir++)
+        {
+            newRegion = region;
+            if (done&(1<<dir))
+                continue;
+            else if (dir==0) // left
+                newRegion.m_width = 0;
+            else if (dir==1) // top
+                newRegion.m_height = 0; // top and bottom
+            else if (dir==2) // right
+            {
+                newRegion.m_xOffset += newRegion.m_width;
+                newRegion.m_width = 0;
+            }
+            else if (dir==3) // bottom
+            {
+                newRegion.m_yOffset += newRegion.m_height;
+                newRegion.m_height = 0;
+            }
+
+            if (growRegion(&newRegion, frame, dir, GROW_INC))
+                done |= 1<<dir;
+            else
+            {
+                ratio = testRegion(newRegion, frame, GROW_INC, &mean, MAX_DIST, points);
+                if (ratio<MIN_RATIO)
+                    done |= 1<<dir;
+                else
+                    growRegion(&region, frame, dir, GROW_INC);
+            }
+        }
+    }
+}
+
+void CBlobModule::renderPoints(const Points &points)
+{
+    int i;
+
+    m_interpreter->m_renderer->renderRects(points, GROW_INC);
+}
+
 bool CBlobModule::command(const QStringList &argv)
 {
-    if (argv.size()==2 && argv[0]=="newsig")
+    if (argv[0]=="newsigArea" || argv[0]=="newsigPoint")
     {
-        uint8_t sig = argv[1].toUInt();
+        uint8_t sig;
+        bool point;
+
+        point = argv[0]=="newsigPoint";
+
+        if (argv.size()<2)
+        {
+            cprintf("error: missing signature");
+            return true;
+        }
+        sig = argv[1].toUInt();
         if (sig<1 || sig>7)
         {
-            cprintf("Signature number out of range!");
+            cprintf("error: signature number out of range!");
             return true;
         }
 
-        RectA region;
-        m_interpreter->getSelection(VideoWidget::REGION, &region);
-
         Frame8 *frame = m_interpreter->m_renderer->backgroundRaw();
-        m_interpreter->m_renderer->pixelsOut(region.m_xOffset, region.m_yOffset, region.m_width, region.m_height);
-        m_cblob->generateSignature(frame, &region, &m_signatures[sig-1]);
+
+        if (point)
+        {
+            Point16 point;
+            Points points;
+            m_interpreter->getSelection(&point);
+            growRegion(*frame, point, &points);
+            renderPoints(points);
+        }
+        else
+        {
+            RectA region;
+            m_interpreter->getSelection(&region);
+
+            m_interpreter->m_renderer->pixelsOut(region.m_xOffset, region.m_yOffset, region.m_width, region.m_height);
+            m_cblob->generateSignature(frame, &region, &m_signatures[sig-1]);
+        }
 
         updateSignatures();
         m_cblob->generateLUT(m_runtimeSigs);

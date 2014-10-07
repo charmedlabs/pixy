@@ -1260,15 +1260,29 @@ void Interpreter::handleSaveParams()
 
 }
 
-void Interpreter::getSelection(VideoWidget::InputMode mode, RectA *rect)
+void Interpreter::getSelection(RectA *region)
 {
-    emit videoInput(mode);
+    emit videoInput(VideoWidget::REGION);
 
     m_mutexInput.lock();
     m_waiting = true;
     m_waitInput.wait(&m_mutexInput);
     m_waiting = false;
-    *rect = m_selection;
+    *region = m_selection;
+    m_mutexInput.unlock();
+}
+
+
+void Interpreter::getSelection(Point16 *point)
+{
+    emit videoInput(VideoWidget::POINT);
+
+    m_mutexInput.lock();
+    m_waiting = true;
+    m_waitInput.wait(&m_mutexInput);
+    m_waiting = false;
+    point->m_x = m_selection.m_xOffset;
+    point->m_y = m_selection.m_yOffset;
     m_mutexInput.unlock();
 }
 

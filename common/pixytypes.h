@@ -34,14 +34,31 @@ struct Point16
         m_x = m_y = 0;
     }
 
-    Point16(uint16_t x, uint16_t y)
+    Point16(int16_t x, int16_t y)
     {
         m_x = x;
         m_y = y;
     }
 
-    uint16_t m_x;
-    uint16_t m_y;
+    int16_t m_x;
+    int16_t m_y;
+};
+
+struct Point32
+{
+    Point32()
+    {
+        m_x = m_y = 0;
+    }
+
+    Point32(int32_t x, int32_t y)
+    {
+        m_x = x;
+        m_y = y;
+    }
+
+    int32_t m_x;
+    int32_t m_y;
 };
 
 struct Frame8

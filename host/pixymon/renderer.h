@@ -21,6 +21,9 @@
 #include "pixytypes.h"
 #include "processblobs.h"
 
+#include <simplevector.h>
+typedef SimpleVector<Point16> Points;
+
 #define RAWFRAME_SIZE    0x10000
 
 class Interpreter;
@@ -38,7 +41,7 @@ public:
     int render(uint32_t type, const void *args[]);
     int renderBackground();
     int renderRect(uint16_t width, uint16_t height, const RectA &rect);
-    void emitFlushImage();
+    void emitFlushImage(bool blend=false);
     void emitImage(const QImage &image);
     QImage *backgroundImage(); // get background from BA81 formatted image data
     Frame8 *backgroundRaw();
@@ -58,6 +61,8 @@ public:
     void renderBlobsB(QImage *image, float scale, BlobB *blobs, uint32_t numBlobs);
     void renderBlobsA(QImage *image, float scale, BlobA *blobs, uint32_t numBlobs);
 
+    void renderRects(const Points &points, uint32_t size);
+    void renderRect(const RectA &rect);
     int saveImage(const QString &filename);
     void pixelsOut(int x0, int y0, int width, int height);
     void renderRL(QImage *image, uint color, uint row, uint startCol, uint len);
@@ -68,7 +73,7 @@ public:
 
 signals:
     void image(QImage image);
-    void flushImage();
+    void flushImage(bool blend);
 
 private:
     inline void interpolateBayer(unsigned int width, unsigned int x, unsigned int y, unsigned char *pixel, unsigned int &r, unsigned int &g, unsigned int &b);

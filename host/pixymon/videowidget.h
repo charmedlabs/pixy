@@ -58,7 +58,7 @@ signals:
 
 public slots:
     void handleImage(QImage image);
-    void handleFlush();
+    void handleFlush(bool blend);
     void acceptInput(VideoWidget::InputMode mode); // need the VideoWidget qualifier, otherwise it won't recognize the metatype!
 
 private slots:

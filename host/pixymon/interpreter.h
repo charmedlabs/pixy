@@ -95,7 +95,8 @@ public:
 
     uint16_t *getVersion();
 
-    void getSelection(VideoWidget::InputMode mode, RectA *rect);
+    void getSelection(RectA *region);
+    void getSelection(Point16 *point);
     void cprintf(const char *format, ...);
 
     ChirpMon *m_chirp;

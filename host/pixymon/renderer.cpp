@@ -40,7 +40,7 @@ Renderer::Renderer(VideoWidget *video, Interpreter *interpreter) : m_blobs(inter
     m_mode = 3;
 
     connect(this, SIGNAL(image(QImage)), m_video, SLOT(handleImage(QImage))); // Qt::BlockingQueuedConnection);
-    connect(this, SIGNAL(flushImage()), m_video, SLOT(handleFlush())); //, Qt::BlockingQueuedConnection);
+    connect(this, SIGNAL(flushImage(bool)), m_video, SLOT(handleFlush(bool))); //, Qt::BlockingQueuedConnection);
 }
 
 
@@ -232,6 +232,47 @@ int Renderer::renderBA81(uint8_t renderFlags, uint16_t width, uint16_t height, u
     return 0;
 }
 
+void Renderer::renderRects(const Points &points, uint32_t size)
+{
+    int i;
+    QPainter p;
+    float scale = (float)m_video->activeWidth()/m_background.width();
+    QImage img(m_video->activeWidth(), m_video->activeHeight(), QImage::Format_ARGB32);
+    img.fill(0x00000000);
+
+    p.begin(&img);
+    p.setBrush(QBrush(QColor(0xff, 0xff, 0xff, 0x20)));
+    p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
+
+    qDebug("*** size %d", points.size());
+    for (i=0; i<points.size(); i++)
+        p.drawRect(points[i].m_x*scale, points[i].m_y*scale, size*scale, size*scale);
+
+    p.end();
+
+    emitImage(img);
+    flushImage(true);
+
+}
+
+void Renderer::renderRect(const RectA &rect)
+{
+    QPainter p;
+    float scale = (float)m_video->activeWidth()/m_background.width();
+    QImage img(m_video->activeWidth(), m_video->activeHeight(), QImage::Format_ARGB32);
+    img.fill(0x00000000);
+
+    p.begin(&img);
+    p.setBrush(QBrush(QColor(0xff, 0xff, 0xff, 0x20)));
+    p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
+
+    p.drawRect(rect.m_xOffset*scale, rect.m_yOffset*scale, rect.m_width*scale, rect.m_height*scale);
+
+    p.end();
+
+    emitImage(img);
+    flushImage(true);
+}
 
 void Renderer::renderBlobsB(QImage *image, float scale, BlobB *blobs, uint32_t numBlobs)
 {
@@ -486,9 +527,9 @@ void Renderer::emitImage(const QImage &img)
     emit image(img);
 }
 
-void Renderer::emitFlushImage()
+void Renderer::emitFlushImage(bool blend)
 {
-    emit flushImage();
+    emit flushImage(blend);
     m_firstFrame = true;
 }
 

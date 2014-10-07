@@ -60,15 +60,24 @@ void VideoWidget::handleImage(QImage image)
 }
 
 
-void VideoWidget::handleFlush()
+void VideoWidget::handleFlush(bool blend)
 {
     QMutexLocker locker(&m_mutex);
+    uint i;
 
     if (m_images.size()==0)
         return; // nothing to render...
 
-    m_renderedImages.clear();
-    m_renderedImages = m_images;
+    if (blend) // add new images to previous images so we can blend
+    {
+        for (i=0; i<m_images.size(); i++)
+            m_renderedImages.push_back(m_images[i]);
+    }
+    else // or just render the new images
+    {
+        m_renderedImages.clear();
+        m_renderedImages = m_images;
+    }
     m_images.clear();
     repaint();
 }
@@ -82,7 +91,7 @@ void VideoWidget::clear()
     img.fill(Qt::black);
 
     handleImage(img);
-    handleFlush();
+    handleFlush(false);
 }
 
 int VideoWidget::activeWidth()
