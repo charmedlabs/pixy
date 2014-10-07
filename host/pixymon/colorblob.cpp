@@ -65,23 +65,23 @@ int32_t ColorBlob::iterate(const int32_t *uvPixels, uint32_t numuv, float ratio,
     return line;
 }
 
-int ColorBlob::generateSignature(const Frame8 *frame, const RectA *region, ColorSignature *signature)
+int ColorBlob::generateSignature(const Frame8 &frame, const RectA &region, ColorSignature *signature)
 {
     int32_t x, y, r, g1, g2, b, count, u, v, c;
     uint8_t *pixels;
-    int32_t numuv = (region->m_width/2 + 1)*(region->m_height/2 + 1);
+    int32_t numuv = (region.m_width/2 + 1)*(region.m_height/2 + 1);
     int32_t *uPixels = new int32_t[numuv];
     int32_t *vPixels = new int32_t[numuv];
 
-    pixels = frame->m_pixels + (region->m_yOffset | 1)*frame->m_width + (region->m_xOffset | 1);
-    for (y=0, count=0; y<region->m_height && count<numuv; y+=2, pixels+=frame->m_width*2)
+    pixels = frame.m_pixels + (region.m_yOffset | 1)*frame.m_width + (region.m_xOffset | 1);
+    for (y=0, count=0; y<region.m_height && count<numuv; y+=2, pixels+=frame.m_width*2)
     {
-        for (x=0; x<region->m_width && count<numuv; x+=2, count++)
+        for (x=0; x<region.m_width && count<numuv; x+=2, count++)
         {
             r = pixels[x];
             g1 = pixels[x - 1];
-            g2 = pixels[-frame->m_width + x];
-            b = pixels[-frame->m_width + x - 1];
+            g2 = pixels[-frame.m_width + x];
+            b = pixels[-frame.m_width + x - 1];
             c = r+g1+b;
             if (c==0)
                 c = 1;
@@ -111,8 +111,53 @@ int ColorBlob::generateSignature(const Frame8 *frame, const RectA *region, Color
     return 0;
 }
 
-int ColorBlob::generateSignature(const Frame8 *frame, const Point16 *point, ColorSignature *signature)
+int ColorBlob::generateSignature(const Frame8 &frame, const Point16 &point, Points *points, ColorSignature *signature)
 {
+    growRegion(frame, point, points);
+    int32_t i, x, y, r, g1, g2, b, count, u, v, c;
+    uint8_t *pixels;
+    int32_t numuv = points->size()*GROW_INC*GROW_INC/4;
+    int32_t *uPixels = new int32_t[numuv];
+    int32_t *vPixels = new int32_t[numuv];
+
+    for (i=0, count=0; i<points->size(); i++)
+    {
+        pixels = frame.m_pixels + ((*points)[i].m_y | 1)*frame.m_width + ((*points)[i].m_x | 1);
+        for (y=0; y<GROW_INC && count<numuv; y+=2, pixels+=frame.m_width*2)
+        {
+            for (x=0; x<GROW_INC && count<numuv; x+=2, count++)
+            {
+                r = pixels[x];
+                g1 = pixels[x - 1];
+                g2 = pixels[-frame.m_width + x];
+                b = pixels[-frame.m_width + x - 1];
+                c = r+g1+b;
+                if (c==0)
+                    c = 1;
+                u = ((r-g1)<<LUT_ENTRY_SCALE)/c;
+                c = r+g2+b;
+                if (c==0)
+                    c = 1;
+                v = ((b-g2)<<LUT_ENTRY_SCALE)/c;
+                uPixels[count] = u;
+                vPixels[count] = v;
+            }
+        }
+    }
+
+    signature->m_uMin = iterate(uPixels, count, m_tol, false);
+    signature->m_uMax = iterate(uPixels, count, m_tol, true);
+    signature->m_vMin = iterate(vPixels, count, m_tol, false);
+    signature->m_vMax = iterate(vPixels, count, m_tol, true);
+
+    delete [] uPixels;
+    delete [] vPixels;
+
+    // if signs of u's and v's are *both* different, our envelope is greater than 90 degrees and it's an indication
+    // that we don't have much of a lock
+    if ((signature->m_uMin>0)!=(signature->m_uMax>0) && (signature->m_vMin>0)!=(signature->m_vMax>0))
+        cprintf("Warning: signature may be poorly defined.");
+
     return 0;
 }
 
@@ -279,10 +324,186 @@ void ColorBlob::clearLUT(uint8_t signum)
     }
 }
 
-void ColorBlob::setParameters(float range, float miny)
+
+bool ColorBlob::growRegion(RectA *region, const Frame8 &frame, uint8_t dir)
+{
+    if (dir==0) // grow left
+    {
+        if (region->m_xOffset>=GROW_INC)
+        {
+            region->m_xOffset -= GROW_INC;
+            region->m_width += GROW_INC;
+        }
+        else
+            return true;
+    }
+    else if (dir==1) // grow top
+    {
+        if (region->m_yOffset>=GROW_INC)
+        {
+            region->m_yOffset -= GROW_INC;
+            region->m_height += GROW_INC;
+        }
+        else
+            return true;
+    }
+    else if (dir==2) // grow right
+    {
+        if (region->m_xOffset+region->m_width+GROW_INC>frame.m_width)
+            return true;
+        region->m_width += GROW_INC;
+    }
+    else if (dir==3) // grow bottom
+    {
+        if (region->m_yOffset+region->m_height+GROW_INC>frame.m_height)
+            return true;
+        region->m_height += GROW_INC;
+    }
+    return false;
+}
+
+float ColorBlob::testRegion(const RectA &region, const Frame8 &frame, Point32 *mean, Points *points)
+{
+    Point32 subMean;
+    float distance;
+    RectA subRegion(0, 0, GROW_INC, GROW_INC);
+    subRegion.m_xOffset = region.m_xOffset;
+    subRegion.m_yOffset = region.m_yOffset;
+    bool horiz = region.m_width>region.m_height;
+    uint32_t i, test, endpoint = horiz ? region.m_width : region.m_height;
+
+    for (i=0, test=0; i<endpoint; i+=GROW_INC)
+    {
+        getMean(subRegion, frame, &subMean);
+        distance = sqrt((mean->m_x-subMean.m_x)*(mean->m_x-subMean.m_x) + (mean->m_y-subMean.m_y)*(mean->m_y-subMean.m_y));
+        if ((uint32_t)distance<m_maxDist)
+        {
+            int32_t n = points->size();
+            mean->m_x = ((qlonglong)mean->m_x*n + subMean.m_x)/(n+1);
+            mean->m_y = ((qlonglong)mean->m_y*n + subMean.m_y)/(n+1);
+            points->push_back(Point16(subRegion.m_xOffset, subRegion.m_yOffset));
+            qDebug("add %d %d %d", subRegion.m_xOffset, subRegion.m_yOffset, points->size());
+            test++;
+        }
+
+        if (horiz)
+            subRegion.m_xOffset += GROW_INC;
+        else
+            subRegion.m_yOffset += GROW_INC;
+    }
+
+    qDebug("return %f", (float)test*GROW_INC/endpoint);
+    return (float)test*GROW_INC/endpoint;
+}
+
+
+void ColorBlob::getMean(const RectA &region ,const Frame8 &frame, Point32 *mean)
+{
+    uint32_t x, y, count;
+    int32_t r, g1, g2, b, u, v, c, miny;
+    uint8_t *pixels;
+    qlonglong usum, vsum;
+
+    pixels = frame.m_pixels + (region.m_yOffset | 1)*frame.m_width + (region.m_xOffset | 1);
+    miny = (3*(1<<8)-1)*0.05;
+    for (y=0, count=0, usum=0, vsum=0; y<region.m_height; y+=2, pixels+=frame.m_width*2)
+    {
+        for (x=0; x<region.m_width; x+=2, count++)
+        {
+            r = pixels[x];
+            g1 = pixels[x - 1];
+            g2 = pixels[-frame.m_width + x];
+            b = pixels[-frame.m_width + x - 1];
+            c = r+g1+b;
+            if (c<miny)
+                continue;
+            u = ((r-g1)<<LUT_ENTRY_SCALE)/c;
+            c = r+g2+b;
+            if (c<miny)
+                continue;
+            v = ((b-g2)<<LUT_ENTRY_SCALE)/c;
+            usum += u;
+            vsum += v;
+        }
+    }
+    mean->m_x = usum/count;
+    mean->m_y = vsum/count;
+}
+
+void ColorBlob::growRegion(const Frame8 &frame, const Point16 &seed, Points *points)
+{
+    uint8_t dir, done;
+    RectA region, newRegion;
+    Point32 mean;
+    float ratio;
+
+    done = 0;
+
+    // create seed 2*GROW_INCx2*GROW_INC region from seed position, make sure it's within the frame
+    region.m_xOffset = seed.m_x;
+    region.m_yOffset = seed.m_y;
+    if (growRegion(&region, frame, 0))
+        done |= 1<<0;
+    else
+        points->push_back(Point16(region.m_xOffset, region.m_yOffset));
+    if (growRegion(&region, frame, 1))
+        done |= 1<<1;
+    else
+        points->push_back(Point16(region.m_xOffset, region.m_yOffset));
+    if (growRegion(&region, frame, 2))
+        done |= 1<<2;
+    else
+        points->push_back(Point16(seed.m_x, region.m_yOffset));
+    if (growRegion(&region, frame, 3))
+        done |= 1<<3;
+    else
+        points->push_back(seed);
+
+    getMean(region, frame, &mean);
+
+    while(done!=0x0f)
+    {
+        for (dir=0; dir<4; dir++)
+        {
+            newRegion = region;
+            if (done&(1<<dir))
+                continue;
+            else if (dir==0) // left
+                newRegion.m_width = 0;
+            else if (dir==1) // top
+                newRegion.m_height = 0; // top and bottom
+            else if (dir==2) // right
+            {
+                newRegion.m_xOffset += newRegion.m_width;
+                newRegion.m_width = 0;
+            }
+            else if (dir==3) // bottom
+            {
+                newRegion.m_yOffset += newRegion.m_height;
+                newRegion.m_height = 0;
+            }
+
+            if (growRegion(&newRegion, frame, dir))
+                done |= 1<<dir;
+            else
+            {
+                ratio = testRegion(newRegion, frame, &mean, points);
+                if (ratio<m_minRatio)
+                    done |= 1<<dir;
+                else
+                    growRegion(&region, frame, dir);
+            }
+        }
+    }
+}
+
+
+void ColorBlob::setParameters(float range, float miny, uint32_t maxDist, float minRatio)
 {
     m_acqRange = range;
     m_miny = miny;
+    m_maxDist = maxDist;
+    m_minRatio = minRatio;
 }
 
 

@@ -2,6 +2,7 @@
 #define CBLOB_H
 #include <inttypes.h>
 #include "pixytypes.h"
+#include "simplevector.h"
 
 #define NUM_SIGNATURES               7
 #define LUT_COMPONENT_SCALE          6
@@ -10,6 +11,13 @@
 #define DEFAULT_TOL                  0.9f
 #define DEFAULT_RANGE                2.0f
 #define DEFAULT_MINY                 0.1f
+#define MIN_RATIO                 0.25f
+#define MAX_DIST                  2000
+
+#define GROW_INC                  4
+
+
+typedef SimpleVector<Point16> Points;
 
 struct ColorSignature
 {
@@ -51,15 +59,20 @@ public:
     ColorBlob(uint8_t *lut);
     ~ColorBlob();
 
-    int generateSignature(const Frame8 *frame, const RectA *region, ColorSignature *signature);
-    int generateSignature(const Frame8 *frame, const Point16 *point, ColorSignature *signature);
+    int generateSignature(const Frame8 &frame, const RectA &region, ColorSignature *signature);
+    int generateSignature(const Frame8 &frame, const Point16 &point, Points *points, ColorSignature *signature);
 
     int generateLUT(const RuntimeSignature signatures[]);
     void clearLUT(uint8_t signum=0);
 
-    void setParameters(float range, float miny);
+    void setParameters(float range, float miny, uint32_t maxDist, float minRatio);
 
 private:
+    bool growRegion(RectA *region, const Frame8 &frame, uint8_t dir);
+    float testRegion(const RectA &region, const Frame8 &frame, Point32 *mean, Points *points);
+    void getMean(const RectA &region ,const Frame8 &frame, Point32 *mean);
+    void growRegion(const Frame8 &frame, const Point16 &seed, Points *points);
+
     float calcRatio(const int32_t *uvPixels, uint32_t numuv, int32_t line, bool lt);
     int32_t iterate(const int32_t *uvPixels, uint32_t numuv, float ratio, bool pos);
     uint8_t *m_lut;
@@ -70,6 +83,8 @@ private:
     float m_miny;
     float m_acqRange;
     float m_trackRange;
+    uint32_t m_maxDist;
+    float m_minRatio;
 };
 
 #endif // CBLOB_H

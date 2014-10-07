@@ -3,7 +3,6 @@
 
 #include "monmodule.h"
 #include "colorblob.h"
-#include "simplevector.h"
 #include "blobs2.h"
 
 struct Qval2
@@ -65,8 +64,6 @@ public:
     QqueueFields2 *m_fields;
 };
 
-typedef SimpleVector<Point16> Points;
-
 class CBlobModule : public MonModule
 {
 public:
@@ -81,11 +78,6 @@ public:
     void renderEX00(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame);
 
 private:
-    bool growRegion(RectA *region, const Frame8 &frame, uint8_t dir, uint16_t growInc);
-    float testRegion(const RectA &region, const Frame8 &frame, uint16_t growInc, Point32 *mean, float maxDist, Points *points);
-    void getMean(const RectA &region ,const Frame8 &frame, Point32 *mean);
-    void growRegion(const Frame8 &frame, const Point16 &seed, Points *points);
-    void renderPoints(const Points &points);
     void handleLine(uint8_t *line, uint16_t width);
     void handleSegment(uint8_t signature, uint16_t row, uint16_t startCol, uint16_t length);
     void updateSignatures();
@@ -107,6 +99,8 @@ private:
     float m_miny;
     bool m_yfilter;
     bool m_fixedLength;
+    uint32_t m_maxDist;
+    float m_minRatio;
 };
 
 #endif // CBLOBMODULE_H
