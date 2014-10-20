@@ -104,7 +104,6 @@ int USBLink::receive(uint8_t *data, uint32_t len, uint16_t timeoutMs)
 #ifdef __MACOS__
         libusb_clear_halt(m_handle, 0x82);
 #endif
-        printf("libusb_bulk_read %d\n", res);
         return res;
     }
     return transferred;
