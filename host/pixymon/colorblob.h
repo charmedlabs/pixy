@@ -11,10 +11,11 @@
 #define DEFAULT_TOL                  0.9f
 #define DEFAULT_RANGE                2.0f
 #define DEFAULT_MINY                 0.1f
-#define MIN_RATIO                 0.25f
-#define MAX_DIST                  2000
-
-#define GROW_INC                  4
+#define MIN_RATIO                    0.25f
+#define MAX_DIST                     2000
+#define GROW_INC                     4
+#define MIN_Y_F                      0.05 // for when generating signatures, etc
+#define MIN_Y                        ((3*(1<<8)-1)*MIN_Y_F)
 
 
 typedef SimpleVector<Point16> Points;
@@ -23,8 +24,10 @@ struct ColorSignature
 {
     int32_t m_uMin;
     int32_t m_uMax;
+    int32_t m_uMean;
     int32_t m_vMin;
     int32_t m_vMax;
+    int32_t m_vMean;
 };
 
 

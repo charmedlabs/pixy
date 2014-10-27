@@ -38,6 +38,24 @@ int main(void)
  	while(1)
  		getRLSFrame(&memory, &lut); 
 #endif
+#if 0
+	int i = 0x12345678;
+	foo(&i);
+	printf("%d\n", i);
+	while(1);
+#endif
+#if 1
+	int i;
+	uint32_t lut = SRAM1_LOC;
+ 	uint32_t memory = SRAM1_LOC+0x4000;
+	uint8_t *plut = (uint8_t *)lut;
+	for (i=0; i<0x4000; i++)
+		plut[i] = i%5==0 ? 1 : 0;
+		 
+ 	while(1)
+ 		getRLSFrame(&memory, &lut); 
+
+#endif
 	//printf("M0 start\n");
 
 	chirpOpen();

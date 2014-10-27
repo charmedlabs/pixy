@@ -323,10 +323,12 @@ void CBlobModule::updateSignatures()
 
     for (signature=0; signature<NUM_SIGNATURES; signature++)
     {
-        c = ((float)m_signatures[signature].m_uMax + m_signatures[signature].m_uMin)/2.0f;
+        //c = ((float)m_signatures[signature].m_uMax + m_signatures[signature].m_uMin)/2.0f;
+        c = m_signatures[signature].m_uMean;
         m_runtimeSigs[signature].m_uMin = c + (m_signatures[signature].m_uMin - c)*m_acqRange;
         m_runtimeSigs[signature].m_uMax = c + (m_signatures[signature].m_uMax - c)*m_acqRange;
-        c = ((float)m_signatures[signature].m_vMax + m_signatures[signature].m_vMin)/2.0f;
+        //c = ((float)m_signatures[signature].m_vMax + m_signatures[signature].m_vMin)/2.0f;
+        c = m_signatures[signature].m_vMean;
         m_runtimeSigs[signature].m_vMin = c + (m_signatures[signature].m_vMin - c)*m_acqRange;
         m_runtimeSigs[signature].m_vMax = c + (m_signatures[signature].m_vMax - c)*m_acqRange;
     }

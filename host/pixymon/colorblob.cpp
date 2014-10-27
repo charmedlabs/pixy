@@ -67,14 +67,16 @@ int32_t ColorBlob::iterate(const int32_t *uvPixels, uint32_t numuv, float ratio,
 
 int ColorBlob::generateSignature(const Frame8 &frame, const RectA &region, ColorSignature *signature)
 {
-    int32_t x, y, r, g1, g2, b, count, u, v, c;
+    int32_t x, y, r, g1, g2, b, count, u, v, c, miny;
     uint8_t *pixels;
     int32_t numuv = (region.m_width/2 + 1)*(region.m_height/2 + 1);
     int32_t *uPixels = new int32_t[numuv];
     int32_t *vPixels = new int32_t[numuv];
+    qlonglong usum, vsum;
 
+    miny = MIN_Y;
     pixels = frame.m_pixels + (region.m_yOffset | 1)*frame.m_width + (region.m_xOffset | 1);
-    for (y=0, count=0; y<region.m_height && count<numuv; y+=2, pixels+=frame.m_width*2)
+    for (y=0, count=0, usum=0, vsum=0; y<region.m_height && count<numuv; y+=2, pixels+=frame.m_width*2)
     {
         for (x=0; x<region.m_width && count<numuv; x+=2, count++)
         {
@@ -83,15 +85,17 @@ int ColorBlob::generateSignature(const Frame8 &frame, const RectA &region, Color
             g2 = pixels[-frame.m_width + x];
             b = pixels[-frame.m_width + x - 1];
             c = r+g1+b;
-            if (c==0)
-                c = 1;
+            if (c<miny)
+                continue;
             u = ((r-g1)<<LUT_ENTRY_SCALE)/c;
             c = r+g2+b;
-            if (c==0)
-                c = 1;
+            if (c<miny)
+                continue;
             v = ((b-g2)<<LUT_ENTRY_SCALE)/c;
             uPixels[count] = u;
             vPixels[count] = v;
+            usum += u;
+            vsum += v;
         }
     }
 
@@ -99,6 +103,8 @@ int ColorBlob::generateSignature(const Frame8 &frame, const RectA &region, Color
     signature->m_uMax = iterate(uPixels, count, m_tol, true);
     signature->m_vMin = iterate(vPixels, count, m_tol, false);
     signature->m_vMax = iterate(vPixels, count, m_tol, true);
+    signature->m_uMean = usum/count;
+    signature->m_vMean = vsum/count;
 
     delete [] uPixels;
     delete [] vPixels;
@@ -114,13 +120,15 @@ int ColorBlob::generateSignature(const Frame8 &frame, const RectA &region, Color
 int ColorBlob::generateSignature(const Frame8 &frame, const Point16 &point, Points *points, ColorSignature *signature)
 {
     growRegion(frame, point, points);
-    int32_t i, x, y, r, g1, g2, b, count, u, v, c;
+    int32_t i, x, y, r, g1, g2, b, count, u, v, c, miny;
     uint8_t *pixels;
     int32_t numuv = points->size()*GROW_INC*GROW_INC/4;
     int32_t *uPixels = new int32_t[numuv];
     int32_t *vPixels = new int32_t[numuv];
+    qlonglong usum, vsum;
 
-    for (i=0, count=0; i<points->size(); i++)
+    miny = MIN_Y;
+    for (i=0, count=0, usum=0, vsum=0; i<points->size(); i++)
     {
         pixels = frame.m_pixels + ((*points)[i].m_y | 1)*frame.m_width + ((*points)[i].m_x | 1);
         for (y=0; y<GROW_INC && count<numuv; y+=2, pixels+=frame.m_width*2)
@@ -132,15 +140,17 @@ int ColorBlob::generateSignature(const Frame8 &frame, const Point16 &point, Poin
                 g2 = pixels[-frame.m_width + x];
                 b = pixels[-frame.m_width + x - 1];
                 c = r+g1+b;
-                if (c==0)
-                    c = 1;
+                if (c<miny)
+                    continue;
                 u = ((r-g1)<<LUT_ENTRY_SCALE)/c;
                 c = r+g2+b;
-                if (c==0)
-                    c = 1;
+                if (c<miny)
+                    continue;
                 v = ((b-g2)<<LUT_ENTRY_SCALE)/c;
                 uPixels[count] = u;
                 vPixels[count] = v;
+                usum += u;
+                vsum += v;
             }
         }
     }
@@ -149,6 +159,8 @@ int ColorBlob::generateSignature(const Frame8 &frame, const Point16 &point, Poin
     signature->m_uMax = iterate(uPixels, count, m_tol, true);
     signature->m_vMin = iterate(vPixels, count, m_tol, false);
     signature->m_vMax = iterate(vPixels, count, m_tol, true);
+    signature->m_uMean = usum/count;
+    signature->m_vMean = vsum/count;
 
     delete [] uPixels;
     delete [] vPixels;
@@ -404,8 +416,8 @@ void ColorBlob::getMean(const RectA &region ,const Frame8 &frame, Point32 *mean)
     uint8_t *pixels;
     qlonglong usum, vsum;
 
+    miny = MIN_Y;
     pixels = frame.m_pixels + (region.m_yOffset | 1)*frame.m_width + (region.m_xOffset | 1);
-    miny = (3*(1<<8)-1)*0.05;
     for (y=0, count=0, usum=0, vsum=0; y<region.m_height; y+=2, pixels+=frame.m_width*2)
     {
         for (x=0; x<region.m_width; x+=2, count++)

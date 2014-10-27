@@ -55,6 +55,10 @@ int main(void)
 {
  	pixyInit(SRAM3_LOC, &LR0[0], sizeof(LR0));
 
+#if 1
+	cam_setMode(1);
+	while(1);
+#endif
 	cc_init(g_chirpUsb);
 	ser_init();
 	exec_init(g_chirpUsb);
