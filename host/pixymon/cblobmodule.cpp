@@ -20,7 +20,7 @@ CBlobModule::CBlobModule(Interpreter *interpreter) : MonModule(interpreter)
 
     scriptlet << "cam_getFrame 0x21 0 0 320 200";
     scriptlet << "newsigPoint 1";
-    scriptlet << "runprogArg 8 100";
+    //scriptlet << "runprogArg 8 100";
     m_interpreter->emit actionScriptlet("Create new signature point 1...", scriptlet);
     scriptlet.clear();
     scriptlet << "cam_getFrame 0x21 0 0 320 200";
@@ -89,6 +89,12 @@ bool CBlobModule::render(uint32_t fourcc, const void *args[])
         renderEX00(*(uint8_t *)args[0], *(uint16_t *)args[1], *(uint16_t *)args[2], *(uint32_t *)args[3], (uint8_t *)args[4]);
         return true;
     }
+    else if (fourcc==FOURCC('C','C','Q','2'))
+    {
+        renderCCQ2(*(uint8_t *)args[0], *(uint16_t *)args[1], *(uint16_t *)args[2], *(uint32_t *)args[3], (uint8_t *)args[4]);
+        return true;
+    }
+
     return false;
 }
 
@@ -135,6 +141,7 @@ bool CBlobModule::command(const QStringList &argv)
 
         updateSignatures();
         m_cblob->generateLUT(m_runtimeSigs);
+        uploadLut();
 
         DataExport dx(m_interpreter->m_pixymonParameters->value("Document folder")->toString(), "lut", ET_MATLAB);
 
@@ -162,6 +169,20 @@ void CBlobModule::paramChange()
     updateSignatures();
 }
 
+int CBlobModule::uploadLut()
+{
+    uint32_t i, sum;
+    uint32_t responseInt;
+
+    for (i=0, sum=0; i<LUT_SIZE; i++)
+        sum += m_lut[i];
+    qDebug() << sum;
+    ChirpProc setmem = m_interpreter->m_chirp->getProc("cc_setMemory");
+    for (i=0; i<LUT_SIZE; i+=0x100)
+        m_interpreter->m_chirp->callSync(setmem, UINT32(0x10080000+i), UINTS8(0x100, m_lut+i), END_OUT_ARGS, &responseInt, END_IN_ARGS);
+
+    return 0;
+}
 
 void CBlobModule::handleLine(uint8_t *line, uint16_t width)
 {
@@ -303,6 +324,24 @@ void CBlobModule::renderEX00(uint8_t renderFlags, uint16_t width, uint16_t heigh
     m_interpreter->m_renderer->renderCCB2(renderFlags, width/2, height/2, numBlobs*sizeof(BlobA)/sizeof(uint16_t), (uint16_t *)blobs, numCCBlobs*sizeof(BlobB)/sizeof(uint16_t), (uint16_t *)ccBlobs);
 }
 
+void CBlobModule::renderCCQ2(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame)
+{
+    uint32_t numBlobs, numCCBlobs;
+    BlobA *blobs;
+    BlobB *ccBlobs;
+    qDebug("ccq2 %d", frameLen);
+#if 1
+    rla(frame, frameLen);
+#if 0
+    m_blobs.blobify();
+    m_blobs.getBlobs(&blobs, &numBlobs, &ccBlobs, &numCCBlobs);
+    processBlobs(blobs, &numBlobs);
+#endif
+    m_interpreter->m_renderer->renderCCQ1(renderFlags, width, height, m_numQvals, m_qvals);
+//    m_interpreter->m_renderer->renderCCB2(renderFlags, width/2, height/2, numBlobs*sizeof(BlobA)/sizeof(uint16_t), (uint16_t *)blobs, numCCBlobs*sizeof(BlobB)/sizeof(uint16_t), (uint16_t *)ccBlobs);
+#endif
+}
+
 void CBlobModule::handleSegment(uint8_t signature, uint16_t row, uint16_t startCol, uint16_t length)
 {
     uint32_t qval;
@@ -440,6 +479,118 @@ void CBlobModule::rla()
     }
 }
 
+void CBlobModule::rla(uint8_t *qmem, uint32_t qmemSize)
+{
+    int32_t row;
+    uint32_t i, startCol, sig, prevSig, prevStartCol, segmentStartCol, segmentEndCol, segmentSig=0;
+    bool merge;
+    Qval3 *qval;
+    int32_t u, v, c;
+    qlonglong m_usum, m_vsum;
+    uint32_t m_numuv;
+
+    m_usum = m_vsum = m_numuv = 0;
+
+    m_numQvals = 0;
+    for (i=0, row=-1; i<qmemSize; i+=sizeof(Qval3))
+    {
+        qval = (Qval3 *)(qmem+i);
+        if (qval->m_col==0xffff)
+        {
+#if 0
+            m_qvals[m_numQvals++] = 0xffffffff;
+            m_blobs.endFrame();
+#endif
+            continue;
+        }
+        if (qval->m_col==0)
+        {
+            prevStartCol = 0xffff;
+            prevSig = 0;
+            if (segmentSig)
+            {
+                handleSegment(segmentSig, row, segmentStartCol-2, segmentEndCol - segmentStartCol+2);
+                segmentSig = 0;
+            }
+            row++;
+            m_qvals[m_numQvals++] = 0;
+            continue;
+        }
+
+        sig = qval->m_col&0x07;
+        qval->m_col >>= 3;
+        startCol = qval->m_col;
+
+        u = qval->m_u;
+        v = qval->m_v;
+
+        u <<= LUT_ENTRY_SCALE;
+        v <<= LUT_ENTRY_SCALE;
+        c = qval->m_y;
+        if (c==0)
+            c = 1;
+        u /= c;
+        v /= c;
+
+        if (true ||
+                (m_runtimeSigs[sig-1].m_uMin<u && u<m_runtimeSigs[sig-1].m_uMax && m_runtimeSigs[sig-1].m_vMin<v && v<m_runtimeSigs[sig-1].m_vMax))
+        {
+            if (m_pb.m_left<startCol && startCol<m_pb.m_right && m_pb.m_top<row && row<m_pb.m_bottom)
+            {
+                m_numuv++;
+                m_usum += u;
+                m_vsum += v;
+            }
+
+
+            merge = startCol-prevStartCol<=4 && prevSig==sig;
+            if (segmentSig==0 && merge)
+            {
+                segmentSig = sig;
+                segmentStartCol = prevStartCol;
+            }
+            else if (segmentSig!=0 && (segmentSig!=sig || !merge))
+            {
+                handleSegment(segmentSig, row, segmentStartCol-2, segmentEndCol - segmentStartCol+2);
+                segmentSig = 0;
+            }
+
+            if (segmentSig!=0 && merge)
+                segmentEndCol = startCol;
+            else if (segmentSig==0 && !merge)
+                handleSegment(sig, row, startCol-2, 2);
+            prevSig = sig;
+            prevStartCol = startCol;
+        }
+        else if (segmentSig!=0)
+        {
+            handleSegment(segmentSig, row, segmentStartCol-2, segmentEndCol - segmentStartCol+2);
+            segmentSig = 0;
+        }
+
+    }
+    if (m_numuv && m_fixedLength)
+    {
+        int32_t uavg, vavg;
+        int32_t urange, vrange;
+
+        urange = (m_runtimeSigs[0].m_uMax - m_runtimeSigs[0].m_uMin);
+        vrange = (m_runtimeSigs[0].m_vMax - m_runtimeSigs[0].m_vMin);
+        uavg = m_usum/m_numuv;
+        vavg = m_vsum/m_numuv;
+
+        m_runtimeSigs[0].m_uMax = uavg + urange/2;
+        m_runtimeSigs[0].m_uMin = uavg - urange/2;
+        m_runtimeSigs[0].m_vMax = vavg + vrange/2;
+        m_runtimeSigs[0].m_vMin = vavg - vrange/2;
+
+        qDebug("*** %d %d", uavg, vavg);
+    }
+    // end frame
+    m_qvals[m_numQvals++] = 0xffffffff;
+    m_blobs.endFrame();
+
+}
 
 
 Qqueue2::Qqueue2()

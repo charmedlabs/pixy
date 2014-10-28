@@ -251,7 +251,7 @@ void Renderer::renderRects(const Points &points, uint32_t size)
     p.end();
 
     emitImage(img);
-    flushImage(true);
+    emitFlushImage(true);
 
 }
 
@@ -271,7 +271,7 @@ void Renderer::renderRect(const RectA &rect)
     p.end();
 
     emitImage(img);
-    flushImage(true);
+    emitFlushImage(true);
 }
 
 void Renderer::renderBlobsB(QImage *image, float scale, BlobB *blobs, uint32_t numBlobs)

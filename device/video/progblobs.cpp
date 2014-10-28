@@ -34,6 +34,7 @@ Program g_progBlobs =
 int blobsSetup()
 {
 	uint8_t c;
+	return 0; 
 
 	// setup camera mode
 	cam_setMode(CAM_MODE1);
@@ -98,6 +99,7 @@ int blobsLoop()
 	BlobB *ccBlobs;
 	uint32_t numBlobs, numCCBlobs;
 
+	return 0;
 	// create blobs
 	g_blobs->blobify();
 

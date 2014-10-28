@@ -44,18 +44,19 @@ int main(void)
 	printf("%d\n", i);
 	while(1);
 #endif
-#if 1
+#if 0
 	int i;
 	uint32_t lut = SRAM1_LOC;
- 	uint32_t memory = SRAM1_LOC+0x4000;
+ 	uint32_t memory = SRAM1_LOC+0x1000;
 	uint8_t *plut = (uint8_t *)lut;
 	for (i=0; i<0x4000; i++)
 		plut[i] = i%5==0 ? 1 : 0;
-		 
+	
  	while(1)
  		getRLSFrame(&memory, &lut); 
 
 #endif
+#if 1
 	//printf("M0 start\n");
 
 	chirpOpen();
@@ -65,7 +66,7 @@ int main(void)
 
 	//printf("M0 ready\n");
 	exec_loop();
-
+#endif
 #if 0
 	while(1)
 	{
@@ -96,7 +97,7 @@ int main(void)
 	lut[0xb409] = 0;
 
 	while(1)
- 		getRLSFrame(&memory, &size, (uint32_t *)&lut);
+ 		getRLSFrame(&memory, &size); //, (uint32_t *)&lut);
 }
 #endif
 }

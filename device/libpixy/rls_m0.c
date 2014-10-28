@@ -17,6 +17,7 @@
 #include "frame_m0.h"
 #include "chirp.h"
 #include "qqueue.h"
+#include "pixyvals.h"
 
 
 //#define RLTEST
@@ -637,7 +638,7 @@ __asm uint32_t lineProcessedRL1A(uint32_t *gpio, Qval *memory, uint8_t *lut, uin
 // r10: usum
 // r11: ?
 // r12:	q memory 
-
+   
 		MACRO // check for end of line
 $lx		EOL_CHECK
 $lx		CMP 	r4, r9
@@ -750,9 +751,9 @@ beg1	EOL_CHECK
 		// *** PIXEL SYNC GREEN
 		LDRB 	r5, [r0] // load green pixel 
 		// cycle
-		MOVS	r1, #16
+		MOVS	r1, #8
 		ADD		r12, r1	// inc qmem
-		ADDS 	r4, #4  // inc col, skipped pixel
+		ADDS 	r4, #12  // inc col, skipped pixel
 		NOP
 		NOP
 		B		beg1
@@ -844,26 +845,33 @@ int32_t getRLSFrame(uint32_t *m0Mem, uint32_t *lut)
 		g_qqueue->produced += numQvals;
 		totalQvals += numQvals+1; // +1 because of beginning of line 
 	}
+	return 0;
+
 #else
 #define MAX_NEW_QVALS_PER_LINE   (320/3)
 
 	uint8_t *lut2 = (uint8_t *)*lut;
-	uint32_t line;
-	Qval *qvalStore;
+	volatile uint32_t line;
+	uint8_t *qvalStore, *qval;
 	uint32_t numQvals;
 	uint8_t *lineStore;
 
-	uint32_t mem = *m0Mem;
-	lineStore = (uint8_t *)(*m0Mem); //(uint8_t *)(*m0Mem) + MAX_NEW_QVALS_PER_LINE*8+16;
-   	qvalStore =	(Qval*)(lineStore + 8*320);
+	lineStore = (uint8_t *)(*lut + 0x1000); //(uint8_t *)(*m0Mem) + MAX_NEW_QVALS_PER_LINE*8+16;
+   	qvalStore =	(uint8_t *)*m0Mem;
 	skipLines(0);
-	for (line=0; line<CAM_RES2_HEIGHT; line++)  // start totalQvals at 1 because of start of frame value
+	qval = qvalStore;
+	*(uint16_t *)qval = 0xffff;
+	qval += 8; 
+	for (line=0; line<CAM_RES2_HEIGHT && qval<(uint8_t *)(SRAM1_LOC+SRAM1_SIZE-320/3*8-16); line++, qval+=numQvals)  // start totalQvals at 1 because of start of frame value
 	{
+		*(uint16_t *)qval = 0x0000;
+		qval += 8; 
 		lineProcessedRL0A((uint32_t *)&CAM_PORT, lineStore, CAM_RES2_WIDTH); 
-		numQvals = lineProcessedRL1A((uint32_t *)&CAM_PORT, qvalStore, lut2, lineStore, CAM_RES2_WIDTH, g_qqueue->data, g_qqueue->writeIndex, QQ_MEM_SIZE);
+		numQvals = lineProcessedRL1A((uint32_t *)&CAM_PORT, (Qval *)qval, lut2, lineStore, CAM_RES2_WIDTH, g_qqueue->data, g_qqueue->writeIndex, QQ_MEM_SIZE);
 	}
+
+	return qval-qvalStore;
 #endif
-	return 0;
 }
 
 int rls_init(void)

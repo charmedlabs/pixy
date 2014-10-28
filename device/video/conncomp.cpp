@@ -360,6 +360,7 @@ int32_t cc_getRLSFrameChirpFlags(Chirp *chirp, uint8_t renderFlags)
 	int32_t result;
 	uint32_t len, numRls;
 
+#if 0
 	if (g_rawFrame.m_pixels)
 		cc_loadLut();
 
@@ -374,6 +375,23 @@ int32_t cc_getRLSFrameChirpFlags(Chirp *chirp, uint8_t renderFlags)
 	Chirp::serialize(chirp, RLS_MEMORY, RLS_MEMORY_SIZE,  HTYPE(FOURCC('C','C','Q','1')), HINT8(renderFlags), UINT16(CAM_RES2_WIDTH), UINT16(CAM_RES2_HEIGHT), UINTS32_NO_COPY(numRls), END);
 	// send frame, use in-place buffer
 	chirp->useBuffer(RLS_MEMORY, len+numRls*4);
+#else
+	uint8_t *mem, *lut;
+	uint32_t memSize;
+
+	lut = (uint8_t *)SRAM1_LOC;
+	mem = lut + 0x1000 + 8*320;
+	memSize = SRAM1_SIZE-8*320-0x1000;
+
+	len = Chirp::serialize(chirp, mem, memSize,  HTYPE(0), UINT16(0), UINT16(0), UINTS8_NO_COPY(0), END);
+	numRls = cc_getRLSFrame((uint32_t *)(mem+len), lut);
+	Chirp::serialize(chirp, mem, memSize,  HTYPE(FOURCC('C','C','Q','2')), HINT8(renderFlags), UINT16(CAM_RES2_WIDTH), UINT16(CAM_RES2_HEIGHT), UINTS8_NO_COPY(numRls), END);
+	// send frame, use in-place buffer
+	chirp->useBuffer(mem, len+numRls);
+
+	result = 0;
+
+#endif
 
 	return result;
 }

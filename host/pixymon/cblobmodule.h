@@ -26,6 +26,27 @@ struct Qval2
     uint16_t m_col;
 };
 
+struct Qval3
+{
+    Qval3()
+    {
+        m_u = m_v = m_y = m_col = 0;
+    }
+
+    Qval3(int16_t u, int16_t v, uint16_t y, uint16_t col)
+    {
+        m_u = u;
+        m_v = v;
+        m_y = y;
+        m_col = col;
+    }
+
+    uint16_t m_col;
+    int16_t m_v;
+    int16_t m_u;
+    uint16_t m_y;
+};
+
 struct QqueueFields2
 {
     uint16_t readIndex;
@@ -76,6 +97,7 @@ public:
 
     void processBlobs(BlobA *blobs, uint32_t *numBlobs);
     void renderEX00(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame);
+    void renderCCQ2(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame);
 
 private:
     void handleLine(uint8_t *line, uint16_t width);
@@ -83,6 +105,9 @@ private:
     void updateSignatures();
     void rls(const Frame8 *frame);
     void rla();
+    void rla(uint8_t *qmem, uint32_t qmemSize);
+    int uploadLut();
+
 
     ColorBlob *m_cblob;
     Qqueue2 *m_qq;

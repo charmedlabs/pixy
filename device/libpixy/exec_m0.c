@@ -61,6 +61,7 @@ uint32_t g_lut = SRAM1_LOC + SRAM1_SIZE-LUT_MEMORY_SIZE;
 
 void loop0()
 {
+	return;
 	getRLSFrame(&g_m0mem, &g_lut);	
 }
 
