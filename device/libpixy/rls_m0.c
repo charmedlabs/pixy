@@ -703,8 +703,8 @@ beg1	EOL_CHECK
 		CMP		r7, #0
 		BEQ		beg0
 		ADDS 	r4, #8 // inc col 
-		NOP
-		NOP
+		EOL_CHECK
+		// cycle
 		NOP
 		NOP
 		// 2nd pixel

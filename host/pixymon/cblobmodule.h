@@ -101,7 +101,7 @@ public:
 
 private:
     void handleLine(uint8_t *line, uint16_t width);
-    void handleSegment(uint8_t signature, uint16_t row, uint16_t startCol, uint16_t length);
+    void handleSegment(uint8_t signature, uint16_t row, uint16_t startCol, uint16_t length, bool blobs=true);
     void updateSignatures();
     void rls(const Frame8 *frame);
     void rla();

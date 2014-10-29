@@ -203,7 +203,6 @@ private:
     QString m_externalCommand;
     QString m_print;
     Qt::Key m_key;
-    uint32_t m_rcount;
     QStringList m_argv; // executed on Pixy
     QStringList m_argvHost;  // executed on host
     QStringList m_commandList;

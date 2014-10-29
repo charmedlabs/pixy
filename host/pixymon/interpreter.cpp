@@ -39,7 +39,6 @@ Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, MonParamete
     m_pc = 0;
     m_programming = false;
     m_localProgramRunning = false;
-    m_rcount = 0;
     m_waiting = false;
     m_fastPoll = true;
     m_notified = false;
@@ -312,7 +311,6 @@ QString printType(uint32_t val, bool parens)
 void Interpreter::handleResponse(const void *args[])
 {
     // strip off response, add to print string
-    //    m_print = "response " + QString::number(m_rcount++) + ": " +
     m_print = "response: " +
             QString::number(*(int *)args[0]) + " (0x" + QString::number((uint)*(uint *)args[0], 16) + ") ";
 
@@ -693,7 +691,10 @@ uint Interpreter::programRunning()
 int Interpreter::clearLocalProgram()
 {
     QMutexLocker locker(&m_mutexProg);
+    uint i;
 
+    for (i=0; i<m_program.size(); i++)
+        delete [] m_program[i].m_buf;
     m_program.clear();
     m_programText.clear();
 
@@ -745,6 +746,7 @@ void Interpreter::command(const QString &command)
         m_command = command;
         m_command.remove(QRegExp("[(),\\t]"));
         m_key = (Qt::Key)0;
+        m_selection = RectA(0, 0, 0, 0);
         m_waitInput.wakeAll();
         return;
     }
@@ -808,6 +810,7 @@ void Interpreter::controlKey(Qt::Key key)
 {
     m_command = "";
     m_key = key;
+    m_selection = RectA(0, 0, 0, 0);
     m_waitInput.wakeAll();
     if (m_programming)
         endLocalProgram();
@@ -892,8 +895,9 @@ void Interpreter::unwait()
     QMutexLocker locker(&m_mutexInput);
     if (m_waiting)
     {
-        m_waitInput.wakeAll();
+        m_selection = RectA(0, 0, 0, 0);
         m_key = Qt::Key_Escape;
+        m_waitInput.wakeAll();
         emit videoInput(VideoWidget::NONE);
     }
 }

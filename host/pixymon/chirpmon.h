@@ -31,10 +31,9 @@ struct ChirpCallData
         memcpy(m_buf, buf, len);
         m_len = len;
     }
-    ~ChirpCallData()
-    {
-        delete [] m_buf;
-    }
+    // no destructor -- need to free the memory explicitly
+    // (freeing mem in destructor is not the correct way to do it in this case unless we
+    // also write a copy constructor.)
 
     uint8_t m_type;
     ChirpProc m_proc;

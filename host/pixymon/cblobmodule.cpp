@@ -342,7 +342,7 @@ void CBlobModule::renderCCQ2(uint8_t renderFlags, uint16_t width, uint16_t heigh
 #endif
 }
 
-void CBlobModule::handleSegment(uint8_t signature, uint16_t row, uint16_t startCol, uint16_t length)
+void CBlobModule::handleSegment(uint8_t signature, uint16_t row, uint16_t startCol, uint16_t length, bool blobs)
 {
     uint32_t qval;
 
@@ -350,8 +350,8 @@ void CBlobModule::handleSegment(uint8_t signature, uint16_t row, uint16_t startC
     qval |= startCol<<3;
     qval |= length<<12;
 
-    m_blobs.addSegment(signature, row, startCol, startCol+length);
-
+    if (blobs)
+        m_blobs.addSegment(signature, row, startCol, startCol+length);
     m_qvals[m_numQvals++] = qval;
 }
 
@@ -509,7 +509,7 @@ void CBlobModule::rla(uint8_t *qmem, uint32_t qmemSize)
             prevSig = 0;
             if (segmentSig)
             {
-                handleSegment(segmentSig, row, segmentStartCol-2, segmentEndCol - segmentStartCol+2);
+                handleSegment(segmentSig, row, segmentStartCol-1, segmentEndCol - segmentStartCol+1, false);
                 segmentSig = 0;
             }
             row++;
@@ -551,44 +551,24 @@ void CBlobModule::rla(uint8_t *qmem, uint32_t qmemSize)
             }
             else if (segmentSig!=0 && (segmentSig!=sig || !merge))
             {
-                handleSegment(segmentSig, row, segmentStartCol-2, segmentEndCol - segmentStartCol+2);
+                handleSegment(segmentSig, row, segmentStartCol-1, segmentEndCol - segmentStartCol+1, false);
                 segmentSig = 0;
             }
 
             if (segmentSig!=0 && merge)
                 segmentEndCol = startCol;
             else if (segmentSig==0 && !merge)
-                handleSegment(sig, row, startCol-2, 2);
+                handleSegment(sig, row, startCol-1, 2, false);
             prevSig = sig;
             prevStartCol = startCol;
         }
         else if (segmentSig!=0)
         {
-            handleSegment(segmentSig, row, segmentStartCol-2, segmentEndCol - segmentStartCol+2);
+            handleSegment(segmentSig, row, segmentStartCol-1, segmentEndCol - segmentStartCol+1, false);
             segmentSig = 0;
         }
 
     }
-    if (m_numuv && m_fixedLength)
-    {
-        int32_t uavg, vavg;
-        int32_t urange, vrange;
-
-        urange = (m_runtimeSigs[0].m_uMax - m_runtimeSigs[0].m_uMin);
-        vrange = (m_runtimeSigs[0].m_vMax - m_runtimeSigs[0].m_vMin);
-        uavg = m_usum/m_numuv;
-        vavg = m_vsum/m_numuv;
-
-        m_runtimeSigs[0].m_uMax = uavg + urange/2;
-        m_runtimeSigs[0].m_uMin = uavg - urange/2;
-        m_runtimeSigs[0].m_vMax = vavg + vrange/2;
-        m_runtimeSigs[0].m_vMin = vavg - vrange/2;
-
-        qDebug("*** %d %d", uavg, vavg);
-    }
-    // end frame
-    m_qvals[m_numQvals++] = 0xffffffff;
-    m_blobs.endFrame();
 
 }
 
