@@ -17,11 +17,14 @@ echo "-----------------------------------------"
 echo " Building libpixyusb SWIG module"
 echo "-----------------------------------------"
 
+cp get_blocks.py $PIXY_ROOT/build/$TARGET_BUILD_FOLDER
+cp pixy.i $PIXY_ROOT/build/$TARGET_BUILD_FOLDER
+cp setup.py $PIXY_ROOT/build/$TARGET_BUILD_FOLDER
+
+cd $PIXY_ROOT/build/$TARGET_BUILD_FOLDER
+
 swig -c++ -python pixy.i
 python setup.py build_ext --inplace
-cp get_blocks.py $PIXY_ROOT/build/$TARGET_BUILD_FOLDER
-cp _pixy.so $PIXY_ROOT/build/$TARGET_BUILD_FOLDER
-cp pixy.py $PIXY_ROOT/build/$TARGET_BUILD_FOLDER
 
 set +e
 

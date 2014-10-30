@@ -4,7 +4,7 @@
 
 %{
 #define SWIG_FILE_WITH_INIT
-#include "../libpixyusb/include/pixy.h"
+#include "pixy.h"
 %}
 
 int pixy_init();
