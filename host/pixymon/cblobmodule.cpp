@@ -532,7 +532,7 @@ void CBlobModule::rla(uint8_t *qmem, uint32_t qmemSize)
         u /= c;
         v /= c;
 
-        if (true ||
+        if (!m_yfilter ||
                 (m_runtimeSigs[sig-1].m_uMin<u && u<m_runtimeSigs[sig-1].m_uMax && m_runtimeSigs[sig-1].m_vMin<v && v<m_runtimeSigs[sig-1].m_vMax))
         {
             if (m_pb.m_left<startCol && startCol<m_pb.m_right && m_pb.m_top<row && row<m_pb.m_bottom)
@@ -567,9 +567,7 @@ void CBlobModule::rla(uint8_t *qmem, uint32_t qmemSize)
             handleSegment(segmentSig, row, segmentStartCol-1, segmentEndCol - segmentStartCol+1, false);
             segmentSig = 0;
         }
-
     }
-
 }
 
 

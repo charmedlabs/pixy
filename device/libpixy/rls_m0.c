@@ -736,7 +736,7 @@ beg1	EOL_CHECK
 		ORRS	r7, r4, r7  // combine signature and index
 		ADDS	r4, #2	 // increment line mem
 		// *** PIXEL SYNC RED
-		LDRB	r1, [r3, r4] // load b+gsum
+		LDRH	r1, [r3, r4] // load b+gsum
 		// cycle 
 		ADD		r1, r8   // add red sum to b+gsum to create ysum
 		STRH	r1, [r5, #6] // store ysum
