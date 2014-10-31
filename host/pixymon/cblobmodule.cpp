@@ -179,7 +179,7 @@ int CBlobModule::uploadLut()
     qDebug() << sum;
     ChirpProc setmem = m_interpreter->m_chirp->getProc("cc_setMemory");
     for (i=0; i<LUT_SIZE; i+=0x100)
-        m_interpreter->m_chirp->callSync(setmem, UINT32(0x10080000+i), UINTS8(0x100, m_lut+i), END_OUT_ARGS, &responseInt, END_IN_ARGS);
+        m_interpreter->m_chirp->callSync(setmem, UINT32(0x10080000+0x12000-LUT_SIZE+i), UINTS8(0x100, m_lut+i), END_OUT_ARGS, &responseInt, END_IN_ARGS);
 
     return 0;
 }

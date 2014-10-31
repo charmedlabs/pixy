@@ -42,7 +42,7 @@ class ConsoleWidget;
 class Renderer;
 class MonModule;
 
-enum CommandType {STOP, RUN, LOAD_PARAMS, SAVE_PARAMS, UPDATE_PARAM};
+enum CommandType {STOP, RUN, STOP_LOCAL, RUN_LOCAL, LOAD_PARAMS, SAVE_PARAMS, UPDATE_PARAM};
 
 struct Command
 {
@@ -75,11 +75,10 @@ public:
     // local program business
     int beginLocalProgram();
     int endLocalProgram();
-    int runLocalProgram();
     int clearLocalProgram();
 
     // "remote" program business
-    void runOrStopProgram();
+    void runOrStopProgram(bool local=false);
     uint programRunning();
 
     void execute(const QString &command);
@@ -141,7 +140,7 @@ private:
 
     int addProgram(ChirpCallData data);
     int addProgram(const QStringList &argv);
-    int execute();
+    void handleLocalProgram();
 
     void getRunning();
     int sendRun();

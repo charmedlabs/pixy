@@ -88,25 +88,41 @@ void ConsoleWidget::emptyLine()
 
 void ConsoleWidget::prompt(QString text)
 {
-    QString text2 = text;
-
     moveCursor(QTextCursor::End);
 
     handleColor(); // change to default color
 
     // add space because it looks better
-    text2 += " ";
+    text += " ";
 
     // go to new line if line isn't empty
     emptyLine();
-    insertPlainText(text2);
+    insertPlainText(text);
     m_lastLine = "";
     // if we have trouble keeping viewport
     QScrollBar *sb = verticalScrollBar();
     sb->setSliderPosition(sb->maximum());
 
-    m_prompt = text2;
+    m_prompt = text;
 }
+
+void ConsoleWidget::prompt()
+{
+    moveCursor(QTextCursor::End);
+    QTextCursor cursor = textCursor();
+    if (cursor.block().text()!="")
+        insertPlainText("\n");
+    if (cursor.block().text()!=m_prompt)
+    {
+        handleColor(); // change to default color
+        insertPlainText(m_prompt);
+    }
+    m_lastLine = "";
+    // if we have trouble keeping viewport
+    QScrollBar *sb = verticalScrollBar();
+    sb->setSliderPosition(sb->maximum());
+}
+
 
 void ConsoleWidget::type(QString text)
 {
@@ -114,6 +130,8 @@ void ConsoleWidget::type(QString text)
 
 void ConsoleWidget::acceptInput(bool accept)
 {
+    if (accept)
+        prompt();
     setReadOnly(!accept);
 }
 

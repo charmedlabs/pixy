@@ -856,13 +856,13 @@ int32_t getRLSFrame(uint32_t *m0Mem, uint32_t *lut)
 	uint32_t numQvals;
 	uint8_t *lineStore;
 
-	lineStore = (uint8_t *)(*lut + 0x1000); //(uint8_t *)(*m0Mem) + MAX_NEW_QVALS_PER_LINE*8+16;
+	lineStore = (uint8_t *)(*lut - 320*8); //(uint8_t *)(*m0Mem) + MAX_NEW_QVALS_PER_LINE*8+16;
    	qvalStore =	(uint8_t *)*m0Mem;
 	skipLines(0);
 	qval = qvalStore;
 	*(uint16_t *)qval = 0xffff;
 	qval += 8; 
-	for (line=0; line<CAM_RES2_HEIGHT && qval<(uint8_t *)(SRAM1_LOC+SRAM1_SIZE-320/3*8-16); line++, qval+=numQvals)  // start totalQvals at 1 because of start of frame value
+	for (line=0; line<CAM_RES2_HEIGHT && qval<(uint8_t *)(SRAM1_LOC+SRAM1_SIZE-320*8-0x1000-16); line++, qval+=numQvals)  // start totalQvals at 1 because of start of frame value
 	{
 		*(uint16_t *)qval = 0x0000;
 		qval += 8; 

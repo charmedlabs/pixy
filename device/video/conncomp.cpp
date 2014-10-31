@@ -355,6 +355,8 @@ int32_t cc_getRLSFrameChirp(Chirp *chirp)
 	return cc_getRLSFrameChirpFlags(chirp);
 }
 
+#define LUT_SIZE  0x1000
+
 int32_t cc_getRLSFrameChirpFlags(Chirp *chirp, uint8_t renderFlags)
 {
 	int32_t result;
@@ -379,9 +381,9 @@ int32_t cc_getRLSFrameChirpFlags(Chirp *chirp, uint8_t renderFlags)
 	uint8_t *mem, *lut;
 	uint32_t memSize;
 
-	lut = (uint8_t *)SRAM1_LOC;
-	mem = lut + 0x1000 + 8*320;
-	memSize = SRAM1_SIZE-8*320-0x1000;
+	lut = (uint8_t *)SRAM1_LOC+SRAM1_SIZE-LUT_SIZE;
+	mem = (uint8_t *)SRAM1_LOC;
+	memSize = SRAM1_SIZE-LUT_SIZE;
 
 	len = Chirp::serialize(chirp, mem, memSize,  HTYPE(0), UINT16(0), UINT16(0), UINTS8_NO_COPY(0), END);
 	numRls = cc_getRLSFrame((uint32_t *)(mem+len), lut);

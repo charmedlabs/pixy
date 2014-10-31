@@ -31,7 +31,8 @@
 
 QString printType(uint32_t val, bool parens=false);
 
-Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, MonParameterDB *data) : m_mutexProg(QMutex::Recursive)
+Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, MonParameterDB *data) :
+    m_mutexProg(QMutex::Recursive)
 {
     m_console = console;
     m_video = video;
@@ -88,37 +89,21 @@ void Interpreter::close()
     m_pixymonParameters->save();
 }
 
-int Interpreter::execute()
+void Interpreter::handleLocalProgram()
 {
     int res;
 
-    emit runState(true);
-    emit enableConsole(false);
-
     QMutexLocker locker(&m_mutexProg);
 
-    while(1)
+    if (m_localProgramRunning)
     {
-        for (; m_pc<m_program.size(); m_pc++)
-        {
-            if (!m_localProgramRunning)
-            {
-                prompt();
-                res = 0;
-                goto end;
-            }
-            res = m_chirp->execute(m_program[m_pc]);
-            if (res<0)
-                goto end;
-        }
-        m_pc = 0;
+        if (m_pc==m_program.size())
+            m_pc = 0;
+        res = m_chirp->execute(m_program[m_pc]);
+        if (res<0)
+            queueCommand(STOP_LOCAL);
+        m_pc++;
     }
-end:
-    m_localProgramRunning = false;
-    emit runState(false);
-    emit enableConsole(true);
-
-    return res;
 }
 
 QString Interpreter::printArgType(uint8_t type, uint32_t flags)
@@ -469,6 +454,19 @@ void Interpreter::handlePendingCommand()
         sendRun();
         break;
 
+    case STOP_LOCAL:
+        m_localProgramRunning = false;
+        emit runState(false);
+        emit enableConsole(true);
+        break;
+
+    case RUN_LOCAL:
+        m_localProgramRunning = true;
+        emit runState(true);
+        emit enableConsole(false);
+        m_pc = 0;
+        break;
+
     case LOAD_PARAMS:
         handleLoadParams();
         break;
@@ -568,6 +566,7 @@ void Interpreter::run()
 
     while(m_run)
     {
+        // poll to see if we're still connected
         if (!m_programming &&
                 ((m_fastPoll && time.elapsed()>RUN_POLL_PERIOD_FAST) ||
                 (!m_fastPoll && time.elapsed()>RUN_POLL_PERIOD_SLOW)))
@@ -575,62 +574,57 @@ void Interpreter::run()
             getRunning();
             time.start();
         }
-        else
+        // service chirps -- but if we're running a local program it just slows things down
+        else if (!m_localProgramRunning)
         {
             m_chirp->service(false);
             msleep(1); // give config thread time to run
         }
         handlePendingCommand();
-        if (!m_running)
+        handleLocalProgram();
+        if (!m_running && !m_localProgramRunning)
         {
-            if (m_localProgramRunning)
-                execute();
-            else
+            Sleeper::msleep(10);
+            if (m_mutexProg.tryLock())
             {
-                Sleeper::msleep(10);
-                if (m_mutexProg.tryLock())
+                if (m_argv.size())
                 {
-                    if (m_argv.size())
+                    if (m_externalCommand!="") // print command to make things explicit and all pretty
+                        emit textOut(PROMPT " " + m_externalCommand);
+                    if (m_argv[0]=="help")
+                        handleHelp();
+                    else
                     {
-                        if (m_externalCommand!="") // print command to make things explicit and all pretty
-                            emit textOut(PROMPT " " + m_externalCommand);
-                        if (m_argv[0]=="help")
-                            handleHelp();
-                        else
+                        res = call(m_argv, true);
+                        if (res<0)
                         {
-                            res = call(m_argv, true);
-                            if (res<0)
+                            if (m_programming)
                             {
-                                if (m_programming)
-                                {
-                                    endLocalProgram();
-                                    clearLocalProgram();
-                                }
-                                m_commandList.clear(); // abort our little scriptlet
+                                endLocalProgram();
+                                clearLocalProgram();
                             }
-                        }
-                        m_argv.clear();
-                        if (m_externalCommand=="")
-                            prompt(); // print prompt only if we expect an actual human to be typing into the command window
-                        else
-                            m_externalCommand = "";
-                        // check quickly to see if we're running after this command
-                        if (!m_programming)
-                            getRunning();
-                        // is there another command in our little scriptlet?
-                        if (m_commandList.size())
-                        {
-                            execute(m_commandList[0]);
-                            m_commandList.removeFirst();
+                            m_commandList.clear(); // abort our little scriptlet
                         }
                     }
-                    m_mutexProg.unlock();
+                    m_argv.clear();
+                    if (m_externalCommand=="")
+                        prompt(); // print prompt only if we expect an actual human to be typing into the command window
+                    else
+                        m_externalCommand = "";
+                    // check quickly to see if we're running after this command
+                    if (!m_programming)
+                        getRunning();
+                    // is there another command in our little scriptlet?
+                    if (m_commandList.size())
+                    {
+                        execute(m_commandList[0]);
+                        m_commandList.removeFirst();
+                    }
                 }
+                m_mutexProg.unlock();
             }
         }
     }
-    sendStop();
-    msleep(200); // let things settle a bit
     qDebug("worker thead exiting");
 }
 
@@ -652,30 +646,28 @@ int Interpreter::endLocalProgram()
     return 0;
 }
 
-int Interpreter::runLocalProgram()
-{
-    QMutexLocker locker(&m_mutexProg);
-
-    if (m_localProgramRunning || m_program.size()==0)
-        return -1;
-
-    m_console->emptyLine(); // don't want to start printing on line with prompt
-
-    m_localProgramRunning = true;
-
-    return 0;
-}
-
-void Interpreter::runOrStopProgram()
+void Interpreter::runOrStopProgram(bool local)
 {
     unwait(); // unhang ourselves if we're waiting
-    if (m_localProgramRunning)
-        m_localProgramRunning = false;
-    else if (m_running==false)
-        queueCommand(RUN);
-    else if (m_running==true)
-        queueCommand(STOP);
-    // no case to run local program because this is sort of an undocumented feature for now
+    if (local)
+    {
+        if (m_running)
+            queueCommand(STOP);
+        else if (m_localProgramRunning)
+            queueCommand(STOP_LOCAL);
+        else
+            queueCommand(RUN_LOCAL);
+    }
+    else
+    {
+        if (m_localProgramRunning)
+            queueCommand(STOP_LOCAL);
+        else if (m_running==false)
+            queueCommand(RUN);
+        else if (m_running==true)
+            queueCommand(STOP);
+        // note m_running has 3 states...
+    }
 }
 
 uint Interpreter::programRunning()
@@ -764,38 +756,20 @@ void Interpreter::command(const QString &command)
     else if (words[0]=="done")
     {
         endLocalProgram();
-        runLocalProgram();
+        locker.unlock();
+        runOrStopProgram(true);
+        locker.relock();
         return;
     }
     else if (words[0]=="list")
         listProgram();
     else if (words[0].left(4)=="cont")
     {
-        if (runLocalProgram()>=0)
-            return;
+        locker.unlock();
+        runOrStopProgram(true);
+        locker.relock();
+        return;
     }
-#if 0
-    else if (words[0]=="rendermode")
-    {
-        if (words.size()>1)
-            m_renderer->setMode(words[1].toInt());
-        else
-            emit textOut("Missing mode parameter.\n");
-    }
-    else if (words[0]=="region")
-    {
-        emit videoInput(VideoWidget::REGION);
-        m_argvHost = words;
-    }
-    else if (words[0]=="set")
-    {
-        if (words.size()==3)
-        {
-            words[1].remove(QRegExp("[\\s\\D]+"));
-            m_renderer->m_blobs.setLabel(words[1], words[2]);
-        }
-    }
-#endif
     else
     {
         handleCall(words);
