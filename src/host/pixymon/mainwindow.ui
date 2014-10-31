@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>677</width>
+    <height>626</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <layout class="QGridLayout" name="gridLayout" rowstretch="0">
+    <item row="0" column="0">
+     <layout class="QGridLayout" name="imageLayout"/>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>677</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="actionConfigure"/>
+    <addaction name="actionSave_Image"/>
+    <addaction name="actionSave_Pixy_parameters"/>
+    <addaction name="actionLoad_Pixy_parameters"/>
+    <addaction name="actionExit"/>
+   </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>Help</string>
+    </property>
+    <addaction name="actionHelp"/>
+    <addaction name="actionAbout"/>
+   </widget>
+   <widget class="QMenu" name="menuAction">
+    <property name="title">
+     <string>Action</string>
+    </property>
+    <addaction name="actionPlay_Pause"/>
+    <addaction name="actionDefault_program"/>
+    <addaction name="actionRaw_video"/>
+    <addaction name="actionCooked_video"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuAction"/>
+   <addaction name="menuHelp"/>
+  </widget>
+  <widget class="QStatusBar" name="statusBar"/>
+  <widget class="QToolBar" name="toolBar">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+  </widget>
+  <action name="actionExit">
+   <property name="text">
+    <string>Exit</string>
+   </property>
+  </action>
+  <action name="actionSave_Image">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Save Image...</string>
+   </property>
+  </action>
+  <action name="actionPlay_Pause">
+   <property name="text">
+    <string>Run/Stop</string>
+   </property>
+   <property name="toolTip">
+    <string>Run/stop</string>
+   </property>
+  </action>
+  <action name="actionHelp">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Help...</string>
+   </property>
+  </action>
+  <action name="actionAbout">
+   <property name="text">
+    <string>About...</string>
+   </property>
+  </action>
+  <action name="actionConfigure">
+   <property name="text">
+    <string>Configure...</string>
+   </property>
+   <property name="toolTip">
+    <string>Configure parameters</string>
+   </property>
+  </action>
+  <action name="actionProgram">
+   <property name="text">
+    <string>Program...</string>
+   </property>
+  </action>
+  <action name="actionRaw_video">
+   <property name="text">
+    <string>Raw video</string>
+   </property>
+   <property name="toolTip">
+    <string>Display raw video</string>
+   </property>
+  </action>
+  <action name="actionCooked_video">
+   <property name="text">
+    <string>Cooked video</string>
+   </property>
+   <property name="toolTip">
+    <string>Display cooked (processed) video</string>
+   </property>
+  </action>
+  <action name="actionDefault_program">
+   <property name="text">
+    <string>Default program</string>
+   </property>
+  </action>
+  <action name="actionSave_Pixy_parameters">
+   <property name="text">
+    <string>Save Pixy parameters...</string>
+   </property>
+  </action>
+  <action name="actionLoad_Pixy_parameters">
+   <property name="text">
+    <string>Load Pixy parameters...</string>
+   </property>
+  </action>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <resources/>
+ <connections/>
+</ui>

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<infoList vendor="NXP"><info name="LPC4330" chip="LPC4330" match_id="0x0"  resetscript="LPC18LPC43ExternalFLASHBootResetscript.scp" stub="crt_emu_lpc18_43_nxp"><chip><name>LPC4330</name>
+<family>LPC43xx</family>
+<vendor>NXP (formerly Philips)</vendor>
+<reset board="None" core="Real" sys="Real"/>
+<clock changeable="TRUE" freq="20MHz" is_accurate="TRUE"/>
+<memory can_program="true" id="Flash" is_ro="true" type="Flash"/>
+<memory id="RAM" type="RAM"/>
+<memory id="Periph" is_volatile="true" type="Peripheral"/>
+<memoryInstance derived_from="RAM" id="RamLoc128" location="0x10000000" size="0x20000"/>
+<memoryInstance derived_from="RAM" id="RamLoc72" location="0x10080000" size="0x12000"/>
+<memoryInstance derived_from="RAM" id="RamAHB32" location="0x20000000" size="0x8000"/>
+<memoryInstance derived_from="RAM" id="RamAHB16" location="0x20008000" size="0x4000"/>
+<memoryInstance derived_from="RAM" id="RamAHB_ETB16" location="0x2000c000" size="0x4000"/>
+<peripheralInstance derived_from="V7M_MPU" id="MPU" location="0xe000ed90"/>
+<peripheralInstance derived_from="V7M_NVIC" id="NVIC" location="0xe000e000"/>
+<peripheralInstance derived_from="V7M_DCR" id="DCR" location="0xe000edf0"/>
+<peripheralInstance derived_from="V7M_ITM" id="ITM" location="0xe0000000"/>
+<peripheralInstance derived_from="SCT" id="SCT" location="0x40000000"/>
+<peripheralInstance derived_from="GPDMA" id="GPDMA" location="0x40002000"/>
+<peripheralInstance derived_from="SPIFI" id="SPIFI" location="0x40003000"/>
+<peripheralInstance derived_from="SDMMC" id="SDMMC" location="0x40004000"/>
+<peripheralInstance derived_from="EMC" id="EMC" location="0x40005000"/>
+<peripheralInstance derived_from="USB0" id="USB0" location="0x40006000"/>
+<peripheralInstance derived_from="USB1" id="USB1" location="0x40007000"/>
+<peripheralInstance derived_from="EEPROM" id="EEPROM" location="0x4000e000"/>
+<peripheralInstance derived_from="ETHERNET" id="ETHERNET" location="0x40010000"/>
+<peripheralInstance derived_from="ATIMER" id="ATIMER" location="0x40040000"/>
+<peripheralInstance derived_from="REGFILE" id="REGFILE" location="0x40041000"/>
+<peripheralInstance derived_from="PMC" id="PMC" location="0x40042000"/>
+<peripheralInstance derived_from="CREG" id="CREG" location="0x40043000"/>
+<peripheralInstance derived_from="EVENTROUTER" id="EVENTROUTER" location="0x40044000"/>
+<peripheralInstance derived_from="RTC" id="RTC" location="0x40046000"/>
+<peripheralInstance derived_from="CGU" id="CGU" location="0x40050000"/>
+<peripheralInstance derived_from="CCU1" id="CCU1" location="0x40051000"/>
+<peripheralInstance derived_from="CCU2" id="CCU2" location="0x40052000"/>
+<peripheralInstance derived_from="RGU" id="RGU" location="0x40053000"/>
+<peripheralInstance derived_from="WWDT" id="WWDT" location="0x40080000"/>
+<peripheralInstance derived_from="USART0" id="USART0" location="0x40081000"/>
+<peripheralInstance derived_from="USART2" id="USART2" location="0x400c1000"/>
+<peripheralInstance derived_from="USART3" id="USART3" location="0x400c2000"/>
+<peripheralInstance derived_from="UART1" id="UART1" location="0x40082000"/>
+<peripheralInstance derived_from="SSP0" id="SSP0" location="0x40083000"/>
+<peripheralInstance derived_from="SSP1" id="SSP1" location="0x400c5000"/>
+<peripheralInstance derived_from="TIMER0" id="TIMER0" location="0x40084000"/>
+<peripheralInstance derived_from="TIMER1" id="TIMER1" location="0x40085000"/>
+<peripheralInstance derived_from="TIMER2" id="TIMER2" location="0x400c3000"/>
+<peripheralInstance derived_from="TIMER3" id="TIMER3" location="0x400c4000"/>
+<peripheralInstance derived_from="SCU" id="SCU" location="0x40086000"/>
+<peripheralInstance derived_from="GPIO-PIN-INT" id="GPIO-PIN-INT" location="0x40087000"/>
+<peripheralInstance derived_from="GPIO-GROUP-INT0" id="GPIO-GROUP-INT0" location="0x40088000"/>
+<peripheralInstance derived_from="GPIO-GROUP-INT1" id="GPIO-GROUP-INT1" location="0x40089000"/>
+<peripheralInstance derived_from="MCPWM" id="MCPWM" location="0x400a0000"/>
+<peripheralInstance derived_from="I2C0" id="I2C0" location="0x400a1000"/>
+<peripheralInstance derived_from="I2C1" id="I2C1" location="0x400e0000"/>
+<peripheralInstance derived_from="I2S0" id="I2S0" location="0x400a2000"/>
+<peripheralInstance derived_from="I2S1" id="I2S1" location="0x400a3000"/>
+<peripheralInstance derived_from="C-CAN1" id="C-CAN1" location="0x400a4000"/>
+<peripheralInstance derived_from="RITIMER" id="RITIMER" location="0x400c0000"/>
+<peripheralInstance derived_from="QEI" id="QEI" location="0x400c6000"/>
+<peripheralInstance derived_from="GIMA" id="GIMA" location="0x400c7000"/>
+<peripheralInstance derived_from="DAC" id="DAC" location="0x400e1000"/>
+<peripheralInstance derived_from="C-CAN0" id="C-CAN0" location="0x400e2000"/>
+<peripheralInstance derived_from="ADC0" id="ADC0" location="0x400e3000"/>
+<peripheralInstance derived_from="ADC1" id="ADC1" location="0x400e4000"/>
+<peripheralInstance derived_from="GPIO-PORT" id="GPIO-PORT" location="0x400f4000"/>
+<peripheralInstance derived_from="SPI" id="SPI" location="0x40100000"/>
+<peripheralInstance derived_from="SGPIO" id="SGPIO" location="0x40101000"/>
+</chip>
+<processor><name gcc_name="cortex-m4">Cortex-M4</name>
+<family>Cortex-M</family>
+</processor>
+<link href="nxp_lpc43xx_peripheral.xme" show="embed" type="simple"/>
+</info>
+</infoList>
+

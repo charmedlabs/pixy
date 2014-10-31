@@ -1,0 +1,12 @@
+LOAD_RAM 0x10000000 0x00020000  
+{    
+  EXEC_RAM 0x10000000 0x00020000  
+  {  
+    startup_LPC43xx_m4.o (VECTORS, +First)
+    .ANY (+RO)
+  }
+  RW_IRAM1 0x10080000 0x00012000  
+  {
+    .ANY (+RW +ZI)
+  }
+}

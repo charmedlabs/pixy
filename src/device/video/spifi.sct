@@ -1,0 +1,18 @@
+LOAD_SPIFI 0x14000000 0x00100000  
+{    
+  EXEC_SPIFI 0x14000000 0x00100000  
+  {  
+    startup_LPC43xx_m4.o (RESET, +First)
+    startup_LPC43xx_m4.o (+RO)
+    * (InRoot$$Sections)
+  }
+  RW_IRAM0 0x10000000 0x00020000  
+  {
+    startup_LPC43xx_m4.o (VECTORS, +First)
+    .ANY (+RO)
+  }
+  RW_IRAM1 0x20000000 0x00008000  
+  {
+    .ANY (+RW +ZI)
+  }
+}

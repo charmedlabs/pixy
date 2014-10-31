@@ -1,0 +1,133 @@
+  <!-- Outer is System (peripheral definitions) -->
+  <!ELEMENT System (enumeration*|peripheral*|peripheralInstance*)> <!ATTLIST System
+		key		CDATA	#REQUIRED
+		hash		CDATA	#REQUIRED
+		dllname		CDATA	#IMPLIED>
+    <!-- Enumerations define string forms for showing values. Inside
+         the enumeration/enumeration pair, the constants are given
+	 as name and value pairs in enumblocks.
+	 Built-in enums: OffOn, falseTrue, disEna -->
+    <!ELEMENT enumeration (enum*)> <!ATTLIST enumeration
+		id		ID	#REQUIRED>
+	<!-- Enum is the enumeration constant. There is one for each
+	     enumeration constant. The name is the name of the constant
+	     and must be unique for this enumeration (and should be
+	     unique for all enumerations ideally). The name may only
+	     be composed of alpha-numeric characters, '_' amd '-'. The
+	     value is the constant value and may be expressed as decimal
+	     (e.g. 212) or hex (e.g. 0x1B3). The display attr is true
+	     if this is used for display only and not entry (this allows
+	     settable ones to be verbs and display ones to be the state
+	     as a noun, but may also be used when a register reads as
+	     one value and writes as another). The description is
+	     optional and allows the user to see the meaning of the
+	     enumeration.					-->
+	<!ELEMENT enum EMPTY><!ATTLIST enum
+		name		CDATA	#REQUIRED
+		value		CDATA	#REQUIRED
+		display		(true|false) "false"
+		description	CDATA	#IMPLIED>
+    <!-- We define peripherals 1st and then peripheralInstances. The
+	 peripheral is the definition, the instance is a location
+	 based implementation of it. There may be multiple instances.
+	 'enable' allows naming a register or expression (mask and/or
+	 = or !=) which defines if the peripheral is readable now; for
+	 example, if a system control register bit is used to determine
+	 if the peripheral is powered/clocked, then it is used at this
+	 level. Also, see enable for group and register. Note that
+	 enableFor is only used for group/reg/field, since a peripheral
+	 instance would not be used if not present. The readRegSize
+	 forces reads to the exact size of registers; otherwise, they
+	 may be widened to allow a block read.			-->
+    <!ELEMENT peripheral (group*|register*)> <!ATTLIST peripheral 
+		id 		ID 	#REQUIRED 
+		description 	CDATA 	#IMPLIED
+		partOf		CDATA   #IMPLIED
+		stride 		(1|2|4)	"4"
+		size 		CDATA 	#IMPLIED
+		defRegSize 	(1|2|4)	"4"
+		readRegSize	(true|false) "false"
+		enable 		CDATA 	#IMPLIED>
+	<!-- Groups are used to encapsulate related registers which
+	     are in logical groupings (such as sub-components. If not
+	     used, an empty group is created. The enable attribute
+	     optionally gives a register expression to use to enable
+	     or disable. The expression will be register name only
+	     (so enabled if not 0, disabled if 0), reg=value, reg!=value,
+	     reg&mask, reg&mask=value, and reg&mask!=value. Value is
+	     any constant, e.g. "sys_ctrl&0x80" is enabled if bit 7
+	     is 1. The enableFor attribute is used to determine if the
+	     group exists at all (vs. being disabled) and bases its
+	     tests soley on the peripheralInstance name. The peripheral
+	     instance must be in the format of name_xxx where name is
+	     the instance name, "_" is the separator, and xxx is some
+	     number or string to represent version or family or some
+	     other use. For example, enableFor=">2" would match PWM_3,
+	     since 3 > 2. EnableFor="v2,v3,v4" would match UART0_v3. The
+	     tests allow for >n, <n, =n (or just n), !=n, and a comma 
+	     separated list of those tests. 			-->
+	<!ELEMENT group (register*)> <!ATTLIST group
+		id		ID	#IMPLIED
+		description	CDATA	#IMPLIED
+		offset		CDATA   #IMPLIED
+		size		CDATA	#IMPLIED
+		enable		CDATA	#IMPLIED
+		enableFor	CDATA	#IMPLIED>
+	<!-- We now define one or more registers. If 'offset' is not given,
+	     next offset using 'stride' is used. If size is not given, 
+	     'defRegSize' is used. 'bitSize' may be used to format less 
+	     than full 'size', such as low 9 bits of a 2 byte register. 
+	     'displayName' may be used as display name, else 'id' is used. 
+	     Name of register in symbol table will be 
+	     peripheralInstance.register (e.g. UART0.ctrl). Note that '.'
+	     may be replaced by '_' based on UI choice -->
+	<!ELEMENT register (field*)> <!ATTLIST register
+		id		CDATA	#REQUIRED
+		description	CDATA	#IMPLIED
+		offset		CDATA   #IMPLIED
+		size		(1|2|4)	#IMPLIED
+		format		(hex|decimal|binary|hex0x|enum) #IMPLIED
+		enum		CDATA   #IMPLIED
+		bitSize		CDATA	#IMPLIED
+	        readOnly	(true|false) "false"
+	        readVolatile	(true|false) "false"
+		writeOnly	(true|false) "false"
+		displayName	CDATA	#IMPLIED
+		enableFor	CDATA	#IMPLIED>
+	  <!-- There may be 0 or more fields within a register. These are
+	       bit extractions of the enclosing register. The 'id' does not
+	       have to be unique except within this register. It will form
+	       a register name if wanted, which will be of the form
+	       peripheralInstance.register.field (e.g. TIMER1.status.atzero).
+	       If no 'offset' given, the next bit position will be used and
+	       the size will be 1. Else, 'offset' is of the form "[4:3]" or
+	       just "[7]". The format means from bit 3 to bit 4 (so size
+               of 2 bits). The latter means at position 7 with size of 1.
+	       If no 'format' given, hex is used. 		-->
+          <!ELEMENT field EMPTY> <!ATTLIST field
+		id		CDATA	#REQUIRED
+		description	CDATA	#IMPLIED
+		offset		CDATA	#IMPLIED
+	        format		(hex|decimal|binary|hex0x|enum) #IMPLIED
+		enum		CDATA	#IMPLIED
+	        makeRegister	(true|false) "false"
+		enableFor	CDATA	#IMPLIED>
+    <!-- peripheralInstance defines an instanciation of a peripheral.
+         It must have a unique id for each instance. The address is
+	 defined in 'location' using either a number (e.g. 0x1234) or
+	 a register pointer expression (e.g. "myreg+0x100"). The
+	 +offset part must be specified, but offset may be 0 of
+	 course. The register must be a register known to be defined
+	 in this file or another file which will be consumed by the
+	 handler (preferably read previously).
+         'enable' may refer to a register (or field) which defines the 
+	 enable for this peripheral.
+         (vs. or as well as the enable term from within the peripheral). 
+	 Note that peripheralInstance is also defined in the chip/board
+         definitions, and both must match rules exactly.	-->
+    <!ELEMENT peripheralInstance EMPTY> <!ATTLIST peripheralInstance
+		id		ID 	#REQUIRED
+		derived_from	IDREF	#REQUIRED
+		location	CDATA	#REQUIRED
+		enable		CDATA	#IMPLIED>
+

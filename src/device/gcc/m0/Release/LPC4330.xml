@@ -1,0 +1,5 @@
+<directory>
+ <chips chipVendor='NXP' >
+  <chip name='LPC4330' xml_file='LPC4330_part.xml' />
+ </chips>
+</directory> 
