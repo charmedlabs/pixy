@@ -58,6 +58,7 @@ Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, MonParamete
     connect(this, SIGNAL(videoInput(VideoWidget::InputMode)), m_video, SLOT(acceptInput(VideoWidget::InputMode)));
     connect(m_video, SIGNAL(selection(int,int,int,int)), this, SLOT(handleSelection(int,int,int,int)));
 
+    prompt();
 
     m_run = true;
 }
@@ -97,7 +98,7 @@ void Interpreter::handleLocalProgram()
 
     if (m_localProgramRunning)
     {
-        if (m_pc==m_program.size())
+        if (m_pc>=m_program.size())
             m_pc = 0;
         res = m_chirp->execute(m_program[m_pc]);
         if (res<0)
@@ -381,9 +382,6 @@ void Interpreter::getRunning()
         m_running = running;
         emit runState(running);
         emit enableConsole(!running);
-        if (!running && m_externalCommand=="")
-            prompt(); // print prompt only if we expect an actual human to be typing into the command window, and we've stopped
-
     }
 }
 
@@ -590,7 +588,10 @@ void Interpreter::run()
                 if (m_argv.size())
                 {
                     if (m_externalCommand!="") // print command to make things explicit and all pretty
+                    {
                         emit textOut(PROMPT " " + m_externalCommand);
+                        m_externalCommand = "";
+                    }
                     if (m_argv[0]=="help")
                         handleHelp();
                     else
@@ -607,10 +608,6 @@ void Interpreter::run()
                         }
                     }
                     m_argv.clear();
-                    if (m_externalCommand=="")
-                        prompt(); // print prompt only if we expect an actual human to be typing into the command window
-                    else
-                        m_externalCommand = "";
                     // check quickly to see if we're running after this command
                     if (!m_programming)
                         getRunning();
@@ -633,6 +630,7 @@ int Interpreter::beginLocalProgram()
 {
     if (m_programming)
         return -1;
+    m_program.clear();
     m_programming = true;
     return 0;
 }
@@ -721,7 +719,7 @@ void Interpreter::listProgram()
 void Interpreter::prompt()
 {
     if (m_programming)
-        emit prompt("prog" + QString::number(m_program.size()+1) + PROMPT);
+        emit prompt(QString("prog") + PROMPT);
     else
         emit prompt(PROMPT);
 }
@@ -733,6 +731,8 @@ void Interpreter::command(const QString &command)
     if (m_localProgramRunning)
         return;
 
+    QStringList words = command.split(QRegExp("[\\s(),\\t]"), QString::SkipEmptyParts);
+
     if (m_waiting)
     {
         m_command = command;
@@ -740,10 +740,8 @@ void Interpreter::command(const QString &command)
         m_key = (Qt::Key)0;
         m_selection = RectA(0, 0, 0, 0);
         m_waitInput.wakeAll();
-        return;
+        goto end;
     }
-
-    QStringList words = command.split(QRegExp("[\\s(),\\t]"), QString::SkipEmptyParts);
 
     if (words.size()==0)
         goto end;
@@ -759,7 +757,6 @@ void Interpreter::command(const QString &command)
         locker.unlock();
         runOrStopProgram(true);
         locker.relock();
-        return;
     }
     else if (words[0]=="list")
         listProgram();
@@ -768,14 +765,9 @@ void Interpreter::command(const QString &command)
         locker.unlock();
         runOrStopProgram(true);
         locker.relock();
-        return;
     }
     else
-    {
         handleCall(words);
-        return; // don't print prompt
-    }
-
 end:
     prompt();
 }
@@ -788,8 +780,6 @@ void Interpreter::controlKey(Qt::Key key)
     m_waitInput.wakeAll();
     if (m_programming)
         endLocalProgram();
-    prompt();
-
 }
 
 
@@ -896,11 +886,16 @@ int Interpreter::call(const QStringList &argv, bool interactive)
         return -1;
 
     // check modules to see if they handle this command, if so, skip to end
+    emit enableConsole(false);
     for (i=0; i<m_modules.size(); i++)
     {
         if (m_modules[i]->command(argv))
+        {
+            emit enableConsole(true);
             return 0;
+        }
     }
+    emit enableConsole(true);
 
     // a procedure needs extension info (arg info, etc) in order for us to call...
     if ((proc=m_chirp->getProc(argv[0].toLocal8Bit()))>=0 &&

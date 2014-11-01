@@ -19,9 +19,11 @@
 #include <QPlainTextEdit>
 #include <QMutex>
 #include <QWaitCondition>
+#include <QTimer>
 
 #define CW_SCROLLHEIGHT     10000
 #define CW_DEFAULT_COLOR    Qt::black
+#define CW_TIMEOUT          100
 
 class MainWindow;
 
@@ -46,6 +48,9 @@ public slots:
     void type(QString text);
     void acceptInput(bool accept);
 
+private slots:
+    void handleTimer();
+
 signals:
     void textLine(const QString &line);
     void controlKey(Qt::Key key);
@@ -62,6 +67,7 @@ private:
     QColor m_color;
     QString m_lastLine;
     bool m_suppress;
+    QTimer m_timer;
 };
 
 #endif // CONSOLE_H

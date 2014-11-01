@@ -29,6 +29,7 @@ ConsoleWidget::ConsoleWidget(MainWindow *main) : QPlainTextEdit((QWidget *)main)
     // a block is a line, so this is the maximum number of lines to buffer
     setMaximumBlockCount(CW_SCROLLHEIGHT);
     acceptInput(false);
+    connect(&m_timer, SIGNAL(timeout()), this, SLOT(handleTimer()));
 }
 
 ConsoleWidget::~ConsoleWidget()
@@ -36,6 +37,12 @@ ConsoleWidget::~ConsoleWidget()
     m_mutexPrint.lock();
     m_waitPrint.wakeAll();
     m_mutexPrint.unlock();
+}
+
+void ConsoleWidget::handleTimer()
+{
+    if (!isReadOnly())
+        prompt();
 }
 
 void ConsoleWidget::handleColor(const QColor &color)
@@ -53,24 +60,34 @@ void ConsoleWidget::print(QString text, QColor color)
 {
     emptyLine();
     moveCursor(QTextCursor::End);
-    handleColor(color);
     m_mutexPrint.lock();
     if (text==m_lastLine)
     {
         if (!m_suppress)
         {
+            handleColor(color);
             insertPlainText("...\n");
             m_suppress = true;
         }
     }
     else
     {
+        QTextCursor cursor = textCursor();
+        if (cursor.block().text()==m_prompt)
+        {
+            int i;
+            for (i=0; i<m_prompt.size(); i++)
+                cursor.deletePreviousChar();
+        }
+        handleColor(color);
         insertPlainText(text);
+
         m_suppress = false;
     }
     m_lastLine = text;
     m_waitPrint.wakeAll();
     m_mutexPrint.unlock();
+    m_timer.start(CW_TIMEOUT);
 }
 
 void ConsoleWidget::error(QString text)
@@ -82,38 +99,29 @@ void ConsoleWidget::error(QString text)
 void ConsoleWidget::emptyLine()
 {
     QTextCursor cursor = textCursor();
-    if (cursor.block().text()!="")
+    QString line = cursor.block().text();
+    if (line!="" && line!=m_prompt)
         insertPlainText("\n");
 }
 
 void ConsoleWidget::prompt(QString text)
 {
-    moveCursor(QTextCursor::End);
-
-    handleColor(); // change to default color
-
     // add space because it looks better
     text += " ";
-
-    // go to new line if line isn't empty
-    emptyLine();
-    insertPlainText(text);
-    m_lastLine = "";
-    // if we have trouble keeping viewport
-    QScrollBar *sb = verticalScrollBar();
-    sb->setSliderPosition(sb->maximum());
-
     m_prompt = text;
+
+    //prompt();
 }
 
 void ConsoleWidget::prompt()
 {
     moveCursor(QTextCursor::End);
     QTextCursor cursor = textCursor();
-    if (cursor.block().text()!="")
-        insertPlainText("\n");
     if (cursor.block().text()!=m_prompt)
     {
+        m_timer.stop();
+        if (cursor.block().text()!="")
+            insertPlainText("\n");
         handleColor(); // change to default color
         insertPlainText(m_prompt);
     }
@@ -130,8 +138,6 @@ void ConsoleWidget::type(QString text)
 
 void ConsoleWidget::acceptInput(bool accept)
 {
-    if (accept)
-        prompt();
     setReadOnly(!accept);
 }
 
@@ -140,6 +146,7 @@ void ConsoleWidget::keyPressEvent(QKeyEvent *event)
 {
     QString line;
 
+    m_timer.stop();
     if (!isReadOnly())
     {
         moveCursor(QTextCursor::End);
@@ -153,6 +160,7 @@ void ConsoleWidget::keyPressEvent(QKeyEvent *event)
             // propagate newline before we send text
             QPlainTextEdit::keyPressEvent(event);
             // send text
+            m_timer.start();
             emit textLine(line);
             return;
 
@@ -178,15 +186,6 @@ void ConsoleWidget::keyPressEvent(QKeyEvent *event)
         }
         else if (event->matches(QKeySequence::Copy)) // break key
             emit controlKey(Qt::Key_Escape);
-        else
-        {
-            // make sure when we're typing, there's a prompt
-            QTextCursor cursor = textCursor();
-
-            line = cursor.block().text();
-            if (line.left(m_prompt.size())!=m_prompt)
-                prompt(m_prompt);
-        }
     }
 
     QPlainTextEdit::keyPressEvent(event);
