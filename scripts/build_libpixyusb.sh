@@ -4,10 +4,22 @@ TARGET_BUILD_FOLDER=../build
 
 mkdir $TARGET_BUILD_FOLDER
 mkdir $TARGET_BUILD_FOLDER/libpixyusb
-
 cd $TARGET_BUILD_FOLDER/libpixyusb
-cmake ../../src/host/libpixyusb
-make
+
+# Abort script on error
+set -e
+
+if [ "$1" == "debug" ]
+then
+  # Build with debug symbols and logging
+  cmake ../../src/host/libpixyusb -DCMAKE_CXX_FLAGS="-DDEBUG -g"
+  make VERBOSE=1
+else
+  cmake ../../src/host/libpixyusb $@
+  make
+fi
+
+set +e
 
 if [ $? -eq 0 ]; then
   echo ""

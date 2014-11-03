@@ -16,6 +16,7 @@
 #include <string.h>
 #include <new>
 #include "chirp.hpp"
+#include "debug.h"
 
 
 // todo yield, sleep() while waiting for sync response
@@ -31,6 +32,7 @@ void copyAlign(char *dest, const char *src, int size)
 
 Chirp::Chirp(bool hinterested, bool client, Link *link)
 {
+  log("pixydebug: Chirp::Chirp()\n");
     m_link = NULL;
     m_errorCorrected = false;
     m_sharedMem = false;
@@ -55,10 +57,12 @@ Chirp::Chirp(bool hinterested, bool client, Link *link)
 
     if (link)
         setLink(link);
+  log("pixydebug: Chirp::Chirp() returned\n");
 }
 
 Chirp::~Chirp()
 {
+  log("pixydebug: Chirp::~Chirp()\n");
     // if we're a client, disconnect (let server know)
     if (m_client)
         remoteInit(false);
@@ -68,6 +72,7 @@ Chirp::~Chirp()
         delete[] m_buf;
     }
     delete[] m_procTable;
+  log("pixydebug: Chirp::~Chirp() returned\n");
 }
 
 int Chirp::init(bool connect)
@@ -77,6 +82,9 @@ int Chirp::init(bool connect)
 
 int Chirp::setLink(Link *link)
 {
+  int return_value;
+
+  log("pixydebug: Chirp::setLink()\n");
     m_link = link;
     m_errorCorrected = m_link->getFlags()&LINK_FLAG_ERROR_CORRECTED;
     m_sharedMem = m_link->getFlags()&LINK_FLAG_SHARED_MEM;
@@ -99,9 +107,14 @@ int Chirp::setLink(Link *link)
     }
 
     // link is set up, need to call init
-    if (m_client)
-        return remoteInit(true);
+    if (m_client) {
+      return_value = remoteInit(true);
+      log("pixydebug:  remoteInit() = %d\n", return_value);
+      log("pixydebug: setLink() returned %d\n", return_value);
+      return return_value;
+    }
 
+    log("pixydebug: setLink() returned %d\n", CRP_RES_OK);
     return CRP_RES_OK;
 }
 
@@ -1152,15 +1165,21 @@ int Chirp::sendAck(bool ack) // false=nack
 
 int Chirp::recvHeader(uint8_t *type, ChirpProc *proc, bool wait)
 {
-    int res;
     uint8_t c;
     uint32_t chunk, startCode = 0;
     uint16_t crc, rcrc;
 
-    if ((res=m_link->receive(&c, 1, wait?m_headerTimeout:0))<0)
-        return res;
-    if (res<1)
-        return CRP_RES_ERROR;
+    int return_value;
+
+    return_value = m_link->receive(&c, 1, wait?m_headerTimeout:0);
+
+    if (return_value < 0) {
+      goto chirp_recvheader__exit;
+    }
+    if (return_value == 0) {
+      return_value = CRP_RES_ERROR;
+      goto chirp_recvheader__exit;
+    }
 
     // find start code
     while(1)
@@ -1169,16 +1188,28 @@ int Chirp::recvHeader(uint8_t *type, ChirpProc *proc, bool wait)
         startCode |= (uint32_t)c<<24;
         if (startCode==CRP_START_CODE)
             break;
-        if ((res=m_link->receive(&c, 1, m_idleTimeout))<0)
-            return res;
-        if (res<1)
-            return CRP_RES_ERROR;
+
+        return_value = m_link->receive(&c, 1, m_idleTimeout);
+
+        if (return_value < 0) {
+          goto chirp_recvheader__exit;
+        }
+        if (return_value == 0) {
+          return_value = CRP_RES_ERROR;
+          goto chirp_recvheader__exit;
+        }
     }
     // receive rest of header
-    if (m_link->receive(m_buf, m_headerLen, m_idleTimeout)<0)
-        return CRP_RES_ERROR_RECV_TIMEOUT;
-    if (res<(int)m_headerLen)
-        return CRP_RES_ERROR;
+    if (m_link->receive(m_buf, m_headerLen, m_idleTimeout) < 0) {
+      return_value = CRP_RES_ERROR_RECV_TIMEOUT;
+      goto chirp_recvheader__exit;
+    }
+
+    if (return_value < (int) m_headerLen) {
+      return_value = CRP_RES_ERROR; 
+      goto chirp_recvheader__exit;
+    }
+
     *type = *(uint8_t *)m_buf;
     *proc = *(ChirpProc *)(m_buf+2);
     m_len = *(uint32_t *)(m_buf+4);
@@ -1188,10 +1219,16 @@ int Chirp::recvHeader(uint8_t *type, ChirpProc *proc, bool wait)
         chunk = CRP_MAX_HEADER_LEN-m_headerLen;
     else
         chunk = m_len;
-    if ((res=m_link->receive(m_buf, chunk+2, m_idleTimeout))<0) // +2 for crc
-        return res;
-    if (res<(int)chunk+2)
-        return CRP_RES_ERROR;
+
+    return_value = m_link->receive(m_buf, chunk+2, m_idleTimeout);
+
+    if (return_value < 0) { // +2 for crc
+      goto chirp_recvheader__exit;
+    }
+    if (return_value < (int) (chunk + 2)) {
+      return_value = CRP_RES_ERROR;
+      goto chirp_recvheader__exit;
+    }
     copyAlign((char *)&rcrc, (char *)(m_buf+chunk), 2);
     if (rcrc==crc+calcCrc(m_buf, chunk))
     {
@@ -1201,10 +1238,15 @@ int Chirp::recvHeader(uint8_t *type, ChirpProc *proc, bool wait)
     else
     {
         sendAck(false); // send nack
-        return CRP_RES_ERROR_CRC;
+        return_value = CRP_RES_ERROR_CRC;
+        goto chirp_recvheader__exit;
     }
 
-    return CRP_RES_OK;
+    return_value = CRP_RES_OK;
+
+chirp_recvheader__exit:
+
+    return return_value;
 }
 
 int Chirp::recvFull(uint8_t *type, ChirpProc *proc, bool wait)
