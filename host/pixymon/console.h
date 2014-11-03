@@ -24,6 +24,7 @@
 #define CW_SCROLLHEIGHT     10000
 #define CW_DEFAULT_COLOR    Qt::black
 #define CW_TIMEOUT          100
+#define CW_MAXHIST          100
 
 class MainWindow;
 
@@ -34,8 +35,6 @@ class ConsoleWidget : public QPlainTextEdit
 public:
     ConsoleWidget(MainWindow *main);
     ~ConsoleWidget();
-
-    void emptyLine();
 
     QMutex m_mutexPrint;
     QWaitCondition m_waitPrint;
@@ -61,13 +60,15 @@ protected:
 
 private:
     void handleColor(const QColor &color=CW_DEFAULT_COLOR);
+    void handleHistory(bool down);
 
     MainWindow *m_main;
     QString m_prompt;
-    QColor m_color;
     QString m_lastLine;
     bool m_suppress;
     QTimer m_timer;
+    QStringList m_history;
+    int m_histIndex;
 };
 
 #endif // CONSOLE_H

@@ -24,8 +24,8 @@
 ConsoleWidget::ConsoleWidget(MainWindow *main) : QPlainTextEdit((QWidget *)main)
 {
     m_main = main;
-    m_color = CW_DEFAULT_COLOR;
     m_suppress = false;
+    m_histIndex = -1;
     // a block is a line, so this is the maximum number of lines to buffer
     setMaximumBlockCount(CW_SCROLLHEIGHT);
     acceptInput(false);
@@ -47,18 +47,17 @@ void ConsoleWidget::handleTimer()
 
 void ConsoleWidget::handleColor(const QColor &color)
 {
-    if (color!=m_color)
+    QTextCharFormat tf = currentCharFormat();
+    if (color!=tf.foreground().color())
     {
-        QTextCharFormat tf = currentCharFormat();
         tf.setForeground(color);
         setCurrentCharFormat(tf);
-        m_color = color;
     }
 }
 
 void ConsoleWidget::print(QString text, QColor color)
 {
-    emptyLine();
+    m_histIndex = -1;
     moveCursor(QTextCursor::End);
     m_mutexPrint.lock();
     if (text==m_lastLine)
@@ -75,11 +74,11 @@ void ConsoleWidget::print(QString text, QColor color)
         QTextCursor cursor = textCursor();
         if (cursor.block().text()==m_prompt)
         {
-            int i;
-            for (i=0; i<m_prompt.size(); i++)
-                cursor.deletePreviousChar();
+            cursor.select(QTextCursor::LineUnderCursor);
+            cursor.removeSelectedText();
         }
         handleColor(color);
+        qDebug() << "console: " << text;
         insertPlainText(text);
 
         m_suppress = false;
@@ -92,16 +91,7 @@ void ConsoleWidget::print(QString text, QColor color)
 
 void ConsoleWidget::error(QString text)
 {
-    emptyLine();
     print("error: " + text, Qt::red);
-}
-
-void ConsoleWidget::emptyLine()
-{
-    QTextCursor cursor = textCursor();
-    QString line = cursor.block().text();
-    if (line!="" && line!=m_prompt)
-        insertPlainText("\n");
 }
 
 void ConsoleWidget::prompt(QString text)
@@ -142,25 +132,62 @@ void ConsoleWidget::acceptInput(bool accept)
 }
 
 
+void ConsoleWidget::handleHistory(bool down)
+{
+    int index;
+    QTextCursor cursor = textCursor();
+
+    if (m_history.size()==0)
+        return;
+
+    if (down)
+        m_histIndex--;
+    else
+        m_histIndex++;
+
+    if (m_histIndex>m_history.size()-1)
+        m_histIndex = m_history.size()-1;
+    if (m_histIndex<0)
+        m_histIndex = 0;
+    index = m_history.size()-1-m_histIndex;
+
+    cursor.select(QTextCursor::LineUnderCursor);
+    cursor.removeSelectedText();
+
+    handleColor();
+    insertPlainText(m_prompt + m_history[index]);
+}
+
 void ConsoleWidget::keyPressEvent(QKeyEvent *event)
 {
     QString line;
 
-    m_timer.stop();
     if (!isReadOnly())
     {
-        moveCursor(QTextCursor::End);
+        m_timer.stop();
+
+        if (event->modifiers()==0 || event->modifiers()==Qt::ShiftModifier || event->matches(QKeySequence::Paste))
+            moveCursor(QTextCursor::End);
+
+        QTextCursor cursor = textCursor();
 
         if (event->key()==Qt::Key_Return)
         {
-            QTextCursor cursor = textCursor();
             line = cursor.block().text();
 
             line.remove(0, m_prompt.size()); // get rid of prompt
+            line.remove(QRegExp("^\\s+")); //remove leading whitespace
+            line.remove(QRegExp("\\s+$")); //remove trailing whitespace
             // propagate newline before we send text
             QPlainTextEdit::keyPressEvent(event);
-            // send text
             m_timer.start();
+            if (line.size()==0)
+                return;
+            m_history << line;
+            if (m_history.size()==CW_MAXHIST+1)
+                m_history.removeFirst();
+            m_histIndex = -1;
+            // send text
             emit textLine(line);
             return;
 
@@ -168,17 +195,17 @@ void ConsoleWidget::keyPressEvent(QKeyEvent *event)
         else if (event->key()==Qt::Key_Up)
         {
             emit controlKey(Qt::Key_Up);
+            handleHistory(false);
             return;
         }
         else if (event->key()==Qt::Key_Down)
         {
             emit controlKey(Qt::Key_Down);
+            handleHistory(true);
             return;
         }
         else if (event->key()==Qt::Key_Backspace)
         {
-            QTextCursor cursor = textCursor();
-
             line = cursor.block().text();
             // don't propagate backspace if it means we're going to delete the prompt
             if (line.size()<=m_prompt.size())
