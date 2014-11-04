@@ -36,6 +36,7 @@ ProcessBlobs::~ProcessBlobs()
 void ProcessBlobs::process(const Frame8 &frame, uint32_t *numBlobs, BlobA **blobs, uint32_t *numCCBlobs, BlobB **ccBlobs, uint32_t *numQvals, Qval **qMem)
 {
 #if 0
+#if 0
     uint16_t boxes[] = {
         1, 20, 30, 10, 20,
         1, 35, 45, 25, 35,
@@ -74,10 +75,12 @@ void ProcessBlobs::process(const Frame8 &frame, uint32_t *numBlobs, BlobA **blob
         }
     }
 #endif
+#endif
 }
 
 void ProcessBlobs::rls(const Frame8 &frame)
 {
+#if 0
     uint32_t x, y, count, index, startCol, model, lutVal, r, g1, g2, b;
     int32_t c1, c2;
     uint32_t prevModel=0;
@@ -176,6 +179,7 @@ void ProcessBlobs::rls(const Frame8 &frame)
     // indicate end of frame
     m_qq->enqueue(0xffffffff);
     m_qMem[m_numQvals++] = 0xffffffff;
+#endif
 }
 
 void ProcessBlobs::handleParamChange()

@@ -511,7 +511,7 @@ int Renderer::renderCMV1(uint8_t renderFlags, uint32_t cmodelsLen, float *cmodel
             m_blobs.m_blobs->m_clut->add((ColorModel *)cmodels, i+1);
     }
 
-    m_blobs.process(Frame8(frame, width, height), &numBlobs, &blobs, &numCCBlobs, &ccBlobs, &numQvals, &qVals);
+    //m_blobs.process(Frame8(frame, width, height), &numBlobs, &blobs, &numCCBlobs, &ccBlobs, &numQvals, &qVals);
 
     renderBA81(0, width, height, frameLen, frame);
     renderCCQ1(0, width/2, height/2, numQvals, qVals);

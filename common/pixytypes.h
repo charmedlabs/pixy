@@ -25,8 +25,6 @@
 #define PRM_FLAG_HEX_FORMAT          0x10
 #define PRM_FLAG_SIGNED              0x80
 
-typedef uint32_t Qval;
-
 struct Point16
 {
     Point16()

@@ -37,7 +37,7 @@ Qqueue::~Qqueue()
 #endif
 }
 
-uint32_t Qqueue::dequeue(uint32_t *val)
+uint32_t Qqueue::dequeue(Qval *val)
 {
     uint16_t len = m_fields->produced - m_fields->consumed;
     if (len)

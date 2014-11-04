@@ -174,6 +174,7 @@ void Blobs::blobify()
 
 void Blobs::unpack()
 {
+#if 0
     SSegment s;
     int32_t row;
     bool memfull;
@@ -223,6 +224,7 @@ void Blobs::unpack()
         m_assembler[i].EndFrame();
         m_assembler[i].SortFinished();
     }
+#endif
 }
 
 uint16_t Blobs::getCCBlock(uint8_t *buf, uint32_t buflen)

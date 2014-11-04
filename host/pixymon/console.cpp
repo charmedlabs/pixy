@@ -183,7 +183,10 @@ void ConsoleWidget::keyPressEvent(QKeyEvent *event)
             m_timer.start();
             if (line.size()==0)
                 return;
-            m_history << line;
+            // add line to history if it's not the same as previous line
+            if (m_history.size()==0 || line!=m_history.back())
+                m_history << line;
+            // remove least recent line if we're up against the max history parameter
             if (m_history.size()==CW_MAXHIST+1)
                 m_history.removeFirst();
             m_histIndex = -1;

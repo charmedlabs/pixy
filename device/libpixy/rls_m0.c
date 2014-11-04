@@ -765,9 +765,45 @@ dest20A	LDR 	r6, [r0] 	// 2
 		TST		r6, r5		// 1
 		BNE		dest20A		// 3
 
-		MOV		r0, r12  // qval pointer
+	    // we have approx 1800 cycles to do something here
+		// The advantage of doing this is that we don't need to buffer much data
+		// and it reduces the latency-- we can start processing qvals immediately
+		// We need to copy these because the memory the qvals comes from must not be 
+		// accessed by the M4, or wait states will be thrown in and we'll lose pixel sync for that line
 		LDR		r1, [sp] // bring in original q memory location 
-		SUBS	r0, r1 // get number of qvals*6, return this number
+
+		LDR		r2, [sp, #0x24] // bring in qq memory pointer 
+		LDR		r3, [sp, #0x28] // bring in qq index
+		LSLS 	r3, #3 // qq index in bytes (4 bytes/qval)
+		ADDS	r3, r2
+		LDR		r4, [sp, #0x2c] // bring in qq size
+		LSLS 	r4, #3 // qq size in bytes (4 bytes/qval)
+		ADDS	r4, r2
+
+lcpy	CMP		r1, r12	  // 1 end condition
+		BEQ		ecpy	  // 1 exit
+
+		LDR		r0, [r1, #0]  // 2 copy (read)
+		STR		r0, [r3, #0]  // 2 copy (write)
+		LDR		r0, [r1, #4]  // 2 copy (read)
+		STR		r0, [r3, #4]  // 2 copy (write)
+
+		ADDS	r1, #8	  // 1 inc qval index
+		ADDS	r3, #8	  // 1 inc qq counter
+
+		CMP		r4, r3    // 1 check for qq index wrap
+		BEQ		wrap	  // 1
+		B		lcpy	  // 3
+
+wrap	
+		LDR		r3, [sp, #0x24] // bring in qq memory pointer 
+		B lcpy
+
+
+ecpy	MOV		r0, r12  // qval pointer
+		LDR		r1, [sp] // bring in original q memory location 
+		SUBS	r0, r1 // get number of qvals*8, return this number
+		LSRS	r0, #3 // divide by 8
 		POP		{r1-r7, pc}
 
 } 
@@ -848,29 +884,40 @@ int32_t getRLSFrame(uint32_t *m0Mem, uint32_t *lut)
 	return 0;
 
 #else
-#define MAX_NEW_QVALS_PER_LINE   (320/3)
+#define MAX_NEW_QVALS_PER_LINE   ((CAM_RES2_WIDTH/3)+2)
 
 	uint8_t *lut2 = (uint8_t *)*lut;
-	volatile uint32_t line;
-	uint8_t *qvalStore, *qval;
+	uint32_t line;
+	Qval *qvalStore;
 	uint32_t numQvals;
 	uint8_t *lineStore;
+	Qval lineBegin, frameEnd;
+	lineBegin.m_col = lineBegin.m_u = lineBegin.m_v = lineBegin.m_y = 0;
+	frameEnd.m_col = 0xffff;
+	frameEnd.m_u = frameEnd.m_v = frameEnd.m_y = 0;
 
-	lineStore = (uint8_t *)(*lut - 320*8); //(uint8_t *)(*m0Mem) + MAX_NEW_QVALS_PER_LINE*8+16;
-   	qvalStore =	(uint8_t *)*m0Mem;
+   	qvalStore =	(Qval *)*m0Mem;
+	lineStore = (uint8_t *)*m0Mem + MAX_NEW_QVALS_PER_LINE*sizeof(Qval);
 	skipLines(0);
-	qval = qvalStore;
-	*(uint16_t *)qval = 0xffff;
-	qval += 8; 
-	for (line=0; line<CAM_RES2_HEIGHT && qval<(uint8_t *)(SRAM1_LOC+SRAM1_SIZE-320*8-0x1000-16); line++, qval+=numQvals)  // start totalQvals at 1 because of start of frame value
+	for (line=0; line<CAM_RES2_HEIGHT; line++) 
 	{
-		*(uint16_t *)qval = 0x0000;
-		qval += 8; 
+		// not enough space--- return error
+		if (qq_free()<MAX_NEW_QVALS_PER_LINE)
+		{
+			qq_enqueue(&frameEnd);
+			return -1;
+		} 
+		qq_enqueue(&lineBegin); 
 		lineProcessedRL0A((uint32_t *)&CAM_PORT, lineStore, CAM_RES2_WIDTH); 
-		numQvals = lineProcessedRL1A((uint32_t *)&CAM_PORT, (Qval *)qval, lut2, lineStore, CAM_RES2_WIDTH, g_qqueue->data, g_qqueue->writeIndex, QQ_MEM_SIZE);
+		numQvals = lineProcessedRL1A((uint32_t *)&CAM_PORT, qvalStore, lut2, lineStore, CAM_RES2_WIDTH, g_qqueue->data, g_qqueue->writeIndex, QQ_MEM_SIZE);
+		g_qqueue->writeIndex += numQvals;
+		if (g_qqueue->writeIndex>=QQ_MEM_SIZE)
+			g_qqueue->writeIndex -= QQ_MEM_SIZE;
+		g_qqueue->produced += numQvals;
 	}
+	qq_enqueue(&frameEnd);
 
-	return qval-qvalStore;
+	return 0;
 #endif
 }
 

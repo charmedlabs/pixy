@@ -359,10 +359,11 @@ int32_t cc_getRLSFrameChirp(Chirp *chirp)
 
 int32_t cc_getRLSFrameChirpFlags(Chirp *chirp, uint8_t renderFlags)
 {
+
+#if 0
 	int32_t result;
 	uint32_t len, numRls;
 
-#if 0
 	if (g_rawFrame.m_pixels)
 		cc_loadLut();
 
@@ -378,27 +379,40 @@ int32_t cc_getRLSFrameChirpFlags(Chirp *chirp, uint8_t renderFlags)
 	// send frame, use in-place buffer
 	chirp->useBuffer(RLS_MEMORY, len+numRls*4);
 #else
-	uint8_t *mem, *lut;
-	uint32_t memSize;
+#define MAX_NEW_QVALS_PER_LINE   ((CAM_RES2_WIDTH/3)+2)
 
-	lut = (uint8_t *)SRAM1_LOC+SRAM1_SIZE-LUT_SIZE;
+	int32_t result;
+	uint8_t *scratchMem, *lut, *mem;
+	uint32_t len, memSize, i;
+	Qval *qmem;
+
+	g_qqueue->flush();
+
+	lut = (uint8_t *)SRAM1_LOC + SRAM1_SIZE - LUT_SIZE;
+	scratchMem = (uint8_t *)SRAM1_LOC + SRAM1_SIZE - LUT_SIZE - 0x1000;  // 4K should be enough for scratch mem (320/3+2)*8 + 320*8 = 3424
 	mem = (uint8_t *)SRAM1_LOC;
-	memSize = SRAM1_SIZE-LUT_SIZE;
+	memSize = (uint32_t)scratchMem-SRAM1_LOC;
 
 	len = Chirp::serialize(chirp, mem, memSize,  HTYPE(0), UINT16(0), UINT16(0), UINTS8_NO_COPY(0), END);
-	numRls = cc_getRLSFrame((uint32_t *)(mem+len), lut);
-	Chirp::serialize(chirp, mem, memSize,  HTYPE(FOURCC('C','C','Q','2')), HINT8(renderFlags), UINT16(CAM_RES2_WIDTH), UINT16(CAM_RES2_HEIGHT), UINTS8_NO_COPY(numRls), END);
+	result = cc_getRLSFrame(scratchMem, lut);
+	qmem = (Qval *)(mem + len);
+	memSize -= len;
+	memSize /= sizeof(Qval);
+	for (i=0; i<memSize; i++)
+	{
+		if (g_qqueue->dequeue(qmem+i) && qmem[i].m_col==0xffff)
+			break;
+	}
+	Chirp::serialize(chirp, mem, memSize,  HTYPE(FOURCC('C','C','Q','2')), HINT8(renderFlags), UINT16(CAM_RES2_WIDTH), UINT16(CAM_RES2_HEIGHT), UINTS8_NO_COPY(i*sizeof(Qval)), END);
 	// send frame, use in-place buffer
-	chirp->useBuffer(mem, len+numRls);
-
-	result = 0;
+	chirp->useBuffer((uint8_t *)mem, len+i*sizeof(Qval));
 
 #endif
 
 	return result;
 }
 
-int32_t cc_getRLSFrame(uint32_t *memory, uint8_t *lut, bool sync)
+int32_t cc_getRLSFrame(uint8_t *memory, uint8_t *lut, bool sync)
 {
 	int32_t res;
 	int32_t responseInt = -1;

@@ -589,6 +589,8 @@ void Interpreter::run()
                 {
                     if (m_externalCommand!="") // print command to make things explicit and all pretty
                     {
+                        if (!m_externalCommand.endsWith('\n'))
+                            m_externalCommand = m_externalCommand + '\n';
                         emit textOut(PROMPT " " + m_externalCommand);
                         m_externalCommand = "";
                     }
