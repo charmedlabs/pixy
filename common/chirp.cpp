@@ -575,7 +575,7 @@ int Chirp::handleChirp(uint8_t type, ChirpProc proc, const void *args[])
     }
     else // normal call
     {
-        if (proc>=m_procTableSize)
+        if (proc>=m_procTableSize || proc<0)
             return CRP_RES_ERROR; // index exceeded
 
         ProcPtr ptr = m_procTable[proc].procPtr;

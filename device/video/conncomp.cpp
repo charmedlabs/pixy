@@ -383,10 +383,8 @@ int32_t cc_getRLSFrameChirpFlags(Chirp *chirp, uint8_t renderFlags)
 
 	int32_t result;
 	uint8_t *scratchMem, *lut, *mem;
-	uint32_t len, memSize, i;
-	Qval *qmem;
+	uint32_t len, memSize, numq;
 
-	g_qqueue->flush();
 
 	lut = (uint8_t *)SRAM1_LOC + SRAM1_SIZE - LUT_SIZE;
 	scratchMem = (uint8_t *)SRAM1_LOC + SRAM1_SIZE - LUT_SIZE - 0x1000;  // 4K should be enough for scratch mem (320/3+2)*8 + 320*8 = 3424
@@ -394,18 +392,16 @@ int32_t cc_getRLSFrameChirpFlags(Chirp *chirp, uint8_t renderFlags)
 	memSize = (uint32_t)scratchMem-SRAM1_LOC;
 
 	len = Chirp::serialize(chirp, mem, memSize,  HTYPE(0), UINT16(0), UINT16(0), UINTS8_NO_COPY(0), END);
+	g_qqueue->flush();
 	result = cc_getRLSFrame(scratchMem, lut);
-	qmem = (Qval *)(mem + len);
 	memSize -= len;
 	memSize /= sizeof(Qval);
-	for (i=0; i<memSize; i++)
-	{
-		if (g_qqueue->dequeue(qmem+i) && qmem[i].m_col==0xffff)
-			break;
-	}
-	Chirp::serialize(chirp, mem, memSize,  HTYPE(FOURCC('C','C','Q','2')), HINT8(renderFlags), UINT16(CAM_RES2_WIDTH), UINT16(CAM_RES2_HEIGHT), UINTS8_NO_COPY(i*sizeof(Qval)), END);
+	// copy from IPC memory to RLS_MEMORY
+	numq = g_qqueue->readAll((Qval *)(mem+len), memSize);
+	g_chirpM0->service();
+	Chirp::serialize(chirp, mem, memSize,  HTYPE(FOURCC('C','C','Q','2')), HINT8(renderFlags), UINT16(CAM_RES2_WIDTH), UINT16(CAM_RES2_HEIGHT), UINTS8_NO_COPY(numq*sizeof(Qval)), END);
 	// send frame, use in-place buffer
-	chirp->useBuffer((uint8_t *)mem, len+i*sizeof(Qval));
+	chirp->useBuffer((uint8_t *)mem, len+numq*sizeof(Qval));
 
 #endif
 
