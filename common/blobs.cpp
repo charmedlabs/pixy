@@ -87,7 +87,7 @@ void Blobs::handleSegment(uint8_t signature, uint16_t row, uint16_t startCol, ui
 // 2: right X edge
 // 3: top Y edge
 // 4: bottom Y edge
-void Blobs::runlengthAnalysis()
+int Blobs::runlengthAnalysis()
 {
     int32_t row;
     uint32_t startCol, sig, prevSig, prevStartCol, segmentStartCol, segmentEndCol, segmentSig=0;
@@ -98,7 +98,7 @@ void Blobs::runlengthAnalysis()
     while(1)
     {
         while (m_qq->dequeue(&qval)==0);
-        if (qval.m_col==0xffff)
+        if (qval.m_col>=0xfffe)
             break;
         if (qval.m_col==0)
         {
@@ -156,10 +156,21 @@ void Blobs::runlengthAnalysis()
             segmentSig = 0;
         }
     }
-	endFrame();
+	if (qval.m_col==0xfffe)
+	{
+		endFrame();
+    	for (int i=0; i<NUM_MODELS; i++)
+        	m_assembler[i].Reset();
+		return -1;
+	}
+	else
+	{
+		endFrame();
+		return 0;
+	}
 }
 
-void Blobs::blobify()
+int Blobs::blobify()
 {
     uint32_t i, j, k;
     bool colorCode;
@@ -169,7 +180,12 @@ void Blobs::blobify()
     uint16_t left, top, right, bottom;
     //uint32_t timer, timer2=0;
 
-	runlengthAnalysis();
+	if (runlengthAnalysis()<0)
+	{
+    	m_numBlobs = 0;
+		m_numCCBlobs = 0;
+		return -1;
+	}
 
     // copy blobs into memory
     invalid = 0;
@@ -241,6 +257,7 @@ void Blobs::blobify()
         cprintf("%d: blobs 0\n", frame);
     frame++;
 #endif
+	return 0;
 }
 
 

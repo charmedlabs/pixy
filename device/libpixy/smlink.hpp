@@ -4,8 +4,8 @@
 #include "pixyvals.h"
 #include "link.h"
 
-#define SM_LOC                 (SRAM4_LOC+0x3000)
-#define SM_SIZE                (SRAM4_SIZE-0x3000)
+#define SM_LOC                 (SRAM4_LOC+0x3c00)
+#define SM_SIZE                (SRAM4_SIZE-0x3c00)
 #define SM_BUFSIZE             (SM_SIZE-4)
 
 // status

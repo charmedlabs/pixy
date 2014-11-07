@@ -136,9 +136,15 @@ int blobsLoop()
 	BlobA *blobs;
 	BlobB *ccBlobs;
 	uint32_t numBlobs, numCCBlobs;
+	static uint32_t drop = 0;
 
 	// create blobs
-	g_blobs->blobify();
+
+	if (g_blobs->blobify()<0)
+	{
+		cprintf("drop %d\n", drop++);
+		return;
+	}
 
 	g_blobs->getBlobs(&blobs, &numBlobs, &ccBlobs, &numCCBlobs);
 	cc_sendBlobs(g_chirpUsb, blobs, numBlobs, ccBlobs, numCCBlobs);

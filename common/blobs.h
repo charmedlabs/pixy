@@ -46,7 +46,7 @@ class Blobs
 public:
     Blobs(Qqueue *qq, uint8_t *lut);
     ~Blobs();
-    void blobify();
+    int blobify();
     uint16_t getBlock(uint8_t *buf, uint32_t buflen);
     uint16_t getCCBlock(uint8_t *buf, uint32_t buflen);
     BlobA *getMaxBlob(uint16_t signature=0);
@@ -56,7 +56,7 @@ public:
 	ColorLUT m_clut;
 
 private:
-    void runlengthAnalysis();
+    int runlengthAnalysis();
     void handleSegment(uint8_t signature, uint16_t row, uint16_t startCol, uint16_t length);
 	void endFrame();
     uint16_t combine(uint16_t *blobs, uint16_t numBlobs);

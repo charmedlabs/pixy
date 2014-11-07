@@ -17,7 +17,7 @@
 #include <inttypes.h>
 
 #define QQ_LOC        SRAM4_LOC
-#define QQ_SIZE       0x3000
+#define QQ_SIZE       0x3c00
 #define QQ_MEM_SIZE  ((QQ_SIZE-sizeof(struct QqueueFields)+sizeof(Qval))/sizeof(Qval))
 
 #ifdef __cplusplus  

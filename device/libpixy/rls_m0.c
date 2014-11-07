@@ -905,6 +905,7 @@ int32_t getRLSFrame(uint32_t *m0Mem, uint32_t *lut)
 		// not enough space--- return error
 		if (qq_free()<MAX_NEW_QVALS_PER_LINE)
 		{
+			frameEnd.m_col = 0xfffe;
 			qq_enqueue(&frameEnd);
 			printf("*\n");
 			return -1;
