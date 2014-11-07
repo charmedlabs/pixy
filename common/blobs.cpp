@@ -13,19 +13,16 @@
 // end license header
 //
 
-#ifdef PIXY
-#include "pixy_init.h"
-#include "misc.h"
-#else
-#include "pixymon.h"
+#ifndef PIXY
+#include <qdebug.h>
 #endif
 #include "blobs.h"
-#include "colorlut.h"
 
-#define CC_SIGNATURE(s) (m_ccMode==CC_ONLY || m_clut->getType(s)==CL_MODEL_TYPE_COLORCODE)
+#define CC_SIGNATURE(s) false //(m_ccMode==CC_ONLY2 || m_clut->getType(s)==CL_MODEL_TYPE_COLORCODE)
 
-Blobs::Blobs(Qqueue *qq)
+Blobs::Blobs(Qqueue *qq, uint8_t *lut) : m_clut(lut)
 {
+
     int i;
 
     m_mutex = false;
@@ -33,25 +30,19 @@ Blobs::Blobs(Qqueue *qq)
     m_maxBlobs = MAX_BLOBS;
     m_maxBlobsPerModel = MAX_BLOBS_PER_MODEL;
     m_mergeDist = MAX_MERGE_DIST;
+
+	m_qq = qq;
 #ifdef PIXY
     m_maxCodedDist = MAX_CODED_DIST;
 #else
     m_maxCodedDist = MAX_CODED_DIST/2;
 #endif
-    m_ccMode = ENABLED;
+    m_ccMode = DISABLED;
 
-    m_qq = qq;
     m_blobs = new uint16_t[MAX_BLOBS*5];
     m_numBlobs = 0;
     m_blobReadIndex = 0;
     m_ccBlobReadIndex = 0;
-
-#ifdef PIXY
-    m_clut = new ColorLUT((void *)LUT_MEMORY);
-#else
-    m_lut = new uint8_t[CL_LUT_SIZE];
-    m_clut = new ColorLUT(m_lut);
-#endif
 
     // reset blob assemblers
     for (i=0; i<NUM_MODELS; i++)
@@ -74,11 +65,20 @@ int Blobs::setParams(uint16_t maxBlobs, uint16_t maxBlobsPerModel, uint32_t minA
 
 Blobs::~Blobs()
 {
-#ifndef PIXY
-    delete [] m_lut;
-#endif
-    delete m_clut;
+
     delete [] m_blobs;
+}
+
+void Blobs::handleSegment(uint8_t signature, uint16_t row, uint16_t startCol, uint16_t length)
+{
+	SSegment s;
+
+    s.model = signature;
+    s.row = row;
+    s.startCol = startCol;
+    s.endCol = startCol+length;
+
+    m_assembler[signature-1].Add(s);
 }
 
 // Blob format:
@@ -87,6 +87,77 @@ Blobs::~Blobs()
 // 2: right X edge
 // 3: top Y edge
 // 4: bottom Y edge
+void Blobs::runlengthAnalysis()
+{
+    int32_t row;
+    uint32_t startCol, sig, prevSig, prevStartCol, segmentStartCol, segmentEndCol, segmentSig=0;
+    bool merge;
+    Qval qval;
+    int32_t u, v, c;
+
+    while(1)
+    {
+        while (m_qq->dequeue(&qval)==0);
+        if (qval.m_col==0xffff)
+            break;
+        if (qval.m_col==0)
+        {
+            prevStartCol = 0xffff;
+            prevSig = 0;
+            if (segmentSig)
+            {
+                handleSegment(segmentSig, row, segmentStartCol-1, segmentEndCol - segmentStartCol+1);
+                segmentSig = 0;
+            }
+            row++;
+            continue;
+        }
+
+        sig = qval.m_col&0x07;
+        qval.m_col >>= 3;
+        startCol = qval.m_col;
+
+        u = qval.m_u;
+        v = qval.m_v;
+
+        u <<= LUT_ENTRY_SCALE;
+        v <<= LUT_ENTRY_SCALE;
+        c = qval.m_y;
+        if (c==0)
+            c = 1;
+        u /= c;
+        v /= c;
+
+        if (m_clut.m_runtimeSigs[sig-1].m_uMin<u && u<m_clut.m_runtimeSigs[sig-1].m_uMax &&
+                m_clut.m_runtimeSigs[sig-1].m_vMin<v && v<m_clut.m_runtimeSigs[sig-1].m_vMax)
+        {
+            merge = startCol-prevStartCol<=4 && prevSig==sig;
+            if (segmentSig==0 && merge)
+            {
+                segmentSig = sig;
+                segmentStartCol = prevStartCol;
+            }
+            else if (segmentSig!=0 && (segmentSig!=sig || !merge))
+            {
+                handleSegment(segmentSig, row, segmentStartCol-1, segmentEndCol - segmentStartCol+1);
+                segmentSig = 0;
+            }
+
+            if (segmentSig!=0 && merge)
+                segmentEndCol = startCol;
+            else if (segmentSig==0 && !merge)
+                handleSegment(sig, row, startCol-1, 2);
+            prevSig = sig;
+            prevStartCol = startCol;
+        }
+        else if (segmentSig!=0)
+        {
+            handleSegment(segmentSig, row, segmentStartCol-1, segmentEndCol - segmentStartCol+1);
+            segmentSig = 0;
+        }
+    }
+	endFrame();
+}
 
 void Blobs::blobify()
 {
@@ -98,7 +169,7 @@ void Blobs::blobify()
     uint16_t left, top, right, bottom;
     //uint32_t timer, timer2=0;
 
-    unpack();
+	runlengthAnalysis();
 
     // copy blobs into memory
     invalid = 0;
@@ -172,60 +243,6 @@ void Blobs::blobify()
 #endif
 }
 
-void Blobs::unpack()
-{
-#if 0
-    SSegment s;
-    int32_t row;
-    bool memfull;
-    uint32_t i;
-    Qval qval;
-
-    // q val:
-    // | 4 bits    | 7 bits      | 9 bits | 9 bits    | 3 bits |
-    // | shift val | shifted sum | length | begin col | model  |
-
-    row = -1;
-    memfull = false;
-    i = 0;
-
-    while(1)
-    {
-        while (m_qq->dequeue(&qval)==0);
-        if (qval==0xffffffff)
-            break;
-        i++;
-        if (qval==0)
-        {
-            row++;
-            continue;
-        }
-        s.model = qval&0x07;
-        if (s.model>0 && !memfull)
-        {
-            s.row = row;
-            qval >>= 3;
-            s.startCol = qval&0x1ff;
-            qval >>= 9;
-            s.endCol = (qval&0x1ff) + s.startCol;
-            if (m_assembler[s.model-1].Add(s)<0)
-            {
-                memfull = true;
-#ifdef PIXY
-                cprintf("heap full %d\n", i);
-#endif
-            }
-        }
-    }
-    //cprintf("rows %d %d\n", row, i);
-    // finish frame
-    for (i=0; i<NUM_MODELS; i++)
-    {
-        m_assembler[i].EndFrame();
-        m_assembler[i].SortFinished();
-    }
-#endif
-}
 
 uint16_t Blobs::getCCBlock(uint8_t *buf, uint32_t buflen)
 {
@@ -294,7 +311,7 @@ uint16_t Blobs::getCCBlock(uint8_t *buf, uint32_t buflen)
 
 
 uint16_t Blobs::getBlock(uint8_t *buf, uint32_t buflen)
-{							
+{
     uint16_t *buf16 = (uint16_t *)buf;
     uint16_t temp, width, height;
     uint16_t checksum;
@@ -406,7 +423,7 @@ BlobA *Blobs::getMaxBlob(uint16_t signature)
     }
 
     return NULL; // no blobs...
-} 
+}
 
 void Blobs::getBlobs(BlobA **blobs, uint32_t *len, BlobB **ccBlobs, uint32_t *ccLen)
 {
@@ -1000,43 +1017,13 @@ void Blobs::processCC()
     }
 }
 
-int Blobs::generateLUT(uint8_t model, const Frame8 &frame, const RectA &region, ColorModel *pcmodel)
+void Blobs::endFrame()
 {
-    int goodness;
-    ColorModel cmodel;
-    if (model>NUM_MODELS)
-        return -1;
-
-    goodness = m_clut->generate(&cmodel, frame, region);
-    if (goodness==0)
-        return -1; // this model sucks!
-
-    if (pcmodel)
-        *pcmodel = cmodel;
-
-    return goodness;
+    int i;
+    for (i=0; i<NUM_MODELS; i++)
+    {
+        m_assembler[i].EndFrame();
+        m_assembler[i].SortFinished();
+    }
 }
-
-int Blobs::generateLUT(uint8_t model, const Frame8 &frame, const Point16 &seed, ColorModel *pcmodel, RectA *region)
-{
-    int goodness;
-    RectA cregion;
-    ColorModel cmodel;
-
-    m_clut->growRegion(&cregion, frame, seed);
-
-    goodness = m_clut->generate(&cmodel, frame, cregion);
-    if (goodness==0)
-        return -1; // this model sucks!
-
-
-    if (region)
-        *region = cregion;
-
-    if (pcmodel)
-        *pcmodel = cmodel;
-
-    return goodness;
-}
-
 

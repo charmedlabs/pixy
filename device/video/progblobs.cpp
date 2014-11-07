@@ -34,14 +34,15 @@ Program g_progBlobs =
 int blobsSetup()
 {
 	uint8_t c;
-	return 0; 
 
 	// setup camera mode
 	cam_setMode(CAM_MODE1);
  	
+#ifdef DA
 	// load lut if we've grabbed any frames lately
 	if (g_rawFrame.m_pixels)
 		cc_loadLut();
+#endif
 
 	// setup qqueue and M0
 	g_qqueue->flush();
@@ -95,11 +96,11 @@ void handleRecv()
 
 int blobsLoop()
 {
+#if 0
 	BlobA *blobs;
 	BlobB *ccBlobs;
 	uint32_t numBlobs, numCCBlobs;
 
-	return 0;
 	// create blobs
 	g_blobs->blobify();
 
@@ -117,6 +118,32 @@ int blobsLoop()
 	// deal with any latent received data until the next frame comes in
 	while(!g_qqueue->queued())
 		handleRecv();
+
+#endif
+#if 0
+	Qval qval;
+	static int i = 0;
+	while(1)
+	{
+		if (g_qqueue->dequeue(&qval) && qval.m_col==0xffff)
+		{
+			cprintf("%d\n", i++);
+			break;
+		}	
+	}
+#endif
+#if 1
+	BlobA *blobs;
+	BlobB *ccBlobs;
+	uint32_t numBlobs, numCCBlobs;
+
+	// create blobs
+	g_blobs->blobify();
+
+	g_blobs->getBlobs(&blobs, &numBlobs, &ccBlobs, &numCCBlobs);
+	cc_sendBlobs(g_chirpUsb, blobs, numBlobs, ccBlobs, numCCBlobs);
+
+#endif
 
 	return 0;
 }

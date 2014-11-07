@@ -17,8 +17,8 @@
 
 #include <stdint.h>
 #include "blob.h"
-#include "colorlut.h"
 #include "pixytypes.h"
+#include "colorlut.h"
 #include "qqueue.h"
 
 #define NUM_MODELS            7
@@ -29,8 +29,6 @@
 #define MIN_COLOR_CODE_AREA   10
 #define MAX_CODED_DIST        6
 #define MAX_COLOR_CODE_MODELS 5
-
-#define LUT_MEMORY		((uint8_t *)SRAM1_LOC + SRAM1_SIZE-CL_LUT_SIZE)  // +0x100 make room for prebuf and palette
 
 #define BL_BEGIN_MARKER	      0xaa55
 #define BL_BEGIN_MARKER_CC    0xaa56
@@ -46,7 +44,7 @@ enum ColorCodeMode
 class Blobs
 {
 public:
-    Blobs(Qqueue *qq);
+    Blobs(Qqueue *qq, uint8_t *lut);
     ~Blobs();
     void blobify();
     uint16_t getBlock(uint8_t *buf, uint32_t buflen);
@@ -55,16 +53,12 @@ public:
     void getBlobs(BlobA **blobs, uint32_t *len, BlobB **ccBlobs, uint32_t *ccLen);
     int setParams(uint16_t maxBlobs, uint16_t maxBlobsPerModel, uint32_t minArea, ColorCodeMode ccMode);
 
-    int generateLUT(uint8_t model, const Frame8 &frame, const RectA &region, ColorModel *pcmodel=NULL);
-    int generateLUT(uint8_t model, const Frame8 &frame, const Point16 &seed, ColorModel *pcmodel=NULL, RectA *region=NULL);
-
-    ColorLUT *m_clut;
-#ifndef PIXY
-    uint8_t *m_lut;
-#endif
+	ColorLUT m_clut;
 
 private:
-    void unpack();
+    void runlengthAnalysis();
+    void handleSegment(uint8_t signature, uint16_t row, uint16_t startCol, uint16_t length);
+	void endFrame();
     uint16_t combine(uint16_t *blobs, uint16_t numBlobs);
     uint16_t combine2(uint16_t *blobs, uint16_t numBlobs);
     uint16_t compress(uint16_t *blobs, uint16_t numBlobs);
@@ -83,7 +77,7 @@ private:
     void printBlobs();
 
     CBlobAssembler m_assembler[NUM_MODELS];
-    Qqueue *m_qq;
+	Qqueue *m_qq;
 
     uint16_t *m_blobs;
     uint16_t m_numBlobs;
@@ -103,6 +97,7 @@ private:
     uint16_t m_maxCodedDist;
     ColorCodeMode m_ccMode;
 };
+
 
 
 #endif // BLOBS_H

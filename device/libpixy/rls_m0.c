@@ -13,6 +13,7 @@
 // end license header
 //
 
+#include <debug.h>
 #include "rls_m0.h"
 #include "frame_m0.h"
 #include "chirp.h"
@@ -905,6 +906,7 @@ int32_t getRLSFrame(uint32_t *m0Mem, uint32_t *lut)
 		if (qq_free()<MAX_NEW_QVALS_PER_LINE)
 		{
 			qq_enqueue(&frameEnd);
+			printf("*\n");
 			return -1;
 		} 
 		qq_enqueue(&lineBegin); 

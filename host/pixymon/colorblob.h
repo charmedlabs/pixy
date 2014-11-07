@@ -20,6 +20,7 @@
 
 typedef SimpleVector<Point16> Points;
 
+#if 0
 struct ColorSignature
 {
     int32_t m_uMin;
@@ -38,7 +39,10 @@ struct RuntimeSignature
     int32_t m_vMin;
     int32_t m_vMax;
 };
+#endif
 
+struct ColorSignature;
+struct RuntimeSignature;
 struct UVPixel
 {
     UVPixel()

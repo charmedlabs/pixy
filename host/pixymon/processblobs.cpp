@@ -20,7 +20,9 @@ ProcessBlobs::ProcessBlobs(Interpreter *interpreter)
 {
     m_interpreter = interpreter;
     m_qq = new Qqueue();
+#ifdef DEFER
     m_blobs = new Blobs(m_qq);
+#endif
     m_qMem = new uint32_t[0x10000];
 
     connect(m_interpreter, SIGNAL(paramChange()), this, SLOT(handleParamChange()));
@@ -28,7 +30,9 @@ ProcessBlobs::ProcessBlobs(Interpreter *interpreter)
 
 ProcessBlobs::~ProcessBlobs()
 {
+#ifdef DEFER
     delete m_blobs;
+#endif
     delete m_qq;
     delete [] m_qMem;
 }
@@ -196,7 +200,9 @@ void ProcessBlobs::handleParamChange()
     if ((variant=m_interpreter->m_pixyParameters.value("Color code mode")))
         m_ccMode = variant->toUInt();
 
+#ifdef DEFER
     // update
     m_blobs->setParams(m_maxBlobs, m_maxBlobsPerModel, m_minArea, (ColorCodeMode)m_ccMode);
+#endif
 }
 

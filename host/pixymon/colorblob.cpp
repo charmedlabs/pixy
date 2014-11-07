@@ -1,5 +1,6 @@
 #include <math.h>
 #include <QDebug>
+#include "colorlut.h"
 #include "colorblob.h"
 #include "monmodule.h"
 

@@ -371,6 +371,21 @@ void CBlobModule::updateSignatures()
         m_runtimeSigs[signature].m_vMin = c + (m_signatures[signature].m_vMin - c)*m_acqRange;
         m_runtimeSigs[signature].m_vMax = c + (m_signatures[signature].m_vMax - c)*m_acqRange;
     }
+    for (signature=0; signature<NUM_SIGNATURES; signature++)
+    {
+        uint32_t responseInt;
+
+        ChirpProc sigBounds = m_interpreter->m_chirp->getProc("cc_setSigBounds");
+        m_interpreter->m_chirp->callSync(sigBounds,
+                                         INT8(signature),
+                                         INT16(m_runtimeSigs[signature].m_uMin),
+                                         INT16(m_runtimeSigs[signature].m_uMax),
+                                         INT16(m_signatures[signature].m_uMean),
+                                         INT16(m_runtimeSigs[signature].m_vMin),
+                                         INT16(m_runtimeSigs[signature].m_vMax),
+                                         INT16(m_signatures[signature].m_vMean),
+                                         END_OUT_ARGS, &responseInt, END_IN_ARGS);
+    }
 }
 
 void CBlobModule::rla()

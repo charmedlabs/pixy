@@ -57,7 +57,7 @@ int main(void)
 
 #endif
 #if 1
-	//printf("M0 start\n");
+	printf("M0 start\n");
 
 	chirpOpen();
 	exec_init();

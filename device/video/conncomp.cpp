@@ -89,6 +89,12 @@ static const ProcModule g_module[] =
 	{CRP_UINT32, CRP_UINTS8, END},
 	"" 
 	},
+	{
+	"cc_setSigBounds",
+	(ProcPtr)cc_setSigBounds,
+	{CRP_UINT8, CRP_UINT16, CRP_UINT16, CRP_UINT16, CRP_UINT16, CRP_UINT16, CRP_UINT16, END},
+	"" 
+	},
 	END
 };
 
@@ -111,12 +117,13 @@ int cc_loadLut(void)
 	int i, res;
 	uint32_t len;
 	char id[32];
-	ColorModel *pmodel;
+	ColorSignature *psig;
 
 	// indicate that raw frame has been overwritten
 	g_rawFrame.m_pixels = NULL;
 	// clear lut
-	g_blobs->m_clut->clear();
+#ifdef DEFER
+	g_blobs->m_clut.clear();
 
 	for (i=1; i<=NUM_MODELS; i++)
 	{
@@ -127,7 +134,7 @@ int cc_loadLut(void)
 			return res;
 		g_blobs->m_clut->add(pmodel, i);
 	}
-
+#endif
 	// go ahead and flush since we've changed things
 	g_qqueue->flush();
 
@@ -137,6 +144,7 @@ int cc_loadLut(void)
 void cc_loadParams(void)
 {
 	int i;
+#ifdef DEFER
 	ColorModel model;
 	char id[32], desc[32];
 
@@ -148,6 +156,7 @@ void cc_loadParams(void)
 		// add if it doesn't exist yet
 		prm_add(id, PRM_FLAG_INTERNAL, desc, INTS8(sizeof(ColorModel), &model), END);
 	}
+#endif
 
 	// others -----
 
@@ -191,7 +200,7 @@ void cc_loadParams(void)
 int cc_init(Chirp *chirp)
 {
 	g_qqueue = new Qqueue;
-	g_blobs = new Blobs(g_qqueue);
+	g_blobs = new Blobs(g_qqueue, LUT_MEMORY);
 
 	chirp->registerModule(g_module);	
 
@@ -207,6 +216,7 @@ int cc_init(Chirp *chirp)
 
 void cc_setBounds(const uint8_t mode)
 {
+#ifdef DEFER
 	float minSat, hueTol, satTol;
 
 	if (mode==1)
@@ -223,11 +233,13 @@ void cc_setBounds(const uint8_t mode)
 	}
 
    	g_blobs->m_clut->setBounds(minSat, hueTol, satTol); 
+#endif
 }
 
 // this routine assumes it can grab valid pixels in video memory described by the box
 int32_t cc_setSigRegion(const uint32_t &type, const uint8_t &model, const uint16_t &xoffset, const uint16_t &yoffset, const uint16_t &width, const uint16_t &height)
 {
+#ifdef DEFER
 	int result;
 	char id[32];
 	ColorModel cmodel;
@@ -261,10 +273,13 @@ int32_t cc_setSigRegion(const uint32_t &type, const uint8_t &model, const uint16
 	cprintf("Success!\n");
 
 	return result;
+#endif
+	return 0;
 }
 
 int32_t cc_setSigPoint(const uint32_t &type, const uint8_t &model, const uint16_t &x, const uint16_t &y, Chirp *chirp)
 {
+#ifdef DEFER
 	RectA region;
 	int result; 
 	char id[32];
@@ -304,10 +319,13 @@ int32_t cc_setSigPoint(const uint32_t &type, const uint8_t &model, const uint16_
 	cprintf("Success!\n");
 
 	return result;
+#endif
+	return 0;
 }
 
 int32_t cc_clearSig(const uint8_t &model)
 {
+#ifdef DEFER
 	char id[32];
 	ColorModel cmodel;
 	int res;
@@ -324,10 +342,13 @@ int32_t cc_clearSig(const uint8_t &model)
  	cc_loadLut();
 
 	return res;
+#endif
+	return 0;
 }
 
 int32_t cc_clearAllSig()
 {
+#ifdef DEFER
 	char id[32];
 	uint8_t model;
 	ColorModel cmodel;
@@ -345,7 +366,7 @@ int32_t cc_clearAllSig()
 
 	// update lut
  	cc_loadLut();
-
+#endif
 	return 0;
 }
 
@@ -505,4 +526,22 @@ void cc_setLED()
 		led_set(0);
 }
 
+int32_t cc_setSigBounds(const uint8_t &sig, const int16_t &umin, const int16_t &umax, const int16_t &umean, const int16_t &vmin, const int16_t &vmax, const int16_t &vmean) 
+{
+	g_blobs->m_clut.m_runtimeSigs[sig].m_uMin = umin;
+	g_blobs->m_clut.m_runtimeSigs[sig].m_uMax = umax;
+	g_blobs->m_clut.m_signatures[sig].m_uMean = umean;
+	g_blobs->m_clut.m_runtimeSigs[sig].m_vMin = vmin;
+	g_blobs->m_clut.m_runtimeSigs[sig].m_vMax = vmax;
+	g_blobs->m_clut.m_signatures[sig].m_vMean = vmean;	
+	uint8_t sig2 = sig;
+	cprintf("sig %d %d %d %d %d\n", sig2, 
+	g_blobs->m_clut.m_runtimeSigs[sig].m_uMin, 
+	g_blobs->m_clut.m_runtimeSigs[sig].m_uMax, 
+	g_blobs->m_clut.m_runtimeSigs[sig].m_vMin, 
+	g_blobs->m_clut.m_runtimeSigs[sig].m_vMax); 
+	
+	return 0;	
+}
+	
 

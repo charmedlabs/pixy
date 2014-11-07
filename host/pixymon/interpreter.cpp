@@ -94,9 +94,7 @@ void Interpreter::handleLocalProgram()
 {
     int res;
 
-    QMutexLocker locker(&m_mutexProg);
-
-    if (m_localProgramRunning)
+    if (m_program.size()>0 && m_localProgramRunning)
     {
         if (m_pc>=m_program.size())
             m_pc = 0;
@@ -459,10 +457,13 @@ void Interpreter::handlePendingCommand()
         break;
 
     case RUN_LOCAL:
-        m_localProgramRunning = true;
-        emit runState(true);
-        emit enableConsole(false);
-        m_pc = 0;
+        if (m_program.size()>0)
+        {
+            m_localProgramRunning = true;
+            emit runState(true);
+            emit enableConsole(false);
+            m_pc = 0;
+        }
         break;
 
     case LOAD_PARAMS:
@@ -819,6 +820,8 @@ void Interpreter::execute(const QString &command)
     m_mutexProg.unlock();
     if (m_running==true)
         queueCommand(STOP);
+    if (m_localProgramRunning)
+        queueCommand(STOP_LOCAL);
 }
 
 void Interpreter::execute(QStringList commandList)

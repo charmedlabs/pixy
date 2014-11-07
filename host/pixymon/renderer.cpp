@@ -504,13 +504,14 @@ int Renderer::renderCMV1(uint8_t renderFlags, uint32_t cmodelsLen, float *cmodel
     uint32_t numQvals;
     uint32_t *qVals;
 
+#ifdef DEFER
     if (cmodelsLen>=sizeof(ColorModel)*NUM_MODELS/sizeof(float)) // create lookup table
     {
         m_blobs.m_blobs->m_clut->clear();
         for (i=0; i<NUM_MODELS; i++, cmodels+=sizeof(ColorModel)/sizeof(float))
             m_blobs.m_blobs->m_clut->add((ColorModel *)cmodels, i+1);
     }
-
+#endif
     //m_blobs.process(Frame8(frame, width, height), &numBlobs, &blobs, &numCCBlobs, &ccBlobs, &numQvals, &qVals);
 
     renderBA81(0, width, height, frameLen, frame);
