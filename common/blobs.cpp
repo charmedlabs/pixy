@@ -69,7 +69,7 @@ Blobs::~Blobs()
     delete [] m_blobs;
 }
 
-void Blobs::handleSegment(uint8_t signature, uint16_t row, uint16_t startCol, uint16_t length)
+int Blobs::handleSegment(uint8_t signature, uint16_t row, uint16_t startCol, uint16_t length)
 {
 	SSegment s;
 
@@ -78,7 +78,7 @@ void Blobs::handleSegment(uint8_t signature, uint16_t row, uint16_t startCol, ui
     s.startCol = startCol;
     s.endCol = startCol+length;
 
-    m_assembler[signature-1].Add(s);
+    return m_assembler[signature-1].Add(s);
 }
 
 // Blob format:
@@ -93,20 +93,22 @@ int Blobs::runlengthAnalysis()
     uint32_t startCol, sig, prevSig, prevStartCol, segmentStartCol, segmentEndCol, segmentSig=0;
     bool merge;
     Qval qval;
-    int32_t u, v, c;
+    int32_t res=0, u, v, c;
 
     while(1)
     {
         while (m_qq->dequeue(&qval)==0);
         if (qval.m_col>=0xfffe)
             break;
+		if (res<0)
+			continue;
         if (qval.m_col==0)
         {
             prevStartCol = 0xffff;
             prevSig = 0;
             if (segmentSig)
             {
-                handleSegment(segmentSig, row, segmentStartCol-1, segmentEndCol - segmentStartCol+1);
+                res = handleSegment(segmentSig, row, segmentStartCol-1, segmentEndCol - segmentStartCol+1);
                 segmentSig = 0;
             }
             row++;
@@ -139,35 +141,28 @@ int Blobs::runlengthAnalysis()
             }
             else if (segmentSig!=0 && (segmentSig!=sig || !merge))
             {
-                handleSegment(segmentSig, row, segmentStartCol-1, segmentEndCol - segmentStartCol+1);
+                res = handleSegment(segmentSig, row, segmentStartCol-1, segmentEndCol - segmentStartCol+1);
                 segmentSig = 0;
             }
 
             if (segmentSig!=0 && merge)
                 segmentEndCol = startCol;
             else if (segmentSig==0 && !merge)
-                handleSegment(sig, row, startCol-1, 2);
+                res = handleSegment(sig, row, startCol-1, 2);
             prevSig = sig;
             prevStartCol = startCol;
         }
         else if (segmentSig!=0)
         {
-            handleSegment(segmentSig, row, segmentStartCol-1, segmentEndCol - segmentStartCol+1);
+            res = handleSegment(segmentSig, row, segmentStartCol-1, segmentEndCol - segmentStartCol+1);
             segmentSig = 0;
         }
     }
+	endFrame();
+
 	if (qval.m_col==0xfffe)
-	{
-		endFrame();
-    	for (int i=0; i<NUM_MODELS; i++)
-        	m_assembler[i].Reset();
 		return -1;
-	}
-	else
-	{
-		endFrame();
-		return 0;
-	}
+	return 0;
 }
 
 int Blobs::blobify()
@@ -182,6 +177,8 @@ int Blobs::blobify()
 
 	if (runlengthAnalysis()<0)
 	{
+   	 	for (i=0; i<NUM_MODELS; i++)
+        	m_assembler[i].Reset();
     	m_numBlobs = 0;
 		m_numCCBlobs = 0;
 		return -1;

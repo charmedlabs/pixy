@@ -57,7 +57,7 @@ public:
 
 private:
     int runlengthAnalysis();
-    void handleSegment(uint8_t signature, uint16_t row, uint16_t startCol, uint16_t length);
+    int handleSegment(uint8_t signature, uint16_t row, uint16_t startCol, uint16_t length);
 	void endFrame();
     uint16_t combine(uint16_t *blobs, uint16_t numBlobs);
     uint16_t combine2(uint16_t *blobs, uint16_t numBlobs);
