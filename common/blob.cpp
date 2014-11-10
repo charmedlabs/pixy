@@ -320,7 +320,7 @@ int CBlobAssembler::Add(const SSegment &segment) {
     if (newBlob==NULL)
     {
 #ifdef PIXY
-        cprintf("blobs %d\n", m_blobCount);
+        cprintf("blobs %d\nheap full", m_blobCount);
 #endif
         return -1;
     }

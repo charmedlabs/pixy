@@ -757,6 +757,36 @@ beg1	EOL_CHECK
 		ADDS 	r4, #12  // inc col, skipped pixel
 		NOP
 		NOP
+
+#if 1
+		NOP
+		NOP
+		NOP
+		NOP
+		NOP
+
+		NOP
+		NOP
+		NOP
+		NOP
+		NOP
+		NOP
+		NOP
+		NOP
+		NOP
+		NOP
+		NOP
+		NOP
+
+		NOP
+		NOP
+		NOP
+		NOP
+		NOP
+		NOP
+		ADDS 	r4, #8  // inc col, skipped pixel
+#endif
+
 		B		beg1
 
 	   	// wait for hsync to go low

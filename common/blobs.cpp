@@ -93,7 +93,8 @@ int Blobs::runlengthAnalysis()
     uint32_t startCol, sig, prevSig, prevStartCol, segmentStartCol, segmentEndCol, segmentSig=0;
     bool merge;
     Qval qval;
-    int32_t res=0, u, v, c;
+    int32_t res=0;
+	register int32_t u, v, c;
 
     while(1)
     {
@@ -116,8 +117,6 @@ int Blobs::runlengthAnalysis()
         }
 
         sig = qval.m_col&0x07;
-        qval.m_col >>= 3;
-        startCol = qval.m_col;
 
         u = qval.m_u;
         v = qval.m_v;
@@ -133,7 +132,9 @@ int Blobs::runlengthAnalysis()
         if (m_clut.m_runtimeSigs[sig-1].m_uMin<u && u<m_clut.m_runtimeSigs[sig-1].m_uMax &&
                 m_clut.m_runtimeSigs[sig-1].m_vMin<v && v<m_clut.m_runtimeSigs[sig-1].m_vMax)
         {
-            merge = startCol-prevStartCol<=4 && prevSig==sig;
+         	qval.m_col >>= 3;
+        	startCol = qval.m_col;
+           	merge = startCol-prevStartCol<=5 && prevSig==sig;
             if (segmentSig==0 && merge)
             {
                 segmentSig = sig;
