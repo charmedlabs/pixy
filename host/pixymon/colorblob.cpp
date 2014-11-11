@@ -12,6 +12,7 @@ ColorBlob::ColorBlob(uint8_t *lut)
     m_miny = DEFAULT_MINY;
     m_acqRange = DEFAULT_RANGE;
     m_trackRange = 1.0;
+    m_ratio = DEFAULT_TOL;
     clearLUT();
 }
 
@@ -141,12 +142,12 @@ int ColorBlob::generateSignature(const Frame8 &frame, const Point16 &point, Poin
                 g2 = pixels[-frame.m_width + x];
                 b = pixels[-frame.m_width + x - 1];
                 c = r+g1+b;
-                if (c<miny)
-                    continue;
+                if (c==0)
+                    c = 1; //continue;
                 u = ((r-g1)<<LUT_ENTRY_SCALE)/c;
                 c = r+g2+b;
-                if (c<miny)
-                    continue;
+                if (c==0)
+                    c = 1;
                 v = ((b-g2)<<LUT_ENTRY_SCALE)/c;
                 uPixels[count] = u;
                 vPixels[count] = v;
@@ -518,5 +519,205 @@ void ColorBlob::setParameters(float range, float miny, uint32_t maxDist, float m
     m_maxDist = maxDist;
     m_minRatio = minRatio;
 }
+
+
+class IterPixel
+{
+public:
+    IterPixel(const Frame8 &frame, const RectA &region);
+    IterPixel(const Frame8 &frame, const Points *points);
+    bool next(UVPixel *uv);
+    bool reset(bool cleari=true);
+
+private:
+    bool nextHelper(UVPixel *uv);
+
+    Frame8 m_frame;
+    RectA m_region;
+    uint32_t m_x, m_y;
+    int32_t m_miny;
+    uint8_t *m_pixels;
+    const Points *m_points;
+    int m_i;
+
+};
+
+
+IterPixel::IterPixel(const Frame8 &frame, const RectA &region)
+{
+    m_frame = frame;
+    m_region = region;
+    m_points = NULL;
+    reset();
+}
+
+IterPixel::IterPixel(const Frame8 &frame, const Points *points)
+{
+    m_frame = frame;
+    m_points = points;
+    reset();
+}
+
+bool IterPixel::reset(bool cleari)
+{
+    if (cleari)
+        m_i = 0;
+    if (m_points)
+    {
+        if (m_points->size()>m_i)
+        {
+            m_region = RectA((*m_points)[m_i].m_x, (*m_points)[m_i].m_y, GROW_INC, GROW_INC);
+            m_i++;
+        }
+        else
+            return false; // empty!
+    }
+    m_x = m_y = 0;
+    m_pixels = m_frame.m_pixels + (m_region.m_yOffset | 1)*m_frame.m_width + (m_region.m_xOffset | 1);
+    return true;
+}
+
+bool IterPixel::next(UVPixel *uv)
+{
+    if (m_points)
+    {
+        if (nextHelper(uv))
+            return true; // working on the current block
+        else // get new block
+        {
+            if (reset(false)) // reset indexes, increment m_i, get new block
+                return nextHelper(uv);  // we have another block!
+            else
+                return false; // blocks are empty
+        }
+    }
+    else
+        return nextHelper(uv);
+}
+
+
+bool IterPixel::nextHelper(UVPixel *uv)
+{
+    int32_t r, g1, g2, b, u, v, c;
+
+    if (m_x>=m_region.m_width)
+    {
+        m_x = 0;
+        m_y += 2;
+        m_pixels += m_frame.m_width*2;
+    }
+    if (m_y>=m_region.m_height)
+        return false;
+
+    r = m_pixels[m_x];
+    g1 = m_pixels[m_x - 1];
+    g2 = m_pixels[-m_frame.m_width + m_x];
+    b = m_pixels[-m_frame.m_width + m_x - 1];
+    c = r+g1+b;
+    if (c==0)
+        c = 1;
+    u = ((r-g1)<<LUT_ENTRY_SCALE)/c;
+    c = r+g2+b;
+    if (c==0)
+        c = 1;
+    v = ((b-g2)<<LUT_ENTRY_SCALE)/c;
+
+    m_x += 2;
+
+    uv->m_u = u;
+    uv->m_v = v;
+
+    return true;
+}
+
+void ColorBlob::calcRatios(IterPixel *ip, ColorSignature *sig, float ratios[])
+{
+    UVPixel uv;
+    uint32_t n=0, counts[4];
+    qlonglong usum=0, vsum=0;
+    counts[0] = counts[1] = counts[2] = counts[3] = 0;
+
+    ip->reset();
+    while(ip->next(&uv))
+    {
+        if (uv.m_u>sig->m_uMin)
+            counts[0]++;
+
+        if (uv.m_u<sig->m_uMax)
+            counts[1]++;
+
+        if (uv.m_v>sig->m_vMin)
+            counts[2]++;
+
+        if (uv.m_v<sig->m_vMax)
+            counts[3]++;
+
+        usum += uv.m_u;
+        vsum += uv.m_v;
+        n++;
+    }
+
+    // calc ratios
+    ratios[0] = (float)counts[0]/n;
+    ratios[1] = (float)counts[1]/n;
+    ratios[2] = (float)counts[2]/n;
+    ratios[3] = (float)counts[3]/n;
+    // calc mean (because it's cheap to do it here)
+    sig->m_uMean = usum/n;
+    sig->m_vMean = vsum/n;
+}
+
+void ColorBlob::iterate(IterPixel *ip, ColorSignature *sig)
+{
+    int32_t scale;
+    float ratios[4];
+
+    // binary search -- this rouine is guaranteed to find the right value +/- 1, which is good enough!
+    // find all four values, umin, umax, vmin, vmax simultaneously
+    for (scale=1<<30, sig->m_uMin=sig->m_uMax=sig->m_vMin=sig->m_vMax=0; scale!=0; scale>>=1)
+    {
+        calcRatios(ip, sig, ratios);
+        if (ratios[0]>m_ratio)
+            sig->m_uMin += scale;
+        else
+            sig->m_uMin -= scale;
+
+        if (ratios[1]>m_ratio)
+            sig->m_uMax -= scale;
+        else
+            sig->m_uMax += scale;
+
+        if (ratios[2]>m_ratio)
+            sig->m_vMin += scale;
+        else
+            sig->m_vMin -= scale;
+
+        if (ratios[3]>m_ratio)
+            sig->m_vMax -= scale;
+        else
+            sig->m_vMax += scale;
+    }
+}
+
+int ColorBlob::generateSignature2(const Frame8 &frame, const RectA &region, ColorSignature *signature)
+{
+    // this is cool-- this routine doesn't allocate any extra memory other than some stack variables
+    IterPixel ip(frame, region);
+    iterate(&ip, signature);
+
+    return 0;
+}
+
+int ColorBlob::generateSignature2(const Frame8 &frame, const Point16 &point, Points *points, ColorSignature *signature)
+{
+    // this routine requires some memory to store the region which consists of some consistently-sized blocks
+    growRegion(frame, point, points);
+    IterPixel ip(frame, points);
+    iterate(&ip, signature);
+
+    return 0;
+}
+
+
 
 

@@ -60,6 +60,8 @@ struct UVPixel
     int32_t m_v;
 };
 
+class IterPixel;
+
 class ColorBlob
 {
 public:
@@ -68,6 +70,8 @@ public:
 
     int generateSignature(const Frame8 &frame, const RectA &region, ColorSignature *signature);
     int generateSignature(const Frame8 &frame, const Point16 &point, Points *points, ColorSignature *signature);
+    int generateSignature2(const Frame8 &frame, const RectA &region, ColorSignature *signature);
+    int generateSignature2(const Frame8 &frame, const Point16 &point, Points *points, ColorSignature *signature);
 
     int generateLUT(const RuntimeSignature signatures[]);
     void clearLUT(uint8_t signum=0);
@@ -82,6 +86,10 @@ private:
 
     float calcRatio(const int32_t *uvPixels, uint32_t numuv, int32_t line, bool lt);
     int32_t iterate(const int32_t *uvPixels, uint32_t numuv, float ratio, bool pos);
+
+    void calcRatios(IterPixel *ip, ColorSignature *sig, float ratios[]);
+    void iterate(IterPixel *ip, ColorSignature *sig);
+
     uint8_t *m_lut;
 
     int32_t m_delta;
@@ -92,6 +100,7 @@ private:
     float m_trackRange;
     uint32_t m_maxDist;
     float m_minRatio;
+    float m_ratio;
 };
 
 #endif // CBLOB_H

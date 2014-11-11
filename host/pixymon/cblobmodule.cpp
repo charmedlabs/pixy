@@ -158,6 +158,19 @@ bool CBlobModule::command(const QStringList &argv)
             Points points;
             m_interpreter->getSelection(&point);
             m_cblob->generateSignature(*frame, point, &points, &m_signatures[sig-1]);
+            ColorSignature s;
+            Points points2;
+            m_cblob->generateSignature2(*frame, point, &points2, &s);
+            if (m_signatures[sig-1].m_uMin==s.m_uMin &&
+                    m_signatures[sig-1].m_uMean==s.m_uMean &&
+                    m_signatures[sig-1].m_uMax==s.m_uMax &&
+                    m_signatures[sig-1].m_vMin==s.m_vMin &&
+                    m_signatures[sig-1].m_vMean==s.m_vMean &&
+                    m_signatures[sig-1].m_vMax==s.m_vMax)
+                qDebug("equal!");
+            else
+                qDebug("not equal!");
+
             m_interpreter->m_renderer->renderRects(points, GROW_INC);
         }
         else
@@ -167,6 +180,18 @@ bool CBlobModule::command(const QStringList &argv)
 
             m_interpreter->m_renderer->pixelsOut(region.m_xOffset, region.m_yOffset, region.m_width, region.m_height);
             m_cblob->generateSignature(*frame, region, &m_signatures[sig-1]);
+            ColorSignature s;
+            m_cblob->generateSignature2(*frame, region, &s);
+            if (m_signatures[sig-1].m_uMin==s.m_uMin &&
+                    m_signatures[sig-1].m_uMean==s.m_uMean &&
+                    m_signatures[sig-1].m_uMax==s.m_uMax &&
+                    m_signatures[sig-1].m_vMin==s.m_vMin &&
+                    m_signatures[sig-1].m_vMean==s.m_vMean &&
+                    m_signatures[sig-1].m_vMax==s.m_vMax)
+                qDebug("equal!");
+            else
+                qDebug("not equal!");
+
         }
 
         updateSignatures();
