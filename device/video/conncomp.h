@@ -23,9 +23,9 @@
 
 int cc_init(Chirp *chirp);
 
-int32_t cc_setSigRegion(const uint32_t &type, const uint8_t &model, const uint16_t &xoffset, const uint16_t &yoffset, const uint16_t &width, const uint16_t &height);
-int32_t cc_setSigPoint(const uint32_t &type, const uint8_t &model, const uint16_t &x, const uint16_t &y, Chirp *chirp=NULL);
-int32_t cc_clearSig(const uint8_t &model);
+int32_t cc_setSigRegion(const uint32_t &type, const uint8_t &signum, const uint16_t &xoffset, const uint16_t &yoffset, const uint16_t &width, const uint16_t &height);
+int32_t cc_setSigPoint(const uint32_t &type, const uint8_t &signum, const uint16_t &x, const uint16_t &y, Chirp *chirp=NULL);
+int32_t cc_clearSig(const uint8_t &signum);
 int32_t cc_clearAllSig();
 int32_t cc_setMemory(const uint32_t &location, const uint32_t &len, const uint8_t *data);
 int32_t cc_getRLSFrameChirp(Chirp *chirp);

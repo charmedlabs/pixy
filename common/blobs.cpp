@@ -45,7 +45,7 @@ Blobs::Blobs(Qqueue *qq, uint8_t *lut) : m_clut(lut)
     m_ccBlobReadIndex = 0;
 
     // reset blob assemblers
-    for (i=0; i<NUM_MODELS; i++)
+    for (i=0; i<CL_NUM_SIGNATURES; i++)
         m_assembler[i].Reset();
 }
 
@@ -121,8 +121,8 @@ int Blobs::runlengthAnalysis()
         u = qval.m_u;
         v = qval.m_v;
 
-        u <<= LUT_ENTRY_SCALE;
-        v <<= LUT_ENTRY_SCALE;
+        u <<= CL_LUT_ENTRY_SCALE;
+        v <<= CL_LUT_ENTRY_SCALE;
         c = qval.m_y;
         if (c==0)
             c = 1;
@@ -178,7 +178,7 @@ int Blobs::blobify()
 
 	if (runlengthAnalysis()<0)
 	{
-   	 	for (i=0; i<NUM_MODELS; i++)
+   	 	for (i=0; i<CL_NUM_SIGNATURES; i++)
         	m_assembler[i].Reset();
     	m_numBlobs = 0;
 		m_numCCBlobs = 0;
@@ -189,7 +189,7 @@ int Blobs::blobify()
     invalid = 0;
     // mutex keeps interrupt routine from stepping on us
     m_mutex = true;
-    for (i=0, m_numBlobs=0, m_numCCBlobs=0; i<NUM_MODELS; i++)
+    for (i=0, m_numBlobs=0, m_numCCBlobs=0; i<CL_NUM_SIGNATURES; i++)
     {
         colorCode = CC_SIGNATURE(i+1);
 
@@ -244,7 +244,7 @@ int Blobs::blobify()
     m_mutex = false;
 
     // free memory
-    for (i=0; i<NUM_MODELS; i++)
+    for (i=0; i<CL_NUM_SIGNATURES; i++)
         m_assembler[i].Reset();
 
 #if 0
@@ -898,19 +898,19 @@ void Blobs::processCC()
         {
             if (closeby(blob0, blob1))
             {
-                if (blob0->m_model<=NUM_MODELS && blob1->m_model<=NUM_MODELS)
+                if (blob0->m_model<=CL_NUM_SIGNATURES && blob1->m_model<=CL_NUM_SIGNATURES)
                 {
                     count++;
                     scount = count<<3;
                     blob0->m_model |= scount;
                     blob1->m_model |= scount;
                 }
-                else if (blob0->m_model>NUM_MODELS && blob1->m_model<=NUM_MODELS)
+                else if (blob0->m_model>CL_NUM_SIGNATURES && blob1->m_model<=CL_NUM_SIGNATURES)
                 {
                     scount = blob0->m_model & ~0x07;
                     blob1->m_model |= scount;
                 }
-                else if (blob1->m_model>NUM_MODELS && blob0->m_model<=NUM_MODELS)
+                else if (blob1->m_model>CL_NUM_SIGNATURES && blob0->m_model<=CL_NUM_SIGNATURES)
                 {
                     scount = blob1->m_model & ~0x07;
                     blob0->m_model |= scount;
@@ -923,12 +923,12 @@ void Blobs::processCC()
     // 2nd pass: merge blob clumps
     for (blob0=(BlobA *)m_blobs; blob0<endBlob; blob0++)
     {
-        if (blob0->m_model<=NUM_MODELS) // skip normal blobs
+        if (blob0->m_model<=CL_NUM_SIGNATURES) // skip normal blobs
             continue;
         scount = blob0->m_model&~0x07;
         for (blob1=(BlobA *)blob0+1; blob1<endBlob; blob1++)
         {
-            if (blob1->m_model<=NUM_MODELS)
+            if (blob1->m_model<=CL_NUM_SIGNATURES)
                 continue;
 
             scount1 = blob1->m_model&~0x07;
@@ -1024,10 +1024,10 @@ void Blobs::processCC()
     {
         if (m_ccMode==MIXED)
         {
-            if (blob0->m_model>NUM_MODELS)
+            if (blob0->m_model>CL_NUM_SIGNATURES)
                 blob0->m_model = 0;
         }
-        else if (blob0->m_model>NUM_MODELS || CC_SIGNATURE(blob0->m_model))
+        else if (blob0->m_model>CL_NUM_SIGNATURES || CC_SIGNATURE(blob0->m_model))
             blob0->m_model = 0; // invalidate-- not part of a color code
     }
 }
@@ -1035,7 +1035,7 @@ void Blobs::processCC()
 void Blobs::endFrame()
 {
     int i;
-    for (i=0; i<NUM_MODELS; i++)
+    for (i=0; i<CL_NUM_SIGNATURES; i++)
     {
         m_assembler[i].EndFrame();
         m_assembler[i].SortFinished();

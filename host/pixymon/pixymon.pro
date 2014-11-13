@@ -76,7 +76,8 @@ HEADERS  += mainwindow.h \
     colorblob.h \
     monparameterdb.h \
     blobs2.h \
-    simplevector.h
+    simplevector.h \
+    ../../common/simplevector.h
 
 INCLUDEPATH += ../../common
 

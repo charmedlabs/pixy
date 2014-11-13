@@ -21,7 +21,6 @@
 #include "colorlut.h"
 #include "qqueue.h"
 
-#define NUM_MODELS            7
 #define MAX_BLOBS             100
 #define MAX_BLOBS_PER_MODEL   20
 #define MAX_MERGE_DIST        5
@@ -76,7 +75,7 @@ private:
 
     void printBlobs();
 
-    CBlobAssembler m_assembler[NUM_MODELS];
+    CBlobAssembler m_assembler[CL_NUM_SIGNATURES];
 	Qqueue *m_qq;
 
     uint16_t *m_blobs;

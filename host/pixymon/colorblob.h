@@ -15,12 +15,12 @@
 #define MAX_DIST                     2000
 #define GROW_INC                     4
 #define MIN_Y_F                      0.05 // for when generating signatures, etc
-#define MIN_Y                        ((3*(1<<8)-1)*MIN_Y_F)
+#define MIN_Y                        (int32_t)(3*((1<<8)-1)*MIN_Y_F)
 
 
 typedef SimpleVector<Point16> Points;
 
-#if 0
+#if 1
 struct ColorSignature
 {
     int32_t m_uMin;
@@ -60,7 +60,7 @@ struct UVPixel
     int32_t m_v;
 };
 
-class IterPixel;
+class IterPixel2;
 
 class ColorBlob
 {
@@ -87,8 +87,8 @@ private:
     float calcRatio(const int32_t *uvPixels, uint32_t numuv, int32_t line, bool lt);
     int32_t iterate(const int32_t *uvPixels, uint32_t numuv, float ratio, bool pos);
 
-    void calcRatios(IterPixel *ip, ColorSignature *sig, float ratios[]);
-    void iterate(IterPixel *ip, ColorSignature *sig);
+    void calcRatios(IterPixel2 *ip, ColorSignature *sig, float ratios[]);
+    void iterate(IterPixel2 *ip, ColorSignature *sig);
 
     uint8_t *m_lut;
 

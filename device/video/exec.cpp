@@ -103,86 +103,86 @@ static const ActionScriptlet actions[]=
 	"Set signature 1...", 
 	"cam_getFrame 0x21 0 0 320 200\n"
     "cc_setSigRegion 0 1\n"
-	"runprogArg 8 1\n"
+//	"runprogArg 8 1\n"
 	},
 	{
 	"Set signature 2...", 
 	"cam_getFrame 0x21 0 0 320 200\n"
     "cc_setSigRegion 0 2\n"
-	"runprogArg 8 1\n"
+//	"runprogArg 8 1\n"
 	},
 	{
 	"Set signature 3...", 
 	"cam_getFrame 0x21 0 0 320 200\n"
     "cc_setSigRegion 0 3\n"
-	"runprogArg 8 1\n"
+//	"runprogArg 8 1\n"
 	},
 	{
 	"Set signature 4...", 
 	"cam_getFrame 0x21 0 0 320 200\n"
     "cc_setSigRegion 0 4\n"
-	"runprogArg 8 1\n"
+//	"runprogArg 8 1\n"
 	},
 	{
 	"Set signature 5...", 
 	"cam_getFrame 0x21 0 0 320 200\n"
     "cc_setSigRegion 0 5\n"
-	"runprogArg 8 1\n"
+//	"runprogArg 8 1\n"
 	},
 	{
 	"Set signature 6...", 
 	"cam_getFrame 0x21 0 0 320 200\n"
     "cc_setSigRegion 0 6\n"
-	"runprogArg 8 1\n"
+//	"runprogArg 8 1\n"
 	},
 	{
 	"Set signature 7...", 
 	"cam_getFrame 0x21 0 0 320 200\n"
     "cc_setSigRegion 0 7\n"
-	"runprogArg 8 1\n"
+//	"runprogArg 8 1\n"
 	},
 
 	{
 	"Set CC signature 1...", 
 	"cam_getFrame 0x21 0 0 320 200\n"
     "cc_setSigRegion 1 1\n"
-	"runprogArg 8 1\n"
+	//"runprogArg 8 1\n"
 	},
 	{
 	"Set CC signature 2...", 
 	"cam_getFrame 0x21 0 0 320 200\n"
     "cc_setSigRegion 1 2\n"
-	"runprogArg 8 1\n"
+	//"runprogArg 8 1\n"
 	},
 	{
 	"Set CC signature 3...", 
 	"cam_getFrame 0x21 0 0 320 200\n"
     "cc_setSigRegion 1 3\n"
-	"runprogArg 8 1\n"
+	//"runprogArg 8 1\n"
 	},
 	{
 	"Set CC signature 4...", 
 	"cam_getFrame 0x21 0 0 320 200\n"
     "cc_setSigRegion 1 4\n"
-	"runprogArg 8 1\n"
+	//"runprogArg 8 1\n"
 	},
 	{
 	"Set CC signature 5...", 
 	"cam_getFrame 0x21 0 0 320 200\n"
     "cc_setSigRegion 1 5\n"
-	"runprogArg 8 1\n"
+	//"runprogArg 8 1\n"
 	},
 	{
 	"Set CC signature 6...", 
 	"cam_getFrame 0x21 0 0 320 200\n"
     "cc_setSigRegion 1 6\n"
-	"runprogArg 8 1\n"
+	//"runprogArg 8 1\n"
 	},
 	{
 	"Set CC signature 7...", 
 	"cam_getFrame 0x21 0 0 320 200\n"
     "cc_setSigRegion 1 7\n"
-	"runprogArg 8 1\n"
+	//"runprogArg 8 1\n"
 	},
 
 	{

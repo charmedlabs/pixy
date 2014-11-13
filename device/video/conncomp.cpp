@@ -237,17 +237,14 @@ void cc_setBounds(const uint8_t mode)
 }
 
 // this routine assumes it can grab valid pixels in video memory described by the box
-int32_t cc_setSigRegion(const uint32_t &type, const uint8_t &model, const uint16_t &xoffset, const uint16_t &yoffset, const uint16_t &width, const uint16_t &height)
+int32_t cc_setSigRegion(const uint32_t &type, const uint8_t &signum, const uint16_t &xoffset, const uint16_t &yoffset, const uint16_t &width, const uint16_t &height)
 {
-#ifdef DEFER
 	int result;
 	char id[32];
-	ColorModel cmodel;
+	ColorSignature *sig;
 
-	if (model<1 || model>NUM_MODELS)
+	if (signum<1 || signum>CL_NUM_SIGNATURES)
 		return -1;
-
-	cc_setBounds(type);
 
 	if (g_rawFrame.m_pixels==NULL)
 	{
@@ -256,25 +253,21 @@ int32_t cc_setSigRegion(const uint32_t &type, const uint8_t &model, const uint16
 	}
 
 	// create lut
-	result = g_blobs->generateLUT(model, g_rawFrame, RectA(xoffset, yoffset, width, height), &cmodel);
-	if (result<0)
-	{
-		cprintf("Color saturation isn't high enough!\n");
-		return result;
-	}
+	g_blobs->m_clut.generateSignature(g_rawFrame, RectA(xoffset, yoffset, width, height), signum);
+	sig = g_blobs->m_clut.getSignature(signum);
+	g_blobs->m_clut.generateLUT();
+	sig->m_type = type;
 
-	cmodel.m_type = type;
-
+#ifdef DEFER
 	// save to flash
 	sprintf(id, "signature%d", model);
 	prm_set(id, INTS8(sizeof(ColorModel), &cmodel), END);
 	prm_setDirty(false); // prevent reload (because we don't want to load the lut (yet) and lose our frame
+#endif
 
 	cprintf("Success!\n");
 
 	return result;
-#endif
-	return 0;
 }
 
 int32_t cc_setSigPoint(const uint32_t &type, const uint8_t &model, const uint16_t &x, const uint16_t &y, Chirp *chirp)
@@ -505,7 +498,7 @@ void cc_setLED()
 	blob = (BlobA *)g_blobs->getMaxBlob();
 	if (blob)
 	{
-		if (blob->m_model<=NUM_MODELS)
+		if (blob->m_model<=CL_NUM_SIGNATURES)
 			color = g_colors[blob->m_model];
 		else
 			color = g_colors[0];

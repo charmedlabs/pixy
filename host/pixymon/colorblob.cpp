@@ -1,6 +1,5 @@
 #include <math.h>
 #include <QDebug>
-#include "colorlut.h"
 #include "colorblob.h"
 #include "monmodule.h"
 
@@ -142,12 +141,12 @@ int ColorBlob::generateSignature(const Frame8 &frame, const Point16 &point, Poin
                 g2 = pixels[-frame.m_width + x];
                 b = pixels[-frame.m_width + x - 1];
                 c = r+g1+b;
-                if (c==0)
-                    c = 1; //continue;
+                if (c<miny)
+                    continue;
                 u = ((r-g1)<<LUT_ENTRY_SCALE)/c;
                 c = r+g2+b;
-                if (c==0)
-                    c = 1;
+                if (c<miny)
+                    continue;
                 v = ((b-g2)<<LUT_ENTRY_SCALE)/c;
                 uPixels[count] = u;
                 vPixels[count] = v;
@@ -281,7 +280,7 @@ int ColorBlob::generateLUT(const RuntimeSignature signatures[])
 
     clearLUT();
 
-    miny = (3*(1<<8)-1)*m_miny;
+    miny = 3*((1<<8)-1)*m_miny;
     if (miny==0)
         miny = 1;
 
@@ -314,7 +313,7 @@ int ColorBlob::generateLUT(const RuntimeSignature signatures[])
 
                         bin = (u<<LUT_COMPONENT_SCALE)+ v;
 
-                        if (m_lut[bin]==0)
+                        if (m_lut[bin]==0 || m_lut[bin]>sig+1)
                             m_lut[bin] = sig+1;
                     }
                 }
@@ -395,7 +394,8 @@ float ColorBlob::testRegion(const RectA &region, const Frame8 &frame, Point32 *m
             int32_t n = points->size();
             mean->m_x = ((qlonglong)mean->m_x*n + subMean.m_x)/(n+1);
             mean->m_y = ((qlonglong)mean->m_y*n + subMean.m_y)/(n+1);
-            points->push_back(Point16(subRegion.m_xOffset, subRegion.m_yOffset));
+            if (points->push_back(Point16(subRegion.m_xOffset, subRegion.m_yOffset))<0)
+                break;
             qDebug("add %d %d %d", subRegion.m_xOffset, subRegion.m_yOffset, points->size());
             test++;
         }
@@ -521,11 +521,11 @@ void ColorBlob::setParameters(float range, float miny, uint32_t maxDist, float m
 }
 
 
-class IterPixel
+class IterPixel2
 {
 public:
-    IterPixel(const Frame8 &frame, const RectA &region);
-    IterPixel(const Frame8 &frame, const Points *points);
+    IterPixel2(const Frame8 &frame, const RectA &region);
+    IterPixel2(const Frame8 &frame, const Points *points);
     bool next(UVPixel *uv);
     bool reset(bool cleari=true);
 
@@ -543,7 +543,7 @@ private:
 };
 
 
-IterPixel::IterPixel(const Frame8 &frame, const RectA &region)
+IterPixel2::IterPixel2(const Frame8 &frame, const RectA &region)
 {
     m_frame = frame;
     m_region = region;
@@ -551,14 +551,14 @@ IterPixel::IterPixel(const Frame8 &frame, const RectA &region)
     reset();
 }
 
-IterPixel::IterPixel(const Frame8 &frame, const Points *points)
+IterPixel2::IterPixel2(const Frame8 &frame, const Points *points)
 {
     m_frame = frame;
     m_points = points;
     reset();
 }
 
-bool IterPixel::reset(bool cleari)
+bool IterPixel2::reset(bool cleari)
 {
     if (cleari)
         m_i = 0;
@@ -577,7 +577,7 @@ bool IterPixel::reset(bool cleari)
     return true;
 }
 
-bool IterPixel::next(UVPixel *uv)
+bool IterPixel2::next(UVPixel *uv)
 {
     if (m_points)
     {
@@ -596,41 +596,44 @@ bool IterPixel::next(UVPixel *uv)
 }
 
 
-bool IterPixel::nextHelper(UVPixel *uv)
+bool IterPixel2::nextHelper(UVPixel *uv)
 {
-    int32_t r, g1, g2, b, u, v, c;
+    int32_t r, g1, g2, b, u, v, c, miny=MIN_Y;
 
-    if (m_x>=m_region.m_width)
+    while(1)
     {
-        m_x = 0;
-        m_y += 2;
-        m_pixels += m_frame.m_width*2;
+        if (m_x>=m_region.m_width)
+        {
+            m_x = 0;
+            m_y += 2;
+            m_pixels += m_frame.m_width*2;
+        }
+        if (m_y>=m_region.m_height)
+            return false;
+
+        r = m_pixels[m_x];
+        g1 = m_pixels[m_x - 1];
+        g2 = m_pixels[-m_frame.m_width + m_x];
+        b = m_pixels[-m_frame.m_width + m_x - 1];
+        c = r+g1+b;
+        if (c<miny)
+            continue;
+        u = ((r-g1)<<LUT_ENTRY_SCALE)/c;
+        c = r+g2+b;
+        if (c<miny)
+            continue;
+        v = ((b-g2)<<LUT_ENTRY_SCALE)/c;
+
+        m_x += 2;
+
+        uv->m_u = u;
+        uv->m_v = v;
+
+        return true;
     }
-    if (m_y>=m_region.m_height)
-        return false;
-
-    r = m_pixels[m_x];
-    g1 = m_pixels[m_x - 1];
-    g2 = m_pixels[-m_frame.m_width + m_x];
-    b = m_pixels[-m_frame.m_width + m_x - 1];
-    c = r+g1+b;
-    if (c==0)
-        c = 1;
-    u = ((r-g1)<<LUT_ENTRY_SCALE)/c;
-    c = r+g2+b;
-    if (c==0)
-        c = 1;
-    v = ((b-g2)<<LUT_ENTRY_SCALE)/c;
-
-    m_x += 2;
-
-    uv->m_u = u;
-    uv->m_v = v;
-
-    return true;
 }
 
-void ColorBlob::calcRatios(IterPixel *ip, ColorSignature *sig, float ratios[])
+void ColorBlob::calcRatios(IterPixel2 *ip, ColorSignature *sig, float ratios[])
 {
     UVPixel uv;
     uint32_t n=0, counts[4];
@@ -667,7 +670,7 @@ void ColorBlob::calcRatios(IterPixel *ip, ColorSignature *sig, float ratios[])
     sig->m_vMean = vsum/n;
 }
 
-void ColorBlob::iterate(IterPixel *ip, ColorSignature *sig)
+void ColorBlob::iterate(IterPixel2 *ip, ColorSignature *sig)
 {
     int32_t scale;
     float ratios[4];
@@ -702,7 +705,7 @@ void ColorBlob::iterate(IterPixel *ip, ColorSignature *sig)
 int ColorBlob::generateSignature2(const Frame8 &frame, const RectA &region, ColorSignature *signature)
 {
     // this is cool-- this routine doesn't allocate any extra memory other than some stack variables
-    IterPixel ip(frame, region);
+    IterPixel2 ip(frame, region);
     iterate(&ip, signature);
 
     return 0;
@@ -712,7 +715,7 @@ int ColorBlob::generateSignature2(const Frame8 &frame, const Point16 &point, Poi
 {
     // this routine requires some memory to store the region which consists of some consistently-sized blocks
     growRegion(frame, point, points);
-    IterPixel ip(frame, points);
+    IterPixel2 ip(frame, points);
     iterate(&ip, signature);
 
     return 0;

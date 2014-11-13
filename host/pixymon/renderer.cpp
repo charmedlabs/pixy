@@ -26,7 +26,11 @@
 #include "calc.h"
 #include <math.h>
 
-Renderer::Renderer(VideoWidget *video, Interpreter *interpreter) : m_blobs(interpreter), m_background(0, 0)
+Renderer::Renderer(VideoWidget *video, Interpreter *interpreter) :
+#ifdef DEFER
+    m_blobs(interpreter),
+#endif
+    m_background(0, 0)
 {
     m_video = video;
     m_interpreter = interpreter;
@@ -445,6 +449,7 @@ void Renderer::renderRL(QImage *image, uint color, uint row, uint startCol, uint
 
 int Renderer::renderCCQ1(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t numVals, uint32_t *qVals)
 {
+
     int32_t row;
     uint32_t i, startCol, length;
     uint8_t model;
@@ -556,8 +561,8 @@ int Renderer::render(uint32_t type, const void *args[])
         res = renderCCB1(*(uint8_t *)args[0], *(uint16_t *)args[1], *(uint32_t *)args[2], *(uint32_t *)args[3], (uint16_t *)args[4]);
     else if (type==FOURCC('C', 'C', 'B', '2'))
         res = renderCCB2(*(uint8_t *)args[0], *(uint16_t *)args[1], *(uint32_t *)args[2], *(uint32_t *)args[3], (uint16_t *)args[4], *(uint32_t *)args[5], (uint16_t *)args[6]);
-    else if (type==FOURCC('C', 'M', 'V', '1'))
-        res = renderCMV1(*(uint8_t *)args[0], *(uint32_t *)args[1], (float *)args[2], *(uint16_t *)args[3], *(uint32_t *)args[4], *(uint32_t *)args[5], (uint8_t *)args[6]);
+//    else if (type==FOURCC('C', 'M', 'V', '1'))
+//        res = renderCMV1(*(uint8_t *)args[0], *(uint32_t *)args[1], (float *)args[2], *(uint16_t *)args[3], *(uint32_t *)args[4], *(uint32_t *)args[5], (uint8_t *)args[6]);
     else // format not recognized
         return -1;
 

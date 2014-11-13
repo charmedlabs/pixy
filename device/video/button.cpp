@@ -212,7 +212,7 @@ bool ButtonMachine::handleSignature()
 		{
 			setTimer(&m_timer);
 			m_index++;
-			if (m_index==NUM_MODELS+1)
+			if (m_index==CL_NUM_SIGNATURES+1)
 				m_index = 0;
 
 			setLED();

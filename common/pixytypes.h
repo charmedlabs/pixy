@@ -220,4 +220,10 @@ struct Line
     float m_yi;
 };
 
+#ifdef PIXY
+typedef long long longlong;
+#else
+typedef qlonglong longlong;
+#endif
+
 #endif // PIXYTYPES_H

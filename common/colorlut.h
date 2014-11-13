@@ -16,14 +16,22 @@
 #define COLORLUT_H	  
 
 #include <inttypes.h>
+#include "simplevector.h"
 #include "pixytypes.h"
 
-#undef PI
-#define PI 3.1415926f
-
 #define CL_NUM_SIGNATURES               7
-#define CL_LUT_SIZE                     0x1000
-#define LUT_ENTRY_SCALE                 15
+#define CL_LUT_COMPONENT_SCALE          6
+#define CL_LUT_SIZE                     (1<<(CL_LUT_COMPONENT_SCALE*2))
+#define CL_LUT_ENTRY_SCALE              15
+#define CL_GROW_INC                     4
+#define CL_MIN_Y_F                      0.05 // for when generating signatures, etc
+#define CL_MIN_Y                        (int32_t)(3*((1<<8)-1)*CL_MIN_Y_F)
+#define CL_MIN_RATIO                    0.25f
+#define CL_DEFAULT_MINY                 0.1f
+#define CL_DEFAULT_ACQ_GAIN				2.0f
+#define CL_MAX_DIST                     2000
+#define CL_DEFAULT_TOL                  0.9f
+
 
 struct ColorSignature
 {
@@ -33,6 +41,7 @@ struct ColorSignature
     int32_t m_vMin;
     int32_t m_vMax;
     int32_t m_vMean;
+	uint32_t m_type;
 };
 
 struct RuntimeSignature
@@ -43,15 +52,78 @@ struct RuntimeSignature
     int32_t m_vMax;
 };
 
+struct UVPixel
+{
+    UVPixel()
+    {
+        m_u = m_v = 0;
+    }
+
+    UVPixel(int32_t u, int32_t v)
+    {
+        m_u = u;
+        m_v = v;
+    }
+
+    int32_t m_u;
+    int32_t m_v;
+};
+
+typedef SimpleVector<Point16> Points;
+
+class IterPixel
+{
+public:
+    IterPixel(const Frame8 &frame, const RectA &region);
+    IterPixel(const Frame8 &frame, const Points *points);
+    bool next(UVPixel *uv);
+    bool reset(bool cleari=true);
+
+private:
+    bool nextHelper(UVPixel *uv);
+
+    Frame8 m_frame;
+    RectA m_region;
+    uint32_t m_x, m_y;
+    int32_t m_miny;
+    uint8_t *m_pixels;
+    const Points *m_points;
+    int m_i;
+};
+
 class ColorLUT
 {
 public:
     ColorLUT(uint8_t *lut);
     ~ColorLUT();
 
+    int generateSignature(const Frame8 &frame, const RectA &region, uint8_t signum);
+    int generateSignature(const Frame8 &frame, const Point16 &point, Points *points, uint8_t signum);
+	ColorSignature *getSignature(uint8_t signum);
+
+    int generateLUT();
+    void clearLUT(uint8_t signum=0);
+	void updateSignature(uint8_t signum);
+
     ColorSignature m_signatures[CL_NUM_SIGNATURES];
     RuntimeSignature m_runtimeSigs[CL_NUM_SIGNATURES];
 	uint8_t *m_lut;
+
+private:
+    bool growRegion(RectA *region, const Frame8 &frame, uint8_t dir);
+    float testRegion(const RectA &region, const Frame8 &frame, UVPixel *mean, Points *points);
+    void growRegion(const Frame8 &frame, const Point16 &seed, Points *points);
+
+    void calcRatios(IterPixel *ip, ColorSignature *sig, float ratios[]);
+    void iterate(IterPixel *ip, ColorSignature *sig);
+    void getMean(const RectA &region ,const Frame8 &frame, UVPixel *mean);
+
+    float m_miny;
+    uint32_t m_maxDist;
+    float m_ratio;
+    float m_minRatio;
+	float m_acqGains[CL_NUM_SIGNATURES];
+
 };
 
 #endif // COLORLUT_H

@@ -19,7 +19,7 @@
 #include <QObject>
 #include <QImage>
 #include "pixytypes.h"
-#include "processblobs.h"
+//#include "processblobs.h"
 
 #include <simplevector.h>
 typedef SimpleVector<Point16> Points;
@@ -68,8 +68,9 @@ public:
     void renderRL(QImage *image, uint color, uint row, uint startCol, uint len);
 
     Frame8 m_rawFrame;
+#ifdef DEFER
     ProcessBlobs m_blobs;
-
+#endif
 
 signals:
     void image(QImage image);
