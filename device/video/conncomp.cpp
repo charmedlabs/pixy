@@ -239,7 +239,6 @@ void cc_setBounds(const uint8_t mode)
 // this routine assumes it can grab valid pixels in video memory described by the box
 int32_t cc_setSigRegion(const uint32_t &type, const uint8_t &signum, const uint16_t &xoffset, const uint16_t &yoffset, const uint16_t &width, const uint16_t &height)
 {
-	int result;
 	char id[32];
 	ColorSignature *sig;
 
@@ -267,21 +266,17 @@ int32_t cc_setSigRegion(const uint32_t &type, const uint8_t &signum, const uint1
 
 	cprintf("Success!\n");
 
-	return result;
+	return 0;
 }
 
-int32_t cc_setSigPoint(const uint32_t &type, const uint8_t &model, const uint16_t &x, const uint16_t &y, Chirp *chirp)
+int32_t cc_setSigPoint(const uint32_t &type, const uint8_t &signum, const uint16_t &x, const uint16_t &y, Chirp *chirp)
 {
-#ifdef DEFER
-	RectA region;
-	int result; 
 	char id[32];
-	ColorModel cmodel;
+	ColorSignature *sig;
+	Points points;
 
-	if (model<1 || model>NUM_MODELS)
+	if (signum<1 || signum>CL_NUM_SIGNATURES)
 		return -1;
-
-	cc_setBounds(type);
 
 	if (g_rawFrame.m_pixels==NULL)
 	{
@@ -289,30 +284,22 @@ int32_t cc_setSigPoint(const uint32_t &type, const uint8_t &model, const uint16_
 		return -2;
 	}
 
-	result = g_blobs->generateLUT(model, g_rawFrame, Point16(x, y), &cmodel, &region);
-  	if (result<0)
-	{
-		cprintf("Color saturation isn't high enough!\n");
-		return result;
-	}
+	// create lut
+	g_blobs->m_clut.generateSignature(g_rawFrame, Point16(x, y), &points, signum);
+	sig = g_blobs->m_clut.getSignature(signum);
+	g_blobs->m_clut.generateLUT();
+	sig->m_type = type;
 
-	if (chirp)
-	{
-		BlobA blob(model, region.m_xOffset, region.m_xOffset+region.m_width, region.m_yOffset, region.m_yOffset+region.m_height);
-		cc_sendBlobs(chirp, &blob, 1, RENDER_FLAG_FLUSH | RENDER_FLAG_BLEND_BG); // draw final rectangle around grown region
-	}
-
-	cmodel.m_type = type;
-
+	cc_sendPoints(points, CL_GROW_INC, CL_GROW_INC, chirp);
+#ifdef DEFER
 	// save to flash
 	sprintf(id, "signature%d", model);
 	prm_set(id, INTS8(sizeof(ColorModel), &cmodel), END);
 	prm_setDirty(false); // prevent reload (because we don't want to load the lut (yet) and lose our frame
-
-	cprintf("Success!\n");
-
-	return result;
 #endif
+
+	//cprintf("Success!\n");
+
 	return 0;
 }
 
@@ -405,7 +392,7 @@ int32_t cc_getRLSFrameChirpFlags(Chirp *chirp, uint8_t renderFlags)
 	mem = (uint8_t *)SRAM1_LOC;
 	memSize = (uint32_t)scratchMem-SRAM1_LOC;
 
-	len = Chirp::serialize(chirp, mem, memSize,  HTYPE(0), UINT16(0), UINT16(0), UINTS8_NO_COPY(0), END);
+	len = Chirp::serialize(chirp, mem, memSize,  HTYPE(0), HINT8(0), UINT16(0), UINT16(0), UINTS8_NO_COPY(0), END);
 	g_qqueue->flush();
 	result = cc_getRLSFrame(scratchMem, lut);
 	memSize -= len;
@@ -517,6 +504,19 @@ void cc_setLED()
 	}
 	else
 		led_set(0);
+}
+
+void cc_sendPoints(Points &points, uint16_t width, uint16_t height, Chirp *chirp, uint8_t renderFlags)
+{
+	uint32_t len;
+	uint8_t *mem = (uint8_t *)SRAM1_LOC;
+
+	len = Chirp::serialize(chirp, mem, SRAM1_SIZE,  HTYPE(0), HINT8(0), UINT16(0), UINT16(0), UINT16(0), UINT16(0), UINTS16_NO_COPY(0), END);
+
+	// copy into video memory because we don't have enough memory in the chirp buffer
+	memcpy(mem+len, points.data(), points.size()*sizeof(Point16));
+	Chirp::serialize(chirp, mem, SRAM1_SIZE, HTYPE(FOURCC('B','L','T','1')), HINT8(renderFlags), UINT16(CAM_RES2_WIDTH), UINT16(CAM_RES2_HEIGHT), UINT16(width), UINT16(height), UINTS16_NO_COPY(points.size()*sizeof(Point16)/sizeof(uint16_t))); 
+	chirp->useBuffer((uint8_t *)mem, len+points.size()*sizeof(Point16));
 }
 
 int32_t cc_setSigBounds(const uint8_t &sig, const int16_t &umin, const int16_t &umax, const int16_t &umean, const int16_t &vmin, const int16_t &vmax, const int16_t &vmean) 

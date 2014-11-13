@@ -9,9 +9,9 @@ template <typename Object> class SimpleVector
 {
 public:
 
-    SimpleVector( int initSize = 0)
-        : m_size( initSize ), m_capacity( initSize + SPARE_CAPACITY )
-    { m_objects = new Object[ m_capacity ]; }
+    SimpleVector(int initSize = 0)
+        : m_size(initSize), m_capacity(initSize + SPARE_CAPACITY)
+    { m_objects = new Object[m_capacity]; }
 
     ~SimpleVector()
     { delete [] m_objects; }
@@ -53,6 +53,9 @@ public:
     int capacity() const
     { return m_capacity; }
 
+	const Object *data()
+	{ return m_objects; }
+
     int push_back(const Object& x)
     {
         if(m_size == m_capacity)
@@ -68,7 +71,7 @@ public:
 private:
     int m_size;
     int m_capacity;
-    Object* m_objects;
+    Object *m_objects;
 };
 
 #endif // SIMPLEVECTOR_H

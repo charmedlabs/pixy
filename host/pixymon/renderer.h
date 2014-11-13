@@ -57,6 +57,8 @@ public:
     int renderCCB1(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t numBlobs, uint16_t *blobs);
     int renderCCB2(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t numBlobs, uint16_t *blobs, uint32_t numCCBlobs, uint16_t *ccBlobs);
     int renderCMV1(uint8_t renderFlags, uint32_t cmodelsLen, float *cmodels, uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame);
+    int renderBLT1(uint8_t renderFlags, uint16_t width, uint16_t height,
+                   uint16_t blockWidth, uint16_t blockHeight, uint32_t numPoints, uint16_t *points);
 
     void renderBlobsB(QImage *image, float scale, BlobB *blobs, uint32_t numBlobs);
     void renderBlobsA(QImage *image, float scale, BlobA *blobs, uint32_t numBlobs);
@@ -78,8 +80,6 @@ signals:
 
 private:
     inline void interpolateBayer(unsigned int width, unsigned int x, unsigned int y, unsigned char *pixel, unsigned int &r, unsigned int &g, unsigned int &b);
-
-
 
     VideoWidget *m_video;
     Interpreter *m_interpreter;

@@ -526,6 +526,30 @@ int Renderer::renderCMV1(uint8_t renderFlags, uint32_t cmodelsLen, float *cmodel
     return 0;
 }
 
+int Renderer::renderBLT1(uint8_t renderFlags, uint16_t width, uint16_t height,
+               uint16_t blockWidth, uint16_t blockHeight, uint32_t numPoints, uint16_t *points)
+{
+    uint i;
+    QPainter p;
+    QImage img(width, height, QImage::Format_ARGB32);
+    img.fill(0x00000000);
+
+    p.begin(&img);
+    p.setBrush(QBrush(QColor(0xff, 0xff, 0xff, 0x20)));
+    p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
+
+    for (i=0; i<numPoints; i+=2)
+        p.drawRect(points[i], points[i+1], blockWidth, blockHeight);
+
+    p.end();
+
+    emitImage(img);
+    emitFlushImage(true);
+
+    return 0;
+}
+
+
 // need this because we need synchronized knowledge of whether we're the background image or not
 void Renderer::emitImage(const QImage &img)
 {
@@ -563,6 +587,9 @@ int Renderer::render(uint32_t type, const void *args[])
         res = renderCCB2(*(uint8_t *)args[0], *(uint16_t *)args[1], *(uint32_t *)args[2], *(uint32_t *)args[3], (uint16_t *)args[4], *(uint32_t *)args[5], (uint16_t *)args[6]);
 //    else if (type==FOURCC('C', 'M', 'V', '1'))
 //        res = renderCMV1(*(uint8_t *)args[0], *(uint32_t *)args[1], (float *)args[2], *(uint16_t *)args[3], *(uint32_t *)args[4], *(uint32_t *)args[5], (uint8_t *)args[6]);
+    else if (type==FOURCC('B','L','T','1'))
+        res = renderBLT1(*(uint8_t *)args[0], *(uint16_t *)args[1], *(uint16_t *)args[2],
+                *(uint16_t *)args[3], *(uint16_t *)args[4], *(uint32_t *)args[5], (uint16_t *)args[6]);
     else // format not recognized
         return -1;
 
