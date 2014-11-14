@@ -39,12 +39,9 @@ Renderer::Renderer(VideoWidget *video, Interpreter *interpreter) :
     m_rawFrame.m_height = 0;
     m_rawFrame.m_width = 0;
 
-    m_firstFrame = true;
-
     m_mode = 3;
 
-    connect(this, SIGNAL(image(QImage)), m_video, SLOT(handleImage(QImage))); // Qt::BlockingQueuedConnection);
-    connect(this, SIGNAL(flushImage(bool)), m_video, SLOT(handleFlush(bool))); //, Qt::BlockingQueuedConnection);
+    connect(this, SIGNAL(image(QImage, uchar)), m_video, SLOT(handleImage(QImage, uchar))); // Qt::BlockingQueuedConnection);
 }
 
 
@@ -226,12 +223,9 @@ int Renderer::renderBA81(uint8_t renderFlags, uint16_t width, uint16_t height, u
     }
     // send image to ourselves across threads
     // from chirp thread to gui thread
-    emitImage(img);
+    emit image(img, renderFlags);
 
     m_background = img;
-
-    if (renderFlags&RENDER_FLAG_FLUSH)
-        emitFlushImage();
 
     return 0;
 }
@@ -254,9 +248,7 @@ void Renderer::renderRects(const Points &points, uint32_t size)
 
     p.end();
 
-    emitImage(img);
-    emitFlushImage(true);
-
+    emit image(img, RENDER_FLAG_BLEND | RENDER_FLAG_FLUSH);
 }
 
 void Renderer::renderRect(const RectA &rect)
@@ -274,8 +266,7 @@ void Renderer::renderRect(const RectA &rect)
 
     p.end();
 
-    emitImage(img);
-    emitFlushImage(true);
+    emit image(img, RENDER_FLAG_BLEND | RENDER_FLAG_FLUSH);
 }
 
 void Renderer::renderBlobsB(QImage *image, float scale, BlobB *blobs, uint32_t numBlobs)
@@ -372,23 +363,18 @@ int Renderer::renderCCB2(uint8_t renderFlags, uint16_t width, uint16_t height, u
     float scale = (float)m_video->activeWidth()/width;
     QImage img(width*scale, height*scale, QImage::Format_ARGB32);
 
-    // render background so we can blend ontop of it
-    if (renderFlags&RENDER_FLAG_BLEND_BG)
-        renderBackground();
 
-    if (m_firstFrame) // if we're the background, we should be opaque
-        img.fill(0xff000000);
+    if (renderFlags&RENDER_FLAG_BLEND) // if we're blending, we should be transparent
+        img.fill(0x00000000);
     else
-        img.fill(0x00000000); // otherwise, we're transparent
+        img.fill(0xff000000); // otherwise, we're just black
 
     numBlobs /= sizeof(BlobA)/sizeof(uint16_t);
     numCCBlobs /= sizeof(BlobB)/sizeof(uint16_t);
     renderBlobsA(&img, scale, (BlobA *)blobs, numBlobs);
     renderBlobsB(&img, scale, (BlobB *)ccBlobs, numCCBlobs);
 
-    emitImage(img);
-    if (renderFlags&RENDER_FLAG_FLUSH)
-        emitFlushImage();
+    emit image(img, renderFlags);
 
     return 0;
 }
@@ -398,39 +384,15 @@ int Renderer::renderCCB1(uint8_t renderFlags, uint16_t width, uint16_t height, u
     float scale = (float)m_video->activeWidth()/width;
     QImage img(width*scale, height*scale, QImage::Format_ARGB32);
 
-    // render background so we can blend ontop of it
-    if (renderFlags&RENDER_FLAG_BLEND_BG)
-        renderBackground();
-
-    if (m_firstFrame) // if we're the background, we should be opaque
-        img.fill(0xff000000);
+    if (renderFlags&RENDER_FLAG_BLEND) // if we're blending, we should be transparent
+        img.fill(0x00000000);
     else
-        img.fill(0x00000000); // otherwise, we're transparent
+        img.fill(0xff000000); // otherwise, we're just black
 
     numBlobs /= sizeof(BlobA)/sizeof(uint16_t);
     renderBlobsA(&img, scale, (BlobA *)blobs, numBlobs);
 
-    emitImage(img);
-    if (renderFlags&RENDER_FLAG_FLUSH)
-        emitFlushImage();
-
-    return 0;
-}
-
-int Renderer::renderRect(uint16_t width, uint16_t height, const RectA &rect)
-{
-    float scale = (float)m_video->activeWidth()/width;
-    QImage img(width*scale, height*scale, QImage::Format_ARGB32);
-    QPainter p;
-
-    img.fill(0x00000000);
-    p.begin(&img);
-    p.setBrush(QBrush(QColor(0xff, 0xff, 0xff, 0x20)));
-    p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
-    p.drawRect(scale*rect.m_xOffset, scale*rect.m_yOffset, scale*rect.m_width, scale*rect.m_height);
-    p.end();
-
-    emitImage(img);
+    emit image(img, renderFlags);
 
     return 0;
 }
@@ -465,8 +427,8 @@ int Renderer::renderCCQ1(uint8_t renderFlags, uint16_t width, uint16_t height, u
      0x80ff00ff  // 7 violet
     };
 
-    // if we're a background frame, set alpha to 1.0
-    if (m_firstFrame)
+    // if we're not blending, set alpha to 1.0
+    if (!(renderFlags&RENDER_FLAG_BLEND))
     {
         for (i=0; i<sizeof(palette)/sizeof(unsigned int); i++)
             palette[i] |= 0xff000000;
@@ -493,10 +455,8 @@ int Renderer::renderCCQ1(uint8_t renderFlags, uint16_t width, uint16_t height, u
         length = qVals[i]&0x1ff;
         renderRL(&img, palette[model], row, startCol, length);
     }
-    emitImage(img);
-    if (renderFlags&RENDER_FLAG_FLUSH)
-        emitFlushImage();
 
+    emit image(img, renderFlags);
     return 0;
 }
 
@@ -532,7 +492,10 @@ int Renderer::renderBLT1(uint8_t renderFlags, uint16_t width, uint16_t height,
     uint i;
     QPainter p;
     QImage img(width, height, QImage::Format_ARGB32);
-    img.fill(0x00000000);
+    if (renderFlags&RENDER_FLAG_BLEND) // if we're blending, we should be transparent
+        img.fill(0x00000000);
+    else
+        img.fill(0xff000000); // otherwise, we're just black
 
     p.begin(&img);
     p.setBrush(QBrush(QColor(0xff, 0xff, 0xff, 0x20)));
@@ -543,25 +506,12 @@ int Renderer::renderBLT1(uint8_t renderFlags, uint16_t width, uint16_t height,
 
     p.end();
 
-    emitImage(img);
-    emitFlushImage(true);
+    emit image(img, renderFlags);
 
     return 0;
 }
 
 
-// need this because we need synchronized knowledge of whether we're the background image or not
-void Renderer::emitImage(const QImage &img)
-{
-    m_firstFrame = false;
-    emit image(img);
-}
-
-void Renderer::emitFlushImage(bool blend)
-{
-    emit flushImage(blend);
-    m_firstFrame = true;
-}
 
 
 int Renderer::render(uint32_t type, const void *args[])
@@ -628,10 +578,10 @@ void Renderer::pixelsOut(int x0, int y0, int width, int height)
 
 
 
-int Renderer::renderBackground()
+int Renderer::renderBackground(uint8_t renderFlags)
 {
     if (m_background.width()!=0)
-        emitImage(m_background);
+        emit image(m_background, renderFlags);
 
     return 0;
 }
@@ -652,8 +602,4 @@ Frame8 *Renderer::backgroundRaw()
     return &m_rawFrame;
 }
 
-bool Renderer::firstFrame()
-{
-    return m_firstFrame;
-}
 

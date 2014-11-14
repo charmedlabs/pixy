@@ -10,7 +10,7 @@ template <typename Object> class SimpleVector
 public:
 
     SimpleVector(int initSize = 0)
-        : m_size(initSize), m_capacity(initSize + SPARE_CAPACITY)
+        : m_size(0), m_capacity(initSize + SPARE_CAPACITY)
     { m_objects = new Object[m_capacity]; }
 
     ~SimpleVector()
@@ -29,7 +29,7 @@ public:
             m_objects = oldArray;
             return -1;
         }
-        for(int k = 0; k < m_size; k++)
+        for(int k = 0; k<m_size; k++)
             m_objects[k] = oldArray[k];
 
         m_capacity = newCapacity;
@@ -45,7 +45,7 @@ public:
     { return m_objects[index]; }
 
     bool empty() const
-    { return size() == 0; }
+    { return size()==0; }
 
     int size() const
     { return m_size; }
@@ -59,7 +59,7 @@ public:
     int push_back(const Object& x)
     {
         if(m_size == m_capacity)
-            if (resize(2 * m_capacity + 1)<0)
+            if (resize(m_capacity + SPARE_CAPACITY)<0)
                 return -1;
         m_objects[m_size++] = x;
         return 0;
@@ -67,6 +67,9 @@ public:
 
     void pop_back()
     { m_size--; }
+
+	void clear()
+	{ m_size = 0; }
 
 private:
     int m_size;

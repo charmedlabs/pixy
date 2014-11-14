@@ -72,11 +72,17 @@ void ConsoleWidget::print(QString text, QColor color)
     else
     {
         QTextCursor cursor = textCursor();
+#if 0
         if (cursor.block().text()==m_prompt)
         {
             cursor.select(QTextCursor::LineUnderCursor);
             cursor.removeSelectedText();
         }
+#endif
+#if 0
+        if (cursor.block().text()!="")
+            text = '\n' + text;
+#endif
         handleColor(color);
         qDebug() << "console: " << text;
         insertPlainText(text);

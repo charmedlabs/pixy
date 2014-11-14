@@ -51,36 +51,27 @@ VideoWidget::~VideoWidget()
 }
 
 
+//0: don’t render, just put on image list, first
+//RENDER_FLAG_BLEND: tack on to end of image list
+//RENDER_FLAG_FLUSH put on image list first, and render
+//RENDER_FLAG_BLEND | RENDER_FLAG_FLUSH: tack on end of image list and render
 
-void VideoWidget::handleImage(QImage image)
+void VideoWidget::handleImage(QImage image, uchar renderFlags)
 {
     QMutexLocker locker(&m_mutex);
 
+    if (!(renderFlags&RENDER_FLAG_BLEND))
+        m_images.clear();
     m_images.push_back(image);
-}
-
-
-void VideoWidget::handleFlush(bool blend)
-{
-    QMutexLocker locker(&m_mutex);
-    uint i;
-
-    if (m_images.size()==0)
-        return; // nothing to render...
-
-    if (blend) // add new images to previous images so we can blend
-    {
-        for (i=0; i<m_images.size(); i++)
-            m_renderedImages.push_back(m_images[i]);
-    }
-    else // or just render the new images
+    if (renderFlags&RENDER_FLAG_FLUSH)
     {
         m_renderedImages.clear();
         m_renderedImages = m_images;
+        m_images.clear();
+        repaint();
     }
-    m_images.clear();
-    repaint();
 }
+
 
 void VideoWidget::clear()
 {
@@ -90,8 +81,7 @@ void VideoWidget::clear()
     QImage img(m_width, m_height, QImage::Format_RGB32);
     img.fill(Qt::black);
 
-    handleImage(img);
-    handleFlush(false);
+    handleImage(img, RENDER_FLAG_FLUSH);
 }
 
 int VideoWidget::activeWidth()

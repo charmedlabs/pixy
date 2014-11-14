@@ -453,7 +453,6 @@ void Interpreter::handlePendingCommand()
     case STOP_LOCAL:
         m_localProgramRunning = false;
         emit runState(false);
-        emit enableConsole(true);
         break;
 
     case RUN_LOCAL:
@@ -583,6 +582,7 @@ void Interpreter::run()
         handleLocalProgram();
         if (!m_running && !m_localProgramRunning)
         {
+            emit enableConsole(true);
             Sleeper::msleep(10);
             if (m_mutexProg.tryLock())
             {
@@ -852,7 +852,8 @@ void Interpreter::saveParams()
 void Interpreter::handleSelection(int x0, int y0, int width, int height)
 {
     m_mutexInput.lock();
-    m_command = QString::number(x0) + " " + QString::number(y0) +  " " + QString::number(width) +  " " + QString::number(height);
+    m_command = QString::number(x0) + " " + QString::number(y0) +  " " + QString::number(width) +  " " + QString::number(height) + "\n";
+    textOut(m_command);
     m_selection = RectA(x0, y0, width, height);
     m_key = (Qt::Key)0;
     m_waitInput.wakeAll();
@@ -895,12 +896,8 @@ int Interpreter::call(const QStringList &argv, bool interactive)
     for (i=0; i<m_modules.size(); i++)
     {
         if (m_modules[i]->command(argv))
-        {
-            emit enableConsole(true);
             return 0;
-        }
     }
-    emit enableConsole(true);
 
     // a procedure needs extension info (arg info, etc) in order for us to call...
     if ((proc=m_chirp->getProc(argv[0].toLocal8Bit()))>=0 &&
@@ -935,23 +932,21 @@ int Interpreter::call(const QStringList &argv, bool interactive)
                                 emit videoInput(VideoWidget::POINT);
                                 pstring2 = "(select point with mouse)";
                             }
-
-                            emit enableConsole(false);
                         }
-
                     }
                     k = i;
                     pstring = printArgType(&info.argTypes[i], i) + " " + list[k].first +
                             (list[k].second=="" ? "?" : " (" + list[k].second + ")?") + " " + pstring2;
 
+                    emit enableConsole(true);
                     emit prompt(pstring);
                     m_mutexInput.lock();
                     m_waiting = true;
                     m_waitInput.wait(&m_mutexInput);
                     m_waiting = false;
                     m_mutexInput.unlock();
-
-                    emit enableConsole(true);
+                    emit prompt(PROMPT);
+                    emit enableConsole(false);
 
                     if (m_key==Qt::Key_Escape)
                         return -1;

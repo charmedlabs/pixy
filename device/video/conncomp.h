@@ -36,7 +36,7 @@ int32_t cc_setSigBounds(const uint8_t &sig, const int16_t &umin, const int16_t &
 int cc_sendBlobs(Chirp *chirp, const BlobA *blobs, uint32_t len, uint8_t renderFlags=RENDER_FLAG_FLUSH);
 int cc_sendBlobs(Chirp *chirp, const BlobA *blobs, uint32_t len, const BlobB *ccBlobs, uint32_t ccLen, uint8_t renderFlags=RENDER_FLAG_FLUSH);
 int cc_loadLut(void);
-void cc_sendPoints(Points &points, uint16_t width, uint16_t height, Chirp *chirp, uint8_t renderFlags=RENDER_FLAG_FLUSH);
+void cc_sendPoints(Points &points, uint16_t width, uint16_t height, Chirp *chirp, uint8_t renderFlags=RENDER_FLAG_BLEND | RENDER_FLAG_FLUSH);
 
 void cc_loadParams(void);
 

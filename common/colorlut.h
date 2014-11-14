@@ -104,6 +104,7 @@ public:
     int generateLUT();
     void clearLUT(uint8_t signum=0);
 	void updateSignature(uint8_t signum);
+    void growRegion(const Frame8 &frame, const Point16 &seed, Points *points);
 
     ColorSignature m_signatures[CL_NUM_SIGNATURES];
     RuntimeSignature m_runtimeSigs[CL_NUM_SIGNATURES];
@@ -112,7 +113,6 @@ public:
 private:
     bool growRegion(RectA *region, const Frame8 &frame, uint8_t dir);
     float testRegion(const RectA &region, const Frame8 &frame, UVPixel *mean, Points *points);
-    void growRegion(const Frame8 &frame, const Point16 &seed, Points *points);
 
     void calcRatios(IterPixel *ip, ColorSignature *sig, float ratios[]);
     void iterate(IterPixel *ip, ColorSignature *sig);

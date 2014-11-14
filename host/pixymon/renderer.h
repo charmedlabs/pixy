@@ -39,13 +39,9 @@ public:
     ~Renderer();
 
     int render(uint32_t type, const void *args[]);
-    int renderBackground();
-    int renderRect(uint16_t width, uint16_t height, const RectA &rect);
-    void emitFlushImage(bool blend=false);
-    void emitImage(const QImage &image);
+    int renderBackground(uint8_t renderFlags);
     QImage *backgroundImage(); // get background from BA81 formatted image data
     Frame8 *backgroundRaw();
-    bool firstFrame(); // are we the first frame (default background) between flushes
 
     void setMode(uint32_t mode)
     {
@@ -75,8 +71,7 @@ public:
 #endif
 
 signals:
-    void image(QImage image);
-    void flushImage(bool blend);
+    void image(QImage image, uchar renderFlags);
 
 private:
     inline void interpolateBayer(unsigned int width, unsigned int x, unsigned int y, unsigned char *pixel, unsigned int &r, unsigned int &g, unsigned int &b);
@@ -84,7 +79,6 @@ private:
     VideoWidget *m_video;
     Interpreter *m_interpreter;
 
-    bool m_firstFrame;
     QImage m_background;
 
     uint32_t m_mode;

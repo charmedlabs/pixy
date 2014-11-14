@@ -129,14 +129,21 @@ ButtonMachine::~ButtonMachine()
 
 void ButtonMachine::ledPipe()
 {
+#if 0
 	uint8_t r, g, b;
 
 	BlobA blob(m_index, (CAM_RES2_WIDTH-BT_CENTER_SIZE)/2, (CAM_RES2_WIDTH+BT_CENTER_SIZE)/2, (CAM_RES2_HEIGHT-BT_CENTER_SIZE)/2, (CAM_RES2_HEIGHT+BT_CENTER_SIZE)/2);
 	cc_sendBlobs(g_chirpUsb, &blob, 1);
-
 	getColor(&r, &g, &b);
 	saturate(&r, &g, &b);
 	led_setRGB(r, g, b);	 	
+#else
+	Points points;
+	g_blobs->m_clut.growRegion(g_rawFrame, Point16(CAM_RES2_WIDTH/2, CAM_RES2_HEIGHT/2), &points);	
+	//cprintf("%d\n", i++); //points.size());		
+	cc_sendPoints(points, CL_GROW_INC, CL_GROW_INC, g_chirpUsb);
+#endif
+
 }
 
 void ButtonMachine::setSignature()

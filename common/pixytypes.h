@@ -17,8 +17,8 @@
 
 #include <stdint.h>
 
-#define RENDER_FLAG_FLUSH            0x01	// render immediately
-#define RENDER_FLAG_BLEND_BG         0x02	// blend with a previous background frame (instead of sending a new background frame)
+#define RENDER_FLAG_FLUSH            0x01	// add to stack, render immediately
+#define RENDER_FLAG_BLEND            0x02	// blend with a previous images in image stack
 
 #define PRM_FLAG_INTERNAL            0x01
 #define PRM_FLAG_ADVANCED            0x02

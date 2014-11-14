@@ -80,34 +80,42 @@ bool IterPixel::nextHelper(UVPixel *uv)
 {
     int32_t r, g1, g2, b, u, v, c, miny=CL_MIN_Y;
 
-    if (m_x>=m_region.m_width)
+    while(1)
     {
-        m_x = 0;
-        m_y += 2;
-        m_pixels += m_frame.m_width*2;
+        if (m_x>=m_region.m_width)
+        {
+            m_x = 0;
+            m_y += 2;
+            m_pixels += m_frame.m_width*2;
+        }
+        if (m_y>=m_region.m_height)
+            return false;
+
+        r = m_pixels[m_x];
+        g1 = m_pixels[m_x - 1];
+        g2 = m_pixels[-m_frame.m_width + m_x];
+        b = m_pixels[-m_frame.m_width + m_x - 1];
+        c = r+g1+b;
+        if (c<miny)
+		{
+			m_x+=2;
+            continue;
+		}
+        u = ((r-g1)<<CL_LUT_ENTRY_SCALE)/c;
+        c = r+g2+b;
+        if (c<miny)
+		{
+			m_x+=2;
+            continue;
+		}
+        v = ((b-g2)<<CL_LUT_ENTRY_SCALE)/c;
+
+        uv->m_u = u;
+        uv->m_v = v;
+
+		m_x+=2;
+        return true;
     }
-    if (m_y>=m_region.m_height)
-        return false;
-
-    r = m_pixels[m_x];
-    g1 = m_pixels[m_x - 1];
-    g2 = m_pixels[-m_frame.m_width + m_x];
-    b = m_pixels[-m_frame.m_width + m_x - 1];
-    c = r+g1+b;
-    if (c<miny)
-        c = miny;
-    u = ((r-g1)<<CL_LUT_ENTRY_SCALE)/c;
-    c = r+g2+b;
-    if (c<miny)
-        c = miny;
-    v = ((b-g2)<<CL_LUT_ENTRY_SCALE)/c;
-
-    m_x += 2;
-
-    uv->m_u = u;
-    uv->m_v = v;
-
-    return true;
 }
 
 
