@@ -426,6 +426,7 @@ void CBlobModule::updateSignatures()
         m_runtimeSigs[signature].m_vMin = c + (m_signatures[signature].m_vMin - c)*m_acqRange;
         m_runtimeSigs[signature].m_vMax = c + (m_signatures[signature].m_vMax - c)*m_acqRange;
     }
+#if 0
     for (signature=0; signature<NUM_SIGNATURES; signature++)
     {
         uint32_t responseInt;
@@ -441,6 +442,7 @@ void CBlobModule::updateSignatures()
                                          INT16(m_signatures[signature].m_vMean),
                                          END_OUT_ARGS, &responseInt, END_IN_ARGS);
     }
+#endif
 }
 
 void CBlobModule::rla()

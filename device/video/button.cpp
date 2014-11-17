@@ -13,6 +13,7 @@
 // end license header
 //
 
+#include <math.h>
 #include "pixy_init.h"
 #include "button.h"
 #include "camera.h"
@@ -78,43 +79,74 @@ void getColor(uint8_t *r, uint8_t *g, uint8_t *b)
 	*b = bsum/count;	 	
 }
 
+#define SA_GAIN   0.015f
+#define G_GAIN 1.10f
 
-void saturate(uint8_t *r, uint8_t *g, uint8_t *b)
+// this routine needs to provide good feedback to the user as to whether the camera sees and segments the object correctly.
+// The key is to integrate the "growing algorithm" such that the growing algorithm is executed continuously and feedback about
+// the "goodness" of the grown region is returned.  We're choosing goodness to be some combination of size (because the bigger 
+// the grown region the better) and saturation (because more saturation the more likely we've found the intended target, vs 
+// the background, which is typically not saturated.)  
+// In general with an RGB LED, you can only communicate 2 things--- brightness and hue, so you have 2 dof to play with....   
+void scaleLED(uint8_t r, uint8_t g, uint8_t b, uint32_t n)
 {
-	uint8_t max, min, bias;
-	float m, fr, fg, fb;
+	float m;
+	uint32_t max, min, bias, current, sat, sat2, t; 
+
+#if 1  // this is odd, but it seems that 
+	t = (uint32_t)(G_GAIN*g);
+	if (t>255)
+		g = 255;
+	else
+		g = t;
+#endif
 
    	// find min
-	if (*r<*b)
-		min = *r;
+	if (r<b)
+		min = r;
 	else
-		min = *b;
-	if (*g<min)
-		min = *g;
-
-	// find reasonable bias to subtract out
-	bias = min*3/4;
-	*r -= bias;
-	*g -= bias;
-	*b -= bias;
+		min = b;
+	if (g<min)
+		min = g;
 
 	// find max
-	if (*r>*b)
-		max = *r;
+	if (r>b)
+		max = r;
 	else
-		max = *b;
-	if (*g>max)
-		max = *g;
+		max = b;
+	if (g>max)
+		max = g;
 
+	// subtract min and form sataration from the distance from origin
+	sat = sqrt((float)((r-min)*(r-min) + (g-min)*(g-min) + (b-min)*(b-min)));
+	if (sat>30) // limit saturation to preven things from getting too bright
+		sat = 30;
+	if (sat<10) // anything less than 15 is pretty uninteresting, no sense in displaying....
+		current = 0;
+	else
+	{
+		//sat2 = exp(sat/13.0f);
+		//current = (uint32_t)(SAT_GAIN*sat2) + (uint32_t)(AREA_GAIN*n) + (uint32_t)(SA_GAIN*n*sat2);
+		current = (uint32_t)(SA_GAIN*n*sat);
+	}
+	if (current>LED_MAX_CURRENT/5)
+		current = LED_MAX_CURRENT/5;
+	led_setMaxCurrent(current);
+
+	// find reasonable bias to subtract out
+	bias = min*75/100;
+	r -= bias;
+	g -= bias;
+	b -= bias;
+	
 	// saturate
-	m = 255.0/max;
-	fr = m**r;
-	fg = m**g;
-	fb = m**b;
+	m = 255.0f/(max-bias);
+	r = (uint8_t)(m*r);
+	g = (uint8_t)(m*g);
+	b = (uint8_t)(m*b);
 
-	*r = (uint8_t)fr;
-	*g = (uint8_t)fg;				  
-	*b = (uint8_t)fb;
+	//cprintf("r %d g %d b %d min %d max %d sat %d sat2 %d n %d\n", r, g, b, min, max, sat, sat2, n);
+	led_setRGB(r, g, b);	 	
 }
 	
 
@@ -129,39 +161,36 @@ ButtonMachine::~ButtonMachine()
 
 void ButtonMachine::ledPipe()
 {
-#if 0
-	uint8_t r, g, b;
-
-	BlobA blob(m_index, (CAM_RES2_WIDTH-BT_CENTER_SIZE)/2, (CAM_RES2_WIDTH+BT_CENTER_SIZE)/2, (CAM_RES2_HEIGHT-BT_CENTER_SIZE)/2, (CAM_RES2_HEIGHT+BT_CENTER_SIZE)/2);
-	cc_sendBlobs(g_chirpUsb, &blob, 1);
-	getColor(&r, &g, &b);
-	saturate(&r, &g, &b);
-	led_setRGB(r, g, b);	 	
-#else
 	Points points;
+	RGBPixel rgb;
+	uint32_t r, g, b, n;
 	g_blobs->m_clut.growRegion(g_rawFrame, Point16(CAM_RES2_WIDTH/2, CAM_RES2_HEIGHT/2), &points);	
-	//cprintf("%d\n", i++); //points.size());		
 	cc_sendPoints(points, CL_GROW_INC, CL_GROW_INC, g_chirpUsb);
-#endif
 
+	IterPixel ip(g_rawFrame, &points);
+	for (r=g=b=n=0; ip.next(NULL, &rgb); n++)
+	{
+		r += rgb.m_r;
+		g += rgb.m_g;
+		b += rgb.m_b;		
+	}
+	r /= n;
+	g /= n;
+	b /= n;
+
+	scaleLED(r, g, b, n);
 }
 
 void ButtonMachine::setSignature()
 {
-	uint32_t current, saveCurrent; 
-	int goodness;
+	uint32_t current; 
+	int res;
 
 	// grow region, create model, save
-	goodness = cc_setSigPoint(0, m_index, CAM_RES2_WIDTH/2, CAM_RES2_HEIGHT/2, g_chirpUsb);
-	if (goodness>0)
-	{
-		cprintf("goodness=%d\n", goodness);
-		saveCurrent = led_getMaxCurrent(); // save off value
-		current = (float)LED_MAX_CURRENT/100.0f*goodness;
-		led_setMaxCurrent(current);
-		flashLED(4); 
-		led_setMaxCurrent(saveCurrent);
-	}
+	res = cc_setSigPoint(0, m_index, CAM_RES2_WIDTH/2, CAM_RES2_HEIGHT/2, g_chirpUsb);
+	if (res<0)
+		return;
+	flashLED(4); 
 }
 
 bool ButtonMachine::handleSignature()
@@ -184,6 +213,7 @@ bool ButtonMachine::handleSignature()
 		if (bt)
 		{
 			setTimer(&m_timer);
+			led_setMaxCurrent(LED_DEFAULT_MAX_CURRENT);
 			m_goto = 1;
 			led_set(0);
 		}

@@ -57,26 +57,26 @@ bool IterPixel::reset(bool cleari)
     return true;
 }
 
-bool IterPixel::next(UVPixel *uv)
+bool IterPixel::next(UVPixel *uv, RGBPixel *rgb)
 {
     if (m_points)
     {
-        if (nextHelper(uv))
+        if (nextHelper(uv, rgb))
             return true; // working on the current block
         else // get new block
         {
             if (reset(false)) // reset indexes, increment m_i, get new block
-                return nextHelper(uv);  // we have another block!
+                return nextHelper(uv, rgb);  // we have another block!
             else
                 return false; // blocks are empty
         }
     }
     else
-        return nextHelper(uv);
+        return nextHelper(uv, rgb);
 }
 
 
-bool IterPixel::nextHelper(UVPixel *uv)
+bool IterPixel::nextHelper(UVPixel *uv, RGBPixel *rgb)
 {
     int32_t r, g1, g2, b, u, v, c, miny=CL_MIN_Y;
 
@@ -95,25 +95,34 @@ bool IterPixel::nextHelper(UVPixel *uv)
         g1 = m_pixels[m_x - 1];
         g2 = m_pixels[-m_frame.m_width + m_x];
         b = m_pixels[-m_frame.m_width + m_x - 1];
-        c = r+g1+b;
-        if (c<miny)
+		if (rgb)
 		{
-			m_x+=2;
-            continue;
+		  	rgb->m_r = r;
+			rgb->m_g = (g1+g2)/2;
+			rgb->m_b = b;
 		}
-        u = ((r-g1)<<CL_LUT_ENTRY_SCALE)/c;
-        c = r+g2+b;
-        if (c<miny)
+		if (uv)
 		{
-			m_x+=2;
-            continue;
+        	c = r+g1+b;
+        	if (c<miny)
+			{
+				m_x += 2;
+            	continue;
+			}
+        	u = ((r-g1)<<CL_LUT_ENTRY_SCALE)/c;
+        	c = r+g2+b;
+        	if (c<miny)
+			{
+				m_x += 2;
+            	continue;
+			}
+        	v = ((b-g2)<<CL_LUT_ENTRY_SCALE)/c;
+
+        	uv->m_u = u;
+        	uv->m_v = v;
 		}
-        v = ((b-g2)<<CL_LUT_ENTRY_SCALE)/c;
 
-        uv->m_u = u;
-        uv->m_v = v;
-
-		m_x+=2;
+		m_x += 2;
         return true;
     }
 }
@@ -261,6 +270,15 @@ ColorSignature *ColorLUT::getSignature(uint8_t signum)
 	return m_signatures+signum-1;
 }
 
+int ColorLUT::setSignature(uint8_t signum, const ColorSignature &sig)
+{
+	if (signum<1 || signum>CL_NUM_SIGNATURES)
+		return -1;
+
+	m_signatures[signum-1] = sig;
+	updateSignature(signum);
+	return 0;
+}
 
 
 int ColorLUT::generateLUT()

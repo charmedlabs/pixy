@@ -89,12 +89,6 @@ static const ProcModule g_module[] =
 	{CRP_UINT32, CRP_UINTS8, END},
 	"" 
 	},
-	{
-	"cc_setSigBounds",
-	(ProcPtr)cc_setSigBounds,
-	{CRP_UINT8, CRP_UINT16, CRP_UINT16, CRP_UINT16, CRP_UINT16, CRP_UINT16, CRP_UINT16, END},
-	"" 
-	},
 	END
 };
 
@@ -119,22 +113,17 @@ int cc_loadLut(void)
 	char id[32];
 	ColorSignature *psig;
 
-	// indicate that raw frame has been overwritten
-	g_rawFrame.m_pixels = NULL;
-	// clear lut
-#ifdef DEFER
-	g_blobs->m_clut.clear();
-
-	for (i=1; i<=NUM_MODELS; i++)
+	for (i=1; i<=CL_NUM_SIGNATURES; i++)
 	{
 		sprintf(id, "signature%d", i);
 		// get signature and add to color lut
-		res = prm_get(id, &len, &pmodel, END);
+		res = prm_get(id, &len, &psig, END);
 		if (res<0)
 			return res;
-		g_blobs->m_clut->add(pmodel, i);
+		g_blobs->m_clut.setSignature(i, *psig);
 	}
-#endif
+
+	g_blobs->m_clut.generateLUT();
 	// go ahead and flush since we've changed things
 	g_qqueue->flush();
 
@@ -144,19 +133,17 @@ int cc_loadLut(void)
 void cc_loadParams(void)
 {
 	int i;
-#ifdef DEFER
-	ColorModel model;
+	ColorSignature signature;
 	char id[32], desc[32];
 
 	// set up signatures, load later
-	for (i=1; i<=NUM_MODELS; i++)
+	for (i=1; i<=CL_NUM_SIGNATURES; i++)
 	{
 		sprintf(id, "signature%d", i);
 		sprintf(desc, "Color signature %d", i);
 		// add if it doesn't exist yet
-		prm_add(id, PRM_FLAG_INTERNAL, desc, INTS8(sizeof(ColorModel), &model), END);
+		prm_add(id, PRM_FLAG_INTERNAL, desc, INTS8(sizeof(ColorSignature), &signature), END);
 	}
-#endif
 
 	// others -----
 
@@ -167,18 +154,6 @@ void cc_loadParams(void)
 		"Sets the maximum blocks for each color signature sent for each frame. (default 1000)", UINT16(1000), END);
 	prm_add("Min block area", 0, 
 		"Sets the minimum required area in pixels for a block.  Blocks with less area won't be sent. (default 20)", UINT32(20), END);
-	prm_add("Min saturation", 0,
-		"@c Signature_creation Sets the minimum allowed color saturation for when generating color signatures. Applies during teaching. (default 15.0)", FLT32(15.0), END);
-	prm_add("Hue spread", 0,
-		"@c Signature_creation Sets how inclusive the color signatures are with respect to hue. Applies during teaching. (default 1.5)", FLT32(1.5), END);
-	prm_add("Saturation spread", 0,
-		"@c Signature_creation Sets how inclusive the color signatures are with respect to saturation. Applies during teaching. (default 1.5)", FLT32(1.5), END);
-	prm_add("CC min saturation", 0,
-		"@c Signature_creation Sets the minimum allowed color saturation for when generating color code (CC) signatures. Applies during teaching. (default 15.0)", FLT32(15.0), END);
-	prm_add("CC hue spread", 0,
-		"@c Signature_creation Sets how inclusive the color code (CC) signatures are with respect to hue. Applies during teaching. (default 3.0)", FLT32(3.0), END);
-	prm_add("CC saturation spread", 0,
-		"@c Signature_creation Sets how inclusive the color code (CC) signatures are with respect to saturation for color codes. Applies during teaching. (default 50.0)", FLT32(50.0), END);
 	prm_add("Color code mode", 0,
 		"Sets the color code mode, 0=disabled, 1=enabled, 2=color codes only, 3=mixed (default 1)", INT8(1), END);
 
@@ -194,7 +169,6 @@ void cc_loadParams(void)
 	g_blobs->setParams(maxBlobs, maxBlobsPerModel, minArea, (ColorCodeMode)ccMode);
 
 	cc_loadLut();
-
 }
 
 int cc_init(Chirp *chirp)
@@ -257,12 +231,9 @@ int32_t cc_setSigRegion(const uint32_t &type, const uint8_t &signum, const uint1
 	g_blobs->m_clut.generateLUT();
 	sig->m_type = type;
 
-#ifdef DEFER
 	// save to flash
-	sprintf(id, "signature%d", model);
-	prm_set(id, INTS8(sizeof(ColorModel), &cmodel), END);
-	prm_setDirty(false); // prevent reload (because we don't want to load the lut (yet) and lose our frame
-#endif
+	sprintf(id, "signature%d", signum);
+	prm_set(id, INTS8(sizeof(ColorSignature), sig), END);
 
 	cprintf("Success!\n");
 
@@ -291,62 +262,55 @@ int32_t cc_setSigPoint(const uint32_t &type, const uint8_t &signum, const uint16
 	sig->m_type = type;
 
 	cc_sendPoints(points, CL_GROW_INC, CL_GROW_INC, chirp);
-#ifdef DEFER
+
 	// save to flash
-	sprintf(id, "signature%d", model);
-	prm_set(id, INTS8(sizeof(ColorModel), &cmodel), END);
-	prm_setDirty(false); // prevent reload (because we don't want to load the lut (yet) and lose our frame
-#endif
+	sprintf(id, "signature%d", signum);
+	prm_set(id, INTS8(sizeof(ColorSignature), sig), END);
 
 	//cprintf("Success!\n");
 
 	return 0;
 }
 
-int32_t cc_clearSig(const uint8_t &model)
+int32_t cc_clearSig(const uint8_t &signum)
 {
-#ifdef DEFER
 	char id[32];
-	ColorModel cmodel;
+	ColorSignature sig;
 	int res;
 
- 	if (model<1 || model>NUM_MODELS)
+ 	if (signum<1 || signum>CL_NUM_SIGNATURES)
 		return -1;
 
-	memset(&cmodel, 0, sizeof(cmodel));
+	memset(&sig, 0, sizeof(ColorSignature));
 
-	sprintf(id, "signature%d", model);
-	res = prm_set(id, INTS8(sizeof(ColorModel), &cmodel), END);
+	sprintf(id, "signature%d", signum);
+	res = prm_set(id, INTS8(sizeof(ColorSignature), &sig), END);
 
 	// update lut
  	cc_loadLut();
 
 	return res;
-#endif
-	return 0;
 }
 
 int32_t cc_clearAllSig()
 {
-#ifdef DEFER
 	char id[32];
-	uint8_t model;
-	ColorModel cmodel;
+	uint8_t signum;
+	ColorSignature sig;
 	int res; 
 
-	memset(&cmodel, 0, sizeof(cmodel));
+	memset(&sig, 0, sizeof(ColorSignature));
 
-   	for (model=1; model<=NUM_MODELS; model++)
+   	for (signum=1; signum<=CL_NUM_SIGNATURES; signum++)
 	{
-		sprintf(id, "signature%d", model);
-		res = prm_set(id, INTS8(sizeof(ColorModel), &cmodel), END);
+		sprintf(id, "signature%d", signum);
+		res = prm_set(id, INTS8(sizeof(ColorSignature), &sig), END);
 		if (res<0)
 			return res;			
 	}
 
 	// update lut
  	cc_loadLut();
-#endif
 	return 0;
 }
 
@@ -519,22 +483,5 @@ void cc_sendPoints(Points &points, uint16_t width, uint16_t height, Chirp *chirp
 	chirp->useBuffer((uint8_t *)mem, len+points.size()*sizeof(Point16));
 }
 
-int32_t cc_setSigBounds(const uint8_t &sig, const int16_t &umin, const int16_t &umax, const int16_t &umean, const int16_t &vmin, const int16_t &vmax, const int16_t &vmean) 
-{
-	g_blobs->m_clut.m_runtimeSigs[sig].m_uMin = umin;
-	g_blobs->m_clut.m_runtimeSigs[sig].m_uMax = umax;
-	g_blobs->m_clut.m_signatures[sig].m_uMean = umean;
-	g_blobs->m_clut.m_runtimeSigs[sig].m_vMin = vmin;
-	g_blobs->m_clut.m_runtimeSigs[sig].m_vMax = vmax;
-	g_blobs->m_clut.m_signatures[sig].m_vMean = vmean;	
-	uint8_t sig2 = sig;
-	cprintf("sig %d %d %d %d %d\n", sig2, 
-	g_blobs->m_clut.m_runtimeSigs[sig].m_uMin, 
-	g_blobs->m_clut.m_runtimeSigs[sig].m_uMax, 
-	g_blobs->m_clut.m_runtimeSigs[sig].m_vMin, 
-	g_blobs->m_clut.m_runtimeSigs[sig].m_vMax); 
-	
-	return 0;	
-}
 	
 

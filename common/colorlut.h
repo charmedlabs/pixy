@@ -35,6 +35,11 @@
 
 struct ColorSignature
 {
+	ColorSignature()
+	{
+		m_uMin = m_uMax = m_uMean = m_vMin = m_vMax = m_vMean = m_type = 0;
+	}	
+
     int32_t m_uMin;
     int32_t m_uMax;
     int32_t m_uMean;
@@ -52,23 +57,6 @@ struct RuntimeSignature
     int32_t m_vMax;
 };
 
-struct UVPixel
-{
-    UVPixel()
-    {
-        m_u = m_v = 0;
-    }
-
-    UVPixel(int32_t u, int32_t v)
-    {
-        m_u = u;
-        m_v = v;
-    }
-
-    int32_t m_u;
-    int32_t m_v;
-};
-
 typedef SimpleVector<Point16> Points;
 
 class IterPixel
@@ -76,11 +64,11 @@ class IterPixel
 public:
     IterPixel(const Frame8 &frame, const RectA &region);
     IterPixel(const Frame8 &frame, const Points *points);
-    bool next(UVPixel *uv);
+    bool next(UVPixel *uv, RGBPixel *rgb=NULL);
     bool reset(bool cleari=true);
 
 private:
-    bool nextHelper(UVPixel *uv);
+    bool nextHelper(UVPixel *uv, RGBPixel *rgb);
 
     Frame8 m_frame;
     RectA m_region;
@@ -100,6 +88,7 @@ public:
     int generateSignature(const Frame8 &frame, const RectA &region, uint8_t signum);
     int generateSignature(const Frame8 &frame, const Point16 &point, Points *points, uint8_t signum);
 	ColorSignature *getSignature(uint8_t signum);
+	int setSignature(uint8_t signum, const ColorSignature &sig);
 
     int generateLUT();
     void clearLUT(uint8_t signum=0);

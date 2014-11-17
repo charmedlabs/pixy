@@ -31,7 +31,6 @@ int32_t cc_setMemory(const uint32_t &location, const uint32_t &len, const uint8_
 int32_t cc_getRLSFrameChirp(Chirp *chirp);
 int32_t cc_getRLSFrameChirpFlags(Chirp *chirp, uint8_t renderFlags=RENDER_FLAG_FLUSH);
 int32_t cc_getRLSFrame(uint8_t *memory, uint8_t *lut, bool sync=true);
-int32_t cc_setSigBounds(const uint8_t &sig, const int16_t &umin, const int16_t &umax, const int16_t &umean, const int16_t &vmin, const int16_t &vmax, const int16_t &vmean); 
 
 int cc_sendBlobs(Chirp *chirp, const BlobA *blobs, uint32_t len, uint8_t renderFlags=RENDER_FLAG_FLUSH);
 int cc_sendBlobs(Chirp *chirp, const BlobA *blobs, uint32_t len, const BlobB *ccBlobs, uint32_t ccLen, uint8_t renderFlags=RENDER_FLAG_FLUSH);

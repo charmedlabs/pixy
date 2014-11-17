@@ -43,22 +43,6 @@ struct RuntimeSignature
 
 struct ColorSignature;
 struct RuntimeSignature;
-struct UVPixel
-{
-    UVPixel()
-    {
-        m_u = m_v = 0;
-    }
-
-    UVPixel(int32_t u, int32_t v)
-    {
-        m_u = u;
-        m_v = v;
-    }
-
-    int32_t m_u;
-    int32_t m_v;
-};
 
 class IterPixel2;
 

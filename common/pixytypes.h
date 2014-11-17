@@ -204,6 +204,43 @@ struct Fpoint
     float m_y;
 };
 
+struct UVPixel
+{
+    UVPixel()
+    {
+        m_u = m_v = 0;
+    }
+
+    UVPixel(int32_t u, int32_t v)
+    {
+        m_u = u;
+        m_v = v;
+    }
+
+    int32_t m_u;
+    int32_t m_v;
+};
+
+struct RGBPixel
+{
+    RGBPixel()
+    {
+        m_r = m_g = m_b = 0;
+    }
+
+    RGBPixel(uint8_t r, uint8_t g, uint8_t b)
+    {
+        m_r = r;
+        m_g = g;
+        m_b = b;
+    }
+
+    uint8_t m_r;
+	uint8_t m_g;
+	uint8_t m_b;
+};
+
+
 struct Line
 {
     Line()
