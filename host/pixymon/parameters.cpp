@@ -183,6 +183,11 @@ int Parameter::setRadio(const QString &description)
     return -1;
 }
 
+void Parameter::setHelp(const QString &help)
+{
+    m_help = help;
+}
+
 void Parameter::addRadioValue(const RadioValue &value)
 {
     m_radioValues.push_back(value);

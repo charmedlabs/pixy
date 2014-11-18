@@ -151,6 +151,8 @@ private:
 
     void prompt();
 
+    QString extractProperty(const QString &tag, QStringList *words, QString *desc);
+    void handleProperties(const uint8_t *argList, Parameter *parameter, QString *desc);
     void handleSaveParams(); // save to Pixy
     void handleLoadParams(); // load from Pixy
     void handleUpdateParam(MonModule *mm);

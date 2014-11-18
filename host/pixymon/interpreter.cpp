@@ -1076,6 +1076,48 @@ void Interpreter::augmentProcInfo(ProcInfo *info)
     }
 }
 
+QString Interpreter::extractProperty(const QString &tag, QStringList *words, QString *desc)
+{
+    QString property;
+    int i = words->indexOf(tag);
+    if (i>=0 && words->size()>i+1)
+    {
+        property = (*words)[i+1];
+        *desc = desc->remove(tag + " "); // remove form description
+        *desc = desc->remove(property + " "); // remove from description
+        return property;
+    }
+    return "";
+}
+
+void Interpreter::handleProperties(const uint8_t *argList, Parameter *parameter, QString *desc)
+{
+    QString property;
+    QStringList words = QString(*desc).split(QRegExp("\\s+"));
+
+    if ((property=extractProperty("@c", &words, desc))!="")
+    {
+        property = property.replace('_', ' '); // make it look prettier
+        parameter->setProperty(PP_CATEGORY, property);
+    }
+
+    if ((property=extractProperty("@m", &words, desc))!="")
+    {
+        if (argList[0]==CRP_FLT32)
+            parameter->setProperty(PP_MIN, property.toFloat());
+        else
+            parameter->setProperty(PP_MIN, property.toInt());
+    }
+
+    if ((property=extractProperty("@M", &words, desc))!="")
+    {
+        if (argList[0]==CRP_FLT32)
+            parameter->setProperty(PP_MAX, property.toFloat());
+        else
+            parameter->setProperty(PP_MAX, property.toInt());
+    }
+}
+
 
 void Interpreter::handleLoadParams()
 {
@@ -1106,21 +1148,12 @@ void Interpreter::handleLoadParams()
             break;
 
         QString sdesc(desc);
+        Parameter parameter(id, (PType)argList[0]);
+        parameter.setProperty(PP_FLAGS, flags);
+        handleProperties(argList, &parameter, &sdesc);
+        parameter.setHelp(sdesc);
 
         // deal with param category
-        QStringList words = QString(desc).split(QRegExp("\\s+"));
-        int i = words.indexOf("@c");
-        Parameter parameter(id, (PType)argList[0], "("+printArgType(argList[0], flags)+") "+sdesc);
-        parameter.setProperty(PP_FLAGS, flags);
-
-        if (i>=0 && words.size()>i+1)
-        {
-            category = words[i+1];
-            sdesc = sdesc.remove("@c "); // remove form description
-            sdesc = sdesc.remove(category + " "); // remove from description
-            category = category.replace('_', ' '); // make it look prettier
-            parameter.setProperty(PP_CATEGORY, category);
-        }
 
         if (strlen((char *)argList)>1)
         {

@@ -491,7 +491,8 @@ int Renderer::renderBLT1(uint8_t renderFlags, uint16_t width, uint16_t height,
 {
     uint i;
     QPainter p;
-    QImage img(width, height, QImage::Format_ARGB32);
+    float scale = (float)m_video->activeWidth()/width;
+    QImage img(m_video->activeWidth(), m_video->activeHeight(), QImage::Format_ARGB32);
     if (renderFlags&RENDER_FLAG_BLEND) // if we're blending, we should be transparent
         img.fill(0x00000000);
     else
@@ -502,7 +503,7 @@ int Renderer::renderBLT1(uint8_t renderFlags, uint16_t width, uint16_t height,
     p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
 
     for (i=0; i<numPoints; i+=2)
-        p.drawRect(points[i], points[i+1], blockWidth, blockHeight);
+        p.drawRect(points[i]*scale, points[i+1]*scale, blockWidth*scale, blockHeight*scale);
 
     p.end();
 

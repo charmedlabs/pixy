@@ -148,6 +148,21 @@ void cc_loadParams(void)
 	// others -----
 
 	// setup
+	prm_add("Signature 1 range", PRM_FLAG_SLIDER, 
+		"@c Signatures @m 0.0 @M 15.0 Sets filtering range of signature 1. (default 2.5)", FLT32(2.5f), END);
+	prm_add("Signature 2 range", PRM_FLAG_SLIDER, 
+		"@c Signatures @m 0.0 @M 15.0 Sets filtering range of signature 2. (default 2.5)", FLT32(2.5f), END);
+	prm_add("Signature 3 range", PRM_FLAG_SLIDER, 					   
+		"@c Signatures @m 0.0 @M 15.0 Sets filtering range of signature 3. (default 2.5)", FLT32(2.5f), END);
+	prm_add("Signature 4 range", PRM_FLAG_SLIDER, 
+		"@c Signatures @m 0.0 @M 15.0 Sets filtering range of signature 4. (default 2.5)", FLT32(2.5f), END);
+	prm_add("Signature 5 range", PRM_FLAG_SLIDER, 
+		"@c Signatures @m 0.0 @M 15.0 Sets filtering range of signature 5. (default 2.5)", FLT32(2.5f), END);
+	prm_add("Signature 6 range", PRM_FLAG_SLIDER, 
+		"@c Signatures @m 0.0 @M 15.0 Sets filtering range of signature 6. (default 2.5)", FLT32(2.5f), END);
+	prm_add("Signature 7 range", PRM_FLAG_SLIDER, 
+		"@c Signatures @m 0.0 @M 15.0 Sets filtering range of signature 7. (default 2.5)", FLT32(2.5f), END);
+
 	prm_add("Max blocks", 0, 
 		"Sets the maximum total blocks sent per frame. (default 1000)", UINT16(1000), END);
 	prm_add("Max blocks per signature", 0, 

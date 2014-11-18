@@ -111,7 +111,22 @@ int ConfigDialog::updateDB(ParameterDB *data)
 
         QLineEdit *line = (QLineEdit *)parameter.property(PP_WIDGET).toLongLong();
 
-        if (type==PT_FLT32)
+        if ((flags&PRM_FLAG_SLIDER) || type==PT_SLIDER_FLT32 || type==PT_SLIDER_INT32)
+        {
+            QSlider *slider = (QSlider *)parameter.property(PP_WIDGET2).toLongLong();
+            QVariant min = parameter.property(PP_MIN);
+            QVariant max = parameter.property(PP_MAX);
+
+            // value = min + pos/100(max-min)
+            float value;
+            value = min.toFloat() + slider->sliderPosition()*(max.toFloat() - min.toFloat())/SLIDER_SIZE;
+            if (value!=parameter.value().toFloat())
+            {
+                parameter.set(value);
+                parameter.setDirty(true);
+            }
+        }
+        else if (type==PT_FLT32)
         {
             bool ok;
             float val;
@@ -151,21 +166,6 @@ int ConfigDialog::updateDB(ParameterDB *data)
             if(cbox->isChecked()!=parameter.value().toBool())
             {
                 parameter.set(cbox->isChecked());
-                parameter.setDirty(true);
-            }
-        }
-        else if (type==PT_SLIDER_FLT32 || type==PT_SLIDER_INT32)
-        {
-            QSlider *slider = (QSlider *)parameter.property(PP_WIDGET2).toLongLong();
-            QVariant min = parameter.property(PP_MIN);
-            QVariant max = parameter.property(PP_MAX);
-
-            // value = min + pos/100(max-min)
-            float value;
-            value = min.toFloat() + slider->sliderPosition()*(max.toFloat() - min.toFloat())/SLIDER_SIZE;
-            if (value!=parameter.value().toFloat())
-            {
-                parameter.set(value);
                 parameter.setDirty(true);
             }
         }
@@ -258,22 +258,7 @@ void ConfigDialog::render(ParameterDB *data, QGridLayout *layout, QTabWidget *ta
                 line->setMaximumWidth(300);
                 line->setText(parameter.value().toString());
             }
-            else if (type==PT_FLT32)
-            {
-                float val = parameter.value().toFloat();
-                line->setText(QString::number(val, 'f', 6));
-            }
-            else if (type==PT_BOOL)
-            {
-                cbox = new QCheckBox();
-                cbox->setProperty("Parameter", (qlonglong)&parameter);
-                cbox->setChecked(parameter.value().toBool());
-                connect(cbox, SIGNAL(clicked()), this, SLOT(handleCheckBox()));
-                parameter.setProperty(PP_WIDGET, (qlonglong)cbox);
-                delete line;
-                line = NULL;
-            }
-            else if (type==PT_SLIDER_FLT32 || type==PT_SLIDER_INT32)
+            else if ((flags&PRM_FLAG_SLIDER) || type==PT_SLIDER_FLT32 || type==PT_SLIDER_INT32)
             {
                 float min = parameter.property(PP_MIN).toFloat();
                 float max = parameter.property(PP_MAX).toFloat();
@@ -289,13 +274,27 @@ void ConfigDialog::render(ParameterDB *data, QGridLayout *layout, QTabWidget *ta
                 //(value - min)100/(max-min) = pos
                 pos = (parameter.value().toFloat() - min)*SLIDER_SIZE/(max - min);
                 slider->setSliderPosition((int)pos);
-                if (type==PT_SLIDER_FLT32)
+                if (type==PT_FLT32)
                     line->setText(QString::number(parameter.value().toFloat(), 'f', 6));
                 else
                     line->setText(QString::number(parameter.value().toInt()));
                 line->setReadOnly(true);
                 connect(slider, SIGNAL(sliderMoved(int)), this, SLOT(handleSlider(int)));
-
+            }
+            else if (type==PT_FLT32)
+            {
+                float val = parameter.value().toFloat();
+                line->setText(QString::number(val, 'f', 6));
+            }
+            else if (type==PT_BOOL)
+            {
+                cbox = new QCheckBox();
+                cbox->setProperty("Parameter", (qlonglong)&parameter);
+                cbox->setChecked(parameter.value().toBool());
+                connect(cbox, SIGNAL(clicked()), this, SLOT(handleCheckBox()));
+                parameter.setProperty(PP_WIDGET, (qlonglong)cbox);
+                delete line;
+                line = NULL;
             }
             else if (!(flags&PRM_FLAG_SIGNED))
             {
@@ -432,26 +431,20 @@ void ConfigDialog::handleSlider(int position)
     QSlider *slider = (QSlider *)sender();
     Parameter *parameter = (Parameter *)slider->property("Parameter").toLongLong();
     QLineEdit *line = (QLineEdit *)parameter->property(PP_WIDGET).toLongLong();
-
-    MonModule *mm = (MonModule *)parameter->property(PP_MM_CALLBACK).toLongLong();
-    if (mm)
+    float value;
+    float min = parameter->property(PP_MIN).toFloat();
+    float max = parameter->property(PP_MAX).toFloat();
+    value = min + slider->sliderPosition()*(max - min)/SLIDER_SIZE;
+    if (parameter->type()==PT_FLT32)
     {
-        float value;
-        float min = parameter->property(PP_MIN).toFloat();
-        float max = parameter->property(PP_MAX).toFloat();
-        value = min + slider->sliderPosition()*(max - min)/SLIDER_SIZE;
-        if (parameter->type()==PT_SLIDER_FLT32)
-        {
-            parameter->set(value, true);
-            line->setText(QString::number(value, 'f', 6));
-        }
-        else
-        {
-            parameter->set((int)value, true);
-            line->setText(QString::number((int)value));
-        }
-        parameter->setDirty(true);
-        m_interpreter->updateParam(mm);
+        parameter->set(value, true);
+        line->setText(QString::number(value, 'f', 6));
     }
-
+    else
+    {
+        parameter->set((int)value, true);
+        line->setText(QString::number((int)value));
+    }
+    parameter->setDirty(true);
+    //m_interpreter->updateParam(mm);
 }

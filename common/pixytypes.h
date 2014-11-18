@@ -20,10 +20,11 @@
 #define RENDER_FLAG_FLUSH            0x01	// add to stack, render immediately
 #define RENDER_FLAG_BLEND            0x02	// blend with a previous images in image stack
 
-#define PRM_FLAG_INTERNAL            0x01
-#define PRM_FLAG_ADVANCED            0x02
-#define PRM_FLAG_HEX_FORMAT          0x10
-#define PRM_FLAG_SIGNED              0x80
+#define PRM_FLAG_INTERNAL            0x00000001
+#define PRM_FLAG_ADVANCED            0x00000002
+#define PRM_FLAG_HEX_FORMAT          0x00000010
+#define PRM_FLAG_SIGNED              0x00000080
+#define PRM_FLAG_SLIDER              0x00000100
 
 struct Point16
 {

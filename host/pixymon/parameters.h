@@ -38,11 +38,6 @@
 #define PP_MIN          "min"
 #define PP_MAX          "max"
 
-#define PRM_FLAG_INTERNAL            0x01
-#define PRM_FLAG_ADVANCED            0x02
-#define PRM_FLAG_HEX_FORMAT          0x10
-#define PRM_FLAG_SIGNED              0x80
-
 struct RadioValue
 {
     RadioValue(const QString &description,  const QVariant &value)
@@ -106,6 +101,7 @@ public:
     int set(const QVariant &value, bool shadow=false);
     int setRadio(const QString &description);
     void setDirty(bool dirty);
+    void setHelp(const QString &help);
     bool dirty();
     void clearShadow();
 
