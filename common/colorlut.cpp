@@ -141,7 +141,7 @@ ColorLUT::ColorLUT(uint8_t *lut)
     m_maxDist = CL_MAX_DIST;
     m_ratio = CL_DEFAULT_TOL;
 	for (i=0; i<CL_NUM_SIGNATURES; i++)
-		m_acqGains[i] = CL_DEFAULT_ACQ_GAIN;
+		m_sigRanges[i] = CL_DEFAULT_SIG_RANGE;
 }
 
 
@@ -256,10 +256,10 @@ void ColorLUT::updateSignature(uint8_t signum)
 	if (signum<1 || signum>CL_NUM_SIGNATURES)
 		return;
 	signum--;
-	m_runtimeSigs[signum].m_uMin = m_signatures[signum].m_uMean + (m_signatures[signum].m_uMin - m_signatures[signum].m_uMean)*m_acqGains[signum];
-	m_runtimeSigs[signum].m_uMax = m_signatures[signum].m_uMean + (m_signatures[signum].m_uMax - m_signatures[signum].m_uMean)*m_acqGains[signum];
-	m_runtimeSigs[signum].m_vMin = m_signatures[signum].m_vMean + (m_signatures[signum].m_vMin - m_signatures[signum].m_vMean)*m_acqGains[signum];
-	m_runtimeSigs[signum].m_vMax = m_signatures[signum].m_vMean + (m_signatures[signum].m_vMax - m_signatures[signum].m_vMean)*m_acqGains[signum];
+	m_runtimeSigs[signum].m_uMin = m_signatures[signum].m_uMean + (m_signatures[signum].m_uMin - m_signatures[signum].m_uMean)*m_sigRanges[signum];
+	m_runtimeSigs[signum].m_uMax = m_signatures[signum].m_uMean + (m_signatures[signum].m_uMax - m_signatures[signum].m_uMean)*m_sigRanges[signum];
+	m_runtimeSigs[signum].m_vMin = m_signatures[signum].m_vMean + (m_signatures[signum].m_vMin - m_signatures[signum].m_vMean)*m_sigRanges[signum];
+	m_runtimeSigs[signum].m_vMax = m_signatures[signum].m_vMean + (m_signatures[signum].m_vMax - m_signatures[signum].m_vMean)*m_sigRanges[signum];
 }
 
 ColorSignature *ColorLUT::getSignature(uint8_t signum)
@@ -308,8 +308,8 @@ int ColorLUT::generateLUT()
                 {
                     if (m_signatures[sig].m_uMin==0 && m_signatures[sig].m_uMax==0)
                         continue;
-                    if ((m_signatures[sig].m_uMin<u) && (u<m_signatures[sig].m_uMax) &&
-                            (m_signatures[sig].m_vMin<v) && (v<m_signatures[sig].m_vMax))
+                    if ((m_runtimeSigs[sig].m_uMin<u) && (u<m_runtimeSigs[sig].m_uMax) &&
+                            (m_runtimeSigs[sig].m_vMin<v) && (v<m_runtimeSigs[sig].m_vMax))
                     {
                         u = r-g;
                         u >>= 9-CL_LUT_COMPONENT_SCALE;
@@ -506,6 +506,22 @@ void ColorLUT::getMean(const RectA &region ,const Frame8 &frame, UVPixel *mean)
     mean->m_v = vsum/n;
 }
 
+void ColorLUT::setSigRange(uint8_t signum, float range)
+{
+	if (signum<1 || signum>CL_NUM_SIGNATURES)
+		return;
+	m_sigRanges[signum-1] = range;
+}
+
+void ColorLUT::setGrowDist(uint32_t dist)
+{
+	m_maxDist = dist;
+}
+
+void ColorLUT::setMinBrightness(float miny)
+{
+	m_miny = miny;
+}
 
 
 

@@ -217,11 +217,17 @@ bool Parameter::dirty()
 
 void Parameter::clearShadow()
 {
-    if (!m_saved.isNull())
+    if (shadow())
     {
         m_value = m_saved;
         m_saved = QVariant();
+        m_dirty = true;  // set dirty bit because we've effectively changed (back)
     }
+}
+
+bool Parameter::shadow()
+{
+    return !m_saved.isNull();
 }
 
 const QString &Parameter::help()

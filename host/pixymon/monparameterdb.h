@@ -17,9 +17,9 @@ public:
     int load();
     int save();
 
-    void addSlider(const QString &id, const QVariant &value, const QVariant &min, const QVariant &max, MonModule *mm,
+    void addSlider(const QString &id, const QVariant &value, const QVariant &min, const QVariant &max,
                    const QString &help="", const QString &category="");
-    void addBool(const QString &id, bool value, MonModule *mm, const QString &help="", const QString &category="");
+    void addBool(const QString &id, bool value, const QString &help="", const QString &category="");
 
     static QString docPath();
 };

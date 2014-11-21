@@ -34,7 +34,6 @@
 #define PP_WIDGET       "widget"
 #define PP_WIDGET2      "widget2"
 #define PP_FLAGS        "flags"
-#define PP_MM_CALLBACK  "mm_callback"
 #define PP_MIN          "min"
 #define PP_MAX          "max"
 
@@ -76,8 +75,6 @@ enum PType
     // other types
     PT_PATH = PT_STRING | 0x100<<8,
     PT_BOOL = PT_INT8 | 0x101<<8,
-    PT_SLIDER_INT32 = PT_INT32 | 0x102<<8,
-    PT_SLIDER_FLT32 = PT_FLT32 | 0x102<<8
 };
 
 typedef QList<RadioValue> RadioValues;
@@ -104,6 +101,7 @@ public:
     void setHelp(const QString &help);
     bool dirty();
     void clearShadow();
+    bool shadow();
 
     void addRadioValue(const RadioValue &value);
     void onOff();

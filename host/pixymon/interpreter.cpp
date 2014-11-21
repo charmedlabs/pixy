@@ -43,7 +43,6 @@ Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, MonParamete
     m_waiting = false;
     m_fastPoll = true;
     m_notified = false;
-    m_paramDirty = true;
     m_running = -1; // set to bogus value to force update
     m_chirp = NULL;
 
@@ -437,7 +436,7 @@ void Interpreter::handlePendingCommand()
     if (m_commandQueue.empty())
         return;
     const Command command = m_commandQueue.front();
-    m_commandQueue.pop();
+    m_commandQueue.pop_front();
     locker.unlock();
 
     switch (command.m_type)
@@ -474,7 +473,7 @@ void Interpreter::handlePendingCommand()
         break;
 
     case UPDATE_PARAM:
-        handleUpdateParam((MonModule *)command.m_arg0.toLongLong());
+        handleUpdateParam();
         break;
     }
 
@@ -485,7 +484,11 @@ void Interpreter::queueCommand(CommandType type, const QVariant &arg0, const QVa
 {
     Command command(type, arg0, arg1);
     m_mutexQueue.lock();
-    m_commandQueue.push(command);
+    // we only want one type of each command queued up at a time,
+    // otherwise we might "wind up".  And we can't block, or the gui will either deadlock
+    // or become sluggish, so instead remove all of this type of command before adding.
+    m_commandQueue.removeAll(command);
+    m_commandQueue.push_back(command);
     m_mutexQueue.unlock();
 }
 
@@ -535,9 +538,12 @@ void Interpreter::run()
         m_get_param = m_chirp->getProc("prm_get");
         m_getAll_param = m_chirp->getProc("prm_getAll");
         m_set_param = m_chirp->getProc("prm_set");
+        m_set_shadow_param = m_chirp->getProc("prm_setShadow");
+        m_reset_shadows = m_chirp->getProc("prm_resetShadows");
 
         if (m_exec_run<0 || m_exec_running<0 || m_exec_stop<0 || m_exec_get_action<0 ||
-                m_get_param<0 || m_getAll_param<0 || m_set_param<0)
+                m_get_param<0 || m_getAll_param<0 || m_set_param<0 ||
+                m_set_shadow_param<0 || m_reset_shadows<0)
             throw std::runtime_error("Communication error with Pixy.");
 
         // create pixymon modules
@@ -545,7 +551,7 @@ void Interpreter::run()
         // reload any parameters that the mon modules might have created
         m_pixymonParameters->load();
         // notify mon modules of parameter changes
-        sendMonModulesParamChange(false);
+        sendMonModulesParamChange();
 
         // get all actions
         for (i=0; sendGetAction(i)>=0; i++);
@@ -1192,39 +1198,28 @@ void Interpreter::handleLoadParams()
 
     qDebug("loaded");
     emit paramLoaded();
-    sendMonModulesParamChange(m_paramDirty);
-    m_paramDirty = false;
+    sendMonModulesParamChange();
 }
 
-
-void Interpreter::handleSaveParams()
+void Interpreter::handleSaveParams(bool shadow)
 {
-    int i;
-    int res, response;
-    bool dirty, running;
-
-    // if we're running, stop so this doesn't take too long....
-    // (ie it would proceed with 1 property to returned frame, which could take 1 second or 2)
-    running = m_running;
-    if (running==1) // only if we're running and not in forced state (running==2)
-        sendStop();
-
+    int i, res, response;
     Parameters &pixyParameters = m_pixyParameters.parameters();
 
-    for (i=0, dirty=false; i<pixyParameters.size(); i++)
+    for (i=0; i<pixyParameters.size(); i++)
     {
         uint8_t buf[0x100];
 
         if (pixyParameters[i].dirty())
         {
+            // (only interested in shadows)
+            if (shadow && !pixyParameters[i].shadow())
+                continue;
             int len;
             QByteArray str = pixyParameters[i].id().toUtf8();
             const char *id = str.constData();
             PType type = pixyParameters[i].type();
             pixyParameters[i].setDirty(false); // reset
-            dirty = true; // keep track for sending signal
-
-            qDebug() << id;
 
             if (type==PT_INT8 || type==PT_INT16 || type==PT_INT32)
             {
@@ -1245,17 +1240,36 @@ void Interpreter::handleSaveParams()
             else
                 continue; // don't know what to do!
 
-            res = m_chirp->callSync(m_set_param, STRING(id), UINTS8(len, buf), END_OUT_ARGS, &response, END_IN_ARGS);
+            if (shadow)
+                res = m_chirp->callSync(m_set_shadow_param, STRING(id), UINTS8(len, buf), END_OUT_ARGS, &response, END_IN_ARGS);
+            else
+                res = m_chirp->callSync(m_set_param, STRING(id), UINTS8(len, buf), END_OUT_ARGS, &response, END_IN_ARGS);
             if (res<0 || response<0)
             {
-                emit error("There was a problem setting a parameter.");
+                emit error("There was a problem setting a parameter.\n");
                 break;
             }
         }
     }
+}
 
+void Interpreter::handleSaveParams()
+{
+    bool running;
+    int32_t response;
+
+    // if we're running, stop so this doesn't take too long....
+    // (ie it would proceed with 1 property to returned frame, which could take 1 second or 2)
+    running = m_running;
+    if (running==1) // only if we're running and not in forced state (running==2)
+        sendStop();
+
+    handleSaveParams(false);
+
+    // reset the shadow parameters because we've saved all params
+    m_chirp->callSync(m_reset_shadows, END_OUT_ARGS, &response, END_IN_ARGS);
     // check pixymon parameters
-    sendMonModulesParamChange(dirty);
+    sendMonModulesParamChange();
 
     // if we're running, we've stopped, now resume
     if (running==1)
@@ -1292,29 +1306,10 @@ void Interpreter::getSelection(Point16 *point)
     m_mutexInput.unlock();
 }
 
-void Interpreter::sendMonModulesParamChange(bool dirty)
+void Interpreter::sendMonModulesParamChange()
 {
-    int i;
-    // check pixymon parameters
-    Parameters &monParameters = m_pixymonParameters->parameters();
-    if (!dirty)
-    {
-        for (i=0; i<monParameters.size(); i++)
-        {
-            if (monParameters[i].dirty())
-            {
-                dirty = true;
-                monParameters[i].setDirty(false);
-            }
-        }
-    }
-    if (dirty)  // if we updated any parameters, output paramChange signal
-    {
-        // notify monmodules of parameter change
-        for (i=0; i<m_modules.size(); i++)
-            m_modules[i]->paramChange();
-        emit paramChange();
-    }
+    for (int i=0; i<m_modules.size(); i++)
+        m_modules[i]->paramChange();
 }
 
 void Interpreter::cprintf(const char *format, ...)
@@ -1326,13 +1321,14 @@ void Interpreter::cprintf(const char *format, ...)
     emit textOut(buffer, Qt::blue);
 }
 
-void Interpreter::updateParam(MonModule *mm)
+void Interpreter::updateParam()
 {
-    queueCommand(UPDATE_PARAM, (qlonglong)mm);
+    queueCommand(UPDATE_PARAM);
 }
 
-void Interpreter::handleUpdateParam(MonModule *mm)
+void Interpreter::handleUpdateParam()
 {
-    mm->paramChange();
+    sendMonModulesParamChange();
+    handleSaveParams(true);
 }
 

@@ -283,7 +283,6 @@ int32_t exec_runprog(const uint8_t &progNum)
 	g_execArg = 0;
 
 	if (progNum==0) // default program!
-
 	{
 		uint8_t program;
 		prm_get("Default program", &program, END);
@@ -440,6 +439,7 @@ void exec_loop()
 				state = 3; // stop state
 			else if (prevConnected && !connected) // if we disconnect from pixymon, revert back to default program
 			{
+				prm_resetShadows(); // shadows are no longer valid now that the host is disconnected.
 				exec_runprog(0); // run default program
 				state = 0; // setup state
 			}

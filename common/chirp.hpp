@@ -223,6 +223,8 @@ public:
     static int deserialize(uint8_t *buf, uint32_t len, ...);
     static int vserialize(Chirp *chirp, uint8_t *buf, uint32_t bufSize, va_list *args);
     static int vdeserialize(uint8_t *buf, uint32_t len, va_list *args);
+    static int deserializeParse(uint8_t *buf, uint32_t len, void *args[]);
+    static int loadArgs(va_list *args, void *recvArgs[]);
     static int getArgList(uint8_t *buf, uint32_t len, uint8_t *argList);
     int useBuffer(uint8_t *buf, uint32_t len);
 
@@ -265,8 +267,6 @@ private:
     int32_t handleInit(uint16_t *blkSize, uint8_t *hintSource);
     int32_t handleEnumerateInfo(ChirpProc *proc);
     int vassemble(va_list *args);
-    static int deserializeParse(uint8_t *buf, uint32_t len, void *args[]);
-    static int loadArgs(va_list *args, void *recvArgs[]);
     void restoreBuffer();
 
     ChirpProc updateTable(const char *procName, ProcPtr procPtr);

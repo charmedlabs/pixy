@@ -19,20 +19,27 @@
 #include <stdarg.h>
 #include "chirp.hpp"
 
+typedef void (*ShadowCallback)(const char *id, const void *arg0);
+
 int prm_init(Chirp *chirp);
 
 int32_t prm_set(const char *id, ...);
 int32_t prm_setChirp(const char *id, const uint32_t &valLen, const uint8_t *val);
+int32_t prm_setShadowChirp(const char *id, const uint32_t &valLen, const uint8_t *val);
+int32_t prm_eraseShadows();
 int32_t prm_get(const char *id, ...);
 int32_t prm_getChirp(const char *id, Chirp *chirp);
 int32_t prm_getInfo(const char *id, Chirp *chirp);
 int32_t prm_getAll(const uint16_t &index, Chirp *chirp);
 
 void prm_setDirty(bool dirty);
+int prm_setShadowCallback(const char *id, ShadowCallback callback);
+int32_t prm_resetShadows();
 
 int prm_add(const char *id, uint32_t flags, const char *desc, ...);
 bool prm_verifyAll();
 int prm_format();
 bool prm_dirty();
+
 
 #endif

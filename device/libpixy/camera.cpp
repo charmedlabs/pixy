@@ -17,6 +17,7 @@
 #include <pixyvals.h>
 #include "camera.h"
 #include "param.h"
+#include "misc.h"
 
 static const ProcModule g_module[] =
 {
@@ -572,10 +573,18 @@ void cam_setRegs(const uint8_t *rPairs, int len)
 	cam_setBrightness(g_brightness);
 }
 
+void cam_shadowCallback(const char *id, const uint8_t &val)
+{
+	// only callback is for brightness
+	//if (strcmp(id, "Brightness")==0)
+	cam_setBrightness(val);
+}
+
 void cam_loadParams()
 {
 	prm_add("Brightness", PRM_FLAG_SLIDER, 
 		"@m 0 @M 100 Sets the average brightness of the camera, can be between 0 and 255 (default 90)", UINT8(CAM_BRIGHTNESS_DEFAULT), END);
+	prm_setShadowCallback("Brightness", (ShadowCallback)cam_shadowCallback);
 
 	prm_add("AEC Enable", PRM_FLAG_ADVANCED, 
 		"@c Camera Enables/disables Auto Exposure Correction, 0=disabled, 1=enabled (default 1)", UINT8(1), END);

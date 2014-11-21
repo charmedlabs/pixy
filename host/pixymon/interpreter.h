@@ -23,7 +23,6 @@
 #include <QVariant>
 #include <QList>
 #include <vector>
-#include <queue>
 #include <utility>
 #include "pixytypes.h"
 #include "chirpmon.h"
@@ -53,13 +52,19 @@ struct Command
         m_arg1 = arg1;
     }
 
+    // need to implement this for QList::removeAll()
+    bool operator==(const Command &rhs)
+    {
+        return m_type==rhs.m_type;
+    }
+
     CommandType m_type;
     QVariant m_arg0;
     QVariant m_arg1;
+
 };
 
-typedef std::queue<Command> CommandQueue;
-
+typedef QList<Command> CommandQueue;
 typedef std::pair<QString,QString> Arg;
 typedef std::vector<Arg> ArgList;
 
@@ -85,7 +90,7 @@ public:
     void execute(QStringList commandList);
     void loadParams();
     void saveParams();
-    void updateParam(MonModule *mm);
+    void updateParam();
     int saveImage(const QString &filename);
     void printHelp();
 
@@ -118,7 +123,6 @@ signals:
     void actionScriptlet(QString action, QStringList scriptlet);
     void parameter(QString id, QByteArray data);
     void paramLoaded();
-    void paramChange();
 
 public slots:
 
@@ -154,9 +158,10 @@ private:
     QString extractProperty(const QString &tag, QStringList *words, QString *desc);
     void handleProperties(const uint8_t *argList, Parameter *parameter, QString *desc);
     void handleSaveParams(); // save to Pixy
+    void handleSaveParams(bool shadow);
     void handleLoadParams(); // load from Pixy
-    void handleUpdateParam(MonModule *mm);
-    void sendMonModulesParamChange(bool dirty);
+    void handleUpdateParam();
+    void sendMonModulesParamChange();
 
     QStringList getSections(const QString &id, const QString &string);
     int getArgs(const ProcInfo *info, ArgList *argList);
@@ -186,6 +191,8 @@ private:
     ChirpProc m_get_param;
     ChirpProc m_getAll_param;
     ChirpProc m_set_param;
+    ChirpProc m_set_shadow_param;
+    ChirpProc m_reset_shadows;
 
     // for program
     bool m_programming;
@@ -194,7 +201,6 @@ private:
     bool m_run;
     bool m_fastPoll;
     bool m_notified;
-    bool m_paramDirty;
     int m_running;
 
     std::vector<ChirpCallData> m_program;

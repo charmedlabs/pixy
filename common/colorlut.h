@@ -28,7 +28,7 @@
 #define CL_MIN_Y                        (int32_t)(3*((1<<8)-1)*CL_MIN_Y_F)
 #define CL_MIN_RATIO                    0.25f
 #define CL_DEFAULT_MINY                 0.1f
-#define CL_DEFAULT_ACQ_GAIN				2.0f
+#define CL_DEFAULT_SIG_RANGE			2.5f
 #define CL_MAX_DIST                     2000
 #define CL_DEFAULT_TOL                  0.9f
 
@@ -95,6 +95,10 @@ public:
 	void updateSignature(uint8_t signum);
     void growRegion(const Frame8 &frame, const Point16 &seed, Points *points);
 
+	void setSigRange(uint8_t signum, float range);
+	void setMinBrightness(float miny);
+	void setGrowDist(uint32_t dist);
+
     ColorSignature m_signatures[CL_NUM_SIGNATURES];
     RuntimeSignature m_runtimeSigs[CL_NUM_SIGNATURES];
 	uint8_t *m_lut;
@@ -111,7 +115,7 @@ private:
     uint32_t m_maxDist;
     float m_ratio;
     float m_minRatio;
-	float m_acqGains[CL_NUM_SIGNATURES];
+	float m_sigRanges[CL_NUM_SIGNATURES];
 
 };
 

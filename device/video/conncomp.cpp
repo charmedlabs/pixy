@@ -130,38 +130,42 @@ int cc_loadLut(void)
 	return 0;
 }
 
+void cc_shadowCallback(const char *id, const float &val)
+{
+}
+
 void cc_loadParams(void)
 {
 	int i;
 	ColorSignature signature;
-	char id[32], desc[32];
+	char id[32], desc[100];
+	float range;
 
-	// set up signatures, load later
+	// set up signatures, and ranges, load later
 	for (i=1; i<=CL_NUM_SIGNATURES; i++)
 	{
 		sprintf(id, "signature%d", i);
 		sprintf(desc, "Color signature %d", i);
 		// add if it doesn't exist yet
 		prm_add(id, PRM_FLAG_INTERNAL, desc, INTS8(sizeof(ColorSignature), &signature), END);
+
+		sprintf(id, "Signature %d range", i);
+		sprintf(desc, "@c Signatures @m 0.0 @M 15.0 Sets filtering range of signature %d. (default 2.5)", i);
+		prm_add(id, PRM_FLAG_SLIDER, desc, FLT32(2.5f), END);
+
+		prm_get(id, &range, END);
+		g_blobs->m_clut.setSigRange(i, range);
+		prm_setShadowCallback(id, (ShadowCallback)cc_shadowCallback);
 	}
 
 	// others -----
 
 	// setup
-	prm_add("Signature 1 range", PRM_FLAG_SLIDER, 
-		"@c Signatures @m 0.0 @M 15.0 Sets filtering range of signature 1. (default 2.5)", FLT32(2.5f), END);
-	prm_add("Signature 2 range", PRM_FLAG_SLIDER, 
-		"@c Signatures @m 0.0 @M 15.0 Sets filtering range of signature 2. (default 2.5)", FLT32(2.5f), END);
-	prm_add("Signature 3 range", PRM_FLAG_SLIDER, 					   
-		"@c Signatures @m 0.0 @M 15.0 Sets filtering range of signature 3. (default 2.5)", FLT32(2.5f), END);
-	prm_add("Signature 4 range", PRM_FLAG_SLIDER, 
-		"@c Signatures @m 0.0 @M 15.0 Sets filtering range of signature 4. (default 2.5)", FLT32(2.5f), END);
-	prm_add("Signature 5 range", PRM_FLAG_SLIDER, 
-		"@c Signatures @m 0.0 @M 15.0 Sets filtering range of signature 5. (default 2.5)", FLT32(2.5f), END);
-	prm_add("Signature 6 range", PRM_FLAG_SLIDER, 
-		"@c Signatures @m 0.0 @M 15.0 Sets filtering range of signature 6. (default 2.5)", FLT32(2.5f), END);
-	prm_add("Signature 7 range", PRM_FLAG_SLIDER, 
-		"@c Signatures @m 0.0 @M 15.0 Sets filtering range of signature 7. (default 2.5)", FLT32(2.5f), END);
+	prm_add("Min brightness", PRM_FLAG_SLIDER, 
+		"@c Signatures @m 0.0 @M 1.0 Sets the minimum brightness of all signatures. (default 0.1)", FLT32(0.1f), END);
+	prm_setShadowCallback("Min brightness", (ShadowCallback)cc_shadowCallback);
+	prm_add("Color code gain", 0, 
+		"@c Signatures Sets the color gain to be multiplied to each signature range. (default 1.5)", FLT32(1.5f), END);
 
 	prm_add("Max blocks", 0, 
 		"Sets the maximum total blocks sent per frame. (default 1000)", UINT16(1000), END);
@@ -176,13 +180,16 @@ void cc_loadParams(void)
 	uint8_t ccMode;
 	uint16_t maxBlobs, maxBlobsPerModel;
 	uint32_t minArea;
+	float miny;
 
 	prm_get("Max blocks", &maxBlobs, END);
 	prm_get("Max blocks per signature", &maxBlobsPerModel, END);
 	prm_get("Min block area", &minArea, END);
 	prm_get("Color code mode", &ccMode, END);
+	prm_get("Min brightness", &miny, END);
 	g_blobs->setParams(maxBlobs, maxBlobsPerModel, minArea, (ColorCodeMode)ccMode);
-
+	g_blobs->m_clut.setMinBrightness(miny);
+	
 	cc_loadLut();
 }
 
@@ -243,7 +250,6 @@ int32_t cc_setSigRegion(const uint32_t &type, const uint8_t &signum, const uint1
 	// create lut
 	g_blobs->m_clut.generateSignature(g_rawFrame, RectA(xoffset, yoffset, width, height), signum);
 	sig = g_blobs->m_clut.getSignature(signum);
-	g_blobs->m_clut.generateLUT();
 	sig->m_type = type;
 
 	// save to flash
@@ -273,7 +279,6 @@ int32_t cc_setSigPoint(const uint32_t &type, const uint8_t &signum, const uint16
 	// create lut
 	g_blobs->m_clut.generateSignature(g_rawFrame, Point16(x, y), &points, signum);
 	sig = g_blobs->m_clut.getSignature(signum);
-	g_blobs->m_clut.generateLUT();
 	sig->m_type = type;
 
 	cc_sendPoints(points, CL_GROW_INC, CL_GROW_INC, chirp);

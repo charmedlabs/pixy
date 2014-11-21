@@ -96,12 +96,12 @@ CBlobModule::CBlobModule(Interpreter *interpreter) : MonModule(interpreter)
     m_maxDist = MAX_DIST;
     m_minRatio = MIN_RATIO;
 
-    m_interpreter->m_pixymonParameters->addSlider("Range", m_acqRange, 0.0f, 10.0f, this, "The range for identifying the colors of a signature.", "CBA");
-    m_interpreter->m_pixymonParameters->addSlider("Min Y", m_miny, 0.0f, 0.5f, this, "Minimum brightness for a signature.", "CBA");
-    m_interpreter->m_pixymonParameters->addSlider("Max distance", m_maxDist, 100, 10000, this, "Maximum distance when growing region.", "CBA");
-    m_interpreter->m_pixymonParameters->addSlider("Min ratio", m_minRatio, 0.1f, 1.0f, this, "Minimum ratio.", "CBA");
-    m_interpreter->m_pixymonParameters->addBool("Y filter", true, this, "Enable Y filtering", "CBA");
-    m_interpreter->m_pixymonParameters->addBool("Fixed length", true, this, "Enable fixed length", "CBA");
+    m_interpreter->m_pixymonParameters->addSlider("Range", m_acqRange, 0.0f, 10.0f, "The range for identifying the colors of a signature.", "CBA");
+    m_interpreter->m_pixymonParameters->addSlider("Min Y", m_miny, 0.0f, 0.5f, "Minimum brightness for a signature.", "CBA");
+    m_interpreter->m_pixymonParameters->addSlider("Max distance", m_maxDist, 100, 10000, "Maximum distance when growing region.", "CBA");
+    m_interpreter->m_pixymonParameters->addSlider("Min ratio", m_minRatio, 0.1f, 1.0f, "Minimum ratio.", "CBA");
+    m_interpreter->m_pixymonParameters->addBool("Y filter", true, "Enable Y filtering", "CBA");
+    m_interpreter->m_pixymonParameters->addBool("Fixed length", true, "Enable fixed length", "CBA");
     memset(m_signatures, 0, sizeof(ColorSignature)*NUM_SIGNATURES);
     memset(m_runtimeSigs, 0, sizeof(RuntimeSignature)*NUM_SIGNATURES);
 }
