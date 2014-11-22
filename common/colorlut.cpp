@@ -511,6 +511,7 @@ void ColorLUT::setSigRange(uint8_t signum, float range)
 	if (signum<1 || signum>CL_NUM_SIGNATURES)
 		return;
 	m_sigRanges[signum-1] = range;
+	updateSignature(signum);
 }
 
 void ColorLUT::setGrowDist(uint32_t dist)

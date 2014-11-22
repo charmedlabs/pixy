@@ -25,6 +25,7 @@
 #include "blobs.h"
 #include "led.h"
 #include "qqueue.h"
+#include "exec.h"
 
 
 Qqueue *g_qqueue;
@@ -132,6 +133,20 @@ int cc_loadLut(void)
 
 void cc_shadowCallback(const char *id, const float &val)
 {
+	if (id[0]=='S') // set Signature range
+	{
+		uint8_t signum = id[10]-'0'; // extract signature number
+		g_blobs->m_clut.setSigRange(signum, val);
+	}
+	else if (id[0]=='M') // set minimum brightness 
+		g_blobs->m_clut.setMinBrightness(val);
+
+  	if (exec_pause()) // pause M0, but only generate LUT if we're running 
+	{
+		// generate lut while M0 is paused
+		g_blobs->m_clut.generateLUT();			
+		exec_resume();
+	}
 }
 
 void cc_loadParams(void)
@@ -494,6 +509,9 @@ void cc_sendPoints(Points &points, uint16_t width, uint16_t height, Chirp *chirp
 {
 	uint32_t len;
 	uint8_t *mem = (uint8_t *)SRAM1_LOC;
+
+	if (chirp==NULL)
+		return;
 
 	len = Chirp::serialize(chirp, mem, SRAM1_SIZE,  HTYPE(0), HINT8(0), UINT16(0), UINT16(0), UINT16(0), UINT16(0), UINTS16_NO_COPY(0), END);
 

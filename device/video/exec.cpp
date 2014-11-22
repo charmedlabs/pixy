@@ -211,6 +211,7 @@ int32_t g_execArg = 0;  // this arg mechanism is lame... should introduce an arg
 static ChirpProc g_runM0 = -1;
 static ChirpProc g_runningM0 = -1;
 static ChirpProc g_stopM0 = -1;
+static uint8_t g_progM0 = 0;
 static Program *g_progTable[EXEC_MAX_PROGS];
 static void loadParams();
 
@@ -346,6 +347,8 @@ int exec_runM0(uint8_t prog)
 	g_chirpM0->callSync(g_runM0, UINT8(prog), END_OUT_ARGS,
 		&responseInt, END_IN_ARGS);
 
+	g_progM0 = prog;
+
 	return responseInt;
 }
 
@@ -354,6 +357,16 @@ int exec_stopM0()
 	int responseInt;
 
 	g_chirpM0->callSync(g_stopM0, END_OUT_ARGS,
+		&responseInt, END_IN_ARGS);
+
+	return responseInt;
+}
+
+uint8_t exec_runningM0()
+{
+	uint32_t responseInt;
+
+	g_chirpM0->callSync(g_runningM0, END_OUT_ARGS,
 		&responseInt, END_IN_ARGS);
 
 	return responseInt;
@@ -479,3 +492,19 @@ void exec_loop()
 		prevConnected = connected;
 	}
 }
+
+uint8_t exec_pause()
+{
+	uint8_t running;
+  	running = exec_runningM0();
+	if (running)
+		exec_stopM0();
+	return running;
+}
+
+void exec_resume()
+{
+	g_qqueue->flush();
+	exec_runM0(g_progM0);
+}
+

@@ -91,7 +91,7 @@ void getColor(uint8_t *r, uint8_t *g, uint8_t *b)
 void scaleLED(uint8_t r, uint8_t g, uint8_t b, uint32_t n)
 {
 	float m;
-	uint32_t max, min, bias, current, sat, sat2, t; 
+	uint32_t max, min, bias, current, sat, t; 
 
 #if 1  // this is odd, but it seems that 
 	t = (uint32_t)(G_GAIN*g);
@@ -183,11 +183,10 @@ void ButtonMachine::ledPipe()
 
 void ButtonMachine::setSignature()
 {
-	uint32_t current; 
 	int res;
 
 	// grow region, create model, save
-	res = cc_setSigPoint(0, m_index, CAM_RES2_WIDTH/2, CAM_RES2_HEIGHT/2, g_chirpUsb);
+	res = cc_setSigPoint(0, m_index, CAM_RES2_WIDTH/2, CAM_RES2_HEIGHT/2);
 	if (res<0)
 		return;
 	flashLED(4); 

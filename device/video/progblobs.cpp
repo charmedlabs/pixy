@@ -142,7 +142,7 @@ int blobsLoop()
 	if (g_blobs->blobify()<0)
 	{
 		cprintf("drop %d\n", drop++);
-		return;
+		return 0;
 	}
 	g_blobs->getBlobs(&blobs, &numBlobs, &ccBlobs, &numCCBlobs);
 	cc_sendBlobs(g_chirpUsb, blobs, numBlobs, ccBlobs, numCCBlobs);
