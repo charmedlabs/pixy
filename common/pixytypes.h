@@ -24,7 +24,11 @@
 #define PRM_FLAG_ADVANCED            0x00000002
 #define PRM_FLAG_HEX_FORMAT          0x00000010
 #define PRM_FLAG_SIGNED              0x00000080
+
+// render-specific flags
 #define PRM_FLAG_SLIDER              0x00000100
+#define PRM_FLAG_CHECKBOX            0x00000200
+#define PRM_FLAG_PATH                0x00000400
 
 struct Point16
 {

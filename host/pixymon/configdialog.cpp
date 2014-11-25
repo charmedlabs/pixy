@@ -389,7 +389,15 @@ void ConfigDialog::accept()
 void ConfigDialog::reject()
 {
     qDebug("reject called");
+    // clear all shadows
     m_interpreter->m_pixymonParameters->clearShadow();
+    m_interpreter->m_pixyParameters.clearShadow();
+    // at this point only shadow parameters that have been modified
+    // have their dirty bits set
+    // calling saveParames will save only shadowed parameters (we didn't call updatedb)
+    // saving the parameters will cause the dirty bit to be set on pixy and all paramters will
+    // be reloaded (remember that parameters on the pixy side don't have dirty bits, but instead
+    // we have a global dirty bit.
     m_interpreter->saveParams();
     QDialog::reject();
 }

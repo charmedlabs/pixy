@@ -35,7 +35,7 @@ int ParamFile::open(const QString &filename, bool read)
 {
     m_read = read;
     m_file = new QFile(filename);
-    m_doc = new QDomDocument;
+    m_doc = new QDomDocument();
     if (m_read)
     {
         QString error;

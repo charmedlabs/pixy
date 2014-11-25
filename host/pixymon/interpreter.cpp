@@ -1089,8 +1089,7 @@ QString Interpreter::extractProperty(const QString &tag, QStringList *words, QSt
     if (i>=0 && words->size()>i+1)
     {
         property = (*words)[i+1];
-        *desc = desc->remove(tag + " "); // remove form description
-        *desc = desc->remove(property + " "); // remove from description
+        *desc = desc->remove(tag + " " + property + " "); // remove form description
         return property;
     }
     return "";
@@ -1264,12 +1263,14 @@ void Interpreter::handleSaveParams()
     if (running==1) // only if we're running and not in forced state (running==2)
         sendStop();
 
+    // notify monmodules
+    sendMonModulesParamChange();
+    // save them in pixy
     handleSaveParams(false);
 
     // reset the shadow parameters because we've saved all params
     m_chirp->callSync(m_reset_shadows, END_OUT_ARGS, &response, END_IN_ARGS);
-    // check pixymon parameters
-    sendMonModulesParamChange();
+
 
     // if we're running, we've stopped, now resume
     if (running==1)
@@ -1310,6 +1311,10 @@ void Interpreter::sendMonModulesParamChange()
 {
     for (int i=0; i<m_modules.size(); i++)
         m_modules[i]->paramChange();
+
+    // "clean up" (reset dirty bit) pixymon parameters because we don't expect the mon module to do it
+    m_pixymonParameters->clean();
+
 }
 
 void Interpreter::cprintf(const char *format, ...)

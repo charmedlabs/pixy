@@ -6,6 +6,7 @@
 #include "monparameterDB.h"
 #include "pixymon.h"
 #include "paramfile.h"
+#include "pixytypes.h"
 
 MonParameterDB::MonParameterDB() : ParameterDB()
 {
@@ -80,6 +81,7 @@ void MonParameterDB::addSlider(const QString &id, const QVariant &value, const Q
     Parameter *param = parameter(id);
     param->setProperty(PP_MIN, min);
     param->setProperty(PP_MAX, max);
+    param->setProperty(PP_FLAGS, PRM_FLAG_SLIDER);
 }
 
 void MonParameterDB::addBool(const QString &id, bool value, const QString &help, const QString &category)

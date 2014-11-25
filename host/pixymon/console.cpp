@@ -84,7 +84,7 @@ void ConsoleWidget::print(QString text, QColor color)
             text = '\n' + text;
 #endif
         handleColor(color);
-        qDebug() << "console: " << text;
+        qDebug() << "console: " + text;
         insertPlainText(text);
 
         m_suppress = false;

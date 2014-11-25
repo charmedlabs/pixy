@@ -146,6 +146,7 @@ public:
     void add(const QString &id, PType type, const QVariant &value, const QString &help="", const QString &category="");
 
     void clearShadow();
+    void clean();
 
     QMutex *mutex()
     {

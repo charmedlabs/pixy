@@ -353,4 +353,11 @@ void ParameterDB::clearShadow()
         m_parameters[i].clearShadow();
 }
 
+void ParameterDB::clean()
+{
+    QMutexLocker locker(&m_mutex);
+    for (int i=0; i<m_parameters.size(); i++)
+        m_parameters[i].setDirty(false);
+}
+
 

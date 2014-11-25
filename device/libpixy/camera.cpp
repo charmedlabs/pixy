@@ -583,7 +583,7 @@ void cam_shadowCallback(const char *id, const uint8_t &val)
 void cam_loadParams()
 {
 	prm_add("Brightness", PRM_FLAG_SLIDER, 
-		"@m 0 @M 100 Sets the average brightness of the camera, can be between 0 and 255 (default 90)", UINT8(CAM_BRIGHTNESS_DEFAULT), END);
+		"@m 0 @M 255 Sets the average brightness of the camera, can be between 0 and 255 (default 90)", UINT8(CAM_BRIGHTNESS_DEFAULT), END);
 	prm_setShadowCallback("Brightness", (ShadowCallback)cam_shadowCallback);
 
 	prm_add("AEC Enable", PRM_FLAG_ADVANCED, 

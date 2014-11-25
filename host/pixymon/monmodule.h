@@ -10,6 +10,7 @@
 
 class MonModule;
 class Interpreter;
+class Parameter;
 
 typedef MonModule *(*NewMonModuleFunc)(Interpreter *);
 typedef QList <MonModule *> MonModules;
@@ -32,6 +33,11 @@ public:
     virtual void paramChange();
 
 protected:
+    bool pixyParameterChanged(const QString &id, QVariant *val=NULL);
+    bool pixymonParameterChanged(const QString &id, QVariant *val=NULL);
+    Parameter *pixyParameter(const QString &id);
+    Parameter *pixymonParameter(const QString &id);
+
     Interpreter *m_interpreter;
 };
 

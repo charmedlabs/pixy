@@ -1,5 +1,6 @@
 #include <stdarg.h>
 #include "monmodule.h"
+#include "parameters.h"
 #include "interpreter.h"
 
 
@@ -34,6 +35,37 @@ void MonModule::paramChange()
 {
 }
 
+bool MonModule::pixyParameterChanged(const QString &id, QVariant *val)
+{
+    Parameter *param = pixyParameter(id);
+    if (param && val)
+        *val = param->value();
+    if (param && param->dirty())
+        return true;
+    return false;
+}
+
+bool MonModule::pixymonParameterChanged(const QString &id, QVariant *val)
+{
+    Parameter *param = pixymonParameter(id);
+    if (param && val)
+        *val = param->value();
+    if (param && param->dirty())
+        return true;
+    return false;
+}
+
+Parameter *MonModule::pixyParameter(const QString &id)
+{
+    return m_interpreter->m_pixyParameters.parameter(id);
+}
+
+Parameter *MonModule::pixymonParameter(const QString &id)
+{
+    return m_interpreter->m_pixymonParameters->parameter(id);
+}
+
+
 void cprintf(const char *format, ...)
 {
     char buffer[256];
@@ -43,3 +75,6 @@ void cprintf(const char *format, ...)
     MonModuleUtil::m_interpreter->cprintf(buffer);
     va_end(args);
 }
+
+
+
