@@ -544,7 +544,7 @@ void Interpreter::run()
         if (m_exec_run<0 || m_exec_running<0 || m_exec_stop<0 || m_exec_get_action<0 ||
                 m_get_param<0 || m_getAll_param<0 || m_set_param<0 ||
                 m_set_shadow_param<0 || m_reset_shadows<0)
-            throw std::runtime_error("Communication error with Pixy.");
+            throw std::runtime_error("Hmm... missing procedures.");
 
         // create pixymon modules
         MonModuleUtil::createModules(&m_modules, this);
@@ -552,13 +552,14 @@ void Interpreter::run()
         m_pixymonParameters->load();
         // notify mon modules of parameter changes
         sendMonModulesParamChange();
+        m_pixymonParameters->clean();
 
         // get all actions
         for (i=0; sendGetAction(i)>=0; i++);
     }
     catch (std::runtime_error &exception)
     {
-        emit error(QString(exception.what()));
+        emit error(QString(exception.what()) + '\n');
         return;
     }
     qDebug() << "*** init done";
@@ -1185,6 +1186,8 @@ void Interpreter::handleLoadParams()
                 parameter.set(a);
             }
         }
+        // it's changed! (ie, it's been loaded)
+        parameter.setDirty(true);
         m_pixyParameters.add(parameter);
     }
 
@@ -1198,41 +1201,52 @@ void Interpreter::handleLoadParams()
     qDebug("loaded");
     emit paramLoaded();
     sendMonModulesParamChange();
+    m_pixyParameters.clean();
+
 }
 
 void Interpreter::handleSaveParams(bool shadow)
 {
     int i, res, response;
+    QVariant var;
+    bool send;
     Parameters &pixyParameters = m_pixyParameters.parameters();
 
     for (i=0; i<pixyParameters.size(); i++)
     {
         uint8_t buf[0x100];
 
-        if (pixyParameters[i].dirty())
+        send = false;
+
+        m_pixyParameters.mutex()->lock();
+        if (pixyParameters[i].dirty() && (!shadow || pixyParameters[i].shadow()))
         {
-            // (only interested in shadows)
-            if (shadow && !pixyParameters[i].shadow())
-                continue;
+            var = pixyParameters[i].value();
+            pixyParameters[i].setDirty(false);
+            send = true;
+        }
+        m_pixyParameters.mutex()->unlock();
+
+        if (send)
+        {
             int len;
             QByteArray str = pixyParameters[i].id().toUtf8();
             const char *id = str.constData();
             PType type = pixyParameters[i].type();
-            pixyParameters[i].setDirty(false); // reset
 
             if (type==PT_INT8 || type==PT_INT16 || type==PT_INT32)
             {
-                int val = pixyParameters[i].value().toInt();
+                int val = var.toInt();
                 len = Chirp::serialize(NULL, buf, 0x100, type, val, END);
             }
             else if (type==PT_FLT32)
             {
-                float val = pixyParameters[i].value().toFloat();
+                float val = var.toFloat();
                 len = Chirp::serialize(NULL, buf, 0x100, type, val, END);
             }
             else if (type==PT_INTS8)
             {
-                QByteArray a = pixyParameters[i].value().toByteArray();
+                QByteArray a = var.toByteArray();
                 len = a.size();
                 memcpy(buf, a.constData(), len);
             }
@@ -1311,10 +1325,6 @@ void Interpreter::sendMonModulesParamChange()
 {
     for (int i=0; i<m_modules.size(); i++)
         m_modules[i]->paramChange();
-
-    // "clean up" (reset dirty bit) pixymon parameters because we don't expect the mon module to do it
-    m_pixymonParameters->clean();
-
 }
 
 void Interpreter::cprintf(const char *format, ...)
@@ -1333,7 +1343,15 @@ void Interpreter::updateParam()
 
 void Interpreter::handleUpdateParam()
 {
+    // use pixyParameters mutex as mutex between the worker thead in interpreter
+    // (here) and the configdialog. If we try to lock both mutexes
+    // (pixymonParameters and pixyParameters) we can get into a double mutex deadlock
+    // (as a rule, never lock more than 1 mutex at a time)
+    m_pixyParameters.mutex()->lock();
     sendMonModulesParamChange();
+    m_pixymonParameters->clean();
+    m_pixyParameters.mutex()->unlock();
+
     handleSaveParams(true);
 }
 

@@ -97,11 +97,12 @@ CBlobModule::CBlobModule(Interpreter *interpreter) : MonModule(interpreter)
     m_minRatio = MIN_RATIO;
 
     m_interpreter->m_pixymonParameters->addSlider("Range", m_acqRange, 0.0f, 10.0f, "The range for identifying the colors of a signature.", "CBA");
-    m_interpreter->m_pixymonParameters->addSlider("Min Y", m_miny, 0.0f, 0.5f, "Minimum brightness for a signature.", "CBA");
+    m_interpreter->m_pixymonParameters->addSlider("Min Y", m_miny, 0.0f, 1.0f, "Minimum brightness for a signature.", "CBA");
     m_interpreter->m_pixymonParameters->addSlider("Max distance", m_maxDist, 100, 10000, "Maximum distance when growing region.", "CBA");
     m_interpreter->m_pixymonParameters->addSlider("Min ratio", m_minRatio, 0.1f, 1.0f, "Minimum ratio.", "CBA");
-    m_interpreter->m_pixymonParameters->addBool("Y filter", true, "Enable Y filtering", "CBA");
-    m_interpreter->m_pixymonParameters->addBool("Fixed length", true, "Enable fixed length", "CBA");
+    m_interpreter->m_pixymonParameters->addCheckbox("Y filter", true, "Enable Y filtering", "CBA");
+    m_interpreter->m_pixymonParameters->addCheckbox("Fixed length", true, "Enable fixed length", "CBA");
+    m_interpreter->m_pixymonParameters->addCheckbox("Y exp", true, "y experiment", "CBA");
     memset(m_signatures, 0, sizeof(ColorSignature)*NUM_SIGNATURES);
     memset(m_runtimeSigs, 0, sizeof(RuntimeSignature)*NUM_SIGNATURES);
 }
@@ -198,7 +199,7 @@ bool CBlobModule::command(const QStringList &argv)
         m_cblob->generateLUT(m_runtimeSigs);
         uploadLut();
 
-        DataExport dx(m_interpreter->m_pixymonParameters->value("Document folder")->toString(), "lut", ET_MATLAB);
+        DataExport dx(m_interpreter->m_pixymonParameters->value("Document folder").toString(), "lut", ET_MATLAB);
 
         dx.startArray(1, "lut");
 
@@ -212,15 +213,16 @@ bool CBlobModule::command(const QStringList &argv)
 
 void CBlobModule::paramChange()
 {
-    m_acqRange = m_interpreter->m_pixymonParameters->value("Range")->toFloat();
-    m_miny = m_interpreter->m_pixymonParameters->value("Min Y")->toFloat();
-    m_minRatio = m_interpreter->m_pixymonParameters->value("Min ratio")->toFloat();
-    m_maxDist = m_interpreter->m_pixymonParameters->value("Max distance")->toUInt();
-    m_cblob->setParameters(m_acqRange, m_miny, m_maxDist, m_minRatio);
-    m_yfilter = m_interpreter->m_pixymonParameters->value("Y filter")->toBool();
-    m_fixedLength = m_interpreter->m_pixymonParameters->value("Fixed length")->toBool();
-    m_cblob->generateLUT(m_runtimeSigs);
+    m_acqRange = m_interpreter->m_pixymonParameters->value("Range").toFloat();
+    m_miny = m_interpreter->m_pixymonParameters->value("Min Y").toFloat();
+    m_minRatio = m_interpreter->m_pixymonParameters->value("Min ratio").toFloat();
+    m_maxDist = m_interpreter->m_pixymonParameters->value("Max distance").toUInt();
+    m_yfilter = m_interpreter->m_pixymonParameters->value("Y filter").toBool();
+    m_fixedLength = m_interpreter->m_pixymonParameters->value("Fixed length").toBool();
+    m_yexp = m_interpreter->m_pixymonParameters->value("Y exp").toBool();
+    m_cblob->setParameters(m_acqRange, m_yexp ? 0.0f : m_miny, m_maxDist, m_minRatio);
     updateSignatures();
+    m_cblob->generateLUT(m_runtimeSigs);
 }
 
 int CBlobModule::uploadLut()
@@ -451,11 +453,12 @@ void CBlobModule::rla()
     uint32_t i, startCol, sig, prevSig, prevStartCol, segmentStartCol, segmentEndCol, segmentSig=0;
     bool merge;
     Qval2 qval;
-    int32_t u, v, c;
+    int32_t u, v, c, miny;
     qlonglong m_usum, m_vsum;
     uint32_t m_numuv;
 
     m_usum = m_vsum = m_numuv = 0;
+    miny = 3*((1<<8)-1)*m_miny;
 
     m_numQvals = 0;
     for (i=0, row=-1; m_qq->dequeue(&qval); i++)
@@ -495,8 +498,13 @@ void CBlobModule::rla()
         u /= c;
         v /= c;
 
-        if (!m_yfilter ||
-                (m_runtimeSigs[sig-1].m_uMin<u && u<m_runtimeSigs[sig-1].m_uMax && m_runtimeSigs[sig-1].m_vMin<v && v<m_runtimeSigs[sig-1].m_vMax))
+        //   yexp min  add
+        //     1   1    1
+        //     1   0    0
+        //     0   x    1
+
+        if (!m_yfilter || (!(m_yexp && c<miny) &&
+                m_runtimeSigs[sig-1].m_uMin<u && u<m_runtimeSigs[sig-1].m_uMax && m_runtimeSigs[sig-1].m_vMin<v && v<m_runtimeSigs[sig-1].m_vMax))
         {
             if (m_pb.m_left<startCol && startCol<m_pb.m_right && m_pb.m_top<row && row<m_pb.m_bottom)
             {

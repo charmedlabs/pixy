@@ -554,7 +554,7 @@ void Renderer::pixelsOut(int x0, int y0, int width, int height)
     uint r, g, b;
     int x, y;
 
-    DataExport dx(m_interpreter->m_pixymonParameters->value("Document folder")->toString(), "pixels", ET_MATLAB);
+    DataExport dx(m_interpreter->m_pixymonParameters->value("Document folder").toString(), "pixels", ET_MATLAB);
 
     dx.startArray(3, "pixels");
 

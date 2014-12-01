@@ -124,6 +124,7 @@ private:
     float m_miny;
     bool m_yfilter;
     bool m_fixedLength;
+    bool m_yexp;
     uint32_t m_maxDist;
     float m_minRatio;
 };

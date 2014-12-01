@@ -10,8 +10,8 @@
 
 MonParameterDB::MonParameterDB() : ParameterDB()
 {
-    add("Document folder", PT_PATH, docPath(),
-        "The directory where images and other data files are saved");
+    add("Document folder", PT_STRING, docPath(),
+        "The directory where images and other data files are saved", "", PRM_FLAG_PATH);
     load();
 }
 
@@ -74,18 +74,16 @@ void MonParameterDB::addSlider(const QString &id, const QVariant &value, const Q
                                const QString &help, const QString &category)
 {
     if (value.type()==(QVariant::Type)QMetaType::Float || value.type()==QVariant::Double)
-        add(id, PT_FLT32, value, help, category);
+        add(id, PT_FLT32, value, help, category, PRM_FLAG_SLIDER);
     else
-        add(id, PT_INT32, value, help, category);
+        add(id, PT_INT32, value, help, category, PRM_FLAG_SLIDER);
 
     Parameter *param = parameter(id);
     param->setProperty(PP_MIN, min);
     param->setProperty(PP_MAX, max);
-    param->setProperty(PP_FLAGS, PRM_FLAG_SLIDER);
 }
 
-void MonParameterDB::addBool(const QString &id, bool value, const QString &help, const QString &category)
+void MonParameterDB::addCheckbox(const QString &id, bool value, const QString &help, const QString &category)
 {
-    add(id, PT_BOOL, value, help, category);
-    Parameter *param = parameter(id);
+    add(id, PT_INT8, value, help, category, PRM_FLAG_CHECKBOX);
 }

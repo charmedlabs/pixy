@@ -11,6 +11,7 @@
 class MonModule;
 class Interpreter;
 class Parameter;
+class Renderer;
 
 typedef MonModule *(*NewMonModuleFunc)(Interpreter *);
 typedef QList <MonModule *> MonModules;
@@ -35,10 +36,11 @@ public:
 protected:
     bool pixyParameterChanged(const QString &id, QVariant *val=NULL);
     bool pixymonParameterChanged(const QString &id, QVariant *val=NULL);
-    Parameter *pixyParameter(const QString &id);
-    Parameter *pixymonParameter(const QString &id);
+    QVariant pixyParameter(const QString &id);
+    QVariant pixymonParameter(const QString &id);
 
     Interpreter *m_interpreter;
+    Renderer *m_renderer;
 };
 
 

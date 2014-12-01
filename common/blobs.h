@@ -54,6 +54,10 @@ public:
 
 	ColorLUT m_clut;
 
+#ifndef PIXY
+    void getRunlengths(uint32_t **qvals, uint32_t *len);
+#endif
+
 private:
     int runlengthAnalysis();
     int handleSegment(uint8_t signature, uint16_t row, uint16_t startCol, uint16_t length);
@@ -95,6 +99,11 @@ private:
     uint16_t m_mergeDist;
     uint16_t m_maxCodedDist;
     ColorCodeMode m_ccMode;
+
+#ifndef PIXY
+    uint32_t m_numQvals;
+    uint32_t *m_qvals;
+#endif
 };
 
 

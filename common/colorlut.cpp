@@ -104,14 +104,14 @@ bool IterPixel::nextHelper(UVPixel *uv, RGBPixel *rgb)
 		if (uv)
 		{
         	c = r+g1+b;
-        	if (c<miny)
+            if (c<miny)
 			{
 				m_x += 2;
             	continue;
 			}
         	u = ((r-g1)<<CL_LUT_ENTRY_SCALE)/c;
         	c = r+g2+b;
-        	if (c<miny)
+            if (c<miny)
 			{
 				m_x += 2;
             	continue;
@@ -136,8 +136,8 @@ ColorLUT::ColorLUT(uint8_t *lut)
     memset((void *)m_runtimeSigs, 0, sizeof(RuntimeSignature)*CL_NUM_SIGNATURES);
 	clearLUT();
 
+    setMinBrightness(CL_DEFAULT_MINY);
     m_minRatio = CL_MIN_RATIO;
-    m_miny = CL_DEFAULT_MINY;
     m_maxDist = CL_MAX_DIST;
     m_ratio = CL_DEFAULT_TOL;
 	for (i=0; i<CL_NUM_SIGNATURES; i++)
@@ -283,13 +283,10 @@ int ColorLUT::setSignature(uint8_t signum, const ColorSignature &sig)
 
 int ColorLUT::generateLUT()
 {
-    int32_t r, g, b, u, v, y, bin, miny, sig;
+    int32_t r, g, b, u, v, y, bin, sig;
 
     clearLUT();
 
-    miny = 3*((1<<8)-1)*m_miny;
-    if (miny==0)
-        miny = 1;
 
     for (r=0; r<1<<8; r+=1<<(8-CL_LUT_COMPONENT_SCALE))
     {
@@ -299,7 +296,7 @@ int ColorLUT::generateLUT()
             {
                 y = r+g+b;
 
-                if (y<miny)
+                if (y<(int32_t)m_miny)
                     continue;
                 u = ((r-g)<<CL_LUT_ENTRY_SCALE)/y;
                 v = ((b-g)<<CL_LUT_ENTRY_SCALE)/y;
@@ -521,7 +518,10 @@ void ColorLUT::setGrowDist(uint32_t dist)
 
 void ColorLUT::setMinBrightness(float miny)
 {
-	m_miny = miny;
+    m_miny = 3*((1<<8)-1)*miny;
+    if (m_miny==0)
+        m_miny = 1;
+
 }
 
 

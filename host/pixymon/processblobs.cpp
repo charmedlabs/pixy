@@ -190,6 +190,7 @@ void ProcessBlobs::handleParamChange()
 {
     const QVariant *variant;
 
+#ifdef DEFER
     // read from parameter database
     if ((variant=m_interpreter->m_pixyParameters.value("Max blocks")))
         m_maxBlobs = variant->toUInt();
@@ -199,6 +200,7 @@ void ProcessBlobs::handleParamChange()
         m_minArea = variant->toUInt();
     if ((variant=m_interpreter->m_pixyParameters.value("Color code mode")))
         m_ccMode = variant->toUInt();
+#endif
 
 #ifdef DEFER
     // update

@@ -267,16 +267,15 @@ ParameterDB::~ParameterDB()
 {
 }
 
-const QVariant *ParameterDB::value(const QString &id)
+QVariant ParameterDB::value(const QString &id)
 {
     QMutexLocker locker(&m_mutex);
-
     for (int i=0; i<m_parameters.size(); i++)
     {
         if (QString::compare(m_parameters[i].id(), id, Qt::CaseInsensitive)==0)
-            return &m_parameters[i].value();
+            return m_parameters[i].value();
     }
-    return NULL;
+    return QVariant();
 }
 
 Parameter *ParameterDB::parameter(const QString &id)
@@ -287,16 +286,6 @@ Parameter *ParameterDB::parameter(const QString &id)
         if (QString::compare(m_parameters[i].id(), id, Qt::CaseInsensitive)==0)
             return &m_parameters[i];
     }
-    return NULL;
-}
-
-const QString *ParameterDB::description(const QString &id)
-{
-    QMutexLocker locker(&m_mutex);
-    Parameter *param = parameter(id);
-
-    if (param)
-        return param->description();
     return NULL;
 }
 
@@ -339,10 +328,11 @@ void ParameterDB::add(Parameter param)
         m_parameters.push_back(param);
 }
 
-void ParameterDB::add(const QString &id, PType type, const QVariant &value, const QString &help, const QString &category)
+void ParameterDB::add(const QString &id, PType type, const QVariant &value, const QString &help, const QString &category, uint flags)
 {
     Parameter param(id, type, value, help);
     param.setProperty(PP_CATEGORY, category);
+    param.setProperty(PP_FLAGS, flags);
     add(param);
 }
 

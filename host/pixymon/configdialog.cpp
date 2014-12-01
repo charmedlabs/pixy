@@ -142,86 +142,84 @@ int ConfigDialog::updateDB(ParameterDB *data)
         else if (type==PT_STRING)
         {
             QString val = line->text();
+            if (flags&PRM_FLAG_PATH)
+            {
+                QDir dir(val);
+
+                if (!dir.exists())
+                {
+                    QMessageBox::critical(NULL, "Error", parameter.id() + " \"" + val + "\" is not a valid folder!");
+                    return -1;
+                }
+            }
             if (val!=parameter.value().toString())
             {
                 parameter.set(val);
                 parameter.setDirty(true);
             }
         }
-        else if (type==PT_PATH)
-        {
-            QDir dir(line->text());
-
-            if (!dir.exists())
-            {
-                QMessageBox::critical(NULL, "Error", parameter.id() + " \"" + line->text() + "\" is not a valid folder!");
-                return -1;
-            }
-            if (line->text()!=parameter.value().toString())
-            {
-                parameter.set(line->text());
-                parameter.setDirty(true);
-            }
-        }
-        else if (type==PT_BOOL)
-        {
-            QCheckBox *cbox = (QCheckBox *)line;
-
-            if(cbox->isChecked()!=parameter.value().toBool())
-            {
-                parameter.set(cbox->isChecked());
-                parameter.setDirty(true);
-            }
-        }
         else // must be int type
         {
-            int base;
-            bool ok;
-            if (line->text().left(2)=="0x")
-                base = 16;
-            else
-                base = 10;
-            if (flags&PRM_FLAG_SIGNED)
+            if (flags&PRM_FLAG_CHECKBOX) // checkbox is a special case of int
             {
-                int val = line->text().toInt(&ok, base);
-                if (!ok)
-                {
-                    QMessageBox::critical(NULL, "Error", parameter.id() + " needs to be an integer!");
-                    return -1;
-                }
-                if (val!=parameter.valueInt())
-                {
-                    parameter.set(val);
-                    parameter.setDirty(true);
-                }
-            }
-            else
-            {
-                uint val = line->text().toUInt(&ok, base);
-                if (!ok)
-                {
-                    QMessageBox::critical(NULL, "Error", parameter.id() + " needs to be an unsigned integer!");
-                    return -1;
-                }
-                if (val!=parameter.value().toUInt())
-                {
-                    parameter.set(val);
-                    parameter.setDirty(true);
-                }
-            }
-            // handle slider if applicable
-            if (flags&PRM_FLAG_SLIDER)
-            {
-                float min = parameter.property(PP_MIN).toFloat();
-                float max = parameter.property(PP_MAX).toFloat();
-                QSlider *slider = (QSlider *)parameter.property(PP_WIDGET2).toLongLong();
-                float pos;
-                // value = min + pos/100(max-min)
-                //(value - min)100/(max-min) = pos
-                pos = (parameter.value().toFloat() - min)*SLIDER_SIZE/(max - min);
-                slider->setSliderPosition((int)pos);
-            }
+                QCheckBox *cbox = (QCheckBox *)line;
 
+                if(cbox->isChecked()!=parameter.value().toBool())
+                {
+                    parameter.set(cbox->isChecked());
+                    parameter.setDirty(true);
+                }
+            }
+            else
+            {
+
+                int base;
+                bool ok;
+                if (line->text().left(2)=="0x")
+                    base = 16;
+                else
+                    base = 10;
+                if (flags&PRM_FLAG_SIGNED)
+                {
+                    int val = line->text().toInt(&ok, base);
+                    if (!ok)
+                    {
+                        QMessageBox::critical(NULL, "Error", parameter.id() + " needs to be an integer!");
+                        return -1;
+                    }
+                    if (val!=parameter.valueInt())
+                    {
+                        parameter.set(val);
+                        parameter.setDirty(true);
+                    }
+                }
+                else
+                {
+                    uint val = line->text().toUInt(&ok, base);
+                    if (!ok)
+                    {
+                        QMessageBox::critical(NULL, "Error", parameter.id() + " needs to be an unsigned integer!");
+                        return -1;
+                    }
+                    if (val!=parameter.value().toUInt())
+                    {
+                        parameter.set(val);
+                        parameter.setDirty(true);
+                    }
+                }
+                // handle slider if applicable
+                if (flags&PRM_FLAG_SLIDER)
+                {
+                    float min = parameter.property(PP_MIN).toFloat();
+                    float max = parameter.property(PP_MAX).toFloat();
+                    QSlider *slider = (QSlider *)parameter.property(PP_WIDGET2).toLongLong();
+                    float pos;
+                    // value = min + pos/100(max-min)
+                    //(value - min)100/(max-min) = pos
+                    pos = (parameter.value().toFloat() - min)*SLIDER_SIZE/(max - min);
+                    slider->setSliderPosition((int)pos);
+                }
+            }
         }
     }
     return 0;
@@ -265,7 +263,7 @@ void ConfigDialog::render(ParameterDB *data, QGridLayout *layout, QTabWidget *ta
 
         if (type!=PT_INTS8) // make sure it's a scalar type
         {
-            if (type==PT_PATH)
+            if (flags&PRM_FLAG_PATH)
             {
                 button = new QPushButton("Change...");
                 button->setProperty("Parameter", (qlonglong)&parameter);
@@ -274,6 +272,16 @@ void ConfigDialog::render(ParameterDB *data, QGridLayout *layout, QTabWidget *ta
                 line->setMinimumWidth(200);
                 line->setMaximumWidth(300);
                 line->setText(parameter.value().toString());
+            }
+            else if (flags&PRM_FLAG_CHECKBOX)
+            {
+                cbox = new QCheckBox();
+                cbox->setProperty("Parameter", (qlonglong)&parameter);
+                cbox->setChecked(parameter.value().toBool());
+                connect(cbox, SIGNAL(clicked()), this, SLOT(handleCheckBox()));
+                parameter.setProperty(PP_WIDGET, (qlonglong)cbox);
+                delete line;
+                line = NULL;
             }
             else if (flags&PRM_FLAG_SLIDER)
             {
@@ -301,16 +309,6 @@ void ConfigDialog::render(ParameterDB *data, QGridLayout *layout, QTabWidget *ta
             {
                 float val = parameter.value().toFloat();
                 line->setText(QString::number(val, 'f', 6));
-            }
-            else if (type==PT_BOOL)
-            {
-                cbox = new QCheckBox();
-                cbox->setProperty("Parameter", (qlonglong)&parameter);
-                cbox->setChecked(parameter.value().toBool());
-                connect(cbox, SIGNAL(clicked()), this, SLOT(handleCheckBox()));
-                parameter.setProperty(PP_WIDGET, (qlonglong)cbox);
-                delete line;
-                line = NULL;
             }
             else if (!(flags&PRM_FLAG_SIGNED))
             {
@@ -441,8 +439,10 @@ void ConfigDialog::handleCheckBox()
     QCheckBox *cbox = (QCheckBox *)sender();
     Parameter *parameter = (Parameter *)cbox->property("Parameter").toLongLong();
 
+    m_interpreter->m_pixyParameters.mutex()->lock();
     parameter->set(cbox->isChecked(), true);
     parameter->setDirty(true);
+    m_interpreter->m_pixyParameters.mutex()->unlock();
     m_interpreter->updateParam();
 }
 
@@ -455,6 +455,12 @@ void ConfigDialog::handleSlider(int position)
     float min = parameter->property(PP_MIN).toFloat();
     float max = parameter->property(PP_MAX).toFloat();
     value = min + slider->sliderPosition()*(max - min)/SLIDER_SIZE;
+
+    // use pixyParameters mutex as mutex between configdialog and rest of pixymon
+    // namely worker thread in interpreter.  If we try to lock both mutexes
+    // (pixymonParameters and pixyParameters) we can get into a double mutex deadlock
+    // (as a rule, never lock more than 1 mutex at a time)
+    m_interpreter->m_pixyParameters.mutex()->lock();
     if (parameter->type()==PT_FLT32)
     {
         parameter->set(value, true); // set as shadow
@@ -466,5 +472,6 @@ void ConfigDialog::handleSlider(int position)
         line->setText(QString::number((int)value));
     }
     parameter->setDirty(true);
+    m_interpreter->m_pixyParameters.mutex()->unlock();
     m_interpreter->updateParam();
 }

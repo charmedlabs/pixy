@@ -43,24 +43,51 @@ bool CccModule::command(const QStringList &argv)
 void CccModule::paramChange()
 {
     QVariant val;
+    bool relut = false;
 
     if (pixyParameterChanged("Signature 1 range", &val))
+    {
         m_blobs->m_clut.setSigRange(1, val.toFloat());
+        relut = true;
+    }
     if (pixyParameterChanged("Signature 2 range", &val))
+    {
         m_blobs->m_clut.setSigRange(2, val.toFloat());
+        relut = true;
+    }
     if (pixyParameterChanged("Signature 3 range", &val))
+    {
         m_blobs->m_clut.setSigRange(3, val.toFloat());
+        relut = true;
+    }
     if (pixyParameterChanged("Signature 4 range", &val))
+    {
         m_blobs->m_clut.setSigRange(4, val.toFloat());
+        relut = true;
+    }
     if (pixyParameterChanged("Signature 5 range", &val))
+    {
         m_blobs->m_clut.setSigRange(5, val.toFloat());
+        relut = true;
+    }
     if (pixyParameterChanged("Signature 6 range", &val))
+    {
         m_blobs->m_clut.setSigRange(6, val.toFloat());
+        relut = true;
+    }
     if (pixyParameterChanged("Signature 7 range", &val))
+    {
         m_blobs->m_clut.setSigRange(7, val.toFloat());
-
+        relut = true;
+    }
     if (pixyParameterChanged("Min brightness", &val))
+    {
         m_blobs->m_clut.setMinBrightness(val.toFloat());
+        relut = true;
+    }
+
+    if (relut)
+        m_blobs->m_clut.generateLUT();
 
     uint16_t maxBlobs, maxBlobsPerSig;
     uint32_t minArea;

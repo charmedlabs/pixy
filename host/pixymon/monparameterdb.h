@@ -19,7 +19,7 @@ public:
 
     void addSlider(const QString &id, const QVariant &value, const QVariant &min, const QVariant &max,
                    const QString &help="", const QString &category="");
-    void addBool(const QString &id, bool value, const QString &help="", const QString &category="");
+    void addCheckbox(const QString &id, bool value, const QString &help="", const QString &category="");
 
     static QString docPath();
 };

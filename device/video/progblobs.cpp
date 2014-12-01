@@ -44,6 +44,9 @@ int blobsSetup()
 		cc_loadLut();
 #endif
 
+	// if there have been any parameter changes, we should regenerate the LUT (do it regardless)
+	g_blobs->m_clut.generateLUT();	
+			
 	// setup qqueue and M0
 	g_qqueue->flush();
 	exec_runM0(0);

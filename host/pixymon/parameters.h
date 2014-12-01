@@ -72,9 +72,6 @@ enum PType
     PT_INTS8_RADIO = PT_INTS8 | PT_RADIO_MASK,
     PT_STRING_RADIO = PT_STRING | PT_RADIO_MASK,
 
-    // other types
-    PT_PATH = PT_STRING | 0x100<<8,
-    PT_BOOL = PT_INT8 | 0x101<<8,
 };
 
 typedef QList<RadioValue> RadioValues;
@@ -134,16 +131,15 @@ public:
     ParameterDB();
     ~ParameterDB();
 
-    const QVariant *value(const QString &id);
+    QVariant value(const QString &id);
     Parameter *parameter(const QString &id);
-    const QString *description(const QString &id);
 
     Parameters &parameters();
     int set(const QString &id, const QVariant &value);
     int set(const QString &id, const QString &description);
 
     void add(Parameter param);
-    void add(const QString &id, PType type, const QVariant &value, const QString &help="", const QString &category="");
+    void add(const QString &id, PType type, const QVariant &value, const QString &help="", const QString &category="", uint flags=0);
 
     void clearShadow();
     void clean();

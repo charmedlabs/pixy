@@ -22,7 +22,6 @@
 
 Blobs::Blobs(Qqueue *qq, uint8_t *lut) : m_clut(lut)
 {
-
     int i;
 
     m_mutex = false;
@@ -36,6 +35,7 @@ Blobs::Blobs(Qqueue *qq, uint8_t *lut) : m_clut(lut)
     m_maxCodedDist = MAX_CODED_DIST;
 #else
     m_maxCodedDist = MAX_CODED_DIST/2;
+    m_qvals = new uint32_t[0x8000];
 #endif
     m_ccMode = DISABLED;
 
@@ -65,8 +65,10 @@ int Blobs::setParams(uint16_t maxBlobs, uint16_t maxBlobsPerModel, uint32_t minA
 
 Blobs::~Blobs()
 {
-
     delete [] m_blobs;
+#ifndef PIXY
+    delete [] m_qvals;
+#endif
 }
 
 int Blobs::handleSegment(uint8_t signature, uint16_t row, uint16_t startCol, uint16_t length)
@@ -77,6 +79,16 @@ int Blobs::handleSegment(uint8_t signature, uint16_t row, uint16_t startCol, uin
     s.row = row;
     s.startCol = startCol;
     s.endCol = startCol+length;
+
+#ifndef PIXY
+    uint32_t qval;
+
+    qval = signature;
+    qval |= startCol<<3;
+    qval |= length<<12;
+
+    m_qvals[m_numQvals++] = qval;
+#endif
 
     return m_assembler[signature-1].Add(s);
 }
@@ -89,12 +101,16 @@ int Blobs::handleSegment(uint8_t signature, uint16_t row, uint16_t startCol, uin
 // 4: bottom Y edge
 int Blobs::runlengthAnalysis()
 {
-    int32_t row;
+    int32_t row = -1;
     uint32_t startCol, sig, prevSig, prevStartCol, segmentStartCol, segmentEndCol, segmentSig=0;
     bool merge;
     Qval qval;
     int32_t res=0;
 	register int32_t u, v, c;
+
+#ifndef PIXY
+    m_numQvals = 0;
+#endif
 
     while(1)
     {
@@ -113,6 +129,9 @@ int Blobs::runlengthAnalysis()
                 segmentSig = 0;
             }
             row++;
+#ifndef PIXY
+            m_qvals[m_numQvals++] = 0;
+#endif
             continue;
         }
 
@@ -130,7 +149,7 @@ int Blobs::runlengthAnalysis()
         v /= c;
 
         if (m_clut.m_runtimeSigs[sig-1].m_uMin<u && u<m_clut.m_runtimeSigs[sig-1].m_uMax &&
-                m_clut.m_runtimeSigs[sig-1].m_vMin<v && v<m_clut.m_runtimeSigs[sig-1].m_vMax)
+                m_clut.m_runtimeSigs[sig-1].m_vMin<v && v<m_clut.m_runtimeSigs[sig-1].m_vMax && c>=(int32_t)m_clut.m_miny)
         {
          	qval.m_col >>= 3;
         	startCol = qval.m_col;
@@ -161,7 +180,7 @@ int Blobs::runlengthAnalysis()
     }
 	endFrame();
 
-	if (qval.m_col==0xfffe)
+    if (qval.m_col==0xfffe) // error code, queue overrun
 		return -1;
 	return 0;
 }
@@ -258,6 +277,13 @@ int Blobs::blobify()
 	return 0;
 }
 
+#ifndef PIXY
+void Blobs::getRunlengths(uint32_t **qvals, uint32_t *len)
+{
+    *qvals = m_qvals;
+    *len = m_numQvals;
+}
+#endif
 
 uint16_t Blobs::getCCBlock(uint8_t *buf, uint32_t buflen)
 {
@@ -839,9 +865,9 @@ void Blobs::cleanup2(BlobA *blobs[], int16_t *numBlobs)
 
 void Blobs::printBlobs()
 {
+#ifndef PIXY
     int i;
     BlobA *blobs = (BlobA *)m_blobs;
-#ifndef PIXY
     for (i=0; i<m_numBlobs; i++)
         qDebug("blob %d: %d %d %d %d %d", i, blobs[i].m_model, blobs[i].m_left, blobs[i].m_right, blobs[i].m_top, blobs[i].m_bottom);
 #endif

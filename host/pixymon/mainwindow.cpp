@@ -608,7 +608,7 @@ void MainWindow::on_actionSave_Image_triggered()
 
     if (m_interpreter)
     {
-        filename = uniqueFilename(m_parameters.value("Document folder")->toString(), "image", "png");
+        filename = uniqueFilename(m_parameters.value("Document folder").toString(), "image", "png");
         m_interpreter->saveImage(filename);
     }
 }

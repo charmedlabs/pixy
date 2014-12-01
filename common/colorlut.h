@@ -73,7 +73,6 @@ private:
     Frame8 m_frame;
     RectA m_region;
     uint32_t m_x, m_y;
-    int32_t m_miny;
     uint8_t *m_pixels;
     const Points *m_points;
     int m_i;
@@ -101,7 +100,7 @@ public:
 
     ColorSignature m_signatures[CL_NUM_SIGNATURES];
     RuntimeSignature m_runtimeSigs[CL_NUM_SIGNATURES];
-	uint8_t *m_lut;
+    uint32_t m_miny;
 
 private:
     bool growRegion(RectA *region, const Frame8 &frame, uint8_t dir);
@@ -111,12 +110,11 @@ private:
     void iterate(IterPixel *ip, ColorSignature *sig);
     void getMean(const RectA &region ,const Frame8 &frame, UVPixel *mean);
 
-    float m_miny;
+    uint8_t *m_lut;
     uint32_t m_maxDist;
     float m_ratio;
     float m_minRatio;
-	float m_sigRanges[CL_NUM_SIGNATURES];
-
+    float m_sigRanges[CL_NUM_SIGNATURES];
 };
 
 #endif // COLORLUT_H

@@ -1,4 +1,5 @@
 #include <stdarg.h>
+#include <QMutexLocker>
 #include "monmodule.h"
 #include "parameters.h"
 #include "interpreter.h"
@@ -13,6 +14,7 @@ Interpreter *MonModuleUtil::m_interpreter = NULL;
 MonModule::MonModule(Interpreter *interpreter)
 {
     m_interpreter = interpreter;
+    m_renderer = m_interpreter->m_renderer;
     MonModuleUtil::m_interpreter = interpreter;
 
 }
@@ -37,7 +39,8 @@ void MonModule::paramChange()
 
 bool MonModule::pixyParameterChanged(const QString &id, QVariant *val)
 {
-    Parameter *param = pixyParameter(id);
+    QMutexLocker lock(m_interpreter->m_pixyParameters.mutex());
+    Parameter *param = m_interpreter->m_pixyParameters.parameter(id);
     if (param && val)
         *val = param->value();
     if (param && param->dirty())
@@ -47,7 +50,8 @@ bool MonModule::pixyParameterChanged(const QString &id, QVariant *val)
 
 bool MonModule::pixymonParameterChanged(const QString &id, QVariant *val)
 {
-    Parameter *param = pixymonParameter(id);
+    QMutexLocker lock(m_interpreter->m_pixymonParameters->mutex());
+    Parameter *param = m_interpreter->m_pixymonParameters->parameter(id);
     if (param && val)
         *val = param->value();
     if (param && param->dirty())
@@ -55,14 +59,14 @@ bool MonModule::pixymonParameterChanged(const QString &id, QVariant *val)
     return false;
 }
 
-Parameter *MonModule::pixyParameter(const QString &id)
+QVariant MonModule::pixyParameter(const QString &id)
 {
-    return m_interpreter->m_pixyParameters.parameter(id);
+    return m_interpreter->m_pixyParameters.value(id);
 }
 
-Parameter *MonModule::pixymonParameter(const QString &id)
+QVariant MonModule::pixymonParameter(const QString &id)
 {
-    return m_interpreter->m_pixymonParameters->parameter(id);
+    return m_interpreter->m_pixymonParameters->value(id);
 }
 
 
