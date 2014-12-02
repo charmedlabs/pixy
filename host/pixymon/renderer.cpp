@@ -15,7 +15,7 @@
 
 #include <QPainter>
 #include <QFont>
-#include <QDebug>
+#include "debug.h"
 #include <QFile>
 #include "renderer.h"
 #include "videowidget.h"
@@ -242,7 +242,7 @@ void Renderer::renderRects(const Points &points, uint32_t size)
     p.setBrush(QBrush(QColor(0xff, 0xff, 0xff, 0x20)));
     p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
 
-    qDebug("*** size %d", points.size());
+    DBG("*** size %d", points.size());
     for (i=0; i<points.size(); i++)
         p.drawRect(points[i].m_x*scale, points[i].m_y*scale, size*scale, size*scale);
 
@@ -293,7 +293,7 @@ void Renderer::renderBlobsB(QImage *image, float scale, BlobB *blobs, uint32_t n
         top = scale*blobs[i].m_top;
         bottom = scale*blobs[i].m_bottom;
 
-        //qDebug() << left << " " << right << " " << top << " " << bottom;
+        //DBG("%d %d %d %d", left, right, top, bottom);
         p.drawRect(left, top, right-left, bottom-top);
         if (blobs[i].m_model)
         {
@@ -338,7 +338,7 @@ void Renderer::renderBlobsA(QImage *image, float scale, BlobA *blobs, uint32_t n
         top = scale*blobs[i].m_top;
         bottom = scale*blobs[i].m_bottom;
 
-        //qDebug() << left << " " << right << " " << top << " " << bottom;
+        //DBG("%d %d %d %d", left, right, top, bottom);
         p.drawRect(left, top, right-left, bottom-top);
         if (blobs[i].m_model)
         {

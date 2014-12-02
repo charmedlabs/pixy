@@ -13,7 +13,7 @@
 // end license header
 //
 
-#include <QDebug>
+#include "debug.h"
 #include <QKeyEvent>
 #include <QTextCursor>
 #include <QTextBlock>
@@ -34,9 +34,11 @@ ConsoleWidget::ConsoleWidget(MainWindow *main) : QPlainTextEdit((QWidget *)main)
 
 ConsoleWidget::~ConsoleWidget()
 {
+#if 0
     m_mutexPrint.lock();
     m_waitPrint.wakeAll();
     m_mutexPrint.unlock();
+#endif
 }
 
 void ConsoleWidget::handleTimer()
@@ -59,7 +61,9 @@ void ConsoleWidget::print(QString text, QColor color)
 {
     m_histIndex = -1;
     moveCursor(QTextCursor::End);
+#if 0
     m_mutexPrint.lock();
+#endif
     if (text==m_lastLine)
     {
         if (!m_suppress)
@@ -84,14 +88,16 @@ void ConsoleWidget::print(QString text, QColor color)
             text = '\n' + text;
 #endif
         handleColor(color);
-        qDebug() << "console: " + text;
+        DBG("console: %s", text.toUtf8().constData());
         insertPlainText(text);
 
         m_suppress = false;
     }
     m_lastLine = text;
+#if 0
     m_waitPrint.wakeAll();
     m_mutexPrint.unlock();
+#endif
     m_timer.start(CW_TIMEOUT);
 }
 

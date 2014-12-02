@@ -16,7 +16,7 @@
 #include <stdexcept>
 #include <QMessageBox>
 #include <QFile>
-#include <QDebug>
+#include "debug.h"
 #include <QTime>
 #include <stdarg.h>
 #include "interpreter.h"
@@ -64,7 +64,7 @@ Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, MonParamete
 
 Interpreter::~Interpreter()
 {
-    qDebug("destroying interpreter...");
+    DBG("destroying interpreter...");
     close();
     wait();
     clearLocalProgram();
@@ -72,7 +72,7 @@ Interpreter::~Interpreter()
     if (m_chirp)
         delete m_chirp;
     delete m_renderer;
-    qDebug("done");
+    DBG("done");
 }
 
 void Interpreter::close()
@@ -320,22 +320,34 @@ void Interpreter::handleData(const void *args[])
             color = Qt::blue;
         }
         else
-            qDebug() << "unknown type " << type;
+            DBG("unknown type: %d", type);
     }
     if (m_print.right(1)!="\n")
         m_print += "\n";
 
+
     // wait queue business keeps worker thread from getting too far ahead of gui thread
     // (when this happens, things can get sluggish.)
+    // update: this causes the worker thread to block.  For example, bringing up a file
+    // dialog will cause the gui to block and a block in the gui causes ths console to block
+    // the console blocks and the xdata console print blocks, blocking the worker thread.
+    // Removing this fixes the issue.  But it's now possible for the console prints to queue
+    // up if they are coming in too fast, causing gui sluggishness.  Limit size of queue?
+    // Need some kind of throttling mechanism -- putting sleeps in the worker thread?  Or
+    // a call somewhere to processevents?
+#if 0
     if (m_localProgramRunning || m_running)
         m_console->m_mutexPrint.lock();
+#endif
     emit textOut(m_print, color);
     m_print = "";
+#if 0
     if (m_localProgramRunning || m_running)
     {
         m_console->m_waitPrint.wait(&m_console->m_mutexPrint);
         m_console->m_mutexPrint.unlock();
     }
+#endif
 }
 
 int Interpreter::addProgram(ChirpCallData data)
@@ -362,7 +374,7 @@ void Interpreter::getRunning()
     int res, running;
 
     res = m_chirp->callSync(m_exec_running, END_OUT_ARGS, &running, END_IN_ARGS);
-    qDebug("running %d %d", res, running);
+    DBG("running %d %d", res, running);
     if (res<0 && !m_notified)
     {
         running = false;
@@ -550,8 +562,9 @@ void Interpreter::run()
         MonModuleUtil::createModules(&m_modules, this);
         // reload any parameters that the mon modules might have created
         m_pixymonParameters->load();
-        // notify mon modules of parameter changes
+        // notify mon modules of parameter change
         sendMonModulesParamChange();
+        // load debug
         m_pixymonParameters->clean();
 
         // get all actions
@@ -562,7 +575,7 @@ void Interpreter::run()
         emit error(QString(exception.what()) + '\n');
         return;
     }
-    qDebug() << "*** init done";
+    DBG("*** init done");
 
     time.start();
     getRunning();
@@ -632,7 +645,7 @@ void Interpreter::run()
             }
         }
     }
-    qDebug("worker thead exiting");
+    DBG("worker thead exiting");
 }
 
 
@@ -1127,7 +1140,7 @@ void Interpreter::handleProperties(const uint8_t *argList, Parameter *parameter,
 
 void Interpreter::handleLoadParams()
 {
-    qDebug("loading...");
+    DBG("loading...");
     uint i;
     char *id, *desc;
     uint32_t len;
@@ -1198,7 +1211,7 @@ void Interpreter::handleLoadParams()
         m_fastPoll = false; // turn off fast polling...
     }
 
-    qDebug("loaded");
+    DBG("loaded");
     emit paramLoaded();
     sendMonModulesParamChange();
     m_pixyParameters.clean();

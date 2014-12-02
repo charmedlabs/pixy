@@ -26,6 +26,7 @@ private:
     uint8_t *m_lut;
     Qqueue *m_qq;
     Blobs *m_blobs;
+    uint8_t m_renderMode;
 };
 
 #endif // CCCMODULE_H

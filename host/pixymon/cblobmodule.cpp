@@ -5,7 +5,7 @@
 #include "dataexport.h"
 
 // declare module
-MON_MODULE(CBlobModule);
+//MON_MODULE(CBlobModule);
 
 
 CBlobModule::CBlobModule(Interpreter *interpreter) : MonModule(interpreter)

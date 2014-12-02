@@ -14,7 +14,7 @@
 //
 
 #include <stdexcept>
-#include <QDebug>
+#include "debug.h"
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QMetaType>
@@ -97,7 +97,7 @@ MainWindow::~MainWindow()
     if (m_connect)
         delete m_connect;
 
-    qDebug("deleting mainWindow");
+    DBG("deleting mainWindow");
     // we don't delete any of the widgets because the parent deletes it's children upon deletion
 
     delete m_settings;
@@ -224,7 +224,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
     {
         m_waiting = WAIT_EXITTING;
         event->ignore(); // ignore event
-        qDebug("closing interpreter");
+        DBG("closing interpreter");
         m_interpreter->close();
     }
 }
@@ -333,7 +333,7 @@ void MainWindow::connectPixy(bool state)
         m_console->error("Pixy has stopped working.\n");
         if (m_interpreter)
         {
-            qDebug("closing interpreter");
+            DBG("closing interpreter");
             m_interpreter->close();
         }
     }
@@ -507,7 +507,7 @@ void MainWindow::on_actionCooked_video_triggered()
 
 void MainWindow::interpreterFinished()
 {
-    qDebug("interpreter finished");
+    DBG("interpreter finished");
     m_interpreter->deleteLater();
     m_interpreter = NULL;
     if (m_waiting==WAIT_EXITTING) // if we're exitting, shut down
@@ -534,7 +534,7 @@ void MainWindow::on_actionExit_triggered()
     if (m_interpreter)
     {
         m_waiting = WAIT_EXITTING;
-        qDebug("closing interpreter");
+        DBG("closing interpreter");
         m_interpreter->close();
     }
     else

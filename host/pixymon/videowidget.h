@@ -18,7 +18,6 @@
 
 #include <QWidget>
 #include <QImage>
-#include <QMutex>
 
 #define VW_ASPECT_RATIO   ((float)1280/(float)800)
 
@@ -64,8 +63,6 @@ private slots:
 
 private:
     MainWindow *m_main;
-
-    QMutex m_mutex;
 
     std::vector<QImage> m_images;
     std::vector<QImage> m_renderedImages;

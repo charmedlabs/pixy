@@ -17,7 +17,7 @@
 #include <math.h>
 #include <string.h>
 #ifndef PIXY
-#include <qdebug.h>
+#include "debug.h"
 #endif
 #include "colorlut.h"
 
@@ -401,7 +401,7 @@ float ColorLUT::testRegion(const RectA &region, const Frame8 &frame, UVPixel *me
             mean->m_v = ((longlong)mean->m_v*n + subMean.m_v)/(n+1);
             if (points->push_back(Point16(subRegion.m_xOffset, subRegion.m_yOffset))<0)
                 break;
-            //qDebug("add %d %d %d", subRegion.m_xOffset, subRegion.m_yOffset, points->size());
+            //DBG("add %d %d %d", subRegion.m_xOffset, subRegion.m_yOffset, points->size());
             test++;
         }
 
@@ -411,7 +411,7 @@ float ColorLUT::testRegion(const RectA &region, const Frame8 &frame, UVPixel *me
             subRegion.m_yOffset += CL_GROW_INC;
     }
 
-    //qDebug("return %f", (float)test*CL_GROW_INC/endpoint);
+    //DBG("return %f", (float)test*CL_GROW_INC/endpoint);
     return (float)test*CL_GROW_INC/endpoint;
 }
 

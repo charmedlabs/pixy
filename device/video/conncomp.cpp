@@ -165,7 +165,7 @@ void cc_loadParams(void)
 		prm_add(id, PRM_FLAG_INTERNAL, desc, INTS8(sizeof(ColorSignature), &signature), END);
 
 		sprintf(id, "Signature %d range", i);
-		sprintf(desc, "@c Signatures @m 0.0 @M 15.0 Sets filtering range of signature %d. (default 2.5)", i);
+		sprintf(desc, "@c Signatures @m 0.0 @M 11.0 Sets filtering range of signature %d. (default 2.5)", i);
 		prm_add(id, PRM_FLAG_SLIDER, desc, FLT32(2.5f), END);
 
 		prm_get(id, &range, END);

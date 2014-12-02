@@ -14,7 +14,7 @@
 //
 
 #ifndef PIXY
-#include <qdebug.h>
+#include "debug.h"
 #endif
 #include "blobs.h"
 
@@ -219,6 +219,8 @@ int Blobs::blobify()
                 (!colorCode && blob->GetArea()<(int)m_minArea))
                 continue;
             blob->getBBox((short &)left, (short &)top, (short &)right, (short &)bottom);
+            if (bottom-top<=1) // blobs that are 1 line tall
+                continue;
             m_blobs[j + 0] = i+1;
             m_blobs[j + 1] = left;
             m_blobs[j + 2] = right;
@@ -773,7 +775,7 @@ bool Blobs::analyzeDistances(BlobA *blobs0[], int16_t numBlobs0, BlobA *blobs[],
     }
 #ifndef PIXY
     if (!result)
-        qDebug("not set!");
+        DBG("not set!");
 #endif
     return result;
 }
@@ -823,7 +825,7 @@ void Blobs::cleanup(BlobA *blobs[], int16_t *numBlobs)
             newBlobs[numNewBlobs++] = blobs[i];
 #ifndef PIXY
         else if (*numBlobs>=5 && (blobs[i]->m_model&0x07)==2)
-            qDebug("eliminated!");
+            DBG("eliminated!");
 #endif
     }
 
@@ -869,7 +871,7 @@ void Blobs::printBlobs()
     int i;
     BlobA *blobs = (BlobA *)m_blobs;
     for (i=0; i<m_numBlobs; i++)
-        qDebug("blob %d: %d %d %d %d %d", i, blobs[i].m_model, blobs[i].m_left, blobs[i].m_right, blobs[i].m_top, blobs[i].m_bottom);
+        DBG("blob %d: %d %d %d %d %d", i, blobs[i].m_model, blobs[i].m_left, blobs[i].m_right, blobs[i].m_top, blobs[i].m_bottom);
 #endif
 }
 
@@ -987,7 +989,7 @@ void Blobs::processCC()
         // find left, right, top, bottom of color coded block
         for (k=0, left=right=top=bottom=0; k<j; k++)
         {
-            //qDebug("* cc %x %d i %d: %d %d %d %d %d", blobs[k], m_numCCBlobs, k, blobs[k]->m_model, blobs[k]->m_left, blobs[k]->m_right, blobs[k]->m_top, blobs[k]->m_bottom);
+            //DBG("* cc %x %d i %d: %d %d %d %d %d", blobs[k], m_numCCBlobs, k, blobs[k]->m_model, blobs[k]->m_left, blobs[k]->m_right, blobs[k]->m_top, blobs[k]->m_bottom);
             if (blobs[left]->m_left > blobs[k]->m_left)
                 left = k;
             if (blobs[top]->m_top > blobs[k]->m_top)
@@ -1040,7 +1042,7 @@ void Blobs::processCC()
             codedBlob->m_angle = angle(blobs[j-1], blobs[0]);
         }
 #endif
-        //qDebug("cc %d %d %d %d %d", m_numCCBlobs, codedBlob->m_left, codedBlob->m_right, codedBlob->m_top, codedBlob->m_bottom);
+        //DBG("cc %d %d %d %d %d", m_numCCBlobs, codedBlob->m_left, codedBlob->m_right, codedBlob->m_top, codedBlob->m_bottom);
         codedBlob++;
         m_numCCBlobs++;
     }

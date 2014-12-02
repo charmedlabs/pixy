@@ -14,6 +14,10 @@ CccModule::CccModule(Interpreter *interpreter) : MonModule(interpreter)
     m_qq = new Qqueue();
     m_lut = new uint8_t[CL_LUT_SIZE];
     m_blobs = new Blobs(m_qq, m_lut);
+
+    m_interpreter->m_pixymonParameters->add("Cooked render mode", PT_INT8, 2,
+        "Cooked video rendering mode, 0=boxes only, 1=filtered pixels only, 2=boxes and filtered pixels");
+    m_renderMode = pixymonParameter("Cooked render mode").toUInt();
 }
 
 CccModule::~CccModule()
@@ -98,6 +102,9 @@ void CccModule::paramChange()
     minArea = pixyParameter("Min block area").toUInt();
     ccMode = (ColorCodeMode)pixyParameter("Color code mode").toUInt();
     m_blobs->setParams(maxBlobs, maxBlobsPerSig, minArea, ccMode);
+
+    if (pixymonParameterChanged("Cooked render mode", &val))
+        m_renderMode = val.toUInt();
 }
 
 void CccModule::handleLine(uint8_t *line, uint16_t width)
@@ -207,10 +214,17 @@ int CccModule::renderCMV2(uint8_t renderFlags, uint32_t sigLen, uint8_t *sigs, u
     m_blobs->getBlobs(&blobs, &numBlobs, &ccBlobs, &numCCBlobs);
     m_blobs->getRunlengths(&qVals, &numQvals);
 
-    m_renderer->renderBA81(RENDER_FLAG_BLEND, width, height, frameLen, frame);
-    m_renderer->renderCCQ1(RENDER_FLAG_BLEND, width/2, height/2, numQvals, qVals);
-    m_renderer->renderCCB2(RENDER_FLAG_BLEND | RENDER_FLAG_FLUSH, width/2, height/2, numBlobs*sizeof(BlobA)/sizeof(uint16_t), (uint16_t *)blobs, numCCBlobs*sizeof(BlobB)/sizeof(uint16_t), (uint16_t *)ccBlobs);
 
+    m_renderer->renderBA81(RENDER_FLAG_BLEND, width, height, frameLen, frame);
+    if (m_renderMode==0)
+        m_renderer->renderCCB2(RENDER_FLAG_BLEND | RENDER_FLAG_FLUSH, width/2, height/2, numBlobs*sizeof(BlobA)/sizeof(uint16_t), (uint16_t *)blobs, numCCBlobs*sizeof(BlobB)/sizeof(uint16_t), (uint16_t *)ccBlobs);
+    else if (m_renderMode==1)
+        m_renderer->renderCCQ1(RENDER_FLAG_BLEND | RENDER_FLAG_FLUSH, width/2, height/2, numQvals, qVals);
+    else if (m_renderMode==2)
+    {
+        m_renderer->renderCCQ1(RENDER_FLAG_BLEND, width/2, height/2, numQvals, qVals);
+        m_renderer->renderCCB2(RENDER_FLAG_BLEND | RENDER_FLAG_FLUSH, width/2, height/2, numBlobs*sizeof(BlobA)/sizeof(uint16_t), (uint16_t *)blobs, numCCBlobs*sizeof(BlobB)/sizeof(uint16_t), (uint16_t *)ccBlobs);
+    }
     return 0;
 }
 

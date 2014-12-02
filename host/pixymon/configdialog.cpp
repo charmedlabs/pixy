@@ -19,7 +19,7 @@
 #include "paramfile.h"
 #include <QLabel>
 #include <QMessageBox>
-#include <QDebug>
+#include "debug.h"
 #include <QTableWidget>
 #include <QPushButton>
 #include <QAbstractButton>
@@ -236,7 +236,7 @@ void ConfigDialog::render(ParameterDB *data, QGridLayout *layout, QTabWidget *ta
     int i;
     QWidget *tab;
 
-    qDebug("rendering config...");
+    DBG("rendering config...");
     Parameters &parameters = data->parameters();
 
     for (i=0; i<parameters.size(); i++)
@@ -373,7 +373,7 @@ void ConfigDialog::render(ParameterDB *data, QGridLayout *layout, QTabWidget *ta
         layout->setColumnStretch(100, 1);
     }
 
-    qDebug("rendering config done");
+    DBG("rendering config done");
 }
 
 void ConfigDialog::accept()
@@ -386,7 +386,7 @@ void ConfigDialog::accept()
 
 void ConfigDialog::reject()
 {
-    qDebug("reject called");
+    DBG("reject called");
     // clear all shadows
     m_interpreter->m_pixymonParameters->clearShadow();
     m_interpreter->m_pixyParameters.clearShadow();
