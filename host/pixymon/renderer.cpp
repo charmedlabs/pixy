@@ -26,11 +26,11 @@
 #include "calc.h"
 #include <math.h>
 
-Renderer::Renderer(VideoWidget *video, Interpreter *interpreter) :
+Renderer::Renderer(VideoWidget *video, Interpreter *interpreter) : MonModule(interpreter), m_background(0, 0)
 #ifdef DEFER
-    m_blobs(interpreter),
+    m_blobs(interpreter)
 #endif
-    m_background(0, 0)
+
 {
     m_video = video;
     m_interpreter = interpreter;
@@ -38,8 +38,10 @@ Renderer::Renderer(VideoWidget *video, Interpreter *interpreter) :
     m_rawFrame.m_pixels = new uint8_t[RAWFRAME_SIZE];
     m_rawFrame.m_height = 0;
     m_rawFrame.m_width = 0;
+    m_highlightOverexp = true;
 
-    m_mode = 3;
+    m_interpreter->m_pixymonParameters->addCheckbox("Highlight overexposure", true,
+        "Highlighting overexposure will overlay black pixels ontop of overexposed pixels in raw and cooked modes");
 
     connect(this, SIGNAL(image(QImage, uchar)), m_video, SLOT(handleImage(QImage, uchar))); // Qt::BlockingQueuedConnection);
 }
@@ -217,7 +219,10 @@ int Renderer::renderBA81(uint8_t renderFlags, uint16_t width, uint16_t height, u
         for (x=1; x<width-1; x++, frame++)
         {
             interpolateBayer(width, x, y, frame, r, g, b);
-            *line++ = (0x40<<24) | (r<<16) | (g<<8) | (b<<0);
+            if (m_highlightOverexp && (r==255 || g==255 || b==255))
+                *line++ = (0xff<<24); // | 0xff0000;
+            else
+                *line++ = (0xff<<24) | (r<<16) | (g<<8) | (b<<0);
         }
         frame++;
     }
@@ -515,36 +520,45 @@ int Renderer::renderBLT1(uint8_t renderFlags, uint16_t width, uint16_t height,
 
 
 
-int Renderer::render(uint32_t type, const void *args[])
+void Renderer::paramChange()
 {
-    int res;
-    int i;
+    QVariant val;
 
-    // check modules, see if they handle the fourcc
-    for (i=0; i<m_interpreter->m_modules.size(); i++)
-    {
-        if (m_interpreter->m_modules[i]->render(type, args))
-            return 0;
-    }
+    if (pixymonParameterChanged("Highlight overexposure", &val))
+        m_highlightOverexp = val.toUInt();
+}
 
+bool Renderer::render(uint32_t fourcc, const void *args[])
+{
     // choose fourcc for representing formats fourcc.org
-    if (type==FOURCC('B','A','8','1'))
-        res = renderBA81(*(uint8_t *)args[0], *(uint16_t *)args[1], *(uint16_t *)args[2], *(uint32_t *)args[3], (uint8_t *)args[4]);
-    else if (type==FOURCC('C','C','Q','1'))
-        res = renderCCQ1(*(uint8_t *)args[0], *(uint16_t *)args[1], *(uint16_t *)args[2], *(uint32_t *)args[3], (uint32_t *)args[4]);
-    else if (type==FOURCC('C', 'C', 'B', '1'))
-        res = renderCCB1(*(uint8_t *)args[0], *(uint16_t *)args[1], *(uint32_t *)args[2], *(uint32_t *)args[3], (uint16_t *)args[4]);
-    else if (type==FOURCC('C', 'C', 'B', '2'))
-        res = renderCCB2(*(uint8_t *)args[0], *(uint16_t *)args[1], *(uint32_t *)args[2], *(uint32_t *)args[3], (uint16_t *)args[4], *(uint32_t *)args[5], (uint16_t *)args[6]);
-//    else if (type==FOURCC('C', 'M', 'V', '1'))
-//        res = renderCMV1(*(uint8_t *)args[0], *(uint32_t *)args[1], (float *)args[2], *(uint16_t *)args[3], *(uint32_t *)args[4], *(uint32_t *)args[5], (uint8_t *)args[6]);
-    else if (type==FOURCC('B','L','T','1'))
-        res = renderBLT1(*(uint8_t *)args[0], *(uint16_t *)args[1], *(uint16_t *)args[2],
+    if (fourcc==FOURCC('B','A','8','1'))
+    {
+        renderBA81(*(uint8_t *)args[0], *(uint16_t *)args[1], *(uint16_t *)args[2], *(uint32_t *)args[3], (uint8_t *)args[4]);
+        return true;
+    }
+    else if (fourcc==FOURCC('C','C','Q','1'))
+    {
+        renderCCQ1(*(uint8_t *)args[0], *(uint16_t *)args[1], *(uint16_t *)args[2], *(uint32_t *)args[3], (uint32_t *)args[4]);
+        return true;
+    }
+    else if (fourcc==FOURCC('C', 'C', 'B', '1'))
+    {
+        renderCCB1(*(uint8_t *)args[0], *(uint16_t *)args[1], *(uint32_t *)args[2], *(uint32_t *)args[3], (uint16_t *)args[4]);
+        return true;
+    }
+    else if (fourcc==FOURCC('C', 'C', 'B', '2'))
+    {
+        renderCCB2(*(uint8_t *)args[0], *(uint16_t *)args[1], *(uint32_t *)args[2], *(uint32_t *)args[3], (uint16_t *)args[4], *(uint32_t *)args[5], (uint16_t *)args[6]);
+        return true;
+    }
+    else if (fourcc==FOURCC('B','L','T','1'))
+    {
+        renderBLT1(*(uint8_t *)args[0], *(uint16_t *)args[1], *(uint16_t *)args[2],
                 *(uint16_t *)args[3], *(uint16_t *)args[4], *(uint32_t *)args[5], (uint16_t *)args[6]);
+        return true;
+    }
     else // format not recognized
-        return -1;
-
-    return res;
+        return false;
 }
 
 
@@ -602,5 +616,6 @@ Frame8 *Renderer::backgroundRaw()
 {
     return &m_rawFrame;
 }
+
 
 

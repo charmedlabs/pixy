@@ -71,7 +71,6 @@ Interpreter::~Interpreter()
     MonModuleUtil::destroyModules(&m_modules);
     if (m_chirp)
         delete m_chirp;
-    delete m_renderer;
     DBG("done");
 }
 
@@ -303,6 +302,7 @@ void Interpreter::handleResponse(const void *args[])
 
 void Interpreter::handleData(const void *args[])
 {
+    int i;
     uint8_t type;
     QColor color = CW_DEFAULT_COLOR;
 
@@ -312,7 +312,12 @@ void Interpreter::handleData(const void *args[])
         if (type==CRP_TYPE_HINT)
         {
             m_print += printType(*(uint32_t *)args[0]) + " frame data\n";
-            m_renderer->render(*(uint32_t *)args[0], args+1);
+            // check modules, see if they handle the fourcc
+            for (i=0; i<m_modules.size(); i++)
+            {
+                if (m_modules[i]->render(*(uint32_t *)args[0], args+1))
+                    break;
+            }
         }
         else if (type==CRP_HSTRING)
         {
@@ -559,6 +564,7 @@ void Interpreter::run()
             throw std::runtime_error("Hmm... missing procedures.");
 
         // create pixymon modules
+        m_modules.push_back(m_renderer); // add renderer to monmodule list so we can send it updates, etc
         MonModuleUtil::createModules(&m_modules, this);
         // reload any parameters that the mon modules might have created
         m_pixymonParameters->load();

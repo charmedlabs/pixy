@@ -19,6 +19,7 @@
 #include <QObject>
 #include <QImage>
 #include "pixytypes.h"
+#include "monmodule.h"
 //#include "processblobs.h"
 
 #include <simplevector.h>
@@ -30,7 +31,7 @@ class Interpreter;
 
 class VideoWidget;
 
-class Renderer : public QObject
+class Renderer : public QObject, public MonModule
 {
     Q_OBJECT
 
@@ -38,15 +39,13 @@ public:
     Renderer(VideoWidget *video, Interpreter *interpreter);
     ~Renderer();
 
-    int render(uint32_t type, const void *args[]);
+    // MonModule
+    virtual bool render(uint32_t fourcc, const void *args[]);
+    virtual void paramChange();
+
     int renderBackground(uint8_t renderFlags);
     QImage *backgroundImage(); // get background from BA81 formatted image data
     Frame8 *backgroundRaw();
-
-    void setMode(uint32_t mode)
-    {
-        m_mode = mode;
-    }
 
     int renderCCQ1(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t numVals, uint32_t *qVals);
     int renderBA81(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame);
@@ -65,6 +64,7 @@ public:
     void pixelsOut(int x0, int y0, int width, int height);
     void renderRL(QImage *image, uint color, uint row, uint startCol, uint len);
 
+
     Frame8 m_rawFrame;
 #ifdef DEFER
     ProcessBlobs m_blobs;
@@ -78,10 +78,9 @@ private:
 
     VideoWidget *m_video;
     Interpreter *m_interpreter;
-
     QImage m_background;
 
-    uint32_t m_mode;
+    bool m_highlightOverexp;
 };
 
 #endif // RENDERER_H
