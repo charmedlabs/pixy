@@ -98,7 +98,6 @@ static const ActionScriptlet actions[]=
 	"Run pan/tilt demo", 
 	"runprog 2\n"
 	}, 
-
 	{
 	"Set signature 1...", 
 	"cam_getFrame 0x21 0 0 320 200\n"
@@ -207,6 +206,7 @@ uint8_t g_run = false;
 uint8_t g_program = 0;
 uint8_t g_override = 0;
 int32_t g_execArg = 0;  // this arg mechanism is lame... should introduce an argv type mechanism 
+uint8_t g_debug = 0;
 
 static ChirpProc g_runM0 = -1;
 static ChirpProc g_runningM0 = -1;
@@ -399,6 +399,10 @@ static void loadParams()
 	// exec's params added here
 	prm_add("Default program", 0, 
 		"Selects the program number that's run by default upon power-up. (default 0)", UINT8(0), END);
+	prm_add("Debug", 0, 
+		"Sets the debug level for the firmware. (default 0)", UINT8(0), END);
+	
+	prm_get("Debug", &g_debug, END);
 }
 
 void exec_loadParams()

@@ -19,6 +19,7 @@
 #include "conncomp.h"
 #include "serial.h"
 #include "rcservo.h"
+#include "exec.h"
 
 
 Program g_progBlobs =
@@ -144,7 +145,7 @@ int blobsLoop()
 	// create blobs
 	if (g_blobs->blobify()<0)
 	{
-		cprintf("drop %d\n", drop++);
+		DBG("drop %d\n", drop++);
 		return 0;
 	}
 	g_blobs->getBlobs(&blobs, &numBlobs, &ccBlobs, &numCCBlobs);

@@ -302,7 +302,7 @@ int32_t cc_setSigPoint(const uint32_t &type, const uint8_t &signum, const uint16
 	sprintf(id, "signature%d", signum);
 	prm_set(id, INTS8(sizeof(ColorSignature), sig), END);
 
-	//cprintf("Success!\n");
+	cprintf("Success!\n");
 
 	return 0;
 }

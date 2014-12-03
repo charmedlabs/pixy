@@ -17,6 +17,7 @@
 #define _EXEC_H
 
 #include "chirp.hpp"
+#include "debug_frmwrk.h"
 
 #define FW_MAJOR_VER		1
 #define FW_MINOR_VER		0
@@ -64,4 +65,11 @@ uint8_t exec_pause();
 void exec_resume();
 
 extern int32_t g_execArg; 
+extern uint8_t g_debug;
+
+#define DBG(...)            if (g_debug) cprintf(__VA_ARGS__)
+#define DBGL(level, ...)    if (g_debug>=level) cprintf(__VA_ARGS__)
+#define DBGE(n, ...)        if (g_debug==n) cprintf(__VA_ARGS__)
+
+
 #endif
