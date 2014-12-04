@@ -83,7 +83,7 @@ public:
 		return m_fields->produced - m_fields->consumed;
 	}
 #ifndef PIXY
-    int enqueue(Qval val);
+    int enqueue(Qval *val);
 #endif
 
     uint32_t readAll(Qval *mem, uint32_t size);

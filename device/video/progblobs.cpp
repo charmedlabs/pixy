@@ -100,14 +100,18 @@ void handleRecv()
 
 int blobsLoop()
 {
-#if 0
+#if 1
 	BlobA *blobs;
 	BlobB *ccBlobs;
 	uint32_t numBlobs, numCCBlobs;
+	static uint32_t drop = 0;
 
 	// create blobs
-	g_blobs->blobify();
-
+	if (g_blobs->blobify()<0)
+	{
+		DBG("drop %d\n", drop++);
+		return 0;
+	}
 	// handle received data immediately
 	handleRecv();
 
@@ -136,7 +140,7 @@ int blobsLoop()
 		}	
 	}
 #endif
-#if 1
+#if 0
 	BlobA *blobs;
 	BlobB *ccBlobs;
 	uint32_t numBlobs, numCCBlobs;

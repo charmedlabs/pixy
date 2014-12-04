@@ -52,13 +52,13 @@ uint32_t Qqueue::dequeue(Qval *val)
 }
 
 #ifndef PIXY
-int Qqueue::enqueue(Qval val)
+int Qqueue::enqueue(Qval *val)
 {
     uint16_t len = m_fields->produced - m_fields->consumed;
     uint16_t freeLen = 	QQ_MEM_SIZE-len;
     if (freeLen>0)
     {
-        m_fields->data[m_fields->writeIndex++] = val;
+        m_fields->data[m_fields->writeIndex++] = *val;
         m_fields->produced++;
         if (m_fields->writeIndex==QQ_MEM_SIZE)
             m_fields->writeIndex = 0;

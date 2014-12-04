@@ -51,15 +51,15 @@ public:
     BlobA *getMaxBlob(uint16_t signature=0);
     void getBlobs(BlobA **blobs, uint32_t *len, BlobB **ccBlobs, uint32_t *ccLen);
     int setParams(uint16_t maxBlobs, uint16_t maxBlobsPerModel, uint32_t minArea, ColorCodeMode ccMode);
-
-	ColorLUT m_clut;
-
+    int runlengthAnalysis();
 #ifndef PIXY
     void getRunlengths(uint32_t **qvals, uint32_t *len);
 #endif
 
+	ColorLUT m_clut;
+    Qqueue *m_qq;
+
 private:
-    int runlengthAnalysis();
     int handleSegment(uint8_t signature, uint16_t row, uint16_t startCol, uint16_t length);
 	void endFrame();
     uint16_t combine(uint16_t *blobs, uint16_t numBlobs);
@@ -80,7 +80,6 @@ private:
     void printBlobs();
 
     CBlobAssembler m_assembler[CL_NUM_SIGNATURES];
-	Qqueue *m_qq;
 
     uint16_t *m_blobs;
     uint16_t m_numBlobs;
