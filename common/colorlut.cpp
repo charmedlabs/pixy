@@ -140,6 +140,7 @@ ColorLUT::ColorLUT(uint8_t *lut)
     m_minRatio = CL_MIN_RATIO;
     m_maxDist = CL_MAX_DIST;
     m_ratio = CL_DEFAULT_TOL;
+    m_ccGain = CL_DEFAULT_CCGAIN;
 	for (i=0; i<CL_NUM_SIGNATURES; i++)
 		m_sigRanges[i] = CL_DEFAULT_SIG_RANGE;
 }
@@ -253,13 +254,20 @@ int ColorLUT::generateSignature(const Frame8 &frame, const Point16 &point, Point
 
 void ColorLUT::updateSignature(uint8_t signum)
 {
+    float range;
+
 	if (signum<1 || signum>CL_NUM_SIGNATURES)
 		return;
 	signum--;
-	m_runtimeSigs[signum].m_uMin = m_signatures[signum].m_uMean + (m_signatures[signum].m_uMin - m_signatures[signum].m_uMean)*m_sigRanges[signum];
-	m_runtimeSigs[signum].m_uMax = m_signatures[signum].m_uMean + (m_signatures[signum].m_uMax - m_signatures[signum].m_uMean)*m_sigRanges[signum];
-	m_runtimeSigs[signum].m_vMin = m_signatures[signum].m_vMean + (m_signatures[signum].m_vMin - m_signatures[signum].m_vMean)*m_sigRanges[signum];
-	m_runtimeSigs[signum].m_vMax = m_signatures[signum].m_vMean + (m_signatures[signum].m_vMax - m_signatures[signum].m_vMean)*m_sigRanges[signum];
+
+    if (m_signatures[signum].m_type==CL_MODEL_TYPE_COLORCODE)
+        range = m_sigRanges[signum]*m_ccGain;
+	else
+		range = m_sigRanges[signum];
+    m_runtimeSigs[signum].m_uMin = m_signatures[signum].m_uMean + (m_signatures[signum].m_uMin - m_signatures[signum].m_uMean)*range;
+	m_runtimeSigs[signum].m_uMax = m_signatures[signum].m_uMean + (m_signatures[signum].m_uMax - m_signatures[signum].m_uMean)*range;
+	m_runtimeSigs[signum].m_vMin = m_signatures[signum].m_vMean + (m_signatures[signum].m_vMin - m_signatures[signum].m_vMean)*range;
+	m_runtimeSigs[signum].m_vMax = m_signatures[signum].m_vMean + (m_signatures[signum].m_vMax - m_signatures[signum].m_vMean)*range;
 }
 
 ColorSignature *ColorLUT::getSignature(uint8_t signum)
@@ -324,6 +332,11 @@ int ColorLUT::generateLUT()
             }
         }
     }
+
+    // recalc bounds for each signature
+    for (r=0; r<CL_NUM_SIGNATURES; r++)
+        updateSignature(r);
+
     return 0;
 }
 
@@ -508,7 +521,6 @@ void ColorLUT::setSigRange(uint8_t signum, float range)
 	if (signum<1 || signum>CL_NUM_SIGNATURES)
 		return;
 	m_sigRanges[signum-1] = range;
-	updateSignature(signum);
 }
 
 void ColorLUT::setGrowDist(uint32_t dist)
@@ -524,5 +536,16 @@ void ColorLUT::setMinBrightness(float miny)
 
 }
 
+void ColorLUT::setCCGain(float gain)
+{
+    m_ccGain = gain;
+}
 
+uint32_t ColorLUT::getType(uint8_t signum)
+{
+    if (signum<1 || signum>CL_NUM_SIGNATURES)
+        return 0;
+
+    return m_signatures[signum-1].m_type;
+}
 

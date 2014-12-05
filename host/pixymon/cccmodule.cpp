@@ -94,6 +94,11 @@ void CccModule::paramChange()
         m_blobs->m_clut.setMinBrightness(val.toFloat());
         relut = true;
     }
+    if (pixyParameterChanged("Color code gain", &val))
+    {
+        m_blobs->m_clut.setCCGain(val.toFloat());
+        relut = true;
+    }
 
     if (relut)
         m_blobs->m_clut.generateLUT();

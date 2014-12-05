@@ -31,6 +31,8 @@
 #define CL_DEFAULT_SIG_RANGE			2.5f
 #define CL_MAX_DIST                     2000
 #define CL_DEFAULT_TOL                  0.9f
+#define CL_DEFAULT_CCGAIN               1.5f
+#define CL_MODEL_TYPE_COLORCODE         1
 
 
 struct ColorSignature
@@ -97,7 +99,10 @@ public:
 	void setSigRange(uint8_t signum, float range);
 	void setMinBrightness(float miny);
 	void setGrowDist(uint32_t dist);
+    void setCCGain(float gain);
+    uint32_t getType(uint8_t signum);
 
+    // these should be in little access methods, but they're here to speed things up a tad
     ColorSignature m_signatures[CL_NUM_SIGNATURES];
     RuntimeSignature m_runtimeSigs[CL_NUM_SIGNATURES];
     uint32_t m_miny;
@@ -114,6 +119,7 @@ private:
     uint32_t m_maxDist;
     float m_ratio;
     float m_minRatio;
+    float m_ccGain;
     float m_sigRanges[CL_NUM_SIGNATURES];
 };
 

@@ -195,15 +195,17 @@ void cc_loadParams(void)
 	uint8_t ccMode;
 	uint16_t maxBlobs, maxBlobsPerModel;
 	uint32_t minArea;
-	float miny;
+	float miny, ccGain;
 
 	prm_get("Max blocks", &maxBlobs, END);
 	prm_get("Max blocks per signature", &maxBlobsPerModel, END);
 	prm_get("Min block area", &minArea, END);
 	prm_get("Color code mode", &ccMode, END);
 	prm_get("Min brightness", &miny, END);
+	prm_get("Color code gain", &ccGain, END);
 	g_blobs->setParams(maxBlobs, maxBlobsPerModel, minArea, (ColorCodeMode)ccMode);
 	g_blobs->m_clut.setMinBrightness(miny);
+	g_blobs->m_clut.setCCGain(ccGain);
 	
 	cc_loadLut();
 }

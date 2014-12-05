@@ -18,7 +18,7 @@
 #endif
 #include "blobs.h"
 
-#define CC_SIGNATURE(s) false //(m_ccMode==CC_ONLY2 || m_clut->getType(s)==CL_MODEL_TYPE_COLORCODE)
+#define CC_SIGNATURE(s) (m_ccMode==CC_ONLY || m_clut.getType(s)==CL_MODEL_TYPE_COLORCODE)
 
 Blobs::Blobs(Qqueue *qq, uint8_t *lut) : m_clut(lut)
 {
