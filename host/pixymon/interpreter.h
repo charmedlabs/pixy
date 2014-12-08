@@ -41,7 +41,7 @@ class ConsoleWidget;
 class Renderer;
 class MonModule;
 
-enum CommandType {STOP, RUN, STOP_LOCAL, RUN_LOCAL, LOAD_PARAMS, SAVE_PARAMS, UPDATE_PARAM};
+enum CommandType {STOP, RUN, STOP_LOCAL, RUN_LOCAL, LOAD_PARAMS, SAVE_PARAMS, UPDATE_PARAM, CLOSE};
 
 struct Command
 {
@@ -112,9 +112,10 @@ public:
     friend class Renderer;
 
 signals:
-    void runState(uint sFtate);
+    void runState(int state);
     void textOut(QString text, QColor color=Qt::black);
     void error(QString text);
+    void consoleCommand(QString text);
     void prompt(QString text);
     void videoInput(VideoWidget::InputMode mode);
     void enableConsole(bool enable);
@@ -207,7 +208,6 @@ private:
     std::vector<QStringList> m_programText;
 
     QString m_command;
-    QString m_externalCommand;
     QString m_print;
     Qt::Key m_key;
     QStringList m_argv; // executed on Pixy

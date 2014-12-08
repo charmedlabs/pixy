@@ -101,6 +101,17 @@ void ConsoleWidget::print(QString text, QColor color)
     m_timer.start(CW_TIMEOUT);
 }
 
+void ConsoleWidget::command(QString text)
+{
+    handleColor(CW_DEFAULT_COLOR);
+    prompt();
+    if (!text.endsWith('\n'))
+        text = text + '\n';
+    insertPlainText(text);
+
+    emit textLine(text);
+}
+
 void ConsoleWidget::error(QString text)
 {
     print("error: " + text, Qt::red);

@@ -197,7 +197,7 @@ static const ActionScriptlet actions[]=
 	{
 	"Restore default parameter values", 
     "prm_restore\n"
-	"run\n"
+	"close\n"
 	}
 };
 
@@ -320,7 +320,7 @@ int32_t exec_version(Chirp *chirp)
 {
 	uint16_t ver[] = {FW_MAJOR_VER, FW_MINOR_VER, FW_BUILD_VER};
 
-	cprintf("Pixy firmware version %d.%d.%d\n", ver[0], ver[1], ver[2]);
+	//cprintf("Pixy firmware version %d.%d.%d\n", ver[0], ver[1], ver[2]);
 	if (chirp)
 		CRP_RETURN(chirp, UINTS16(sizeof(ver), ver), END);
 
@@ -398,9 +398,9 @@ static void loadParams()
 {
 	// exec's params added here
 	prm_add("Default program", 0, 
-		"Selects the program number that's run by default upon power-up. (default 0)", UINT8(0), END);
+		"@c Expert Selects the program number that's run by default upon power-up. (default 0)", UINT8(0), END);
 	prm_add("Debug", 0, 
-		"Sets the debug level for the firmware. (default 0)", UINT8(0), END);
+		"@c Expert Sets the debug level for the firmware. (default 0)", UINT8(0), END);
 	
 	prm_get("Debug", &g_debug, END);
 }

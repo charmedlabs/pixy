@@ -49,7 +49,7 @@ public:
     friend class ConsoleWidget;
 
 private slots:
-    void handleRunState(uint state);
+    void handleRunState(int state);
     void handleConnected(Device device, bool state);
     void handleActions();
     void handleActionScriptlet(QString action, QStringList scriptlet);

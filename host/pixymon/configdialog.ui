@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>288</width>
+    <width>444</width>
     <height>211</height>
    </rect>
   </property>
@@ -31,9 +31,9 @@
        <property name="currentIndex">
         <number>0</number>
        </property>
-       <widget class="QWidget" name="pixyParameters">
+       <widget class="QWidget" name="pixyTab">
         <attribute name="title">
-         <string>Pixy Parameters</string>
+         <string>Pixy Parameters (saved on Pixy)</string>
         </attribute>
         <layout class="QGridLayout" name="gridLayout_5">
          <item row="0" column="0">
@@ -43,7 +43,7 @@
        </widget>
        <widget class="QWidget" name="pixymonTab">
         <attribute name="title">
-         <string>PixyMon Parameters</string>
+         <string>PixyMon Parameters (saved on computer)</string>
         </attribute>
         <layout class="QGridLayout" name="gridLayout_4">
          <item row="0" column="0">

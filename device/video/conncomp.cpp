@@ -149,6 +149,14 @@ void cc_shadowCallback(const char *id, const float &val)
 	}
 }
 
+void cc_teachThreshCallback(const char *id, const uint32_t &val)
+{
+	uint32_t growDist;
+
+	prm_get("Signature teach threshold", &growDist, END);
+	g_blobs->m_clut.setGrowDist(growDist);
+}
+
 void cc_loadParams(void)
 {
 	int i;
@@ -165,7 +173,7 @@ void cc_loadParams(void)
 		prm_add(id, PRM_FLAG_INTERNAL, desc, INTS8(sizeof(ColorSignature), &signature), END);
 
 		sprintf(id, "Signature %d range", i);
-		sprintf(desc, "@c Signatures @m 0.0 @M 11.0 Sets filtering range of signature %d. (default 2.5)", i);
+		sprintf(desc, "@c Signature_Tuning @m 0.0 @M 11.0 Sets filtering range of signature %d. (default 2.5)", i);
 		prm_add(id, PRM_FLAG_SLIDER, desc, FLT32(2.5f), END);
 
 		prm_get(id, &range, END);
@@ -177,24 +185,27 @@ void cc_loadParams(void)
 
 	// setup
 	prm_add("Min brightness", PRM_FLAG_SLIDER, 
-		"@c Signatures @m 0.0 @M 1.0 Sets the minimum brightness of all signatures. (default 0.1)", FLT32(0.1f), END);
+		"@c Signature_Tuning @m 0.0 @M 0.5 Sets the minimum brightness of all signatures. (default 0.1)", FLT32(0.1f), END);
 	prm_setShadowCallback("Min brightness", (ShadowCallback)cc_shadowCallback);
 	prm_add("Color code gain", 0, 
-		"@c Signatures Sets the color gain to be multiplied to each signature range. (default 1.5)", FLT32(1.5f), END);
+		"@c Expert Sets the color gain to be multiplied to each signature range. (default 1.8)", FLT32(1.8f), END);
+	prm_add("Color code mode", 0,
+		"@c Expert Sets the color code mode, 0=disabled, 1=enabled, 2=color codes only, 3=mixed (default 1)", INT8(1), END);
+	prm_add("Signature teach threshold", PRM_FLAG_SLIDER, 
+		"@c Expert @m 0 @M 10000 Determines how inclusive the growing algorithm is when teaching signatures with button-push method (default 2000)", INT32(2000), END);
+	prm_setShadowCallback("Signature teach threshold", (ShadowCallback)cc_teachThreshCallback);
 
 	prm_add("Max blocks", 0, 
-		"Sets the maximum total blocks sent per frame. (default 1000)", UINT16(1000), END);
+		"@c Blocks Sets the maximum total blocks sent per frame. (default 1000)", UINT16(1000), END);
 	prm_add("Max blocks per signature", 0, 
-		"Sets the maximum blocks for each color signature sent for each frame. (default 1000)", UINT16(1000), END);
+		"@c Blocks Sets the maximum blocks for each color signature sent for each frame. (default 1000)", UINT16(1000), END);
 	prm_add("Min block area", 0, 
-		"Sets the minimum required area in pixels for a block.  Blocks with less area won't be sent. (default 20)", UINT32(20), END);
-	prm_add("Color code mode", 0,
-		"Sets the color code mode, 0=disabled, 1=enabled, 2=color codes only, 3=mixed (default 1)", INT8(1), END);
+		"@c Blocks Sets the minimum required area in pixels for a block.  Blocks with less area won't be sent. (default 20)", UINT32(20), END);
 
 	// load
 	uint8_t ccMode;
 	uint16_t maxBlobs, maxBlobsPerModel;
-	uint32_t minArea;
+	uint32_t minArea, growDist;
 	float miny, ccGain;
 
 	prm_get("Max blocks", &maxBlobs, END);
@@ -203,9 +214,11 @@ void cc_loadParams(void)
 	prm_get("Color code mode", &ccMode, END);
 	prm_get("Min brightness", &miny, END);
 	prm_get("Color code gain", &ccGain, END);
+	prm_get("Signature teach threshold", &growDist, END);
 	g_blobs->setParams(maxBlobs, maxBlobsPerModel, minArea, (ColorCodeMode)ccMode);
 	g_blobs->m_clut.setMinBrightness(miny);
 	g_blobs->m_clut.setCCGain(ccGain);
+	g_blobs->m_clut.setGrowDist(growDist);
 	
 	cc_loadLut();
 }

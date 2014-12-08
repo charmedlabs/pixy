@@ -54,6 +54,7 @@ Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, MonParamete
     connect(this, SIGNAL(error(QString)), m_console, SLOT(error(QString)));
     connect(this, SIGNAL(enableConsole(bool)), m_console, SLOT(acceptInput(bool)));
     connect(this, SIGNAL(prompt(QString)), m_console, SLOT(prompt(QString)));
+    connect(this, SIGNAL(consoleCommand(QString)), m_console, SLOT(command(QString)));
     connect(this, SIGNAL(videoInput(VideoWidget::InputMode)), m_video, SLOT(acceptInput(VideoWidget::InputMode)));
     connect(m_video, SIGNAL(selection(int,int,int,int)), this, SLOT(handleSelection(int,int,int,int)));
 
@@ -492,8 +493,11 @@ void Interpreter::handlePendingCommand()
     case UPDATE_PARAM:
         handleUpdateParam();
         break;
-    }
 
+    case CLOSE:
+        emit runState(-1);
+        break;
+    }
 }
 
 
@@ -614,13 +618,6 @@ void Interpreter::run()
             {
                 if (m_argv.size())
                 {
-                    if (m_externalCommand!="") // print command to make things explicit and all pretty
-                    {
-                        if (!m_externalCommand.endsWith('\n'))
-                            m_externalCommand = m_externalCommand + '\n';
-                        emit textOut(PROMPT " " + m_externalCommand);
-                        m_externalCommand = "";
-                    }
                     if (m_argv[0]=="help")
                         handleHelp();
                     else
@@ -795,6 +792,8 @@ void Interpreter::command(const QString &command)
         runOrStopProgram(true);
         locker.relock();
     }
+    else if (words[0]=="close")
+        queueCommand(CLOSE);
     else
         handleCall(words);
 end:
@@ -838,12 +837,7 @@ void Interpreter::handleCall(const QStringList &argv)
 
 void Interpreter::execute(const QString &command)
 {
-    QStringList argv = command.split(QRegExp("[\\s(),\\t]"), QString::SkipEmptyParts);
-    unwait(); // unhang ourselves if we're waiting for input
-    m_mutexProg.lock();
-    m_argv = argv;
-    m_externalCommand = command; // save command so we can print.  This variable also indicates that we're not a human typing a command
-    m_mutexProg.unlock();
+    emit consoleCommand(command);
     if (m_running==true)
         queueCommand(STOP);
     if (m_localProgramRunning)

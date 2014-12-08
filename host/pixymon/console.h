@@ -41,6 +41,7 @@ public:
 
 public slots:
     void print(QString text, QColor color=CW_DEFAULT_COLOR);
+    void command(QString text);
     void error(QString text);
     void prompt(QString text);
     void prompt();

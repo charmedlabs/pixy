@@ -504,14 +504,24 @@ void CBlobAssembler::Reset() {
 void 
 CBlobAssembler::BlobNewRow(CBlob **ptr) 
 {
+    short left, top, right, bottom;
+
     while (*ptr) {
         CBlob *blob= *ptr;
         blob->NewRow();
         if (currentRow - blob->lastBottom.row > maxRowDelta) {
-            // Too many rows have elapsed.  Move it to the finished list.
-            *ptr= blob->next;
-            blob->next= finishedBlobs;
-            finishedBlobs= blob;
+            // Too many rows have elapsed.  Move it to the finished list
+            *ptr= blob->next; // cut out of current list
+            // check to see if it meets height and area constraints
+            blob->getBBox(left, top, right, bottom);
+            if (bottom-top>1) //&& blob->GetArea()>=MIN_COLOR_CODE_AREA)
+            {
+                // add to finished blobs
+                blob->next= finishedBlobs;
+                finishedBlobs= blob;
+            }
+            else
+                delete blob;
         } else {
             // Blob is valid
             return;

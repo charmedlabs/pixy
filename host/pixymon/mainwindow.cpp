@@ -229,7 +229,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
     }
 }
 
-void MainWindow::handleRunState(uint state)
+void MainWindow::handleRunState(int state)
 {
     updateButtons();
     if (state==true && m_initScript.size()>0 && !m_initScriptExecuted)
@@ -237,7 +237,18 @@ void MainWindow::handleRunState(uint state)
         m_interpreter->execute(m_initScript);
         m_initScriptExecuted = true;
     }
+    else if (state==-1 && m_interpreter)
+    {
+        if (m_configDialog)
+        {
+            m_configDialog->close();
+            m_configDialog = NULL;
+        }
+        DBG("closing interpreter");
+        m_interpreter->close();
+    }
 }
+
 
 void MainWindow::connectPixyDFU(bool state)
 {
@@ -311,7 +322,7 @@ void MainWindow::connectPixy(bool state)
                 m_interpreter = new Interpreter(m_console, m_video, &m_parameters);
 
                 m_initScriptExecuted = false; // reset so we'll execute for this instance
-                connect(m_interpreter, SIGNAL(runState(uint)), this, SLOT(handleRunState(uint)));
+                connect(m_interpreter, SIGNAL(runState(int)), this, SLOT(handleRunState(int)));
                 connect(m_interpreter, SIGNAL(finished()), this, SLOT(interpreterFinished()));
                 connect(m_interpreter, SIGNAL(connected(Device,bool)), this, SLOT(handleConnected(Device,bool)));
                 connect(m_interpreter, SIGNAL(actionScriptlet(QString,QStringList)), this, SLOT(handleActionScriptlet(QString,QStringList)));
