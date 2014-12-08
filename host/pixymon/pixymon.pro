@@ -27,7 +27,6 @@ SOURCES += main.cpp\
     ../../common/colorlut.cpp \
     ../../common/blob.cpp \
     ../../common/blobs.cpp \
-    processblobs.cpp \
     ../../common/qqueue.cpp \
     configdialog.cpp \
     aboutdialog.cpp \
@@ -38,9 +37,9 @@ SOURCES += main.cpp\
     cblobmodule.cpp \
     colorblob.cpp \
     monparameterdb.cpp \
-    blobs2.cpp \
     cccmodule.cpp \
-    debug.cpp
+    debug.cpp \
+    blobs2.cpp
 
 HEADERS  += mainwindow.h \
     videowidget.h \
@@ -63,7 +62,6 @@ HEADERS  += mainwindow.h \
     ../../common/blobs.h \
     ../../common/blob.h \
     ../../common/blobs.h \
-    processblobs.h \
     ../../common/qqueue.h \
     pixymon.h \
     configdialog.h \
@@ -77,11 +75,11 @@ HEADERS  += mainwindow.h \
     cblobmodule.h \
     colorblob.h \
     monparameterdb.h \
-    blobs2.h \
     simplevector.h \
     ../../common/simplevector.h \
     cccmodule.h \
-    debug.h
+    debug.h \
+    blobs2.h
 
 INCLUDEPATH += ../../common
 

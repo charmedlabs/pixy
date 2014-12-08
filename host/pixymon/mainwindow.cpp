@@ -443,7 +443,11 @@ void MainWindow::on_actionAbout_triggered()
 
     contents += "\nCMUCam5 Pixy and PixyMon are open hardware and open source software ";
     contents += "maintained by Charmed Labs and Carnegie Mellon University.\n\n";
-    contents += "Send problems, suggestions, etc. to cmucam@cs.cmu.edu";
+    contents += "CMUcam5 Pixy firmware and PixyMon software are provided under the GNU ";
+    contents += "General Public License, version 2. \"CMUcam\" is used under license from ";
+    contents += "Carnegie Mellon University.\n\n";
+    contents += "Please send problems, suggestions, etc. to support@charmedlabs.com. ";
+    contents += "Additional information can be found at charmedlabs.com/pixy.";
 
     about = new AboutDialog(contents);
     about->setAttribute(Qt::WA_DeleteOnClose);

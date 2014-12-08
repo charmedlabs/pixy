@@ -240,28 +240,6 @@ int cc_init(Chirp *chirp)
 	return 0;
 }
 
-void cc_setBounds(const uint8_t mode)
-{
-#ifdef DEFER
-	float minSat, hueTol, satTol;
-
-	if (mode==1)
-	{
-		prm_get("CC min saturation", &minSat, END);
-		prm_get("CC hue spread", &hueTol, END);
-		prm_get("CC saturation spread", &satTol, END);
-	}
-	else
-	{
-		prm_get("Min saturation", &minSat, END);
-		prm_get("Hue spread", &hueTol, END);
-		prm_get("Saturation spread", &satTol, END);
-	}
-
-   	g_blobs->m_clut->setBounds(minSat, hueTol, satTol); 
-#endif
-}
-
 // this routine assumes it can grab valid pixels in video memory described by the box
 int32_t cc_setSigRegion(const uint32_t &type, const uint8_t &signum, const uint16_t &xoffset, const uint16_t &yoffset, const uint16_t &width, const uint16_t &height)
 {
@@ -370,30 +348,9 @@ int32_t cc_getRLSFrameChirp(Chirp *chirp)
 	return cc_getRLSFrameChirpFlags(chirp);
 }
 
-#define LUT_SIZE  0x1000
-
 int32_t cc_getRLSFrameChirpFlags(Chirp *chirp, uint8_t renderFlags)
 {
 
-#if 0
-	int32_t result;
-	uint32_t len, numRls;
-
-	if (g_rawFrame.m_pixels)
-		cc_loadLut();
-
-	g_qqueue->flush();
-
-	// figure out prebuf length (we need the prebuf length and the number of runlength segments, but there's a chicken and egg problem...)
-	len = Chirp::serialize(chirp, RLS_MEMORY, RLS_MEMORY_SIZE,  HTYPE(0), UINT16(0), UINT16(0), UINTS32_NO_COPY(0), END);
-
-	result = cc_getRLSFrame((uint32_t *)(RLS_MEMORY+len), LUT_MEMORY);
-	// copy from IPC memory to RLS_MEMORY
-	numRls = g_qqueue->readAll((Qval *)(RLS_MEMORY+len), (RLS_MEMORY_SIZE-len)/sizeof(Qval));
-	Chirp::serialize(chirp, RLS_MEMORY, RLS_MEMORY_SIZE,  HTYPE(FOURCC('C','C','Q','1')), HINT8(renderFlags), UINT16(CAM_RES2_WIDTH), UINT16(CAM_RES2_HEIGHT), UINTS32_NO_COPY(numRls), END);
-	// send frame, use in-place buffer
-	chirp->useBuffer(RLS_MEMORY, len+numRls*4);
-#else
 #define MAX_NEW_QVALS_PER_LINE   ((CAM_RES2_WIDTH/3)+2)
 
 	int32_t result;
@@ -401,8 +358,8 @@ int32_t cc_getRLSFrameChirpFlags(Chirp *chirp, uint8_t renderFlags)
 	uint32_t len, memSize, numq;
 
 
-	lut = (uint8_t *)SRAM1_LOC + SRAM1_SIZE - LUT_SIZE;
-	scratchMem = (uint8_t *)SRAM1_LOC + SRAM1_SIZE - LUT_SIZE - 0x1000;  // 4K should be enough for scratch mem (320/3+2)*8 + 320*8 = 3424
+	lut = (uint8_t *)SRAM1_LOC + SRAM1_SIZE - CL_LUT_SIZE;
+	scratchMem = (uint8_t *)SRAM1_LOC + SRAM1_SIZE - CL_LUT_SIZE - 0x1000;  // 4K should be enough for scratch mem (320/3+2)*8 + 320*8 = 3424
 	mem = (uint8_t *)SRAM1_LOC;
 	memSize = (uint32_t)scratchMem-SRAM1_LOC;
 
@@ -417,8 +374,6 @@ int32_t cc_getRLSFrameChirpFlags(Chirp *chirp, uint8_t renderFlags)
 	Chirp::serialize(chirp, mem, memSize,  HTYPE(FOURCC('C','C','Q','2')), HINT8(renderFlags), UINT16(CAM_RES2_WIDTH), UINT16(CAM_RES2_HEIGHT), UINTS8_NO_COPY(numq*sizeof(Qval)), END);
 	// send frame, use in-place buffer
 	chirp->useBuffer((uint8_t *)mem, len+numq*sizeof(Qval));
-
-#endif
 
 	return result;
 }

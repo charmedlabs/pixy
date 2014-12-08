@@ -27,10 +27,6 @@
 #include <math.h>
 
 Renderer::Renderer(VideoWidget *video, Interpreter *interpreter) : MonModule(interpreter), m_background(0, 0)
-#ifdef DEFER
-    m_blobs(interpreter)
-#endif
-
 {
     m_video = video;
     m_interpreter = interpreter;
@@ -465,31 +461,6 @@ int Renderer::renderCCQ1(uint8_t renderFlags, uint16_t width, uint16_t height, u
     return 0;
 }
 
-int Renderer::renderCMV1(uint8_t renderFlags, uint32_t cmodelsLen, float *cmodels, uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame)
-{
-    int i;
-    uint32_t numBlobs, numCCBlobs;
-    BlobA *blobs;
-    BlobB *ccBlobs;
-    uint32_t numQvals;
-    uint32_t *qVals;
-
-#ifdef DEFER
-    if (cmodelsLen>=sizeof(ColorModel)*NUM_MODELS/sizeof(float)) // create lookup table
-    {
-        m_blobs.m_blobs->m_clut->clear();
-        for (i=0; i<NUM_MODELS; i++, cmodels+=sizeof(ColorModel)/sizeof(float))
-            m_blobs.m_blobs->m_clut->add((ColorModel *)cmodels, i+1);
-    }
-#endif
-    //m_blobs.process(Frame8(frame, width, height), &numBlobs, &blobs, &numCCBlobs, &ccBlobs, &numQvals, &qVals);
-
-    renderBA81(0, width, height, frameLen, frame);
-    renderCCQ1(0, width/2, height/2, numQvals, qVals);
-    renderCCB2(RENDER_FLAG_FLUSH, width/2, height/2, numBlobs*sizeof(BlobA)/sizeof(uint16_t), (uint16_t *)blobs, numCCBlobs*sizeof(BlobB)/sizeof(uint16_t), (uint16_t *)ccBlobs);
-
-    return 0;
-}
 
 int Renderer::renderBLT1(uint8_t renderFlags, uint16_t width, uint16_t height,
                uint16_t blockWidth, uint16_t blockHeight, uint32_t numPoints, uint16_t *points)

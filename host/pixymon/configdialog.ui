@@ -6,12 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>444</width>
-    <height>211</height>
+    <width>589</width>
+    <height>305</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Configure Parameters</string>
+   <string>Configure</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_2">
    <item row="1" column="0">

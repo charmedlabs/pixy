@@ -869,52 +869,6 @@ uint32_t rgData[] =
 
 int32_t getRLSFrame(uint32_t *m0Mem, uint32_t *lut)
 {
-#ifndef NEWLINE 
-	uint8_t *lut2 = (uint8_t *)*lut;
-	Qval *qvalStore = (Qval *)*m0Mem;
-	uint32_t line;
-	uint32_t numQvals;
-	uint32_t totalQvals;
-	uint8_t *lineStore;
-	uint8_t *logLut;
-
-	lineStore = (uint8_t *)(qvalStore + MAX_QVALS_PER_LINE);
-	logLut = lineStore + CAM_RES2_WIDTH + 4;
-	// m0mem needs to be at least 64*4 + CAM_RES2_WIDTH*2 + 4 =	900 ~ 1024
-
-	if (g_logLut!=logLut)
-	{
-		g_logLut = logLut; 
-	 	createLogLut();
-	}
-
-	// don't even attempt to grab lines if we're lacking space...
-	if (qq_free()<MAX_QVALS_PER_LINE)
-		return -1; 
-
-	// indicate start of frame
-	qq_enqueue(0xffffffff); 
-	skipLines(0);
-	for (line=0, totalQvals=1; line<CAM_RES2_HEIGHT; line++)  // start totalQvals at 1 because of start of frame value
-	{
-		// not enough space--- return error
-		if (qq_free()<MAX_QVALS_PER_LINE)
-			return -1; 
-		// mark beginning of this row (column 0 = 0)
-		// column 1 is the first real column of pixels
-		qq_enqueue(0); 
-		lineProcessedRL0A((uint32_t *)&CAM_PORT, lineStore, CAM_RES2_WIDTH); 
-		numQvals = lineProcessedRL1A((uint32_t *)&CAM_PORT, qvalStore, lut2, lineStore, CAM_RES2_WIDTH, g_logLut, g_qqueue->data, g_qqueue->writeIndex, QQ_MEM_SIZE);
-		// modify qq to reflect added data
-		g_qqueue->writeIndex += numQvals;
-		if (g_qqueue->writeIndex>=QQ_MEM_SIZE)
-			g_qqueue->writeIndex -= QQ_MEM_SIZE;
-		g_qqueue->produced += numQvals;
-		totalQvals += numQvals+1; // +1 because of beginning of line 
-	}
-	return 0;
-
-#else
 #define MAX_NEW_QVALS_PER_LINE   ((CAM_RES2_WIDTH/3)+2)
 
 	uint8_t *lut2 = (uint8_t *)*lut;
@@ -951,7 +905,6 @@ int32_t getRLSFrame(uint32_t *m0Mem, uint32_t *lut)
 	qq_enqueue(&frameEnd);
 
 	return 0;
-#endif
 }
 
 int rls_init(void)

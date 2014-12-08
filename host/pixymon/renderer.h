@@ -51,7 +51,6 @@ public:
     int renderBA81(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame);
     int renderCCB1(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t numBlobs, uint16_t *blobs);
     int renderCCB2(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t numBlobs, uint16_t *blobs, uint32_t numCCBlobs, uint16_t *ccBlobs);
-    int renderCMV1(uint8_t renderFlags, uint32_t cmodelsLen, float *cmodels, uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame);
     int renderBLT1(uint8_t renderFlags, uint16_t width, uint16_t height,
                    uint16_t blockWidth, uint16_t blockHeight, uint32_t numPoints, uint16_t *points);
 
@@ -64,11 +63,7 @@ public:
     void pixelsOut(int x0, int y0, int width, int height);
     void renderRL(QImage *image, uint color, uint row, uint startCol, uint len);
 
-
     Frame8 m_rawFrame;
-#ifdef DEFER
-    ProcessBlobs m_blobs;
-#endif
 
 signals:
     void image(QImage image, uchar renderFlags);
