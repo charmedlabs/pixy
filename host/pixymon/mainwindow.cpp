@@ -438,16 +438,15 @@ void MainWindow::on_actionAbout_triggered()
         QString fwver;
         uint16_t *version;
         version = m_interpreter->getVersion();
-        contents += fwver.sprintf("Pixy firmware version (queried) %d.%d.%d\n", version[0], version[1], version[2]);
+        contents += fwver.sprintf("Pixy firmware version %d.%d.%d (queried)\n", version[0], version[1], version[2]);
     }
 
     contents += "\nCMUCam5 Pixy and PixyMon are open hardware and open source software ";
     contents += "maintained by Charmed Labs and Carnegie Mellon University.\n\n";
-    contents += "CMUcam5 Pixy firmware and PixyMon software are provided under the GNU ";
-    contents += "General Public License, version 2. \"CMUcam\" is used under license from ";
-    contents += "Carnegie Mellon University.\n\n";
-    contents += "Please send problems, suggestions, etc. to support@charmedlabs.com. ";
-    contents += "Additional information can be found at charmedlabs.com/pixy.";
+    contents += "Pixy firmware and PixyMon software are provided here under the GNU ";
+    contents += "General Public License. Source code can be found at github.com/charmedlabs/pixy.\n\n";
+    contents += "Please send problems, suggestions, inquiries and/or witticisms to support@charmedlabs.com. ";
+    contents += "Additional information can be found at charmedlabs.com/pixy. Thank you!";
 
     about = new AboutDialog(contents);
     about->setAttribute(Qt::WA_DeleteOnClose);

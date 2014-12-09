@@ -66,9 +66,29 @@ bool CccModule::command(const QStringList &argv)
 
 void CccModule::paramChange()
 {
+    int i;
     QVariant val;
     bool relut = false;
+    uint32_t palette[CL_NUM_SIGNATURES];
+    char id[128];
+    uint32_t sigLen;
+    uint8_t *sigData;
+    QByteArray ba;
 
+    for (i=0; i<CL_NUM_SIGNATURES; i++)
+    {
+        sprintf(id, "signature%d", i+1);
+        if (pixyParameterChanged(id, &val))
+        {
+            ba = val.toByteArray();
+            Chirp::deserialize((uint8_t *)ba.data(), val.toByteArray().size(), &sigLen, &sigData, END);
+            if (sigLen==sizeof(ColorSignature))
+            {
+                memcpy(m_blobs->m_clut.m_signatures+i, sigData, sizeof(ColorSignature));
+                relut = true;
+            }
+        }
+    }
     if (pixyParameterChanged("Signature 1 range", &val))
     {
         m_blobs->m_clut.setSigRange(1, val.toFloat());
@@ -116,7 +136,13 @@ void CccModule::paramChange()
     }
 
     if (relut)
+    {
         m_blobs->m_clut.generateLUT();
+        for (i=0; i<CL_NUM_SIGNATURES; i++)
+            palette[i] = m_blobs->m_clut.getColor(i+1);
+        m_renderer->setPalette(palette);
+    }
+
 
     uint16_t maxBlobs, maxBlobsPerSig;
     uint32_t minArea;
@@ -226,7 +252,7 @@ int CccModule::renderCMV2(uint8_t renderFlags, uint32_t sigLen, uint8_t *sigs, u
     // create checksum for color signatures
     crc = Chirp::calcCrc(sigs, sigLen);
 
-    if (crc!=m_crc)
+    if (0) //crc!=m_crc)
     { // update!
         m_crc = crc;
         memcpy(m_blobs->m_clut.m_signatures, sigs, sizeof(ColorLUT::m_signatures));

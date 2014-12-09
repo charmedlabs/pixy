@@ -101,6 +101,7 @@ public:
 	void setGrowDist(uint32_t dist);
     void setCCGain(float gain);
     uint32_t getType(uint8_t signum);
+    uint32_t getColor(uint8_t signum);
 
     // these should be in little access methods, but they're here to speed things up a tad
     ColorSignature m_signatures[CL_NUM_SIGNATURES];

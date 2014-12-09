@@ -192,7 +192,7 @@ void cc_loadParams(void)
 	prm_add("Color code mode", 0,
 		"@c Expert Sets the color code mode, 0=disabled, 1=enabled, 2=color codes only, 3=mixed (default 1)", INT8(1), END);
 	prm_add("Signature teach threshold", PRM_FLAG_SLIDER, 
-		"@c Expert @m 0 @M 10000 Determines how inclusive the growing algorithm is when teaching signatures with button-push method (default 2000)", INT32(2000), END);
+		"@c Expert @m 0 @M 10000 Determines how inclusive the growing algorithm is when teaching signatures with button-push method (default 3000)", INT32(3000), END);
 	prm_setShadowCallback("Signature teach threshold", (ShadowCallback)cc_teachThreshCallback);
 
 	prm_add("Max blocks", 0, 

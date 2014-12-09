@@ -295,6 +295,9 @@ int ColorLUT::generateLUT()
 
     clearLUT();
 
+    // recalc bounds for each signature
+    for (r=0; r<CL_NUM_SIGNATURES; r++)
+        updateSignature(r);
 
     for (r=0; r<1<<8; r+=1<<(8-CL_LUT_COMPONENT_SCALE))
     {
@@ -332,10 +335,6 @@ int ColorLUT::generateLUT()
             }
         }
     }
-
-    // recalc bounds for each signature
-    for (r=0; r<CL_NUM_SIGNATURES; r++)
-        updateSignature(r);
 
     return 0;
 }
@@ -547,5 +546,74 @@ uint32_t ColorLUT::getType(uint8_t signum)
         return 0;
 
     return m_signatures[signum-1].m_type;
+}
+
+
+uint32_t ColorLUT::getColor(uint8_t signum)
+{
+    int32_t r, g, b, max, u, v;
+
+    if (signum<1 || signum>CL_NUM_SIGNATURES)
+        return 0;
+
+    u = m_signatures[signum-1].m_uMean;
+    v = m_signatures[signum-1].m_vMean;
+
+    // u = r-g
+    // v = b-g
+    if (abs(u)>abs(v))
+    {
+        if (u>0)
+        {
+            r = u;
+            if (v>0)
+                g = 0;
+            else
+                g = -v;
+            b = v+g;
+        }
+        else
+        {
+            g = -u;
+            r = 0;
+            b = v+g;
+        }
+    }
+    else
+    {
+        if (v>0)
+        {
+            b = v;
+            if (u>0)
+                g = 0;
+            else
+                g = -u;
+            r = u+g;
+        }
+        else
+        {
+            g = -v;
+            b = 0;
+            r = u+g;
+        }
+    }
+
+    if (r>g)
+        max = r;
+    else
+        max = g;
+    if (b>max)
+        max = b;
+
+    // normalize
+    if (max>0)
+    {
+        r = (float)r/max*255;
+        g = (float)g/max*255;
+        b = (float)b/max*255;
+        return (r<<16) | (g<<8) | b;
+    }
+    else
+        return 0;
 }
 

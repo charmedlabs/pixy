@@ -26,6 +26,17 @@
 #include "calc.h"
 #include <math.h>
 
+const uint32_t Renderer::m_defaultPalette[PALETTE_SIZE] =
+{
+    0x00ff0000, // 1 red
+    0x00ff4000, // 2 orange
+    0x00ffff00, // 3 yellow
+    0x0000ff00, // 4 green
+    0x0000ffff, // 5 cyan
+    0x000000ff, // 6 blue
+    0x00ff00ff  // 7 violet
+};
+
 Renderer::Renderer(VideoWidget *video, Interpreter *interpreter) : MonModule(interpreter), m_background(0, 0)
 {
     m_video = video;
@@ -35,6 +46,7 @@ Renderer::Renderer(VideoWidget *video, Interpreter *interpreter) : MonModule(int
     m_rawFrame.m_height = 0;
     m_rawFrame.m_width = 0;
     m_highlightOverexp = true;
+    m_paletteSet = false;
 
     m_interpreter->m_pixymonParameters->addCheckbox("Highlight overexposure", true,
         "Highlighting overexposure will overlay black pixels ontop of overexposed pixels in raw and cooked modes");
@@ -270,7 +282,7 @@ void Renderer::renderRect(const RectA &rect)
     emit image(img, RENDER_FLAG_BLEND | RENDER_FLAG_FLUSH);
 }
 
-void Renderer::renderBlobsB(QImage *image, float scale, BlobB *blobs, uint32_t numBlobs)
+void Renderer::renderBlobsB(bool blend, QImage *image, float scale, BlobB *blobs, uint32_t numBlobs)
 {
     QPainter p;
     QString str, modelStr;
@@ -315,7 +327,7 @@ void Renderer::renderBlobsB(QImage *image, float scale, BlobB *blobs, uint32_t n
     p.end();
 }
 
-void Renderer::renderBlobsA(QImage *image, float scale, BlobA *blobs, uint32_t numBlobs)
+void Renderer::renderBlobsA(bool blend, QImage *image, float scale, BlobA *blobs, uint32_t numBlobs)
 {
     QPainter p;
     QString str;
@@ -323,7 +335,8 @@ void Renderer::renderBlobsA(QImage *image, float scale, BlobA *blobs, uint32_t n
     uint i;
 
     p.begin(image);
-    p.setBrush(QBrush(QColor(0xff, 0xff, 0xff, 0x20)));
+    if (blend)
+        p.setBrush(QBrush(QColor(0xff, 0xff, 0xff, 0x20)));
     p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
 
 #ifdef __MACOS__
@@ -340,6 +353,8 @@ void Renderer::renderBlobsA(QImage *image, float scale, BlobA *blobs, uint32_t n
         bottom = scale*blobs[i].m_bottom;
 
         //DBG("%d %d %d %d", left, right, top, bottom);
+        if (!blend && m_paletteSet)
+            p.setBrush(QBrush(QRgb(m_palette[blobs[i].m_model-1])));
         p.drawRect(left, top, right-left, bottom-top);
         if (blobs[i].m_model)
         {
@@ -360,10 +375,9 @@ void Renderer::renderBlobsA(QImage *image, float scale, BlobA *blobs, uint32_t n
 }
 
 int Renderer::renderCCB2(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t numBlobs, uint16_t *blobs, uint32_t numCCBlobs, uint16_t *ccBlobs)
-{
+{    
     float scale = (float)m_video->activeWidth()/width;
     QImage img(width*scale, height*scale, QImage::Format_ARGB32);
-
 
     if (renderFlags&RENDER_FLAG_BLEND) // if we're blending, we should be transparent
         img.fill(0x00000000);
@@ -372,8 +386,8 @@ int Renderer::renderCCB2(uint8_t renderFlags, uint16_t width, uint16_t height, u
 
     numBlobs /= sizeof(BlobA)/sizeof(uint16_t);
     numCCBlobs /= sizeof(BlobB)/sizeof(uint16_t);
-    renderBlobsA(&img, scale, (BlobA *)blobs, numBlobs);
-    renderBlobsB(&img, scale, (BlobB *)ccBlobs, numCCBlobs);
+    renderBlobsA(renderFlags&RENDER_FLAG_BLEND, &img, scale, (BlobA *)blobs, numBlobs);
+    renderBlobsB(renderFlags&RENDER_FLAG_BLEND, &img, scale, (BlobB *)ccBlobs, numCCBlobs);
 
     emit image(img, renderFlags);
 
@@ -391,7 +405,7 @@ int Renderer::renderCCB1(uint8_t renderFlags, uint16_t width, uint16_t height, u
         img.fill(0xff000000); // otherwise, we're just black
 
     numBlobs /= sizeof(BlobA)/sizeof(uint16_t);
-    renderBlobsA(&img, scale, (BlobA *)blobs, numBlobs);
+    renderBlobsA(renderFlags&RENDER_FLAG_BLEND, &img, scale, (BlobA *)blobs, numBlobs);
 
     emit image(img, renderFlags);
 
@@ -417,22 +431,25 @@ int Renderer::renderCCQ1(uint8_t renderFlags, uint16_t width, uint16_t height, u
     uint32_t i, startCol, length;
     uint8_t model;
     QImage img(width, height, QImage::Format_ARGB32);
-    unsigned int palette[] =
-    {0x00000000, // 0 no model (transparent)
-     0x80ff0000, // 1 red
-     0x80ff4000, // 2 orange
-     0x80ffff00, // 3 yellow
-     0x8000ff00, // 4 green
-     0x8000ffff, // 5 cyan
-     0x800000ff, // 6 blue
-     0x80ff00ff  // 7 violet
-    };
+    uint32_t palette[PALETTE_SIZE+1];
 
-    // if we're not blending, set alpha to 1.0
-    if (!(renderFlags&RENDER_FLAG_BLEND))
+    palette[0] = 0;  // zero signature is transparent -- don't render anything
+    for (i=0; i<PALETTE_SIZE; i++)
     {
-        for (i=0; i<sizeof(palette)/sizeof(unsigned int); i++)
-            palette[i] |= 0xff000000;
+        if (m_paletteSet)
+        {
+            if (renderFlags&RENDER_FLAG_BLEND)
+                palette[i+1] = lighten(m_palette[i], 0x80) | 0x80000000; // lighten the color for contrast
+            else
+                palette[i+1] = m_palette[i] | 0xff000000;
+        }
+        else
+        {
+            if (renderFlags&RENDER_FLAG_BLEND)
+                palette[i+1] = m_defaultPalette[i] | 0x80000000;
+            else
+                palette[i+1] = m_defaultPalette[i] | 0xff000000;
+        }
     }
 
     // q val:
@@ -588,5 +605,45 @@ Frame8 *Renderer::backgroundRaw()
     return &m_rawFrame;
 }
 
+void Renderer::setPalette(const uint32_t palette[])
+{
+    int i;
+    for (i=0; i<PALETTE_SIZE; i++)
+        m_palette[i] = palette[i];
+
+    m_paletteSet = true;
+}
+
+uint32_t *Renderer::getPalette()
+{
+    if (m_paletteSet)
+        return m_palette;
+    else
+        return NULL;
+}
+
+uint32_t Renderer::lighten(uint32_t color, uint8_t factor)
+{
+    uint32_t r, g, b;
+
+    b = color&0xff;
+    color >>= 8;
+    g = color&0xff;
+    color >>= 8;
+    r = color&0xff;
+
+    r += factor;
+    g += factor;
+    b += factor;
+
+    if (r>0xff)
+        r = 0xff;
+    if (g>0xff)
+        g = 0xff;
+    if (b>0xff)
+        b = 0xff;
+
+    return (r<<16) | (g<<8) | b;
+}
 
 

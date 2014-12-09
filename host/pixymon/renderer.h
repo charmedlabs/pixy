@@ -26,6 +26,7 @@
 typedef SimpleVector<Point16> Points;
 
 #define RAWFRAME_SIZE    0x10000
+#define PALETTE_SIZE     7
 
 class Interpreter;
 
@@ -54,14 +55,18 @@ public:
     int renderBLT1(uint8_t renderFlags, uint16_t width, uint16_t height,
                    uint16_t blockWidth, uint16_t blockHeight, uint32_t numPoints, uint16_t *points);
 
-    void renderBlobsB(QImage *image, float scale, BlobB *blobs, uint32_t numBlobs);
-    void renderBlobsA(QImage *image, float scale, BlobA *blobs, uint32_t numBlobs);
+    void renderBlobsB(bool blend, QImage *image, float scale, BlobB *blobs, uint32_t numBlobs);
+    void renderBlobsA(bool blend, QImage *image, float scale, BlobA *blobs, uint32_t numBlobs);
 
     void renderRects(const Points &points, uint32_t size);
     void renderRect(const RectA &rect);
     int saveImage(const QString &filename);
     void pixelsOut(int x0, int y0, int width, int height);
     void renderRL(QImage *image, uint color, uint row, uint startCol, uint len);
+    void setPalette(const uint32_t palette[]);
+    uint32_t *getPalette();
+    static uint32_t lighten(uint32_t color, uint8_t factor);
+
 
     Frame8 m_rawFrame;
 
@@ -74,6 +79,9 @@ private:
     VideoWidget *m_video;
     Interpreter *m_interpreter;
     QImage m_background;
+    bool m_paletteSet;
+    uint32_t m_palette[PALETTE_SIZE];
+    static const unsigned int m_defaultPalette[PALETTE_SIZE];
 
     bool m_highlightOverexp;
 };
