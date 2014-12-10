@@ -241,7 +241,7 @@ int cc_init(Chirp *chirp)
 }
 
 // this routine assumes it can grab valid pixels in video memory described by the box
-int32_t cc_setSigRegion(const uint32_t &type, const uint8_t &signum, const uint16_t &xoffset, const uint16_t &yoffset, const uint16_t &width, const uint16_t &height)
+int32_t cc_setSigRegion(const uint32_t &type, const uint8_t &signum, const uint16_t &xoffset, const uint16_t &yoffset, const uint16_t &width, const uint16_t &height, Chirp *chirp)
 {
 	char id[32];
 	ColorSignature *sig;
@@ -264,8 +264,9 @@ int32_t cc_setSigRegion(const uint32_t &type, const uint8_t &signum, const uint1
 	sprintf(id, "signature%d", signum);
 	prm_set(id, INTS8(sizeof(ColorSignature), sig), END);
 
-	cprintf("Success!\n");
+	cprintf("Signature set!\n");
 
+    exec_sendEvent(chirp, EVT_PARAM_CHANGE);
 	return 0;
 }
 
@@ -295,12 +296,13 @@ int32_t cc_setSigPoint(const uint32_t &type, const uint8_t &signum, const uint16
 	sprintf(id, "signature%d", signum);
 	prm_set(id, INTS8(sizeof(ColorSignature), sig), END);
 
-	cprintf("Success!\n");
+	cprintf("Signature set!\n");
 
+    exec_sendEvent(chirp, EVT_PARAM_CHANGE);
 	return 0;
 }
 
-int32_t cc_clearSig(const uint8_t &signum)
+int32_t cc_clearSig(const uint8_t &signum, Chirp *chirp)
 {
 	char id[32];
 	ColorSignature sig;
@@ -317,10 +319,12 @@ int32_t cc_clearSig(const uint8_t &signum)
 	// update lut
  	cc_loadLut();
 
+    exec_sendEvent(chirp, EVT_PARAM_CHANGE);
+
 	return res;
 }
 
-int32_t cc_clearAllSig()
+int32_t cc_clearAllSig(Chirp *chirp)
 {
 	char id[32];
 	uint8_t signum;
@@ -339,6 +343,9 @@ int32_t cc_clearAllSig()
 
 	// update lut
  	cc_loadLut();
+
+    exec_sendEvent(chirp, EVT_PARAM_CHANGE);
+
 	return 0;
 }
 

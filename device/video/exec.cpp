@@ -512,3 +512,9 @@ void exec_resume()
 	exec_runM0(g_progM0);
 }
 
+void exec_sendEvent(Chirp *chirp, uint32_t event)
+{
+	if (chirp)
+		CRP_SEND_XDATA(chirp, HTYPE(FOURCC('E','V','T','1')), INT32(event));
+}
+

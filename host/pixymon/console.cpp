@@ -59,6 +59,8 @@ void ConsoleWidget::handleColor(const QColor &color)
 
 void ConsoleWidget::print(QString text, QColor color)
 {
+    if (text=="")
+        return;
     m_histIndex = -1;
     moveCursor(QTextCursor::End);
 #if 0

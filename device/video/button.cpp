@@ -22,6 +22,7 @@
 #include "misc.h"
 #include "colorlut.h"
 #include "conncomp.h"
+#include "exec.h"
 
 #define BT_CENTER_SIZE   6
 
@@ -189,6 +190,7 @@ void ButtonMachine::setSignature()
 	res = cc_setSigPoint(0, m_index, CAM_RES2_WIDTH/2, CAM_RES2_HEIGHT/2);
 	if (res<0)
 		return;
+	exec_sendEvent(g_chirpUsb, EVT_PARAM_CHANGE);
 	flashLED(4); 
 }
 

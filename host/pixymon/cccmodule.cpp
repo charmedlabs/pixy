@@ -75,6 +75,7 @@ void CccModule::paramChange()
     uint8_t *sigData;
     QByteArray ba;
 
+    // check to see if any signatures have changed
     for (i=0; i<CL_NUM_SIGNATURES; i++)
     {
         sprintf(id, "signature%d", i+1);
@@ -142,7 +143,6 @@ void CccModule::paramChange()
             palette[i] = m_blobs->m_clut.getColor(i+1);
         m_renderer->setPalette(palette);
     }
-
 
     uint16_t maxBlobs, maxBlobsPerSig;
     uint32_t minArea;
@@ -243,30 +243,16 @@ void CccModule::rls(const Frame8 *frame)
 
 int CccModule::renderCMV2(uint8_t renderFlags, uint32_t sigLen, uint8_t *sigs, uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame)
 {
-    int i;
-    uint32_t crc, numBlobs, numCCBlobs;
+    uint32_t numBlobs, numCCBlobs;
     BlobA *blobs;
     BlobB *ccBlobs;
     uint32_t numQvals, *qVals;
-
-    // create checksum for color signatures
-    crc = Chirp::calcCrc(sigs, sigLen);
-
-    if (0) //crc!=m_crc)
-    { // update!
-        m_crc = crc;
-        memcpy(m_blobs->m_clut.m_signatures, sigs, sizeof(ColorLUT::m_signatures));
-        for (i=1; i<=CL_NUM_SIGNATURES; i++)
-            m_blobs->m_clut.updateSignature(i);
-        m_blobs->m_clut.generateLUT();
-    }
 
     Frame8 rawFrame(frame, width, height);
     rls(&rawFrame);
     m_blobs->blobify();
     m_blobs->getBlobs(&blobs, &numBlobs, &ccBlobs, &numCCBlobs);
     m_blobs->getRunlengths(&qVals, &numQvals);
-
 
     // render different layers...
     // starting with the background

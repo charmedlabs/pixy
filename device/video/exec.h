@@ -60,6 +60,7 @@ int32_t exec_list();
 int32_t exec_version(Chirp *chirp=NULL);
 int32_t exec_getAction(const uint16_t &index, Chirp *chirp=NULL);
 void exec_loadParams();
+void exec_sendEvent(Chirp *chirp, uint32_t event);
 
 uint8_t exec_pause();
 void exec_resume();

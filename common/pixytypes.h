@@ -31,6 +31,9 @@
 #define PRM_FLAG_CHECKBOX            0x00000200
 #define PRM_FLAG_PATH                0x00000400
 
+// events
+#define EVT_PARAM_CHANGE             1
+
 struct Point16
 {
     Point16()

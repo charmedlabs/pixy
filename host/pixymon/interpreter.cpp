@@ -312,12 +312,22 @@ void Interpreter::handleData(const void *args[])
         type = Chirp::getType(args[0]);
         if (type==CRP_TYPE_HINT)
         {
-            m_print += printType(*(uint32_t *)args[0]) + " frame data\n";
-            // check modules, see if they handle the fourcc
-            for (i=0; i<m_modules.size(); i++)
+            if (g_debug)
+                m_print += printType(*(uint32_t *)args[0]) + " data\n";
+            if (*(uint32_t *)args[0]==FOURCC('E','V','T','1'))
             {
-                if (m_modules[i]->render(*(uint32_t *)args[0], args+1))
-                    break;
+                uint32_t event = *(uint32_t *)args[1];
+                if (event==EVT_PARAM_CHANGE)
+                    loadParams();
+            }
+            else
+            {
+                // check modules, see if they handle the fourcc
+                for (i=0; i<m_modules.size(); i++)
+                {
+                    if (m_modules[i]->render(*(uint32_t *)args[0], args+1))
+                        break;
+                }
             }
         }
         else if (type==CRP_HSTRING)
@@ -328,8 +338,8 @@ void Interpreter::handleData(const void *args[])
         else
             DBG("unknown type: %d", type);
     }
-    if (m_print.right(1)!="\n")
-        m_print += "\n";
+    if (m_print.size()>0 && !m_print.endsWith('\n'))
+        m_print += '\n';
 
 
     // wait queue business keeps worker thread from getting too far ahead of gui thread
@@ -345,8 +355,11 @@ void Interpreter::handleData(const void *args[])
     if (m_localProgramRunning || m_running)
         m_console->m_mutexPrint.lock();
 #endif
-    emit textOut(m_print, color);
-    m_print = "";
+    if (m_print.size()>0)
+    {
+        emit textOut(m_print, color);
+        m_print = "";
+    }
 #if 0
     if (m_localProgramRunning || m_running)
     {
