@@ -19,6 +19,7 @@
 #include "blobs.h"
 #include "qqueue.h"
 #include "colorlut.h"
+#include "calc.h"
 
 // declare module
 MON_MODULE(CccModule);
@@ -140,7 +141,7 @@ void CccModule::paramChange()
     {
         m_blobs->m_clut.generateLUT();
         for (i=0; i<CL_NUM_SIGNATURES; i++)
-            palette[i] = m_blobs->m_clut.getColor(i+1);
+            palette[i] = m_blobs->m_clut.m_signatures[i].m_rgb;
         m_renderer->setPalette(palette);
     }
 

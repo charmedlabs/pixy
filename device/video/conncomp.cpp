@@ -192,7 +192,7 @@ void cc_loadParams(void)
 	prm_add("Color code mode", 0,
 		"@c Expert Sets the color code mode, 0=disabled, 1=enabled, 2=color codes only, 3=mixed (default 1)", INT8(1), END);
 	prm_add("Signature teach threshold", PRM_FLAG_SLIDER, 
-		"@c Expert @m 0 @M 10000 Determines how inclusive the growing algorithm is when teaching signatures with button-push method (default 3000)", INT32(3000), END);
+		"@c Expert @m 0 @M 10000 Determines how inclusive the growing algorithm is when teaching signatures with button-push method (default 2500)", INT32(2500), END);
 	prm_setShadowCallback("Signature teach threshold", (ShadowCallback)cc_teachThreshCallback);
 
 	prm_add("Max blocks", 0, 
@@ -245,7 +245,7 @@ int32_t cc_setSigRegion(const uint32_t &type, const uint8_t &signum, const uint1
 {
 	char id[32];
 	ColorSignature *sig;
-
+	RectA region(xoffset, yoffset, width, height);
 	if (signum<1 || signum>CL_NUM_SIGNATURES)
 		return -1;
 
@@ -256,9 +256,24 @@ int32_t cc_setSigRegion(const uint32_t &type, const uint8_t &signum, const uint1
 	}
 
 	// create lut
-	g_blobs->m_clut.generateSignature(g_rawFrame, RectA(xoffset, yoffset, width, height), signum);
+	g_blobs->m_clut.generateSignature(g_rawFrame, region, signum);
 	sig = g_blobs->m_clut.getSignature(signum);
 	sig->m_type = type;
+
+	// find average RGB value
+	IterPixel ip(g_rawFrame, region);
+	RGBPixel rgb;
+	uint32_t r, g, b, n;
+	for (r=g=b=n=0; ip.next(NULL, &rgb); n++)
+	{
+		r += rgb.m_r;
+		g += rgb.m_g;
+		b += rgb.m_b;		
+	}
+	r /= n;
+	g /= n;
+	b /= n;
+	sig->m_rgb = (r<<16) | (g<<8) | b;
 
 	// save to flash
 	sprintf(id, "signature%d", signum);
@@ -289,6 +304,21 @@ int32_t cc_setSigPoint(const uint32_t &type, const uint8_t &signum, const uint16
 	g_blobs->m_clut.generateSignature(g_rawFrame, Point16(x, y), &points, signum);
 	sig = g_blobs->m_clut.getSignature(signum);
 	sig->m_type = type;
+
+	// find average RGB value
+	IterPixel ip(g_rawFrame, &points);
+	RGBPixel rgb;
+	uint32_t r, g, b, n;
+	for (r=g=b=n=0; ip.next(NULL, &rgb); n++)
+	{
+		r += rgb.m_r;
+		g += rgb.m_g;
+		b += rgb.m_b;		
+	}
+	r /= n;
+	g /= n;
+	b /= n;
+	sig->m_rgb = (r<<16) | (g<<8) | b;
 
 	cc_sendPoints(points, CL_GROW_INC, CL_GROW_INC, chirp);
 

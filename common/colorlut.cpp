@@ -548,7 +548,7 @@ uint32_t ColorLUT::getType(uint8_t signum)
     return m_signatures[signum-1].m_type;
 }
 
-
+#if 0
 uint32_t ColorLUT::getColor(uint8_t signum)
 {
     int32_t r, g, b, max, u, v;
@@ -616,4 +616,4 @@ uint32_t ColorLUT::getColor(uint8_t signum)
     else
         return 0;
 }
-
+#endif

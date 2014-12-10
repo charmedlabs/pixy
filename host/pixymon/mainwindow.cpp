@@ -442,15 +442,19 @@ void MainWindow::on_actionAbout_triggered()
     }
 
     contents +=
-            "<br>CMUCam5 Pixy and PixyMon are open hardware and open source software "
-            "maintained by Charmed Labs and Carnegie Mellon University.<br><br>"
-            "Pixy firmware and PixyMon software are provided here under the GNU "
-            "General Public License. Source code can be found at "
+            "<br>The latest version of PixyMon and Pixy firmware can be downloaded "
+            "<a href=\"http://charmedlabs.com/pixydownload\">here</a>.<br><br>"
+            "CMUCam5 Pixy and PixyMon are open hardware and open source software "
+            "maintained by Charmed Labs and Carnegie Mellon University. "
+            "All software and firmware is provided under the GNU "
+            "General Public License. Complete source code is available at "
             "<a href=\"http://charmedlabs.com/pixysource\">github.com</a>.<br><br>"
-            "Please send problems, suggestions, ideas, inquiries and/or funny anecdotes "
+            "Please send problems, suggestions, ideas, inquiries and feedback, positive or negative, "
+            "although we do love to hear the positive stuff, "
             "to <a href=\"mailto:support@charmedlabs.com\">support@charmedlabs.com</a>. "
             "Additional information can be found <a href=\"http://charmedlabs.com/pixy\">here</a> "
-            "and <a href=\"http://charmedlabs.com/pixywiki\">here</a>. Thanks for supporting our little Pixy!";
+            "and <a href=\"http://charmedlabs.com/pixywiki\">here</a>.<br><br>"
+            "Thanks for supporting our little Pixy!";
 
     about = new AboutDialog(contents);
     about->setAttribute(Qt::WA_DeleteOnClose);

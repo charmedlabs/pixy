@@ -227,7 +227,7 @@ int Renderer::renderBA81(uint8_t renderFlags, uint16_t width, uint16_t height, u
         for (x=1; x<width-1; x++, frame++)
         {
             interpolateBayer(width, x, y, frame, r, g, b);
-            if (m_highlightOverexp && (r==255 || g==255 || b==255))
+            if (m_highlightOverexp && (r==0xff || g==0xff || b==0xff))
                 *line++ = (0xff<<24); // | 0xff0000;
             else
                 *line++ = (0xff<<24) | (r<<16) | (g<<8) | (b<<0);
@@ -439,7 +439,7 @@ int Renderer::renderCCQ1(uint8_t renderFlags, uint16_t width, uint16_t height, u
         if (m_paletteSet)
         {
             if (renderFlags&RENDER_FLAG_BLEND)
-                palette[i+1] = lighten(m_palette[i], 0x80) | 0x80000000; // lighten the color for contrast
+                palette[i+1] = saturate(m_palette[i]) | 0x80000000; // lighten the color for contrast
             else
                 palette[i+1] = m_palette[i] | 0xff000000;
         }
@@ -620,30 +620,6 @@ uint32_t *Renderer::getPalette()
         return m_palette;
     else
         return NULL;
-}
-
-uint32_t Renderer::lighten(uint32_t color, uint8_t factor)
-{
-    uint32_t r, g, b;
-
-    b = color&0xff;
-    color >>= 8;
-    g = color&0xff;
-    color >>= 8;
-    r = color&0xff;
-
-    r += factor;
-    g += factor;
-    b += factor;
-
-    if (r>0xff)
-        r = 0xff;
-    if (g>0xff)
-        g = 0xff;
-    if (b>0xff)
-        b = 0xff;
-
-    return (r<<16) | (g<<8) | b;
 }
 
 

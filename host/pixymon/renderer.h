@@ -65,7 +65,6 @@ public:
     void renderRL(QImage *image, uint color, uint row, uint startCol, uint len);
     void setPalette(const uint32_t palette[]);
     uint32_t *getPalette();
-    static uint32_t lighten(uint32_t color, uint8_t factor);
 
 
     Frame8 m_rawFrame;

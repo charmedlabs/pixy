@@ -17,6 +17,13 @@
 #define CALC_H
 #include <inttypes.h>
 
+#define MAX(a, b)  (a>b ? a : b)
+#define MIN(a, b)  (a<b ? a : b)
+
 void hsvc(uint8_t r, uint8_t g, uint8_t b, uint8_t *h, uint8_t *s, uint8_t *v, uint8_t *c);
+uint32_t lighten(uint32_t color, uint8_t factor);
+uint32_t saturate(uint32_t color);
+uint32_t rgbPack(uint32_t r, uint32_t g, uint32_t b);
+void rgbUnpack(uint32_t color, uint32_t *r, uint32_t *g, uint32_t *b);
 
 #endif // CALC_H

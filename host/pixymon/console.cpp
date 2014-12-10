@@ -154,6 +154,8 @@ void ConsoleWidget::type(QString text)
 void ConsoleWidget::acceptInput(bool accept)
 {
     setReadOnly(!accept);
+    if (accept)
+        m_timer.start(CW_TIMEOUT);
 }
 
 

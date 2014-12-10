@@ -15,9 +15,6 @@
 
 #include "calc.h"
 
-#define MAX(a, b)  (a>b ? a : b)
-#define MIN(a, b)  (a<b ? a : b)
-
 void hsvc(uint8_t r, uint8_t g, uint8_t b, uint8_t *h, uint8_t *s, uint8_t *v, uint8_t *c)
 {
     uint8_t min, max, delta;
@@ -58,3 +55,54 @@ void hsvc(uint8_t r, uint8_t g, uint8_t b, uint8_t *h, uint8_t *s, uint8_t *v, u
     *c = delta;
 }
 
+uint32_t lighten(uint32_t color, uint8_t factor)
+{
+    uint32_t r, g, b;
+
+    rgbUnpack(color, &r, &g, &b);
+
+    r += factor;
+    g += factor;
+    b += factor;
+
+    return rgbPack(r, g, b);
+}
+
+uint32_t rgbPack(uint32_t r, uint32_t g, uint32_t b)
+{
+    if (r>0xff)
+        r = 0xff;
+    if (g>0xff)
+        g = 0xff;
+    if (b>0xff)
+        b = 0xff;
+    return (r<<16) | (g<<8) | b;
+}
+
+void rgbUnpack(uint32_t color, uint32_t *r, uint32_t *g, uint32_t *b)
+{
+    *b = color&0xff;
+    color >>= 8;
+    *g = color&0xff;
+    color >>= 8;
+    *r = color&0xff;
+}
+
+uint32_t saturate(uint32_t color)
+{
+    float m;
+    uint32_t max, r, g, b;
+
+    rgbUnpack(color, &r, &g, &b);
+
+    max = MAX(r, g);
+    max = MAX(max, b);
+
+    // saturate while maintaining ratios
+    m = 255.0f/max;
+    r = (uint8_t)(m*r);
+    g = (uint8_t)(m*g);
+    b = (uint8_t)(m*b);
+
+    return rgbPack(r, g, b);
+}

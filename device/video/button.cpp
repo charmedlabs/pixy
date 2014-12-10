@@ -94,7 +94,7 @@ void scaleLED(uint8_t r, uint8_t g, uint8_t b, uint32_t n)
 	float m;
 	uint32_t max, min, bias, current, sat, t; 
 
-#if 1  // this is odd, but it seems that 
+#if 1  // it seems that green is a little attenuated on this sensor
 	t = (uint32_t)(G_GAIN*g);
 	if (t>255)
 		g = 255;
@@ -134,6 +134,7 @@ void scaleLED(uint8_t r, uint8_t g, uint8_t b, uint32_t n)
 		current = LED_MAX_CURRENT/5;
 	led_setMaxCurrent(current);
 
+#if 0
 	// find reasonable bias to subtract out
 	bias = min*75/100;
 	r -= bias;
@@ -145,7 +146,15 @@ void scaleLED(uint8_t r, uint8_t g, uint8_t b, uint32_t n)
 	r = (uint8_t)(m*r);
 	g = (uint8_t)(m*g);
 	b = (uint8_t)(m*b);
+#endif
+#if 1
+	// saturate while maintaining ratios
+	m = 255.0f/max;
+	r = (uint8_t)(m*r);
+	g = (uint8_t)(m*g);
+	b = (uint8_t)(m*b);
 
+#endif
 	//cprintf("r %d g %d b %d min %d max %d sat %d sat2 %d n %d\n", r, g, b, min, max, sat, sat2, n);
 	led_setRGB(r, g, b);	 	
 }
