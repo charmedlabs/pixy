@@ -431,22 +431,26 @@ void MainWindow::on_actionAbout_triggered()
     AboutDialog *about;
     QString contents;
 
-    contents.sprintf("%s version %d.%d.%d\n", PIXYMON_TITLE, VER_MAJOR, VER_MINOR, VER_BUILD);
+    contents.sprintf("<b>%s version %d.%d.%d</b><br>", PIXYMON_TITLE, VER_MAJOR, VER_MINOR, VER_BUILD);
 
     if (m_interpreter)
     {
         QString fwver;
         uint16_t *version;
         version = m_interpreter->getVersion();
-        contents += fwver.sprintf("Pixy firmware version %d.%d.%d (queried)\n", version[0], version[1], version[2]);
+        contents += fwver.sprintf("<b>Pixy firmware version %d.%d.%d</b> (queried)<br>", version[0], version[1], version[2]);
     }
 
-    contents += "\nCMUCam5 Pixy and PixyMon are open hardware and open source software ";
-    contents += "maintained by Charmed Labs and Carnegie Mellon University.\n\n";
-    contents += "Pixy firmware and PixyMon software are provided here under the GNU ";
-    contents += "General Public License. Source code can be found at github.com/charmedlabs/pixy.\n\n";
-    contents += "Please send problems, suggestions, inquiries and/or witticisms to support@charmedlabs.com. ";
-    contents += "Additional information can be found at charmedlabs.com/pixy. Thank you!";
+    contents +=
+            "<br>CMUCam5 Pixy and PixyMon are open hardware and open source software "
+            "maintained by Charmed Labs and Carnegie Mellon University.<br><br>"
+            "Pixy firmware and PixyMon software are provided here under the GNU "
+            "General Public License. Source code can be found at "
+            "<a href=\"http://charmedlabs.com/pixysource\">github.com</a>.<br><br>"
+            "Please send problems, suggestions, ideas, inquiries and/or funny anecdotes "
+            "to <a href=\"mailto:support@charmedlabs.com\">support@charmedlabs.com</a>. "
+            "Additional information can be found <a href=\"http://charmedlabs.com/pixy\">here</a> "
+            "and <a href=\"http://charmedlabs.com/pixywiki\">here</a>. Thanks for supporting our little Pixy!";
 
     about = new AboutDialog(contents);
     about->setAttribute(Qt::WA_DeleteOnClose);
