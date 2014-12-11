@@ -23,62 +23,10 @@
 #include "colorlut.h"
 #include "conncomp.h"
 #include "exec.h"
+#include "calc.h"
 
 #define BT_CENTER_SIZE   6
 
-void interpolateBayer(uint32_t width, uint32_t x, uint32_t y, uint8_t *pixel, uint32_t &r, uint32_t &g, uint32_t &b)
-{
-    if (y&1)
-    {
-        if (x&1)
-        {
-            r = *pixel;
-            g = *(pixel-1);
-            b = *(pixel-width-1);
-        }
-        else
-        {
-            r = *(pixel-1);
-            g = *pixel;
-            b = *(pixel-width);
-        }
-    }
-    else
-    {
-        if (x&1)
-        {
-            r = *(pixel-width);
-            g = *pixel;
-            b = *(pixel-1);
-        }
-        else
-        {
-            r = *(pixel-width-1);
-            g = *(pixel-1);
-            b = *pixel;
-        }
-    }
-}
-
-void getColor(uint8_t *r, uint8_t *g, uint8_t *b)
-{
-	uint32_t x, y, R, G, B, rsum, gsum, bsum, count;
-	uint8_t *frame = g_rawFrame.m_pixels;  // use the correct pointer
-
-	for (rsum=0, gsum=0, bsum=0, count=0, y=(CAM_RES2_HEIGHT-BT_CENTER_SIZE)/2; y<(CAM_RES2_HEIGHT+BT_CENTER_SIZE)/2; y++)
-	{
-		for (x=(CAM_RES2_WIDTH-BT_CENTER_SIZE)/2; x<(CAM_RES2_WIDTH+BT_CENTER_SIZE)/2; x++, count++)
-		{
-			interpolateBayer(CAM_RES2_WIDTH, x, y, frame+CAM_RES2_WIDTH*y+x, R, G, B);
-		 	rsum += R;
-			gsum += G;
-			bsum += B;
-		}
-	}
-	*r = rsum/count;
-	*g = gsum/count;										 
-	*b = bsum/count;	 	
-}
 
 #define SA_GAIN   0.015f
 #define G_GAIN 1.10f
@@ -89,10 +37,9 @@ void getColor(uint8_t *r, uint8_t *g, uint8_t *b)
 // the grown region the better) and saturation (because more saturation the more likely we've found the intended target, vs 
 // the background, which is typically not saturated.)  
 // In general with an RGB LED, you can only communicate 2 things--- brightness and hue, so you have 2 dof to play with....   
-void scaleLED(uint8_t r, uint8_t g, uint8_t b, uint32_t n)
+void scaleLED(uint32_t r, uint32_t g, uint32_t b, uint32_t n)
 {
-	float m;
-	uint32_t max, min, bias, current, sat, t; 
+	uint32_t max, min, current, sat, t; 
 
 #if 1  // it seems that green is a little attenuated on this sensor
 	t = (uint32_t)(G_GAIN*g);
@@ -103,20 +50,12 @@ void scaleLED(uint8_t r, uint8_t g, uint8_t b, uint32_t n)
 #endif
 
    	// find min
-	if (r<b)
-		min = r;
-	else
-		min = b;
-	if (g<min)
-		min = g;
+	min = MIN(r, g);
+	min = MIN(min, b);
 
 	// find max
-	if (r>b)
-		max = r;
-	else
-		max = b;
-	if (g>max)
-		max = g;
+	max = MAX(r, g);
+	max = MAX(max, b);
 
 	// subtract min and form sataration from the distance from origin
 	sat = sqrt((float)((r-min)*(r-min) + (g-min)*(g-min) + (b-min)*(b-min)));
@@ -148,12 +87,8 @@ void scaleLED(uint8_t r, uint8_t g, uint8_t b, uint32_t n)
 	b = (uint8_t)(m*b);
 #endif
 #if 1
-	// saturate while maintaining ratios
-	m = 255.0f/max;
-	r = (uint8_t)(m*r);
-	g = (uint8_t)(m*g);
-	b = (uint8_t)(m*b);
-
+	// saturate
+	rgbUnpack(saturate(rgbPack(r, g, b)), &r, &g, &b);
 #endif
 	//cprintf("r %d g %d b %d min %d max %d sat %d sat2 %d n %d\n", r, g, b, min, max, sat, sat2, n);
 	led_setRGB(r, g, b);	 	
@@ -173,21 +108,14 @@ void ButtonMachine::ledPipe()
 {
 	Points points;
 	RGBPixel rgb;
-	uint32_t r, g, b, n;
+	uint32_t color, r, g, b, n;
 	g_blobs->m_clut.growRegion(g_rawFrame, Point16(CAM_RES2_WIDTH/2, CAM_RES2_HEIGHT/2), &points);	
 	cc_sendPoints(points, CL_GROW_INC, CL_GROW_INC, g_chirpUsb);
 
 	IterPixel ip(g_rawFrame, &points);
-	for (r=g=b=n=0; ip.next(NULL, &rgb); n++)
-	{
-		r += rgb.m_r;
-		g += rgb.m_g;
-		b += rgb.m_b;		
-	}
-	r /= n;
-	g /= n;
-	b /= n;
+	color = ip.averageRgb(&n);
 
+	rgbUnpack(color, &r, &g, &b);
 	scaleLED(r, g, b, n);
 }
 

@@ -98,6 +98,7 @@ private:
     uint16_t m_mergeDist;
     uint16_t m_maxCodedDist;
     ColorCodeMode m_ccMode;
+    BlobA *m_maxBlob;
 
 #ifndef PIXY
     uint32_t m_numQvals;

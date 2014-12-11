@@ -29,6 +29,7 @@ Blobs::Blobs(Qqueue *qq, uint8_t *lut) : m_clut(lut)
     m_maxBlobs = MAX_BLOBS;
     m_maxBlobsPerModel = MAX_BLOBS_PER_MODEL;
     m_mergeDist = MAX_MERGE_DIST;
+    m_maxBlob = NULL;
 
 	m_qq = qq;
 #ifdef PIXY
@@ -208,6 +209,9 @@ int Blobs::blobify()
     invalid = 0;
     // mutex keeps interrupt routine from stepping on us
     m_mutex = true;
+
+    m_maxBlob = NULL;
+
     for (i=0, m_numBlobs=0, m_numCCBlobs=0; i<CL_NUM_SIGNATURES; i++)
     {
         colorCode = CC_SIGNATURE(i+1);
@@ -422,39 +426,38 @@ uint16_t Blobs::getBlock(uint8_t *buf, uint32_t buflen)
 BlobA *Blobs::getMaxBlob(uint16_t signature)
 {
     int i, j;
-    uint32_t area=0, ccArea=0;
-    BlobA *blob=NULL, *ccBlob=NULL;
+    uint32_t area, maxArea;
+    BlobA *blob;
+	BlobB *ccBlob;
 
     if (signature==0) // 0 means return the biggest regardless of signature number
     {
-        if (m_numBlobs>0)
+        // if we've already found it, return it
+        if (m_maxBlob)
+            return m_maxBlob;
+
+        // look through all blobs looking for the blob with the biggest area
+        for (i=0, maxArea=0; i<m_numBlobs; i++)
         {
-            blob = (BlobA *)m_blobs;
+            blob = (BlobA *)m_blobs + i;
             area = (blob->m_right - blob->m_left)*(blob->m_bottom - blob->m_top);
+            if (area>maxArea)
+            {
+                maxArea = area;
+                m_maxBlob = blob;
+            }
         }
-        if (m_numCCBlobs>0)
+        for (i=0; i<m_numCCBlobs; i++)
         {
-            ccBlob = (BlobA *)m_ccBlobs;
-            ccArea = (ccBlob->m_right - ccBlob->m_left)*(ccBlob->m_bottom - ccBlob->m_top);
+            ccBlob = (BlobB *)m_ccBlobs + i;
+            area = (ccBlob->m_right - ccBlob->m_left)*(ccBlob->m_bottom - ccBlob->m_top);
+            if (area>maxArea)
+            {
+                maxArea = area;
+                m_maxBlob = (BlobA *)ccBlob;
+            }
         }
-        if (m_ccMode==CC_ONLY)
-        {
-            if (ccBlob)
-                return ccBlob;
-            else
-                return NULL;
-        }
-        else if (m_ccMode==DISABLED)
-        {
-            if (blob)
-                return blob;
-            else
-                return NULL;
-        }
-        else if (area>ccArea)
-            return blob;
-        else if (ccArea>area)
-            return ccBlob;
+		return m_maxBlob;
     }
     else
     {

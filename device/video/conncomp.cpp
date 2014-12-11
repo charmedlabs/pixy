@@ -26,6 +26,7 @@
 #include "led.h"
 #include "qqueue.h"
 #include "exec.h"
+#include "calc.h"
 
 
 Qqueue *g_qqueue;
@@ -262,18 +263,7 @@ int32_t cc_setSigRegion(const uint32_t &type, const uint8_t &signum, const uint1
 
 	// find average RGB value
 	IterPixel ip(g_rawFrame, region);
-	RGBPixel rgb;
-	uint32_t r, g, b, n;
-	for (r=g=b=n=0; ip.next(NULL, &rgb); n++)
-	{
-		r += rgb.m_r;
-		g += rgb.m_g;
-		b += rgb.m_b;		
-	}
-	r /= n;
-	g /= n;
-	b /= n;
-	sig->m_rgb = (r<<16) | (g<<8) | b;
+	sig->m_rgb = ip.averageRgb();
 
 	// save to flash
 	sprintf(id, "signature%d", signum);
@@ -307,18 +297,7 @@ int32_t cc_setSigPoint(const uint32_t &type, const uint8_t &signum, const uint16
 
 	// find average RGB value
 	IterPixel ip(g_rawFrame, &points);
-	RGBPixel rgb;
-	uint32_t r, g, b, n;
-	for (r=g=b=n=0; ip.next(NULL, &rgb); n++)
-	{
-		r += rgb.m_r;
-		g += rgb.m_g;
-		b += rgb.m_b;		
-	}
-	r /= n;
-	g /= n;
-	b /= n;
-	sig->m_rgb = (r<<16) | (g<<8) | b;
+	sig->m_rgb = ip.averageRgb();
 
 	cc_sendPoints(points, CL_GROW_INC, CL_GROW_INC, chirp);
 
@@ -492,19 +471,15 @@ void cc_setLED()
 	if (blob)
 	{
 		if (blob->m_model<=CL_NUM_SIGNATURES)
-			color = g_colors[blob->m_model];
+			color = g_blobs->m_clut.m_runtimeSigs[blob->m_model-1].m_rgbSat;
 		else
-			color = g_colors[0];
+			color = 0;
 
 		area = (blob->m_right - blob->m_left)*(blob->m_bottom - blob->m_top);
 		brightness = ledBrightness(area);
-		b = color&0xff;
+		rgbUnpack(color, &r, &g, &b);
 		b = b ? (b*brightness>>8)+1 : 0;
-		color >>= 8;
-		g = color&0xff;
 		g = g ? (g*brightness>>8)+1 : 0;
-		color >>= 8;
-		r = color&0xff;
 		r = r ? (r*brightness>>8)+1 : 0;
 		led_setRGB(r, g, b);
 	}

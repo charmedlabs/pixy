@@ -47,9 +47,7 @@ bool CccModule::render(uint32_t fourcc, const void *args[])
 {
     if (fourcc==FOURCC('C','M','V','2'))
     {
-        // uint8_t renderFlags, uint32_t sigLen, uint8_t *sigs, uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame
-        // 0                    1                2              3               4                5                  6
-        renderCMV2(*(uint8_t *)args[0], *(uint32_t *)args[1], (uint8_t *)args[2], *(uint16_t *)args[3], *(uint16_t *)args[4], *(uint32_t *)args[5], (uint8_t *)args[6]);
+        renderCMV2(*(uint8_t *)args[0], *(uint16_t *)args[1], *(uint16_t *)args[2], *(uint32_t *)args[3], (uint8_t *)args[4]);
         return true;
     }
     else if (fourcc==FOURCC('C','C','Q','2'))
@@ -242,7 +240,7 @@ void CccModule::rls(const Frame8 *frame)
     m_qq->enqueue(&eof);
 }
 
-int CccModule::renderCMV2(uint8_t renderFlags, uint32_t sigLen, uint8_t *sigs, uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame)
+int CccModule::renderCMV2(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame)
 {
     uint32_t numBlobs, numCCBlobs;
     BlobA *blobs;

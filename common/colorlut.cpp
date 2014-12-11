@@ -20,6 +20,7 @@
 #include "debug.h"
 #endif
 #include "colorlut.h"
+#include "calc.h"
 
 
 
@@ -127,6 +128,26 @@ bool IterPixel::nextHelper(UVPixel *uv, RGBPixel *rgb)
     }
 }
 
+uint32_t IterPixel::averageRgb(uint32_t *pixels)
+{
+	RGBPixel rgb;
+	uint32_t r, g, b, n;
+	reset();
+	for (r=g=b=n=0; next(NULL, &rgb); n++)
+	{
+		r += rgb.m_r;
+		g += rgb.m_g;
+		b += rgb.m_b;		
+	}
+
+	r /= n;
+	g /= n;
+	b /= n;
+
+	if (pixels)
+		*pixels = n;
+	return (r<<16) | (g<<8) | b;
+}
 
 ColorLUT::ColorLUT(uint8_t *lut)
 {
@@ -268,6 +289,8 @@ void ColorLUT::updateSignature(uint8_t signum)
 	m_runtimeSigs[signum].m_uMax = m_signatures[signum].m_uMean + (m_signatures[signum].m_uMax - m_signatures[signum].m_uMean)*range;
 	m_runtimeSigs[signum].m_vMin = m_signatures[signum].m_vMean + (m_signatures[signum].m_vMin - m_signatures[signum].m_vMean)*range;
 	m_runtimeSigs[signum].m_vMax = m_signatures[signum].m_vMean + (m_signatures[signum].m_vMax - m_signatures[signum].m_vMean)*range;
+
+    m_runtimeSigs[signum].m_rgbSat = saturate(m_signatures[signum].m_rgb);
 }
 
 ColorSignature *ColorLUT::getSignature(uint8_t signum)

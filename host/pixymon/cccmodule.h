@@ -33,7 +33,7 @@ public:
 
 private:
 
-    int renderCMV2(uint8_t renderFlags, uint32_t sigLen, uint8_t *sigs, uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame);
+    int renderCMV2(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame);
     void renderCCQ2(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame);
     void rls(const Frame8 *frame);
     void handleLine(uint8_t *line, uint16_t width);

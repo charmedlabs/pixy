@@ -18,7 +18,6 @@ SOURCES += main.cpp\
     interpreter.cpp \
     renderer.cpp \
     chirpmon.cpp \
-    calc.cpp \
     dfu.cpp \
     connectevent.cpp \
     flash.cpp \
@@ -39,7 +38,8 @@ SOURCES += main.cpp\
     monparameterdb.cpp \
     cccmodule.cpp \
     debug.cpp \
-    blobs2.cpp
+    blobs2.cpp \
+    ../../common/calc.cpp
 
 HEADERS  += mainwindow.h \
     videowidget.h \
@@ -79,7 +79,8 @@ HEADERS  += mainwindow.h \
     ../../common/simplevector.h \
     cccmodule.h \
     debug.h \
-    blobs2.h
+    blobs2.h \
+    ../../common/calc.h
 
 INCLUDEPATH += ../../common
 

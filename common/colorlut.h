@@ -58,6 +58,7 @@ struct RuntimeSignature
     int32_t m_uMax;
     int32_t m_vMin;
     int32_t m_vMax;
+    uint32_t m_rgbSat;
 };
 
 typedef SimpleVector<Point16> Points;
@@ -69,6 +70,7 @@ public:
     IterPixel(const Frame8 &frame, const Points *points);
     bool next(UVPixel *uv, RGBPixel *rgb=NULL);
     bool reset(bool cleari=true);
+	uint32_t averageRgb(uint32_t *pixels=NULL);
 
 private:
     bool nextHelper(UVPixel *uv, RGBPixel *rgb);
