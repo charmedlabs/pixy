@@ -124,6 +124,7 @@ signals:
     void actionScriptlet(QString action, QStringList scriptlet);
     void parameter(QString id, QByteArray data);
     void paramLoaded();
+    void version(ushort major, ushort minor, ushort build);
 
 public slots:
 

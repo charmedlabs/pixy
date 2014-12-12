@@ -290,7 +290,7 @@ void Renderer::renderBlobsB(bool blend, QImage *image, float scale, BlobB *blobs
     uint i;
 
     p.begin(image);
-    p.setBrush(QBrush(QColor(0xff, 0xff, 0xff, 0x20)));
+    p.setBrush(QBrush(QColor(0xff, 0xff, 0xff, 0x40)));
     p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
 
 #ifdef __MACOS__

@@ -21,9 +21,9 @@
 #define PIXYMON_TITLE   "PixyMon"
 #define PIXYMON_COMPANY "Charmed Labs"
 
-#define VER_MAJOR       1
+#define VER_MAJOR       2
 #define VER_MINOR       0
-#define VER_BUILD       2
+#define VER_BUILD       1
 
 #define PM_DEFAULT_DATA_DIR   "PixyMon"
 

@@ -542,7 +542,7 @@ void Interpreter::run()
     {
         int i;
         ChirpProc versionProc;
-        uint16_t *version;
+        uint16_t *ver;
         uint32_t verLen, responseInt;
 
         if (m_link.open()<0)
@@ -553,10 +553,11 @@ void Interpreter::run()
         versionProc = m_chirp->getProc("version");
         if (versionProc<0)
             throw std::runtime_error("Can't get firmware version.");
-        res = m_chirp->callSync(versionProc, END_OUT_ARGS, &responseInt, &verLen, &version, END_IN_ARGS);
+        res = m_chirp->callSync(versionProc, END_OUT_ARGS, &responseInt, &verLen, &ver, END_IN_ARGS);
         if (res<0)
             throw std::runtime_error("Can't get firmware version.");
-        memcpy(m_version, version, 3*sizeof(uint16_t));
+        memcpy(m_version, ver, 3*sizeof(uint16_t));
+        emit version(m_version[0], m_version[1], m_version[2]);
         if (m_version[0]!=VER_MAJOR || m_version[1]>VER_MINOR)
         {
             char buf[0x100];

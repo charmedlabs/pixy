@@ -56,6 +56,7 @@ private slots:
     void handleLoadParams();
     void handleConfigDialogFinished();
     void interpreterFinished();
+    void handleVersion(ushort major, ushort minor, ushort build);
     void on_actionAbout_triggered();
     void on_actionPlay_Pause_triggered();
     void on_actionDefault_program_triggered();
@@ -81,6 +82,7 @@ private:
     void close();
     void parseCommandline(int argc, char *argv[]);
     void program(const QString &file);
+    void handleFirmware();
 
     bool m_pixyConnected;
     bool m_pixyDFUConnected;
@@ -97,6 +99,7 @@ private:
     QString m_firmwareFile;
     QStringList m_initScript;
     bool m_initScriptExecuted;
+    bool m_versionIncompatibility;
     QSettings *m_settings;
     MonParameterDB m_parameters;
 };

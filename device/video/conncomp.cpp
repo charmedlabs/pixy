@@ -473,7 +473,7 @@ void cc_setLED()
 		if (blob->m_model<=CL_NUM_SIGNATURES)
 			color = g_blobs->m_clut.m_runtimeSigs[blob->m_model-1].m_rgbSat;
 		else
-			color = 0;
+			color = g_colors[0];
 
 		area = (blob->m_right - blob->m_left)*(blob->m_bottom - blob->m_top);
 		brightness = ledBrightness(area);
