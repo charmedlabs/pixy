@@ -61,6 +61,8 @@ Device ConnectEvent::getConnected()
 
 void ConnectEvent::emitConnected(Device dev, bool state)
 {
+    // this makes sure we only send connect events upon changes
+    // which also prevents late events from coming in after we destroy this class instance.
     if (dev!=m_dev || state!=m_state)
     {
         m_dev = dev;

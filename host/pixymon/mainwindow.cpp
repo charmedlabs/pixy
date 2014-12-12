@@ -21,6 +21,7 @@
 #include <QSettings>
 #include <QUrl>
 #include <QDesktopServices>
+#include <QSysInfo>
 #include "mainwindow.h"
 #include "pixymon.h"
 #include "videowidget.h"
@@ -560,7 +561,7 @@ void MainWindow::interpreterFinished()
     updateButtons();
 }
 
-void MainWindow::handleFirmware()
+void MainWindow::handleFirmware(ushort major, ushort minor, ushort build)
 {
     // check executable directory for firmware
     int i;
@@ -572,6 +573,7 @@ void MainWindow::handleFirmware()
     QStringList files = dir.entryList(filters);
     QStringList parts;
     QString fwFilename;
+    QString maxVerStr;
     ushort fmajor, fminor, fbuild;
     qlonglong ver, maxVer;
 
@@ -587,13 +589,14 @@ void MainWindow::handleFirmware()
                 fminor = parts[1].toInt();
                 fbuild = parts[2].toInt();
 
-                if (fmajor>VER_MAJOR || (fmajor==VER_MAJOR && (short)fminor>=VER_MINOR))
+                if (fmajor>major || (fmajor==major && (short)fminor>=minor))
                 {
                     ver = ((qlonglong)fmajor<<32) | (fminor<<16) | fbuild;
                     if (ver>maxVer)
                     {
                         maxVer = ver;
                         fwFilename = files[i];
+                        maxVerStr = QString::number(fmajor) + "." + QString::number(minor) + "." + QString::number(fbuild);
                     }
                 }
             }
@@ -602,19 +605,26 @@ void MainWindow::handleFirmware()
 
     if (fwFilename!="")
     {
-        QString str = "There is a more recent firmware version (" + fwFilename + ") available.\n" +
-                "Would you like to upload this firmware into your Pixy? (psst, click yes!)";
+#if 0
+        bool xp = false;
+#ifdef __WINDOWS__
+        xp = QSysInfo::WindowsVersion<=QSysInfo::WV_2003;
+#endif
+#endif
+        QString str =
+                "There is a more recent firmware version (" + maxVerStr + ") available.<br>"
+                "Your Pixy is running firmware version " + QString::number(major) + "." + QString::number(minor) + "." + QString::number(build) + ".<br><br>"
+                "Would you like to upload this firmware into your Pixy? <i>Psst, click yes!</i>";
         if (QMessageBox::question(NULL, "New firmware available!", str, QMessageBox::Yes|QMessageBox::No, QMessageBox::Yes)==QMessageBox::Yes)
         {
             m_firmwareFile = QFileInfo(path, fwFilename).absoluteFilePath();
-            QMessageBox::information(NULL, "Get your Pixy ready",
-                                     "Please follow these steps to get your Pixy ready to accept new firmware:\n\n"
-                                     "1. Unplug your Pixy from USB (do it now).\n"
-                                     "2. Press and hold down the white button on top of Pixy.\n"
-                                     "3. Plug the USB cable back in while continuing to hold down the button.\n"
-                                     "4. Release the button after the USB cable is plugged back in.\n"
+            QMessageBox::information(NULL, "Get your Pixy ready!",
+                                     "Please follow these steps to get your Pixy ready to accept new firmware:<br><br>"
+                                     "1. Unplug your Pixy from USB (do this now).<br>"
+                                     "2. Press and hold down the white button on top of Pixy.<br>"
+                                     "3. Plug the USB cable back in while continuing to hold down the button.<br>"
+                                     "4. Release the button after the USB cable is plugged back in.<br>"
                                      "5. Press OK (below), and wait (the drivers sometimes take time to install).");
-
         }
     }
 }
@@ -625,8 +635,8 @@ void MainWindow::handleVersion(ushort major, ushort minor, ushort build)
     {
         // Interpreter will automatically exit if there's a version incompatibility, so no need to close interpreter
         m_versionIncompatibility = true;
-        handleFirmware();
     }
+    handleFirmware(major, minor, build);
 }
 
 

@@ -82,7 +82,7 @@ private:
     void close();
     void parseCommandline(int argc, char *argv[]);
     void program(const QString &file);
-    void handleFirmware();
+    void handleFirmware(ushort major, ushort minor, ushort build);
 
     bool m_pixyConnected;
     bool m_pixyDFUConnected;
