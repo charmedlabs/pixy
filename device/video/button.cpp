@@ -41,7 +41,7 @@ void scaleLED(uint32_t r, uint32_t g, uint32_t b, uint32_t n)
 {
 	uint32_t max, min, current, sat, t; 
 
-#if 1  // it seems that green is a little attenuated on this sensor
+#if 0  // it seems that green is a little attenuated on this sensor
 	t = (uint32_t)(G_GAIN*g);
 	if (t>255)
 		g = 255;

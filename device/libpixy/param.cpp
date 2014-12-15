@@ -114,15 +114,24 @@ static SimpleVector<Shadow> g_shadowTable;
 
 int prm_init(Chirp *chirp)
 {
+	int i, count;
 	// check integrity
-#if 0
 	if (!prm_verifyAll())
 	{
+		// take a more stochastic approach becuause there may be power-related issues that would cause us to 
+		// mis-read.  But if we truly are corrupt, count will not increment. 
+		for (i=0, count=0; i<10; i++)
+		{
+			if (prm_verifyAll())
+				count++;
+		}	
 		// if we're corrupt, format, start over
-		prm_format();
-		return -1;
+		if (count==0)
+		{
+			prm_format();
+			return -1;
+		}
 	} 
-#endif
 
 	chirp->registerModule(g_module);
 		

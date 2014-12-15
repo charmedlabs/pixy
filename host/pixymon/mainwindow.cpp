@@ -465,8 +465,8 @@ void MainWindow::on_actionAbout_triggered()
             "All software and firmware is provided under the GNU "
             "General Public License. Complete source code is available at "
             "<a href=\"http://charmedlabs.com/pixysource\">github.com</a>.<br><br>"
-            "Please send problems, suggestions, ideas, inquiries and feedback, positive or negative, "
-            "although we do love to hear the positive stuff, "
+            "Please send problems, suggestions, ideas, inquiries and feedback, positive or negative "
+            "(although we do love to hear the positive stuff!) "
             "to <a href=\"mailto:support@charmedlabs.com\">support@charmedlabs.com</a>. "
             "Additional information can be found <a href=\"http://charmedlabs.com/pixy\">here</a> "
             "and <a href=\"http://charmedlabs.com/pixywiki\">here</a>.<br><br>"
@@ -589,7 +589,7 @@ void MainWindow::handleFirmware(ushort major, ushort minor, ushort build)
                 fminor = parts[1].toInt();
                 fbuild = parts[2].toInt();
 
-                if (fmajor>major || (fmajor==major && (short)fminor>=minor))
+                if (fmajor>major || (fmajor==major && (short)fminor>minor))
                 {
                     ver = ((qlonglong)fmajor<<32) | (fminor<<16) | fbuild;
                     if (ver>maxVer)
@@ -631,12 +631,16 @@ void MainWindow::handleFirmware(ushort major, ushort minor, ushort build)
 
 void MainWindow::handleVersion(ushort major, ushort minor, ushort build)
 {
+    QString str;
+
     if (major!=VER_MAJOR || minor>VER_MINOR)
     {
         // Interpreter will automatically exit if there's a version incompatibility, so no need to close interpreter
         m_versionIncompatibility = true;
     }
     handleFirmware(major, minor, build);
+    //str = str.sprintf("Pixy firmware version %d.%d.%d.\n", major, minor, build);
+    //m_console->print(str);
 }
 
 

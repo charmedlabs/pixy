@@ -99,7 +99,7 @@ void rcs_loadParams()
 	prm_add("S1 upper limit", PRM_FLAG_SIGNED, 
 		"@c Servo Sets the upper limit of travel for servo 1 (default 200)", INT16(200), END);
 	prm_add("Servo frequency", PRM_FLAG_ADVANCED, 
-		"@c Servo Sets the PWM frequency of the servos (default 80)", UINT16(80), END);
+		"@c Servo Sets the PWM frequency of the servos (default 60)", UINT16(60), END);
 
 	int16_t lower, upper, freq;
 

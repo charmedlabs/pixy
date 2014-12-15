@@ -113,14 +113,14 @@ int ptSetup()
 
 void ptLoadParams()
 {
-	prm_add("Pan P gain", 0, 
-		"@c Pan/tilt_Demo Pan axis proportional gain (default 500)", INT32(500), END);
-	prm_add("Pan D gain", 0, 
-		"@c Pan/tilt_Demo Pan axis derivative gain (default 800)", INT32(800), END);
-	prm_add("Tilt P gain", 0, 
-		"@c Pan/tilt_Demo Tilt axis proportional gain (default 700)", INT32(700), END);
-	prm_add("Tilt D gain", 0, 
-		"@c Pan/tilt_Demo Tilt axis derivative gain (default 900)", INT32(900), END);
+	prm_add("Pan P gain", PRM_FLAG_SIGNED, 
+		"@c Pan/tilt_Demo Pan axis proportional gain (default 350)", INT32(350), END);
+	prm_add("Pan D gain", PRM_FLAG_SIGNED, 
+		"@c Pan/tilt_Demo Pan axis derivative gain (default 600)", INT32(600), END);
+	prm_add("Tilt P gain", PRM_FLAG_SIGNED, 
+		"@c Pan/tilt_Demo Tilt axis proportional gain (default 500)", INT32(500), END);
+	prm_add("Tilt D gain", PRM_FLAG_SIGNED, 
+		"@c Pan/tilt_Demo Tilt axis derivative gain (default 700)", INT32(700), END);
 
 	int32_t pgain, dgain; 
 

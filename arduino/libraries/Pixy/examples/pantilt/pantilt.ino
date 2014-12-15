@@ -36,8 +36,8 @@ public:
 };
 
 
-ServoLoop panLoop(500, 800);
-ServoLoop tiltLoop(700, 900);
+ServoLoop panLoop(300, 500);
+ServoLoop tiltLoop(500, 700);
 
 ServoLoop::ServoLoop(int32_t pgain, int32_t dgain)
 {
