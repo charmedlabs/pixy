@@ -16,7 +16,7 @@
 #include <string.h>
 #include <new>
 #include "chirp.hpp"
-#include "debug.h"
+#include "debuglog.h"
 
 
 // todo yield, sleep() while waiting for sync response

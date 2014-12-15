@@ -269,6 +269,7 @@ struct Line
 #ifdef PIXY
 typedef long long longlong;
 #else
+#include <QtGlobal>
 typedef qlonglong longlong;
 #endif
 

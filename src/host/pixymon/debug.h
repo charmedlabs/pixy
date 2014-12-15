@@ -1,5 +1,5 @@
-#ifndef _DEBUG_H
-#define _DEBUG_H
+#ifndef _DEBUG2_H
+#define _DEBUG2_H
 
 #include <QDebug>
 #include "monmodule.h"
