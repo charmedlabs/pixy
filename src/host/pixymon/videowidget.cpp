@@ -17,7 +17,6 @@
 #include <QPainter>
 #include <QDebug>
 #include <QMouseEvent>
-#include <QMutexLocker>
 #include <QMetaType>
 #include "mainwindow.h"
 #include "videowidget.h"
@@ -26,7 +25,7 @@
 //#include "interpreter.h"
 #include "renderer.h"
 
-VideoWidget::VideoWidget(MainWindow *main) : QWidget((QWidget *)main), m_mutex(QMutex::Recursive)
+VideoWidget::VideoWidget(MainWindow *main) : QWidget((QWidget *)main)
 {
     qRegisterMetaType<VideoWidget::InputMode>("VideoWidget::InputMode");
 
@@ -51,55 +50,47 @@ VideoWidget::~VideoWidget()
 }
 
 
+//0: don’t render, just put on image list, first
+//RENDER_FLAG_BLEND: tack on to end of image list
+//RENDER_FLAG_FLUSH put on image list first, and render
+//RENDER_FLAG_BLEND | RENDER_FLAG_FLUSH: tack on end of image list and render
 
-void VideoWidget::handleImage(QImage image)
+void VideoWidget::handleImage(QImage image, uchar renderFlags)
 {
-    QMutexLocker locker(&m_mutex);
-
+    if (!(renderFlags&RENDER_FLAG_BLEND))
+        m_images.clear();
     m_images.push_back(image);
+    if (renderFlags&RENDER_FLAG_FLUSH)
+    {
+        m_renderedImages.clear();
+        m_renderedImages = m_images;
+        m_images.clear();
+        repaint();
+    }
 }
 
-
-void VideoWidget::handleFlush()
-{
-    QMutexLocker locker(&m_mutex);
-
-    if (m_images.size()==0)
-        return; // nothing to render...
-
-    m_renderedImages.clear();
-    m_renderedImages = m_images;
-    m_images.clear();
-    repaint();
-}
 
 void VideoWidget::clear()
 {
-    QMutexLocker locker(&m_mutex);
-
     m_images.clear();
     QImage img(m_width, m_height, QImage::Format_RGB32);
     img.fill(Qt::black);
 
-    handleImage(img);
-    handleFlush();
+    handleImage(img, RENDER_FLAG_FLUSH);
 }
 
 int VideoWidget::activeWidth()
 {
-    QMutexLocker locker(&m_mutex);
     return m_width;
 }
 
 int  VideoWidget::activeHeight()
 {
-    QMutexLocker locker(&m_mutex);
     return m_height;
 }
 
 void VideoWidget::paintEvent(QPaintEvent *event)
 {
-    QMutexLocker locker(&m_mutex);
     unsigned int i;
     m_width = this->width();
     m_height = this->height();
@@ -236,7 +227,7 @@ void VideoWidget::mouseReleaseEvent(QMouseEvent *event)
         }
         emit selection(x, y, width, height);
         acceptInput(NONE);
-        //qDebug() << x << " " << y << " " << width << " " << height;
+        //DBG("%d %d %d %d", x, y, width, height);
         m_selection = false;
     }
     else if (m_inputMode==POINT)

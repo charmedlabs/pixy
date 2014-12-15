@@ -15,27 +15,43 @@
 
 #include <QPainter>
 #include <QFont>
-#include <QDebug>
+#include "debug.h"
 #include <QFile>
 #include "renderer.h"
 #include "videowidget.h"
+#include "interpreter.h"
+#include "dataexport.h"
+#include "monmodule.h"
 #include <chirp.hpp>
 #include "calc.h"
 #include <math.h>
 
-Renderer::Renderer(VideoWidget *video, Interpreter *interpreter) : m_blobs(interpreter), m_background(0, 0)
+const uint32_t Renderer::m_defaultPalette[PALETTE_SIZE] =
+{
+    0x00ff0000, // 1 red
+    0x00ff4000, // 2 orange
+    0x00ffff00, // 3 yellow
+    0x0000ff00, // 4 green
+    0x0000ffff, // 5 cyan
+    0x000000ff, // 6 blue
+    0x00ff00ff  // 7 violet
+};
+
+Renderer::Renderer(VideoWidget *video, Interpreter *interpreter) : MonModule(interpreter), m_background(0, 0)
 {
     m_video = video;
     m_interpreter = interpreter;
 
-    m_rawFrame.m_pixels = new uint8_t[0x10000];
+    m_rawFrame.m_pixels = new uint8_t[RAWFRAME_SIZE];
+    m_rawFrame.m_height = 0;
+    m_rawFrame.m_width = 0;
+    m_highlightOverexp = true;
+    m_paletteSet = false;
 
-    m_backgroundFrame = true;
+    m_interpreter->m_pixymonParameters->addCheckbox("Highlight overexposure", true,
+        "Highlighting overexposure will overlay black pixels ontop of overexposed pixels in raw and cooked modes");
 
-    m_mode = 3;
-
-    connect(this, SIGNAL(image(QImage)), m_video, SLOT(handleImage(QImage))); // Qt::BlockingQueuedConnection);
-    connect(this, SIGNAL(flushImage()), m_video, SLOT(handleFlush())); //, Qt::BlockingQueuedConnection);
+    connect(this, SIGNAL(image(QImage, uchar)), m_video, SLOT(handleImage(QImage, uchar))); // Qt::BlockingQueuedConnection);
 }
 
 
@@ -185,9 +201,17 @@ int Renderer::renderBA81(uint8_t renderFlags, uint16_t width, uint16_t height, u
     uint32_t *line;
     uint32_t r, g, b;
 
-    memcpy(m_rawFrame.m_pixels, frame, width*height);
-    m_rawFrame.m_width = width;
-    m_rawFrame.m_height = height;
+    if (width*height>RAWFRAME_SIZE)
+    {
+        m_rawFrame.m_width = 0;
+        m_rawFrame.m_height = 0;
+    }
+    else
+    {
+        memcpy(m_rawFrame.m_pixels, frame, width*height);
+        m_rawFrame.m_width = width;
+        m_rawFrame.m_height = height;
+    }
 
     // skip first line
     frame += width;
@@ -203,24 +227,62 @@ int Renderer::renderBA81(uint8_t renderFlags, uint16_t width, uint16_t height, u
         for (x=1; x<width-1; x++, frame++)
         {
             interpolateBayer(width, x, y, frame, r, g, b);
-            *line++ = (0x40<<24) | (r<<16) | (g<<8) | (b<<0);
+            if (m_highlightOverexp && (r==0xff || g==0xff || b==0xff))
+                *line++ = (0xff<<24); // | 0xff0000;
+            else
+                *line++ = (0xff<<24) | (r<<16) | (g<<8) | (b<<0);
         }
         frame++;
     }
     // send image to ourselves across threads
     // from chirp thread to gui thread
-    emitImage(img);
+    emit image(img, renderFlags);
 
     m_background = img;
-
-    if (renderFlags&RENDER_FLAG_FLUSH)
-        emitFlushImage();
 
     return 0;
 }
 
+void Renderer::renderRects(const Points &points, uint32_t size)
+{
+    int i;
+    QPainter p;
+    float scale = (float)m_video->activeWidth()/m_background.width();
+    QImage img(m_video->activeWidth(), m_video->activeHeight(), QImage::Format_ARGB32);
+    img.fill(0x00000000);
 
-void Renderer::renderBlobsB(QImage *image, float scale, BlobB *blobs, uint32_t numBlobs)
+    p.begin(&img);
+    p.setBrush(QBrush(QColor(0xff, 0xff, 0xff, 0x20)));
+    p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
+
+    DBG("*** size %d", points.size());
+    for (i=0; i<points.size(); i++)
+        p.drawRect(points[i].m_x*scale, points[i].m_y*scale, size*scale, size*scale);
+
+    p.end();
+
+    emit image(img, RENDER_FLAG_BLEND | RENDER_FLAG_FLUSH);
+}
+
+void Renderer::renderRect(const RectA &rect)
+{
+    QPainter p;
+    float scale = (float)m_video->activeWidth()/m_background.width();
+    QImage img(m_video->activeWidth(), m_video->activeHeight(), QImage::Format_ARGB32);
+    img.fill(0x00000000);
+
+    p.begin(&img);
+    p.setBrush(QBrush(QColor(0xff, 0xff, 0xff, 0x20)));
+    p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
+
+    p.drawRect(rect.m_xOffset*scale, rect.m_yOffset*scale, rect.m_width*scale, rect.m_height*scale);
+
+    p.end();
+
+    emit image(img, RENDER_FLAG_BLEND | RENDER_FLAG_FLUSH);
+}
+
+void Renderer::renderBlobsB(bool blend, QImage *image, float scale, BlobB *blobs, uint32_t numBlobs)
 {
     QPainter p;
     QString str, modelStr;
@@ -228,7 +290,7 @@ void Renderer::renderBlobsB(QImage *image, float scale, BlobB *blobs, uint32_t n
     uint i;
 
     p.begin(image);
-    p.setBrush(QBrush(QColor(0xff, 0xff, 0xff, 0x20)));
+    p.setBrush(QBrush(QColor(0xff, 0xff, 0xff, 0x40)));
     p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
 
 #ifdef __MACOS__
@@ -244,7 +306,7 @@ void Renderer::renderBlobsB(QImage *image, float scale, BlobB *blobs, uint32_t n
         top = scale*blobs[i].m_top;
         bottom = scale*blobs[i].m_bottom;
 
-        //qDebug() << left << " " << right << " " << top << " " << bottom;
+        //DBG("%d %d %d %d", left, right, top, bottom);
         p.drawRect(left, top, right-left, bottom-top);
         if (blobs[i].m_model)
         {
@@ -265,7 +327,7 @@ void Renderer::renderBlobsB(QImage *image, float scale, BlobB *blobs, uint32_t n
     p.end();
 }
 
-void Renderer::renderBlobsA(QImage *image, float scale, BlobA *blobs, uint32_t numBlobs)
+void Renderer::renderBlobsA(bool blend, QImage *image, float scale, BlobA *blobs, uint32_t numBlobs)
 {
     QPainter p;
     QString str;
@@ -273,7 +335,8 @@ void Renderer::renderBlobsA(QImage *image, float scale, BlobA *blobs, uint32_t n
     uint i;
 
     p.begin(image);
-    p.setBrush(QBrush(QColor(0xff, 0xff, 0xff, 0x20)));
+    if (blend)
+        p.setBrush(QBrush(QColor(0xff, 0xff, 0xff, 0x20)));
     p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
 
 #ifdef __MACOS__
@@ -289,7 +352,9 @@ void Renderer::renderBlobsA(QImage *image, float scale, BlobA *blobs, uint32_t n
         top = scale*blobs[i].m_top;
         bottom = scale*blobs[i].m_bottom;
 
-        //qDebug() << left << " " << right << " " << top << " " << bottom;
+        //DBG("%d %d %d %d", left, right, top, bottom);
+        if (!blend && m_paletteSet)
+            p.setBrush(QBrush(QRgb(m_palette[blobs[i].m_model-1])));
         p.drawRect(left, top, right-left, bottom-top);
         if (blobs[i].m_model)
         {
@@ -310,27 +375,21 @@ void Renderer::renderBlobsA(QImage *image, float scale, BlobA *blobs, uint32_t n
 }
 
 int Renderer::renderCCB2(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t numBlobs, uint16_t *blobs, uint32_t numCCBlobs, uint16_t *ccBlobs)
-{
+{    
     float scale = (float)m_video->activeWidth()/width;
     QImage img(width*scale, height*scale, QImage::Format_ARGB32);
 
-    // render background so we can blend ontop of it
-    if (renderFlags&RENDER_FLAG_BLEND_BG)
-        renderBackground();
-
-    if (m_backgroundFrame) // if we're the background, we should be opaque
-        img.fill(0xff000000);
+    if (renderFlags&RENDER_FLAG_BLEND) // if we're blending, we should be transparent
+        img.fill(0x00000000);
     else
-        img.fill(0x00000000); // otherwise, we're transparent
+        img.fill(0xff000000); // otherwise, we're just black
 
     numBlobs /= sizeof(BlobA)/sizeof(uint16_t);
     numCCBlobs /= sizeof(BlobB)/sizeof(uint16_t);
-    renderBlobsA(&img, scale, (BlobA *)blobs, numBlobs);
-    renderBlobsB(&img, scale, (BlobB *)ccBlobs, numCCBlobs);
+    renderBlobsA(renderFlags&RENDER_FLAG_BLEND, &img, scale, (BlobA *)blobs, numBlobs);
+    renderBlobsB(renderFlags&RENDER_FLAG_BLEND, &img, scale, (BlobB *)ccBlobs, numCCBlobs);
 
-    emitImage(img);
-    if (renderFlags&RENDER_FLAG_FLUSH)
-        emitFlushImage();
+    emit image(img, renderFlags);
 
     return 0;
 }
@@ -340,44 +399,20 @@ int Renderer::renderCCB1(uint8_t renderFlags, uint16_t width, uint16_t height, u
     float scale = (float)m_video->activeWidth()/width;
     QImage img(width*scale, height*scale, QImage::Format_ARGB32);
 
-    // render background so we can blend ontop of it
-    if (renderFlags&RENDER_FLAG_BLEND_BG)
-        renderBackground();
-
-    if (m_backgroundFrame) // if we're the background, we should be opaque
-        img.fill(0xff000000);
+    if (renderFlags&RENDER_FLAG_BLEND) // if we're blending, we should be transparent
+        img.fill(0x00000000);
     else
-        img.fill(0x00000000); // otherwise, we're transparent
+        img.fill(0xff000000); // otherwise, we're just black
 
     numBlobs /= sizeof(BlobA)/sizeof(uint16_t);
-    renderBlobsA(&img, scale, (BlobA *)blobs, numBlobs);
+    renderBlobsA(renderFlags&RENDER_FLAG_BLEND, &img, scale, (BlobA *)blobs, numBlobs);
 
-    emitImage(img);
-    if (renderFlags&RENDER_FLAG_FLUSH)
-        emitFlushImage();
+    emit image(img, renderFlags);
 
     return 0;
 }
 
-int Renderer::renderRect(uint16_t width, uint16_t height, const RectA &rect)
-{
-    float scale = (float)m_video->activeWidth()/width;
-    QImage img(width*scale, height*scale, QImage::Format_ARGB32);
-    QPainter p;
-
-    img.fill(0x00000000);
-    p.begin(&img);
-    p.setBrush(QBrush(QColor(0xff, 0xff, 0xff, 0x20)));
-    p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
-    p.drawRect(scale*rect.m_xOffset, scale*rect.m_yOffset, scale*rect.m_width, scale*rect.m_height);
-    p.end();
-
-    emitImage(img);
-
-    return 0;
-}
-
-void Renderer::handleRL(QImage *image, uint color, uint row, uint startCol, uint len)
+void Renderer::renderRL(QImage *image, uint color, uint row, uint startCol, uint len)
 {
     uint *line;
     uint col;
@@ -391,26 +426,30 @@ void Renderer::handleRL(QImage *image, uint color, uint row, uint startCol, uint
 
 int Renderer::renderCCQ1(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t numVals, uint32_t *qVals)
 {
+
     int32_t row;
     uint32_t i, startCol, length;
     uint8_t model;
     QImage img(width, height, QImage::Format_ARGB32);
-    unsigned int palette[] =
-    {0x00000000, // 0 no model (transparent)
-     0x80ff0000, // 1 red
-     0x80ff4000, // 2 orange
-     0x80ffff00, // 3 yellow
-     0x8000ff00, // 4 green
-     0x8000ffff, // 5 cyan
-     0x800000ff, // 6 blue
-     0x80ff00ff  // 7 violet
-    };
+    uint32_t palette[PALETTE_SIZE+1];
 
-    // if we're a background frame, set alpha to 1.0
-    if (m_backgroundFrame)
+    palette[0] = 0;  // zero signature is transparent -- don't render anything
+    for (i=0; i<PALETTE_SIZE; i++)
     {
-        for (i=0; i<sizeof(palette)/sizeof(unsigned int); i++)
-            palette[i] |= 0xff000000;
+        if (m_paletteSet)
+        {
+            if (renderFlags&RENDER_FLAG_BLEND)
+                palette[i+1] = saturate(m_palette[i]) | 0x80000000; // lighten the color for contrast
+            else
+                palette[i+1] = m_palette[i] | 0xff000000;
+        }
+        else
+        {
+            if (renderFlags&RENDER_FLAG_BLEND)
+                palette[i+1] = m_defaultPalette[i] | 0x80000000;
+            else
+                palette[i+1] = m_defaultPalette[i] | 0xff000000;
+        }
     }
 
     // q val:
@@ -432,115 +471,94 @@ int Renderer::renderCCQ1(uint8_t renderFlags, uint16_t width, uint16_t height, u
         startCol = qVals[i]&0x1ff;
         qVals[i] >>= 9;
         length = qVals[i]&0x1ff;
-        handleRL(&img, palette[model], row, startCol, length);
+        renderRL(&img, palette[model], row, startCol, length);
     }
-    emitImage(img);
-    if (renderFlags&RENDER_FLAG_FLUSH)
-        emitFlushImage();
+
+    emit image(img, renderFlags);
+    return 0;
+}
+
+
+int Renderer::renderBLT1(uint8_t renderFlags, uint16_t width, uint16_t height,
+               uint16_t blockWidth, uint16_t blockHeight, uint32_t numPoints, uint16_t *points)
+{
+    uint i;
+    QPainter p;
+    float scale = (float)m_video->activeWidth()/width;
+    QImage img(m_video->activeWidth(), m_video->activeHeight(), QImage::Format_ARGB32);
+    if (renderFlags&RENDER_FLAG_BLEND) // if we're blending, we should be transparent
+        img.fill(0x00000000);
+    else
+        img.fill(0xff000000); // otherwise, we're just black
+
+    p.begin(&img);
+    p.setBrush(QBrush(QColor(0xff, 0xff, 0xff, 0x20)));
+    p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
+
+    for (i=0; i<numPoints; i+=2)
+        p.drawRect(points[i]*scale, points[i+1]*scale, blockWidth*scale, blockHeight*scale);
+
+    p.end();
+
+    emit image(img, renderFlags);
 
     return 0;
 }
 
-int Renderer::renderCMV1(uint8_t renderFlags, uint32_t cmodelsLen, float *cmodels, uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame)
+
+
+
+void Renderer::paramChange()
 {
-    int i;
-    uint32_t numBlobs, numCCBlobs;
-    BlobA *blobs;
-    BlobB *ccBlobs;
-    uint32_t numQvals;
-    uint32_t *qVals;
+    QVariant val;
 
-    if (cmodelsLen>=sizeof(ColorModel)*NUM_MODELS/sizeof(float)) // create lookup table
-    {
-        m_blobs.m_blobs->m_clut->clear();
-        for (i=0; i<NUM_MODELS; i++, cmodels+=sizeof(ColorModel)/sizeof(float))
-            m_blobs.m_blobs->m_clut->add((ColorModel *)cmodels, i+1);
-    }
-
-    m_blobs.process(Frame8(frame, width, height), &numBlobs, &blobs, &numCCBlobs, &ccBlobs, &numQvals, &qVals);
-
-    renderBA81(0, width, height, frameLen, frame);
-    renderCCQ1(0, width/2, height/2, numQvals, qVals);
-    renderCCB2(RENDER_FLAG_FLUSH, width/2, height/2, numBlobs*sizeof(BlobA)/sizeof(uint16_t), (uint16_t *)blobs, numCCBlobs*sizeof(BlobB)/sizeof(uint16_t), (uint16_t *)ccBlobs);
-
-    return 0;
+    if (pixymonParameterChanged("Highlight overexposure", &val))
+        m_highlightOverexp = val.toUInt();
 }
 
-// need this because we need synchronized knowledge of whether we're the background image or not
-void Renderer::emitImage(const QImage &img)
+bool Renderer::render(uint32_t fourcc, const void *args[])
 {
-    m_backgroundFrame = false;
-    emit image(img);
-}
-
-void Renderer::emitFlushImage()
-{
-    emit flushImage();
-    m_backgroundFrame = true;
-}
-
-
-int Renderer::render(uint32_t type, void *args[])
-{
-    int res;
-
     // choose fourcc for representing formats fourcc.org
-    if (type==FOURCC('B','A','8','1'))
-        res = renderBA81(*(uint8_t *)args[0], *(uint16_t *)args[1], *(uint16_t *)args[2], *(uint32_t *)args[3], (uint8_t *)args[4]);
-    else if (type==FOURCC('C','C','Q','1'))
-        res = renderCCQ1(*(uint8_t *)args[0], *(uint16_t *)args[1], *(uint16_t *)args[2], *(uint32_t *)args[3], (uint32_t *)args[4]);
-    else if (type==FOURCC('C', 'C', 'B', '1'))
-        res = renderCCB1(*(uint8_t *)args[0], *(uint16_t *)args[1], *(uint32_t *)args[2], *(uint32_t *)args[3], (uint16_t *)args[4]);
-    else if (type==FOURCC('C', 'C', 'B', '2'))
-        res = renderCCB2(*(uint8_t *)args[0], *(uint16_t *)args[1], *(uint32_t *)args[2], *(uint32_t *)args[3], (uint16_t *)args[4], *(uint32_t *)args[5], (uint16_t *)args[6]);
-    else if (type==FOURCC('C', 'M', 'V', '1'))
-        res = renderCMV1(*(uint8_t *)args[0], *(uint32_t *)args[1], (float *)args[2], *(uint16_t *)args[3], *(uint32_t *)args[4], *(uint32_t *)args[5], (uint8_t *)args[6]);
-    else // format not recognized
-        return -1;
-
-    return res;
-}
-
-#if 0
-void matlabArrayOut(QFile *file, const QString &name, float *data, int width, int height)
-{
-    int i, j;
-    float (&array)[height][width] = *reinterpret_cast<float (*)[height][width]>(data);
-
-    QTextStream out(file);
-
-    out << name << "=[\n";
-
-    for (i=0; i<height; i++)
+    if (fourcc==FOURCC('B','A','8','1'))
     {
-        if (i!=0)
-            out << "\n";
-        for(j=0; j<width; j++)
-        {
-            if (j!=0)
-                out << ", ";
-            out << array[i][j];
-        }
+        renderBA81(*(uint8_t *)args[0], *(uint16_t *)args[1], *(uint16_t *)args[2], *(uint32_t *)args[3], (uint8_t *)args[4]);
+        return true;
     }
-    out << "];\n";
+    else if (fourcc==FOURCC('C','C','Q','1'))
+    {
+        renderCCQ1(*(uint8_t *)args[0], *(uint16_t *)args[1], *(uint16_t *)args[2], *(uint32_t *)args[3], (uint32_t *)args[4]);
+        return true;
+    }
+    else if (fourcc==FOURCC('C', 'C', 'B', '1'))
+    {
+        renderCCB1(*(uint8_t *)args[0], *(uint16_t *)args[1], *(uint32_t *)args[2], *(uint32_t *)args[3], (uint16_t *)args[4]);
+        return true;
+    }
+    else if (fourcc==FOURCC('C', 'C', 'B', '2'))
+    {
+        renderCCB2(*(uint8_t *)args[0], *(uint16_t *)args[1], *(uint32_t *)args[2], *(uint32_t *)args[3], (uint16_t *)args[4], *(uint32_t *)args[5], (uint16_t *)args[6]);
+        return true;
+    }
+    else if (fourcc==FOURCC('B','L','T','1'))
+    {
+        renderBLT1(*(uint8_t *)args[0], *(uint16_t *)args[1], *(uint16_t *)args[2],
+                *(uint16_t *)args[3], *(uint16_t *)args[4], *(uint32_t *)args[5], (uint16_t *)args[6]);
+        return true;
+    }
+    else // format not recognized
+        return false;
 }
-#endif
+
 
 void Renderer::pixelsOut(int x0, int y0, int width, int height)
 {
     uint pixel, *line;
-    int u, v;
     uint r, g, b;
-    int x, y, n = width*height;
-    float uvals[n], vvals[n];
-    //QString str, name = "pixels";
-    //QFile file(name + QString::number(index) + ".m");
-    QFile file("pixels.m");
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
-        return;
+    int x, y;
 
-    QTextStream out(&file);
+    DataExport dx(m_interpreter->m_pixymonParameters->value("Document folder").toString(), "pixels", ET_MATLAB);
 
+    dx.startArray(3, "pixels");
 
     for (y=0; y<height; y++)
     {
@@ -553,42 +571,20 @@ void Renderer::pixelsOut(int x0, int y0, int width, int height)
             g = pixel&0xff;
             pixel >>= 8;
             r = pixel&0xff;
-            qDebug("%d: %d %d %d", y*width+x, r, g, b);
-            u = r-g;
-            v = b-g;
-            u >>= 1;
-            v >>= 1;
 
-            uvals[y*width+x] = u;
-            vvals[y*width+x] = v;
+            dx.addElement(r);
+            dx.addElement(g);
+            dx.addElement(b);
         }
     }
-#ifdef MATLAB
-    matlabArrayOut(&file, "u", uvals, 1, n);
-    matlabArrayOut(&file, "v", vvals, 1, n);
-#endif
-
-    file.close();
 }
 
 
-void Renderer::regionCommand(int x0, int y0, int width, int height, const QStringList &argv)
-{
-    qDebug("%d %d %d %d", x0, y0, width, height);
 
-    if (m_background.width()==0)
-        return;
-
-#ifdef MATLAB
-    pixelsOut(x0, y0, width, height);
-#endif
-}
-
-
-int Renderer::renderBackground()
+int Renderer::renderBackground(uint8_t renderFlags)
 {
     if (m_background.width()!=0)
-        emitImage(m_background);
+        emit image(m_background, renderFlags);
 
     return 0;
 }
@@ -597,4 +593,33 @@ int Renderer::saveImage(const QString &filename)
 {
     return m_background.save(filename);
 }
+
+
+QImage *Renderer::backgroundImage()
+{
+    return &m_background;
+}
+
+Frame8 *Renderer::backgroundRaw()
+{
+    return &m_rawFrame;
+}
+
+void Renderer::setPalette(const uint32_t palette[])
+{
+    int i;
+    for (i=0; i<PALETTE_SIZE; i++)
+        m_palette[i] = palette[i];
+
+    m_paletteSet = true;
+}
+
+uint32_t *Renderer::getPalette()
+{
+    if (m_paletteSet)
+        return m_palette;
+    else
+        return NULL;
+}
+
 

@@ -18,10 +18,8 @@
 
 #include <QMainWindow>
 #include <vector>
-#include "parameters.h"
+#include "monparameterdb.h"
 
-#define CONFIGFILE_FILENAME     "config.xml"
-#define CONFIGFILE_TAG          "PixyMon_parameters"
 #define PIXY_PARAMFILE_TAG      "Pixy_parameters"
 
 namespace Ui {
@@ -51,13 +49,14 @@ public:
     friend class ConsoleWidget;
 
 private slots:
-    void handleRunState(uint state);
+    void handleRunState(int state);
     void handleConnected(Device device, bool state);
     void handleActions();
-    void handleActionScriptlet(int index, QString action, QStringList scriptlet);
+    void handleActionScriptlet(QString action, QStringList scriptlet);
     void handleLoadParams();
     void handleConfigDialogFinished();
     void interpreterFinished();
+    void handleVersion(ushort major, ushort minor, ushort build);
     void on_actionAbout_triggered();
     void on_actionPlay_Pause_triggered();
     void on_actionDefault_program_triggered();
@@ -80,12 +79,10 @@ private:
     void addAction(const QString &label, const QStringList &command);
     void clearActions();
     void setEnabledActions(bool enable);
-    QString docPath();
     void close();
     void parseCommandline(int argc, char *argv[]);
     void program(const QString &file);
-    void loadParameters();
-    void saveParameters();
+    void handleFirmware(ushort major, ushort minor, ushort build);
 
     bool m_pixyConnected;
     bool m_pixyDFUConnected;
@@ -102,9 +99,9 @@ private:
     QString m_firmwareFile;
     QStringList m_initScript;
     bool m_initScriptExecuted;
+    bool m_versionIncompatibility;
     QSettings *m_settings;
-
-    ParameterDB m_parameters;
+    MonParameterDB m_parameters;
 };
 
 #endif // MAINWINDOW_H

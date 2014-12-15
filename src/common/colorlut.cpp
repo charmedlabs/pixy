@@ -13,520 +13,630 @@
 // end license header
 //
 
-#ifndef PIXY
-#include <QString>
-#include <QFile>
-#include <QTextStream>
-#endif
 #include <stdlib.h>
 #include <math.h>
+#include <string.h>
+#ifndef PIXY
+#include "debug.h"
+#endif
 #include "colorlut.h"
+#include "calc.h"
 
 
-float sign(float val)
+
+IterPixel::IterPixel(const Frame8 &frame, const RectA &region)
 {
-    if (val<0.0f)
-        return -1.0f;
-    else
-        return 1.0f;
+    m_frame = frame;
+    m_region = region;
+    m_points = NULL;
+    reset();
 }
 
-float dot(Fpoint a, Fpoint b)
+IterPixel::IterPixel(const Frame8 &frame, const Points *points)
 {
-    return a.m_x*b.m_x + a.m_y*b.m_y;
+    m_frame = frame;
+    m_points = points;
+    reset();
 }
 
-void *maxMalloc(uint32_t initSize, uint32_t *allocSize)
+bool IterPixel::reset(bool cleari)
 {
-    void *mem;
-    int32_t size = (int32_t)initSize;
-
-    while(size>=0)
+    if (cleari)
+        m_i = 0;
+    if (m_points)
     {
-        mem = malloc(size);
-        if (mem)
+        if (m_points->size()>m_i)
         {
-            *allocSize = (uint32_t)size;
-            return mem;
+            m_region = RectA((*m_points)[m_i].m_x, (*m_points)[m_i].m_y, CL_GROW_INC, CL_GROW_INC);
+            m_i++;
         }
         else
-            size -= 0x100;
+            return false; // empty!
     }
-    *allocSize = 0;
-    return NULL;
+    m_x = m_y = 0;
+    m_pixels = m_frame.m_pixels + (m_region.m_yOffset | 1)*m_frame.m_width + (m_region.m_xOffset | 1);
+    return true;
 }
 
-float distance(Fpoint a, Fpoint b)
+bool IterPixel::next(UVPixel *uv, RGBPixel *rgb)
 {
-    float diffx, diffy;
-
-    diffx = a.m_x-b.m_x;
-    diffy = a.m_y-b.m_y;
-
-    return sqrt(diffx*diffx + diffy*diffy);
+    if (m_points)
+    {
+        if (nextHelper(uv, rgb))
+            return true; // working on the current block
+        else // get new block
+        {
+            if (reset(false)) // reset indexes, increment m_i, get new block
+                return nextHelper(uv, rgb);  // we have another block!
+            else
+                return false; // blocks are empty
+        }
+    }
+    else
+        return nextHelper(uv, rgb);
 }
 
 
-ColorLUT::ColorLUT(const void *lutMem)
+bool IterPixel::nextHelper(UVPixel *uv, RGBPixel *rgb)
 {
-    m_lut = (uint8_t *)lutMem;
-    m_iterateStep = CL_DEFAULT_ITERATE_STEP;
-    m_hueTol = CL_DEFAULT_HUETOL;
-    m_satTol = CL_DEFAULT_SATTOL;
-    m_minSat = CL_DEFAULT_MINSAT;
-    m_maxSatRatio = CL_DEFAULT_MAXSAT_RATIO;
-    m_outlierRatio = CL_DEFAULT_OUTLIER_RATIO;
+    int32_t r, g1, g2, b, u, v, c, miny=CL_MIN_Y;
 
-    clear();
+    while(1)
+    {
+        if (m_x>=m_region.m_width)
+        {
+            m_x = 0;
+            m_y += 2;
+            m_pixels += m_frame.m_width*2;
+        }
+        if (m_y>=m_region.m_height)
+            return false;
 
-    for (int i=0; i<CL_NUM_MODELS; i++)
-        m_types[i] = 0;
+        r = m_pixels[m_x];
+        g1 = m_pixels[m_x - 1];
+        g2 = m_pixels[-m_frame.m_width + m_x];
+        b = m_pixels[-m_frame.m_width + m_x - 1];
+		if (rgb)
+		{
+		  	rgb->m_r = r;
+			rgb->m_g = (g1+g2)/2;
+			rgb->m_b = b;
+		}
+		if (uv)
+		{
+        	c = r+g1+b;
+            if (c<miny)
+			{
+				m_x += 2;
+            	continue;
+			}
+        	u = ((r-g1)<<CL_LUT_ENTRY_SCALE)/c;
+        	c = r+g2+b;
+            if (c<miny)
+			{
+				m_x += 2;
+            	continue;
+			}
+        	v = ((b-g2)<<CL_LUT_ENTRY_SCALE)/c;
+
+        	uv->m_u = u;
+        	uv->m_v = v;
+		}
+
+		m_x += 2;
+        return true;
+    }
 }
+
+uint32_t IterPixel::averageRgb(uint32_t *pixels)
+{
+	RGBPixel rgb;
+	uint32_t r, g, b, n;
+	reset();
+	for (r=g=b=n=0; next(NULL, &rgb); n++)
+	{
+		r += rgb.m_r;
+		g += rgb.m_g;
+		b += rgb.m_b;		
+	}
+
+	r /= n;
+	g /= n;
+	b /= n;
+
+	if (pixels)
+		*pixels = n;
+	return (r<<16) | (g<<8) | b;
+}
+
+ColorLUT::ColorLUT(uint8_t *lut)
+{
+	int i; 
+    m_lut = lut;
+    memset((void *)m_signatures, 0, sizeof(ColorSignature)*CL_NUM_SIGNATURES);
+    memset((void *)m_runtimeSigs, 0, sizeof(RuntimeSignature)*CL_NUM_SIGNATURES);
+	clearLUT();
+
+    setMinBrightness(CL_DEFAULT_MINY);
+    m_minRatio = CL_MIN_RATIO;
+    m_maxDist = CL_MAX_DIST;
+    m_ratio = CL_DEFAULT_TOL;
+    m_ccGain = CL_DEFAULT_CCGAIN;
+	for (i=0; i<CL_NUM_SIGNATURES; i++)
+		m_sigRanges[i] = CL_DEFAULT_SIG_RANGE;
+}
+
 
 ColorLUT::~ColorLUT()
 {
 }
 
 
-int ColorLUT::generate(ColorModel *model, const Frame8 &frame, const RectA &region)
+void ColorLUT::calcRatios(IterPixel *ip, ColorSignature *sig, float ratios[])
 {
-    Fpoint meanVal;
-    float angle, pangle, pslope, meanSat;
-    float yi, istep, s, xsat, sat;
-    int result;
+    UVPixel uv;
+    uint32_t n=0, counts[4];
+    longlong usum=0, vsum=0;
+    counts[0] = counts[1] = counts[2] = counts[3] = 0;
 
-    m_hpixels = (HuePixel *)maxMalloc(sizeof(HuePixel)*CL_HPIXEL_MAX_SIZE, &m_hpixelSize);
-    if (m_hpixels==NULL)
-        return -1; // not enough memory
-
-    m_hpixelSize /= sizeof(HuePixel);
-
-    map(frame, region);
-    mean(&meanVal);
-    angle = atan2(meanVal.m_y, meanVal.m_x);
-    Fpoint uvec(cos(angle), sin(angle));
-
-    Line hueLine(tan(angle), 0.0);
-
-    pangle = angle + PI/2; // perpendicular angle
-    pslope = tan(pangle); // perpendicular slope
-    Line pLine(pslope, meanVal.m_y - pslope*meanVal.m_x); // perpendicular line through mean
-
-    // upper hue line
-    istep = fabs(m_iterateStep/uvec.m_x);
-    yi = iterate(hueLine, istep);
-    yi += fabs(m_hueTol*yi); // extend
-    model->m_hue[0].m_yi = yi;
-    model->m_hue[0].m_slope = hueLine.m_slope;
-
-    // lower hue line
-    yi = iterate(hueLine, -istep);
-    yi -= fabs(m_hueTol*yi); // extend
-    model->m_hue[1].m_yi = yi;
-    model->m_hue[1].m_slope = hueLine.m_slope;
-
-    // inner sat line
-    s = sign(uvec.m_y);
-    istep = s*fabs(m_iterateStep/cos(pangle));
-    yi = iterate(pLine, -istep);
-    yi -= s*fabs(m_satTol*(yi-pLine.m_yi)); // extend
-    xsat = yi/(hueLine.m_slope-pslope); // x value where inner sat line crosses hue line
-    Fpoint minsatVec(xsat, xsat*hueLine.m_slope); // vector going to inner sat line
-    sat = dot(uvec, minsatVec); // length of line
-    meanSat = dot(uvec, meanVal);
-    if (sat < m_minSat) // if it's too short, we need to extend
+    ip->reset();
+    while(ip->next(&uv))
     {
-        minsatVec.m_x = uvec.m_x*m_minSat;
-        minsatVec.m_y = uvec.m_y*m_minSat;
-        yi = minsatVec.m_y - pslope*minsatVec.m_x;
-    }
-    model->m_sat[0].m_yi = yi;
-    model->m_sat[0].m_slope = pslope;
+        if (uv.m_u>sig->m_uMin)
+            counts[0]++;
 
-    // outer sat line
-    yi = iterate(pLine, istep);
-    yi += s*fabs(m_maxSatRatio*m_satTol*(yi-pLine.m_yi)); // extend
-    model->m_sat[1].m_yi = yi;
-    model->m_sat[1].m_slope = pslope;
+        if (uv.m_u<sig->m_uMax)
+            counts[1]++;
 
-    // swap if outer sat line is greater than inner sat line
-    // Arbitrary convention, but we need it to be consistent to test membership (checkBounds)
-    if (model->m_sat[1].m_yi>model->m_sat[0].m_yi)
-    {
-        Line tmp = model->m_sat[0];
-        model->m_sat[0] = model->m_sat[1];
-        model->m_sat[1] = tmp;
+        if (uv.m_v>sig->m_vMin)
+            counts[2]++;
+
+        if (uv.m_v<sig->m_vMax)
+            counts[3]++;
+
+        usum += uv.m_u;
+        vsum += uv.m_v;
+        n++;
     }
 
-    free(m_hpixels);
-
-    // calculate goodness
-    result = (meanSat-m_minSat)*100/64 + 10; // 64 because it's half of our range
-    if (result<0)
-        result = 0;
-    if (result>100)
-        result = 100;
-
-    return result;
+    // calc ratios
+    ratios[0] = (float)counts[0]/n;
+    ratios[1] = (float)counts[1]/n;
+    ratios[2] = (float)counts[2]/n;
+    ratios[3] = (float)counts[3]/n;
+    // calc mean (because it's cheap to do it here)
+    sig->m_uMean = usum/n;
+    sig->m_vMean = vsum/n;
 }
 
-void ColorLUT::map(const Frame8 &frame, const RectA &region)
+
+void ColorLUT::iterate(IterPixel *ip, ColorSignature *sig)
 {
-    uint32_t x, y, r, g1, g2, b, count;
-    int32_t u, v;
-    uint8_t *pixels;
+    int32_t scale;
+    float ratios[4];
 
-    pixels = frame.m_pixels + (region.m_yOffset | 1)*frame.m_width + (region.m_xOffset | 1);
-    for (y=0, count=0; y<region.m_height && count<m_hpixelSize; y+=2, pixels+=frame.m_width*2)
+    // binary search -- this rouine is guaranteed to find the right value +/- 1, which is good enough!
+    // find all four values, umin, umax, vmin, vmax simultaneously
+    for (scale=1<<30, sig->m_uMin=sig->m_uMax=sig->m_vMin=sig->m_vMax=0; scale!=0; scale>>=1)
     {
-        for (x=0; x<region.m_width && count<m_hpixelSize; x+=2, count++)
-        {
-            r = pixels[x];
-            g1 = pixels[x - 1];
-            g2 = pixels[-frame.m_width + x];
-            b = pixels[-frame.m_width + x - 1];
-            u = r-g1;
-            v = b-g2;
-            u >>= 1;
-            v >>= 1;
-            m_hpixels[count].m_u = u;
-            m_hpixels[count].m_v = v;
-        }
-    }
-    m_hpixelLen = count;
-
-}
-
-void ColorLUT::tweakMean(float *mean)
-{
-    if (abs(*mean)<CL_MIN_MEAN)
-    {
-        if (*mean>0.0f)
-            *mean = CL_MIN_MEAN;
+        calcRatios(ip, sig, ratios);
+        if (ratios[0]>m_ratio)
+            sig->m_uMin += scale;
         else
-            *mean = -CL_MIN_MEAN;
+            sig->m_uMin -= scale;
+
+        if (ratios[1]>m_ratio)
+            sig->m_uMax -= scale;
+        else
+            sig->m_uMax += scale;
+
+        if (ratios[2]>m_ratio)
+            sig->m_vMin += scale;
+        else
+            sig->m_vMin -= scale;
+
+        if (ratios[3]>m_ratio)
+            sig->m_vMax -= scale;
+        else
+            sig->m_vMax += scale;
     }
 }
 
-void ColorLUT::mean(Fpoint *mean)
+
+
+
+int ColorLUT::generateSignature(const Frame8 &frame, const RectA &region, uint8_t signum)
 {
-    uint32_t i;
-    float usum, vsum;
+ 	if (signum<1 || signum>CL_NUM_SIGNATURES)
+		return -1;
+   // this is cool-- this routine doesn't allocate any extra memory other than some stack variables
+    IterPixel ip(frame, region);
+    iterate(&ip, m_signatures+signum-1);
+	m_signatures[signum-1].m_type = 0;
 
-    for (i=0, usum=0.0, vsum=0.0; i<m_hpixelLen; i++)
-    {
-        usum += m_hpixels[i].m_u;
-        vsum += m_hpixels[i].m_v;
-    }
-    usum /= m_hpixelLen;
-    vsum /= m_hpixelLen;
-
-    // if mean is too close to 0, the slope of the hue or sat lines will explode
-    tweakMean(&usum);
-    tweakMean(&vsum);
-
-    mean->m_x = usum;
-    mean->m_y = vsum;
+	updateSignature(signum);
+    return 0;
 }
 
-uint32_t ColorLUT::boundTest(const Line *line, float dir)
-{
-    uint32_t i, count;
-    float v;
-    bool gtz = dir>0.0f;
 
-    for (i=0, count=0; i<m_hpixelLen; i++)
+int ColorLUT::generateSignature(const Frame8 &frame, const Point16 &point, Points *points, uint8_t signum)
+{
+	if (signum<1 || signum>CL_NUM_SIGNATURES)
+		return -1;
+    // this routine requires some memory to store the region which consists of some consistently-sized blocks
+    growRegion(frame, point, points);
+    IterPixel ip(frame, points);
+    iterate(&ip, m_signatures+signum-1);
+	m_signatures[signum-1].m_type = 0;
+
+	updateSignature(signum);
+    return 0;
+}
+
+void ColorLUT::updateSignature(uint8_t signum)
+{
+    float range;
+
+	if (signum<1 || signum>CL_NUM_SIGNATURES)
+		return;
+	signum--;
+
+    if (m_signatures[signum].m_type==CL_MODEL_TYPE_COLORCODE)
+        range = m_sigRanges[signum]*m_ccGain;
+	else
+		range = m_sigRanges[signum];
+    m_runtimeSigs[signum].m_uMin = m_signatures[signum].m_uMean + (m_signatures[signum].m_uMin - m_signatures[signum].m_uMean)*range;
+	m_runtimeSigs[signum].m_uMax = m_signatures[signum].m_uMean + (m_signatures[signum].m_uMax - m_signatures[signum].m_uMean)*range;
+	m_runtimeSigs[signum].m_vMin = m_signatures[signum].m_vMean + (m_signatures[signum].m_vMin - m_signatures[signum].m_vMean)*range;
+	m_runtimeSigs[signum].m_vMax = m_signatures[signum].m_vMean + (m_signatures[signum].m_vMax - m_signatures[signum].m_vMean)*range;
+
+    m_runtimeSigs[signum].m_rgbSat = saturate(m_signatures[signum].m_rgb);
+}
+
+ColorSignature *ColorLUT::getSignature(uint8_t signum)
+{
+	if (signum<1 || signum>CL_NUM_SIGNATURES)
+		return NULL;
+
+	return m_signatures+signum-1;
+}
+
+int ColorLUT::setSignature(uint8_t signum, const ColorSignature &sig)
+{
+	if (signum<1 || signum>CL_NUM_SIGNATURES)
+		return -1;
+
+	m_signatures[signum-1] = sig;
+	updateSignature(signum);
+	return 0;
+}
+
+
+int ColorLUT::generateLUT()
+{
+    int32_t r, g, b, u, v, y, bin, sig;
+
+    clearLUT();
+
+    // recalc bounds for each signature
+    for (r=0; r<CL_NUM_SIGNATURES; r++)
+        updateSignature(r);
+
+    for (r=0; r<1<<8; r+=1<<(8-CL_LUT_COMPONENT_SCALE))
     {
-        v = m_hpixels[i].m_u*line->m_slope + line->m_yi;
-        if (gtz)
+        for (g=0; g<1<<8; g+=1<<(8-CL_LUT_COMPONENT_SCALE))
         {
-            if (m_hpixels[i].m_v<v)
-                count++;
+            for (b=0; b<1<<8; b+=1<<(8-CL_LUT_COMPONENT_SCALE))
+            {
+                y = r+g+b;
+
+                if (y<(int32_t)m_miny)
+                    continue;
+                u = ((r-g)<<CL_LUT_ENTRY_SCALE)/y;
+                v = ((b-g)<<CL_LUT_ENTRY_SCALE)/y;
+
+                for (sig=0; sig<CL_NUM_SIGNATURES; sig++)
+                {
+                    if (m_signatures[sig].m_uMin==0 && m_signatures[sig].m_uMax==0)
+                        continue;
+                    if ((m_runtimeSigs[sig].m_uMin<u) && (u<m_runtimeSigs[sig].m_uMax) &&
+                            (m_runtimeSigs[sig].m_vMin<v) && (v<m_runtimeSigs[sig].m_vMax))
+                    {
+                        u = r-g;
+                        u >>= 9-CL_LUT_COMPONENT_SCALE;
+                        u &= (1<<CL_LUT_COMPONENT_SCALE)-1;
+                        v = b-g;
+                        v >>= 9-CL_LUT_COMPONENT_SCALE;
+                        v &= (1<<CL_LUT_COMPONENT_SCALE)-1;
+
+                        bin = (u<<CL_LUT_COMPONENT_SCALE)+ v;
+
+                        if (m_lut[bin]==0 || m_lut[bin]>sig+1)
+                            m_lut[bin] = sig+1;
+                    }
+                }
+            }
         }
-        else if (m_hpixels[i].m_v>v)
-            count++;
     }
-
-    return count;
-}
-
-float ColorLUT::iterate(Line line, float step)
-{
-    float ratio;
-
-    while(1)
-    {
-        ratio = (float)boundTest(&line, sign(step))/m_hpixelLen;
-        if ( ratio >= m_outlierRatio)
-            break;
-        line.m_yi += step;
-    }
-
-    return line.m_yi;
-}
-
-
-int ColorLUT::setBounds(float minSat, float hueTol, float satTol)
-{
-    m_minSat = minSat;
-    m_hueTol = hueTol;
-    m_satTol = satTol;
 
     return 0;
 }
 
-void ColorLUT::add(const ColorModel *model, uint8_t modelIndex)
+
+void ColorLUT::clearLUT(uint8_t signum)
 {
-    uint32_t i;
-    HuePixel p;
-
-#ifndef PIXY
-#ifdef MATLAB
-    matlabOut(model, modelIndex);
-#endif
-#endif
-
-    if (modelIndex-1 > CL_NUM_MODELS)
-        return;
-
-    if (model->m_hue[0].m_slope==0.0f)
-        return;
+    int i;
 
     for (i=0; i<CL_LUT_SIZE; i++)
     {
-        p.m_v = (int8_t)(i&0xff);
-        p.m_u = (int8_t)(i>>8);
-        if (((m_lut[i]&0x07)==0 || (m_lut[i]&0x07)>=modelIndex) &&
-                checkBounds(model, &p))
-            m_lut[i] = modelIndex;
-    }
-
-    m_types[modelIndex-1] = model->m_type;
-}
-
-uint32_t ColorLUT::getType(uint8_t modelIndex)
-{
-	if (modelIndex-1 > CL_NUM_MODELS)
-		return 0;
-
-	return m_types[modelIndex-1];
-}
-
-bool ColorLUT::checkBounds(const ColorModel *model, const HuePixel *pixel)
-{
-    float v;
-
-    v = model->m_hue[0].m_slope*pixel->m_u + model->m_hue[0].m_yi;
-    if (v<(float)pixel->m_v)
-        return false;
-
-    v = model->m_hue[1].m_slope*pixel->m_u + model->m_hue[1].m_yi;
-    if (v>(float)pixel->m_v)
-        return false;
-
-    v = model->m_sat[0].m_slope*pixel->m_u + model->m_sat[0].m_yi;
-    if (v<(float)pixel->m_v)
-        return false;
-
-    v = model->m_sat[1].m_slope*pixel->m_u + model->m_sat[1].m_yi;
-    if (v>(float)pixel->m_v)
-        return false;
-
-    return true;
-}
-
-void ColorLUT::clear(uint8_t modelIndex)
-{
-    uint32_t i;
-
-    for (i=0; i<CL_LUT_SIZE; i++)
-    {
-        if (modelIndex==0 || (m_lut[i]&0x07)==modelIndex)
+        if (signum==0)
+            m_lut[i] = 0;
+        else if (m_lut[i]==signum)
             m_lut[i] = 0;
     }
 }
 
-#define GROW_INC                  4
-#define GROW_MAX_DISTANCE         20.0f
-#define GROW_REGION_MAX_SIZE      100
-#define GROW_REGION_ATTEN         0.75f
 
-int ColorLUT::growRegion(RectA *result, const Frame8 &frame, const Point16 &seed)
+bool ColorLUT::growRegion(RectA *region, const Frame8 &frame, uint8_t dir)
 {
-    uint8_t dir;
-    Fpoint mean0, newMean;
-    float dist;
-    RectA newRegion, region;
-    uint8_t done;
+    if (dir==0) // grow left
+    {
+        if (region->m_xOffset>=CL_GROW_INC)
+        {
+            region->m_xOffset -= CL_GROW_INC;
+            region->m_width += CL_GROW_INC;
+        }
+        else
+            return true;
+    }
+    else if (dir==1) // grow top
+    {
+        if (region->m_yOffset>=CL_GROW_INC)
+        {
+            region->m_yOffset -= CL_GROW_INC;
+            region->m_height += CL_GROW_INC;
+        }
+        else
+            return true;
+    }
+    else if (dir==2) // grow right
+    {
+        if (region->m_xOffset+region->m_width+CL_GROW_INC>frame.m_width)
+            return true;
+        region->m_width += CL_GROW_INC;
+    }
+    else if (dir==3) // grow bottom
+    {
+        if (region->m_yOffset+region->m_height+CL_GROW_INC>frame.m_height)
+            return true;
+        region->m_height += CL_GROW_INC;
+    }
+    return false;
+}
 
-    m_hpixels = (HuePixel *)maxMalloc(sizeof(HuePixel)*CL_HPIXEL_MAX_SIZE, &m_hpixelSize);
-    if (m_hpixels==NULL)
-        return -1; // not enough memory
 
-    m_hpixelSize /= sizeof(HuePixel);
+float ColorLUT::testRegion(const RectA &region, const Frame8 &frame, UVPixel *mean, Points *points)
+{
+    UVPixel subMean;
+    float distance;
+    RectA subRegion(0, 0, CL_GROW_INC, CL_GROW_INC);
+    subRegion.m_xOffset = region.m_xOffset;
+    subRegion.m_yOffset = region.m_yOffset;
+    bool horiz = region.m_width>region.m_height;
+    uint32_t i, test, endpoint = horiz ? region.m_width : region.m_height;
 
-    // create seed 2*GROW_INCx2*GROW_INC region from seed position, make sure it's within the frame
-    region.m_xOffset = seed.m_x>GROW_INC ? seed.m_x-GROW_INC : 0;
-    region.m_yOffset = seed.m_y>GROW_INC ? seed.m_y-GROW_INC : 0;
-    region.m_width = 2*GROW_INC;
-    if (region.m_xOffset+region.m_width>frame.m_width)
-        region.m_width = frame.m_width-region.m_xOffset;
-    region.m_height = 2*GROW_INC;
-    if (region.m_yOffset+region.m_height>frame.m_height)
-        region.m_height = frame.m_height-region.m_yOffset;
+    for (i=0, test=0; i<endpoint; i+=CL_GROW_INC)
+    {
+        getMean(subRegion, frame, &subMean);
+        distance = sqrt((float)((mean->m_u-subMean.m_u)*(mean->m_u-subMean.m_u) + (mean->m_v-subMean.m_v)*(mean->m_v-subMean.m_v)));
+        if ((uint32_t)distance<m_maxDist)
+        {
+            int32_t n = points->size();
+            mean->m_u = ((longlong)mean->m_u*n + subMean.m_u)/(n+1);
+            mean->m_v = ((longlong)mean->m_v*n + subMean.m_v)/(n+1);
+            if (points->push_back(Point16(subRegion.m_xOffset, subRegion.m_yOffset))<0)
+                break;
+            //DBG("add %d %d %d", subRegion.m_xOffset, subRegion.m_yOffset, points->size());
+            test++;
+        }
 
-    map(frame, region);
-    mean(&mean0);
-    done = 0x00;
+        if (horiz)
+            subRegion.m_xOffset += CL_GROW_INC;
+        else
+            subRegion.m_yOffset += CL_GROW_INC;
+    }
 
-    while (1)
+    //DBG("return %f", (float)test*CL_GROW_INC/endpoint);
+    return (float)test*CL_GROW_INC/endpoint;
+}
+
+
+void ColorLUT::growRegion(const Frame8 &frame, const Point16 &seed, Points *points)
+{
+    uint8_t dir, done;
+    RectA region, newRegion;
+    UVPixel mean;
+    float ratio;
+
+    done = 0;
+
+    // create seed 2*CL_GROW_INCx2*CL_GROW_INC region from seed position, make sure it's within the frame
+    region.m_xOffset = seed.m_x;
+    region.m_yOffset = seed.m_y;
+    if (growRegion(&region, frame, 0))
+        done |= 1<<0;
+    else
+        points->push_back(Point16(region.m_xOffset, region.m_yOffset));
+    if (growRegion(&region, frame, 1))
+        done |= 1<<1;
+    else
+        points->push_back(Point16(region.m_xOffset, region.m_yOffset));
+    if (growRegion(&region, frame, 2))
+        done |= 1<<2;
+    else
+        points->push_back(Point16(seed.m_x, region.m_yOffset));
+    if (growRegion(&region, frame, 3))
+        done |= 1<<3;
+    else
+        points->push_back(seed);
+
+    getMean(region, frame, &mean);
+
+    while(done!=0x0f)
     {
         for (dir=0; dir<4; dir++)
         {
+            newRegion = region;
             if (done&(1<<dir))
                 continue;
-            else if (dir==0) // add to left
+            else if (dir==0) // left
+                newRegion.m_width = 0;
+            else if (dir==1) // top
+                newRegion.m_height = 0; // top and bottom
+            else if (dir==2) // right
             {
-                if (region.m_xOffset>GROW_INC)
-                    newRegion.m_xOffset = region.m_xOffset-GROW_INC;
-                else
-                {
-                    newRegion.m_xOffset = 0;
-                    done |= 1<<dir;
-                }
-                newRegion.m_yOffset = region.m_yOffset;
-                newRegion.m_width = GROW_INC;
-                newRegion.m_height = region.m_height;
+                newRegion.m_xOffset += newRegion.m_width;
+                newRegion.m_width = 0;
             }
-            else if (dir==1) // add to top
+            else if (dir==3) // bottom
             {
-                if (region.m_yOffset>GROW_INC)
-                    newRegion.m_yOffset = region.m_yOffset-GROW_INC;
-                else
-                {
-                    newRegion.m_yOffset = 0;
-                    done |= 1<<dir;
-                }
-                newRegion.m_xOffset = region.m_xOffset;
-                newRegion.m_width = region.m_width;
-                newRegion.m_height = GROW_INC;
-            }
-            else if (dir==2) // add to right
-            {
-                if (region.m_xOffset+region.m_width+GROW_INC>frame.m_width)
-                {
-                    newRegion.m_width = frame.m_width-region.m_xOffset-region.m_width;
-                    done |= 1<<dir;
-                }
-                else
-                    newRegion.m_width = GROW_INC;
-                newRegion.m_xOffset = region.m_xOffset+region.m_width;
-                newRegion.m_yOffset = region.m_yOffset;
-                newRegion.m_height = region.m_height;
-            }
-            else // dir==3, add to bottom
-            {
-                if (region.m_yOffset+region.m_height+GROW_INC>frame.m_height)
-                {
-                    newRegion.m_height = frame.m_height-region.m_yOffset-region.m_height;
-                    done |= 1<<dir;
-                }
-                else
-                    newRegion.m_height = GROW_INC;
-                newRegion.m_xOffset = region.m_xOffset;
-                newRegion.m_yOffset = region.m_yOffset+region.m_height;
-                newRegion.m_width = region.m_width;
+                newRegion.m_yOffset += newRegion.m_height;
+                newRegion.m_height = 0;
             }
 
-            // calculate new region mean
-            map(frame, newRegion);
-            mean(&newMean);
-
-            // test new region
-            dist = distance(mean0, newMean);
-
-            if (dist>GROW_MAX_DISTANCE || m_hpixelLen==0)
+            if (growRegion(&newRegion, frame, dir))
                 done |= 1<<dir;
-            else // new region passes, so add new region
+            else
             {
-                if (newRegion.m_xOffset<region.m_xOffset)
-                {
-                    region.m_xOffset = newRegion.m_xOffset;
-                    region.m_width += newRegion.m_width;
-
-                }
-                else if (newRegion.m_yOffset<region.m_yOffset)
-                {
-                    region.m_yOffset = newRegion.m_yOffset;
-                    region.m_height += newRegion.m_height;
-
-                }
-                else if (newRegion.m_xOffset+newRegion.m_width>region.m_xOffset+region.m_width)
-                    region.m_width += newRegion.m_width;
-                else if (newRegion.m_yOffset+newRegion.m_height>region.m_yOffset+region.m_height)
-                    region.m_height += newRegion.m_height;
-            }
-            if (done==0x0f) // finished!
-            {
-                *result = region;
-				result->m_width = result->m_width*GROW_REGION_ATTEN;
-				result->m_xOffset += result->m_width*(1.0f-GROW_REGION_ATTEN)/2;
-				result->m_height = result->m_height*GROW_REGION_ATTEN;
-				result->m_yOffset += result->m_height*(1.0f-GROW_REGION_ATTEN)/2;
-                free(m_hpixels);
-                return 0;
+                ratio = testRegion(newRegion, frame, &mean, points);
+                if (ratio<m_minRatio)
+                    done |= 1<<dir;
+                else
+                    growRegion(&region, frame, dir);
             }
         }
     }
 }
 
-#ifndef PIXY
-void ColorLUT::matlabOut(const ColorModel *model, uint8_t index)
-{
-    unsigned int i;
-    QString str, name = "lutinfo";
-    QFile file(name + QString::number(index) + ".m");
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
-        return;
 
-    QTextStream out(&file);
+void ColorLUT::getMean(const RectA &region ,const Frame8 &frame, UVPixel *mean)
+{
+    UVPixel uv;
+    uint32_t n=0;
+    IterPixel ip(frame, region);
+
+    longlong usum=0, vsum=0;
+
+    while(ip.next(&uv))
+    {
+        usum += uv.m_u;
+        vsum += uv.m_v;
+        n++;
+    }
+
+    mean->m_u = usum/n;
+    mean->m_v = vsum/n;
+}
+
+void ColorLUT::setSigRange(uint8_t signum, float range)
+{
+	if (signum<1 || signum>CL_NUM_SIGNATURES)
+		return;
+	m_sigRanges[signum-1] = range;
+}
+
+void ColorLUT::setGrowDist(uint32_t dist)
+{
+	m_maxDist = dist;
+}
+
+void ColorLUT::setMinBrightness(float miny)
+{
+    m_miny = 3*((1<<8)-1)*miny;
+    if (m_miny==0)
+        m_miny = 1;
+
+}
+
+void ColorLUT::setCCGain(float gain)
+{
+    m_ccGain = gain;
+}
+
+uint32_t ColorLUT::getType(uint8_t signum)
+{
+    if (signum<1 || signum>CL_NUM_SIGNATURES)
+        return 0;
+
+    return m_signatures[signum-1].m_type;
+}
 
 #if 0
-    out << "function [HuePixels, Lines]=" << name << "()\n\n";
-    out << "HuePixels=[\n";
-    for (i=0; i<m_hpixelLen; i++)
-        out << str.sprintf("%d %d\n", m_hpixels[i].m_u, m_hpixels[i].m_v);
-
-    out << "];\n\n";
-#endif
-    out << "Lines=[\n";
-    out << str.sprintf("%f %f\n",  model->m_hue[0].m_slope,  model->m_hue[0].m_yi);
-    out << str.sprintf("%f %f\n",  model->m_hue[1].m_slope,  model->m_hue[1].m_yi);
-    out << str.sprintf("%f %f\n",  model->m_sat[0].m_slope,  model->m_sat[0].m_yi);
-    out << str.sprintf("%f %f\n",  model->m_sat[1].m_slope,  model->m_sat[1].m_yi);
-    out << "];\n";
-
-    file.close();
-}
-
-void ColorLUT::matlabOut()
+uint32_t ColorLUT::getColor(uint8_t signum)
 {
-    unsigned int i;
-    QString str, name = "lut";
-    QFile file(name + ".m");
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
-        return;
+    int32_t r, g, b, max, u, v;
 
-    QTextStream out(&file);
+    if (signum<1 || signum>CL_NUM_SIGNATURES)
+        return 0;
 
-    out << "function [LUT]=" << name << "()\n\n";
-    out << "LUT=[\n";
-    for (i=0; i<0x10000; i++)
-        out << str.sprintf("%d\n", m_lut[i]);
+    u = m_signatures[signum-1].m_uMean;
+    v = m_signatures[signum-1].m_vMean;
 
-    out << "];\n";
+    // u = r-g
+    // v = b-g
+    if (abs(u)>abs(v))
+    {
+        if (u>0)
+        {
+            r = u;
+            if (v>0)
+                g = 0;
+            else
+                g = -v;
+            b = v+g;
+        }
+        else
+        {
+            g = -u;
+            r = 0;
+            b = v+g;
+        }
+    }
+    else
+    {
+        if (v>0)
+        {
+            b = v;
+            if (u>0)
+                g = 0;
+            else
+                g = -u;
+            r = u+g;
+        }
+        else
+        {
+            g = -v;
+            b = 0;
+            r = u+g;
+        }
+    }
 
-    file.close();
+    if (r>g)
+        max = r;
+    else
+        max = g;
+    if (b>max)
+        max = b;
+
+    // normalize
+    if (max>0)
+    {
+        r = (float)r/max*255;
+        g = (float)g/max*255;
+        b = (float)b/max*255;
+        return (r<<16) | (g<<8) | b;
+    }
+    else
+        return 0;
 }
 #endif
-

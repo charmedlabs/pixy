@@ -215,7 +215,7 @@ public:
 
     int call(uint8_t service, ChirpProc proc, ...);
     int call(uint8_t service, ChirpProc proc, va_list args);
-    static uint8_t getType(void *arg);
+    static uint8_t getType(const void *arg);
     int service(bool all=true);
     int assemble(uint8_t type, ...);
     bool connected();
@@ -225,6 +225,8 @@ public:
     static int deserialize(uint8_t *buf, uint32_t len, ...);
     static int vserialize(Chirp *chirp, uint8_t *buf, uint32_t bufSize, va_list *args);
     static int vdeserialize(uint8_t *buf, uint32_t len, va_list *args);
+    static int deserializeParse(uint8_t *buf, uint32_t len, void *args[]);
+    static int loadArgs(va_list *args, void *recvArgs[]);
     static int getArgList(uint8_t *buf, uint32_t len, uint8_t *argList);
     int useBuffer(uint8_t *buf, uint32_t len);
 
@@ -233,8 +235,8 @@ public:
 protected:
     int remoteInit(bool connect);
     int recvChirp(uint8_t *type, ChirpProc *proc, void *args[], bool wait=false); // null pointer terminates
-    virtual int handleChirp(uint8_t type, ChirpProc proc, void *args[]); // null pointer terminates
-    virtual void handleXdata(void *data[]) {}
+    virtual int handleChirp(uint8_t type, ChirpProc proc, const void *args[]); // null pointer terminates
+    virtual void handleXdata(const void *data[]) {}
     virtual int sendChirp(uint8_t type, ChirpProc proc);
 
     uint8_t *m_buf;
@@ -267,8 +269,6 @@ private:
     int32_t handleInit(uint16_t *blkSize, uint8_t *hintSource);
     int32_t handleEnumerateInfo(ChirpProc *proc);
     int vassemble(va_list *args);
-    static int deserializeParse(uint8_t *buf, uint32_t len, void *args[]);
-    static int loadArgs(va_list *args, void *recvArgs[]);
     void restoreBuffer();
 
     ChirpProc updateTable(const char *procName, ProcPtr procPtr);

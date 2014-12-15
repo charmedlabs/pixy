@@ -13,10 +13,12 @@
 // end license header
 //
 
+#include <debug.h>
 #include "rls_m0.h"
 #include "frame_m0.h"
 #include "chirp.h"
 #include "qqueue.h"
+#include "pixyvals.h"
 
 
 //#define RLTEST
@@ -187,6 +189,9 @@ dest20	LDR 	r6, [r0] 	// 2
 } 
 #endif
 
+#define NEWLINE
+#ifndef NEWLINE
+
 __asm void lineProcessedRL0A(uint32_t *gpio, uint8_t *memory, uint32_t width) // width in bytes
 { 
 		PRESERVE8
@@ -248,7 +253,99 @@ dest11A	LDR 	r3, [r0] 	// 2
 		POP		{r4-r5, pc}
 }
 
+#else
 
+__asm void lineProcessedRL0A(uint32_t *gpio, uint8_t *memory, uint32_t width) // width in bytes
+{ 
+// r0: gpio
+// r1: memory
+// r2: end mem
+// r3: scratch
+// r4: scratch
+// r5: scratch
+// r6: lastv
+// r7: lastb+g
+		PRESERVE8
+		IMPORT 	callSyncM1
+
+		PUSH	{r4-r7, lr}
+
+		LSLS	r2, #3 // scale ending by 8
+		// add width to memory pointer so we can compare
+		ADDS	r2, r1
+		// generate hsync bit
+	  	MOVS	r7, #0x1
+		LSLS	r7, #11
+
+		PUSH	{r0-r3} // save args
+		BL.W	callSyncM1 // get pixel sync
+		POP		{r0-r3}	// restore args
+	   
+	   	// pixel sync starts here
+
+		// wait for hsync to go high
+dest10B	LDR 	r3, [r0] 	// 2
+		TST		r3, r7		// 1
+		BEQ		dest10B		// 3
+
+		// variable delay --- get correct phase for sampling
+		NOP
+		NOP
+
+loop5B
+		LDRB 	r3, [r0] // blue
+		// cycle
+		EORS	r6, r6
+		EORS	r7, r7
+		NOP
+		NOP
+		NOP
+		NOP
+		NOP
+		NOP
+		NOP
+		NOP
+
+loop6B
+		LDRB 	r4, [r0] // green 	 
+		// cycle 
+		ADDS    r5, r3, r4	// blue+green
+		ADDS	r7, r5	// blue+green+lastb+g
+		STRH 	r7, [r1, #2] // store b+gsum
+		// cycle
+		MOV		r7, r5 // save lastb+g
+		SUBS	r4, r3, r4   // blue-green (v)
+		ADDS	r6, r4
+		LSLS	r6, #16
+		STR	    r6,	[r1, #4] // store vsum
+		// cycle 
+		// pixel sync
+ 		LDRB 	r3, [r0] // blue
+		// cycle
+		MOV		r6, r4 // save lastv
+		LSLS	r4, #23  // shift b-g and get rid of higher-order bits
+		LSRS	r4, #26  // shift it back down and throw out the 3 lsbs
+		STRH    r4,	[r1, #0] // store shifted v
+		// cycle
+		ADDS	r1, #8
+		CMP		r1, r2
+		BLT		loop6B
+
+	   	// generate hsync bit
+		MOVS	r7, #0x1
+		LSLS	r7, #11
+		// wait for hsync to go low (end of line)	
+dest11B	LDR 	r3, [r0] 	// 2
+		TST		r3, r7		// 1
+		BNE		dest11B		// 3
+
+		POP		{r4-r7, pc}
+}
+
+#endif
+
+#ifndef NEWLINE 
+  
 __asm uint32_t lineProcessedRL1A(uint32_t *gpio, Qval *memory, uint8_t *lut, uint8_t *linestore, uint32_t width, uint8_t *shiftLut, 
 	Qval *qqMem, uint32_t qqIndex, uint32_t qqSize) // width in bytes
 {
@@ -524,6 +621,225 @@ ecpy	LSRS    r0, #2 // return number of qvals
 		POP		{r1-r7, pc}
 } 
 
+#else
+
+__asm uint32_t lineProcessedRL1A(uint32_t *gpio, Qval *memory, uint8_t *lut, uint8_t *linestore, uint32_t width, 
+	Qval *qqMem, uint32_t qqIndex, uint32_t qqSize) // width in bytes
+{
+// r0: gpio	register
+// r1: scratch 
+// r2: lut
+// r3: prev line
+// r4: column 
+// r5: scratch
+// r6: scratch
+// r7: prev model
+// r8: red pixel sum (for ysum)
+// r9: ending column
+// r10: usum
+// r11: ?
+// r12:	q memory 
+   
+		MACRO // check for end of line
+$lx		EOL_CHECK
+$lx		CMP 	r4, r9
+		BGE		eol
+	   	MEND
+
+		PRESERVE8
+		IMPORT 	callSyncM1
+
+		PUSH	{r1-r7, lr}
+		// bring in ending column
+		LDR		r4, [sp, #0x20]
+		LSLS	r4, #3 // scale ending count by 8
+	   	MOV		r9, r4  // move into r9
+	  	MOVS	r5, #0x1
+		LSLS	r5, #11	 // create hsync bit mask
+
+		PUSH	{r0-r3} // save args
+		BL.W	callSyncM1 // get pixel sync
+		POP		{r0-r3}	// restore args
+
+	   	// pixel sync starts here
+		
+		// wait for hsync to go high
+dest12A	LDR 	r6, [r0] 	// 2
+		TST		r6, r5		// 1
+		BEQ		dest12A		// 3
+
+		// variable delay --- get correct phase for sampling
+		MOV		r12, r1 // save q memory
+		MOVS	r4, #0 // clear column value
+
+		// *** PIXEL SYNC (start reading pixels)
+		LDRB 	r5, [r0] // load green pixel 
+		// cycle
+		NOP
+		NOP
+		NOP
+		SUBS	r4, #8
+beg0	ADDS 	r4, #8 // inc col 
+beg1	EOL_CHECK
+		// cycle
+		// *** PIXEL SYNC 
+		LDRB 	r6, [r0] // load red pixel 
+		// cycle
+		SUBS	r5, r6, r5   // red-green
+		MOV		r10, r5 // save red-green
+		ASRS	r5, #3	 // reduce 9 to 6 bits arithmetically
+		LSLS	r5, #26  // shift red-green and get rid of higher-order bits
+		LSRS	r5, #20  // shift red-green back, make it the higher 6 bits of the index
+		LDRH	r1, [r3, r4] // load shifted blue-green val
+		// cycle
+		ORRS	r1, r5   // form 12-bit index
+		LDRB	r7, [r2, r1] // load lut val
+		// cycle
+		// *** PIXEL SYNC
+		LDRB 	r5, [r0] // load green pixel 
+		// cycle
+		MOV		r8, r6 // save red
+		NOP
+		NOP
+		CMP		r7, #0
+		BEQ		beg0
+		ADDS 	r4, #8 // inc col 
+		EOL_CHECK
+		// cycle
+		NOP
+		NOP
+		// 2nd pixel
+		// *** PIXEL SYNC
+		LDRB 	r6, [r0] // load red pixel 
+		// cycle
+		SUBS	r5, r6, r5   // red-green
+		ADD 	r10, r5	 // usum
+		ASRS	r5, #3	 // reduce 9 to 6 bits arithmetically
+		LSLS	r5, #26  // shift red-green and get rid of higher-order bits
+		LSRS	r5, #20  // shift red-green back, make it the higher 8 bits of the index
+		LDRB	r1, [r3, r4] // load shifted blue-green val
+		// cycle
+		ORRS	r1, r5   // form 12-bit index
+		LDRB	r1, [r2, r1] // load lut val
+		// cycle
+		// *** PIXEL SYNC
+		LDRB 	r5, [r0] // load green pixel 
+		// cycle
+		ADD		r8, r6   // add red
+		NOP
+		MOV		r6, r10	 // bring in usum
+		CMP		r1, r7
+		BNE		beg0  
+		// ************ store qvals 
+ 		MOV		r5, r12	 // bring in qmem pointer
+ 		STRH	r6, [r5, #4] // store usum
+		// cycle
+		ORRS	r7, r4, r7  // combine signature and index
+		ADDS	r4, #2	 // increment line mem
+		// *** PIXEL SYNC RED
+		LDRH	r1, [r3, r4] // load b+gsum
+		// cycle 
+		ADD		r1, r8   // add red sum to b+gsum to create ysum
+		STRH	r1, [r5, #6] // store ysum
+		// cycle
+		ADDS	r4, #2	 // increment line mem
+		LDR		r1, [r3, r4] // load vsum which is shifted by 16
+		// cycle
+		ORRS	r1, r7 // combine vsum with signature and index
+		STR		r1, [r5] // store vsum
+		// cycle
+		NOP
+		// *** PIXEL SYNC GREEN
+		LDRB 	r5, [r0] // load green pixel 
+		// cycle
+		MOVS	r1, #8
+		ADD		r12, r1	// inc qmem
+		ADDS 	r4, #12  // inc col, skipped pixel
+		NOP
+		NOP
+
+#if 1
+		NOP
+		NOP
+		NOP
+		NOP
+		NOP
+
+		NOP
+		NOP
+		NOP
+		NOP
+		NOP
+		NOP
+		NOP
+		NOP
+		NOP
+		NOP
+		NOP
+		NOP
+
+		NOP
+		NOP
+		NOP
+		NOP
+		NOP
+		NOP
+		ADDS 	r4, #8  // inc col, skipped pixel
+#endif
+
+		B		beg1
+
+	   	// wait for hsync to go low
+eol		MOVS	r5, #0x1
+		LSLS	r5, #11
+dest20A	LDR 	r6, [r0] 	// 2
+		TST		r6, r5		// 1
+		BNE		dest20A		// 3
+
+	    // we have approx 1800 cycles to do something here
+		// The advantage of doing this is that we don't need to buffer much data
+		// and it reduces the latency-- we can start processing qvals immediately
+		// We need to copy these because the memory the qvals comes from must not be 
+		// accessed by the M4, or wait states will be thrown in and we'll lose pixel sync for that line
+		LDR		r1, [sp] // bring in original q memory location 
+
+		LDR		r2, [sp, #0x24] // bring in qq memory pointer 
+		LDR		r3, [sp, #0x28] // bring in qq index
+		LSLS 	r3, #3 // qq index in bytes (4 bytes/qval)
+		ADDS	r3, r2
+		LDR		r4, [sp, #0x2c] // bring in qq size
+		LSLS 	r4, #3 // qq size in bytes (4 bytes/qval)
+		ADDS	r4, r2
+
+lcpy	CMP		r1, r12	  // 1 end condition
+		BEQ		ecpy	  // 1 exit
+
+		LDR		r0, [r1, #0]  // 2 copy (read)
+		STR		r0, [r3, #0]  // 2 copy (write)
+		LDR		r0, [r1, #4]  // 2 copy (read)
+		STR		r0, [r3, #4]  // 2 copy (write)
+
+		ADDS	r1, #8	  // 1 inc qval index
+		ADDS	r3, #8	  // 1 inc qq counter
+
+		CMP		r4, r3    // 1 check for qq index wrap
+		BEQ		wrap	  // 1
+		B		lcpy	  // 3
+
+wrap	
+		LDR		r3, [sp, #0x24] // bring in qq memory pointer 
+		B lcpy
+
+
+ecpy	MOV		r0, r12  // qval pointer
+		LDR		r1, [sp] // bring in original q memory location 
+		SUBS	r0, r1 // get number of qvals*8, return this number
+		LSRS	r0, #3 // divide by 8
+		POP		{r1-r7, pc}
+
+} 
+
+#endif
 
 uint8_t intLog(int i)
 {
@@ -553,48 +869,41 @@ uint32_t rgData[] =
 
 int32_t getRLSFrame(uint32_t *m0Mem, uint32_t *lut)
 {
+#define MAX_NEW_QVALS_PER_LINE   ((CAM_RES2_WIDTH/3)+2)
+
 	uint8_t *lut2 = (uint8_t *)*lut;
-	Qval *qvalStore = (Qval *)*m0Mem;
 	uint32_t line;
+	Qval *qvalStore;
 	uint32_t numQvals;
-	uint32_t totalQvals;
 	uint8_t *lineStore;
-	uint8_t *logLut;
+	Qval lineBegin, frameEnd;
+	lineBegin.m_col = lineBegin.m_u = lineBegin.m_v = lineBegin.m_y = 0;
+	frameEnd.m_col = 0xffff;
+	frameEnd.m_u = frameEnd.m_v = frameEnd.m_y = 0;
 
-	lineStore = (uint8_t *)(qvalStore + MAX_QVALS_PER_LINE);
-	logLut = lineStore + CAM_RES2_WIDTH + 4;
-	// m0mem needs to be at least 64*4 + CAM_RES2_WIDTH*2 + 4 =	900 ~ 1024
-
-	if (g_logLut!=logLut)
-	{
-		g_logLut = logLut; 
-	 	createLogLut();
-	}
-
-	// don't even attempt to grab lines if we're lacking space...
-	if (qq_free()<MAX_QVALS_PER_LINE)
-		return -1; 
-
-	// indicate start of frame
-	qq_enqueue(0xffffffff); 
+   	qvalStore =	(Qval *)*m0Mem;
+	lineStore = (uint8_t *)*m0Mem + MAX_NEW_QVALS_PER_LINE*sizeof(Qval);
 	skipLines(0);
-	for (line=0, totalQvals=1; line<CAM_RES2_HEIGHT; line++)  // start totalQvals at 1 because of start of frame value
+	for (line=0; line<CAM_RES2_HEIGHT; line++) 
 	{
 		// not enough space--- return error
-		if (qq_free()<MAX_QVALS_PER_LINE)
-			return -1; 
-		// mark beginning of this row (column 0 = 0)
-		// column 1 is the first real column of pixels
-		qq_enqueue(0); 
+		if (qq_free()<MAX_NEW_QVALS_PER_LINE)
+		{
+			frameEnd.m_col = 0xfffe;
+			qq_enqueue(&frameEnd);
+			printf("*\n");
+			return -1;
+		} 
+		qq_enqueue(&lineBegin); 
 		lineProcessedRL0A((uint32_t *)&CAM_PORT, lineStore, CAM_RES2_WIDTH); 
-		numQvals = lineProcessedRL1A((uint32_t *)&CAM_PORT, qvalStore, lut2, lineStore, CAM_RES2_WIDTH, g_logLut, g_qqueue->data, g_qqueue->writeIndex, QQ_MEM_SIZE);
-		// modify qq to reflect added data
+		numQvals = lineProcessedRL1A((uint32_t *)&CAM_PORT, qvalStore, lut2, lineStore, CAM_RES2_WIDTH, g_qqueue->data, g_qqueue->writeIndex, QQ_MEM_SIZE);
 		g_qqueue->writeIndex += numQvals;
 		if (g_qqueue->writeIndex>=QQ_MEM_SIZE)
 			g_qqueue->writeIndex -= QQ_MEM_SIZE;
 		g_qqueue->produced += numQvals;
-		totalQvals += numQvals+1; // +1 because of beginning of line 
 	}
+	qq_enqueue(&frameEnd);
+
 	return 0;
 }
 

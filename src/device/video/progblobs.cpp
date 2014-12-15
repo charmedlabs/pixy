@@ -19,6 +19,7 @@
 #include "conncomp.h"
 #include "serial.h"
 #include "rcservo.h"
+#include "exec.h"
 
 
 Program g_progBlobs =
@@ -38,10 +39,15 @@ int blobsSetup()
 	// setup camera mode
 	cam_setMode(CAM_MODE1);
  	
+#ifdef DA
 	// load lut if we've grabbed any frames lately
 	if (g_rawFrame.m_pixels)
 		cc_loadLut();
+#endif
 
+	// if there have been any parameter changes, we should regenerate the LUT (do it regardless)
+	g_blobs->m_clut.generateLUT();	
+			
 	// setup qqueue and M0
 	g_qqueue->flush();
 	exec_runM0(0);
@@ -94,13 +100,18 @@ void handleRecv()
 
 int blobsLoop()
 {
+#if 1
 	BlobA *blobs;
 	BlobB *ccBlobs;
 	uint32_t numBlobs, numCCBlobs;
+	static uint32_t drop = 0;
 
 	// create blobs
-	g_blobs->blobify();
-
+	if (g_blobs->blobify()<0)
+	{
+		DBG("drop %d\n", drop++);
+		return 0;
+	}
 	// handle received data immediately
 	handleRecv();
 
@@ -115,6 +126,36 @@ int blobsLoop()
 	// deal with any latent received data until the next frame comes in
 	while(!g_qqueue->queued())
 		handleRecv();
+
+#endif
+#if 0
+	Qval qval;
+	static int i = 0;
+	while(1)
+	{
+		if (g_qqueue->dequeue(&qval) && qval.m_col==0xffff)
+		{
+			cprintf("%d\n", i++);
+			break;
+		}	
+	}
+#endif
+#if 0
+	BlobA *blobs;
+	BlobB *ccBlobs;
+	uint32_t numBlobs, numCCBlobs;
+	static uint32_t drop = 0;
+
+	// create blobs
+	if (g_blobs->blobify()<0)
+	{
+		DBG("drop %d\n", drop++);
+		return 0;
+	}
+	g_blobs->getBlobs(&blobs, &numBlobs, &ccBlobs, &numCCBlobs);
+	cc_sendBlobs(g_chirpUsb, blobs, numBlobs, ccBlobs, numCCBlobs);
+
+#endif
 
 	return 0;
 }

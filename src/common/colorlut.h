@@ -13,79 +13,117 @@
 // end license header
 //
 #ifndef COLORLUT_H
-#define COLORLUT_H
+#define COLORLUT_H	  
 
 #include <inttypes.h>
+#include "simplevector.h"
 #include "pixytypes.h"
 
-#undef PI
-#define PI 3.1415926f
-
-#define CL_NUM_MODELS                   7
-#define CL_LUT_SIZE                     0x10000
-#define CL_DEFAULT_ITERATE_STEP         0.1f
-#define CL_DEFAULT_HUETOL               1.0f
-#define CL_DEFAULT_SATTOL               1.0f
-#define CL_DEFAULT_MINSAT               15.0f
-#define CL_DEFAULT_MAXSAT_RATIO         2.0f
-#define CL_DEFAULT_OUTLIER_RATIO        0.90f
-#define CL_MIN_MEAN                     0.001f
-#define CL_HPIXEL_MAX_SIZE              10000
+#define CL_NUM_SIGNATURES               7
+#define CL_LUT_COMPONENT_SCALE          6
+#define CL_LUT_SIZE                     (1<<(CL_LUT_COMPONENT_SCALE*2))
+#define CL_LUT_ENTRY_SCALE              15
+#define CL_GROW_INC                     4
+#define CL_MIN_Y_F                      0.05 // for when generating signatures, etc
+#define CL_MIN_Y                        (int32_t)(3*((1<<8)-1)*CL_MIN_Y_F)
+#define CL_MIN_RATIO                    0.25f
+#define CL_DEFAULT_MINY                 0.1f
+#define CL_DEFAULT_SIG_RANGE			2.5f
+#define CL_MAX_DIST                     2000
+#define CL_DEFAULT_TOL                  0.9f
+#define CL_DEFAULT_CCGAIN               1.5f
 #define CL_MODEL_TYPE_COLORCODE         1
 
-struct ColorModel
-{
-    ColorModel()
-    {
-        m_type = 0;
-        // Lines have their own constructors
-    }
 
-    uint32_t m_type; // bitmap  0x1 = color code
-    Line m_hue[2];
-    Line m_sat[2];
+struct ColorSignature
+{
+	ColorSignature()
+	{
+		m_uMin = m_uMax = m_uMean = m_vMin = m_vMax = m_vMean = m_type = 0;
+	}	
+
+    int32_t m_uMin;
+    int32_t m_uMax;
+    int32_t m_uMean;
+    int32_t m_vMin;
+    int32_t m_vMax;
+    int32_t m_vMean;
+	uint32_t m_rgb;
+	uint32_t m_type;
 };
 
+struct RuntimeSignature
+{
+    int32_t m_uMin;
+    int32_t m_uMax;
+    int32_t m_vMin;
+    int32_t m_vMax;
+    uint32_t m_rgbSat;
+};
+
+typedef SimpleVector<Point16> Points;
+
+class IterPixel
+{
+public:
+    IterPixel(const Frame8 &frame, const RectA &region);
+    IterPixel(const Frame8 &frame, const Points *points);
+    bool next(UVPixel *uv, RGBPixel *rgb=NULL);
+    bool reset(bool cleari=true);
+	uint32_t averageRgb(uint32_t *pixels=NULL);
+
+private:
+    bool nextHelper(UVPixel *uv, RGBPixel *rgb);
+
+    Frame8 m_frame;
+    RectA m_region;
+    uint32_t m_x, m_y;
+    uint8_t *m_pixels;
+    const Points *m_points;
+    int m_i;
+};
 
 class ColorLUT
 {
 public:
-    ColorLUT(const void *lutMem);
+    ColorLUT(uint8_t *lut);
     ~ColorLUT();
 
-    int setBounds(float minSat, float hueTol, float satTol);
-    int setOther(float maxSatRatio, float outlierRatio);
+    int generateSignature(const Frame8 &frame, const RectA &region, uint8_t signum);
+    int generateSignature(const Frame8 &frame, const Point16 &point, Points *points, uint8_t signum);
+	ColorSignature *getSignature(uint8_t signum);
+	int setSignature(uint8_t signum, const ColorSignature &sig);
 
-    int generate(ColorModel *model, const Frame8 &frame, const RectA &region);
-    int growRegion(RectA *result, const Frame8 &frame, const Point16 &seed);
-    void add(const ColorModel *model, uint8_t modelIndex);
-    void clear(uint8_t modelIndex=0); // 0 = all models
-    uint32_t getType(uint8_t modelIndex);
+    int generateLUT();
+    void clearLUT(uint8_t signum=0);
+	void updateSignature(uint8_t signum);
+    void growRegion(const Frame8 &frame, const Point16 &seed, Points *points);
+
+	void setSigRange(uint8_t signum, float range);
+	void setMinBrightness(float miny);
+	void setGrowDist(uint32_t dist);
+    void setCCGain(float gain);
+    uint32_t getType(uint8_t signum);
+
+    // these should be in little access methods, but they're here to speed things up a tad
+    ColorSignature m_signatures[CL_NUM_SIGNATURES];
+    RuntimeSignature m_runtimeSigs[CL_NUM_SIGNATURES];
+    uint32_t m_miny;
 
 private:
-    void map(const Frame8 &frame, const RectA &region);
-    void mean(Fpoint *meanVal);
-    float iterate(Line line, float step);
-    void tweakMean(float *mean);
-    uint32_t boundTest(const Line *line, float dir);
-    bool checkBounds(const ColorModel *model, const HuePixel *pixel);
+    bool growRegion(RectA *region, const Frame8 &frame, uint8_t dir);
+    float testRegion(const RectA &region, const Frame8 &frame, UVPixel *mean, Points *points);
 
-#ifndef PIXY
-    void matlabOut(const ColorModel *model, uint8_t index);
-    void matlabOut();
-#endif
+    void calcRatios(IterPixel *ip, ColorSignature *sig, float ratios[]);
+    void iterate(IterPixel *ip, ColorSignature *sig);
+    void getMean(const RectA &region ,const Frame8 &frame, UVPixel *mean);
 
     uint8_t *m_lut;
-    HuePixel *m_hpixels;
-    uint32_t m_hpixelLen;  // number of pixels
-    uint32_t m_hpixelSize; // size of m_hpixels memory in HuePixels
-    uint32_t m_types[CL_NUM_MODELS];
-    float m_iterateStep;
-    float m_hueTol;
-    float m_satTol;
-    float m_minSat;
-    float m_maxSatRatio;
-    float m_outlierRatio;
+    uint32_t m_maxDist;
+    float m_ratio;
+    float m_minRatio;
+    float m_ccGain;
+    float m_sigRanges[CL_NUM_SIGNATURES];
 };
 
 #endif // COLORLUT_H

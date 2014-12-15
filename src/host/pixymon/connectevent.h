@@ -39,11 +39,16 @@ protected:
     virtual void run();
 
 private:
+    void emitConnected(Device dev, bool state);
+
     libusb_context *m_context;
     MainWindow *m_main;
     unsigned int m_sleep;
     QMutex m_mutex;
     bool m_run;
+
+    Device m_dev;
+    bool m_state;
 };
 
 #endif // CONNECTEVENT_H

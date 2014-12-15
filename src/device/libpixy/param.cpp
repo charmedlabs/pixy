@@ -20,6 +20,7 @@
 #include "flash.h"
 #include "debug.h"
 #include "pixy_init.h"
+#include "simplevector.h"
 
 #define PRM_MAX_LEN       			256
 #define PRM_HEADER_LEN    			8
@@ -43,8 +44,24 @@ static const ProcModule g_module[] =
 	(ProcPtr)prm_setChirp, 
 	{CRP_STRING, CRP_INTS8, END}, 
 	"Set parameter value"
-	"@p parameter identifier (string)"
-	"@p parameter value (encoded)"
+	"@p identifier name of parameter (string)"
+	"@p value value of parameter (encoded)"
+	"@r 0 if success, negative if error"
+	},
+	{
+	"prm_setShadow",
+	(ProcPtr)prm_setShadowChirp, 
+	{CRP_STRING, CRP_INTS8, END}, 
+	"Set parameter's shadow value"
+	"@p identifier name of parameter (string)"
+	"@p value value of parameter (encoded)"
+	"@r 0 if success, negative if error"
+	},
+	{
+	"prm_resetShadows",
+	(ProcPtr)prm_resetShadows, 
+	{END}, 
+	"Reset the shadow values of all parameters"
 	"@r 0 if success, negative if error"
 	},
 	{
@@ -52,7 +69,7 @@ static const ProcModule g_module[] =
 	(ProcPtr)prm_getChirp, 
 	{CRP_STRING, END}, 
 	"Get parameter value"
-	"@p parameter identifier (string)"
+	"@p identifier name of parameter (string)"
 	"@r 0 if success, negative if error"
 	},
 	{
@@ -60,7 +77,7 @@ static const ProcModule g_module[] =
 	(ProcPtr)prm_getInfo, 
 	{CRP_STRING, END}, 
 	"Get parameter information"
-	"@p parameter identifier (string)"
+	"@p identifier name of parameter (string)"
 	"@r 0 if success, negative if error"
 	},
 	{
@@ -68,13 +85,11 @@ static const ProcModule g_module[] =
 	(ProcPtr)prm_getAll, 
 	{CRP_INT16, END}, 
 	"Get all information"
-	"@p index of parameter"
+	"@p index index of parameter"
 	"@r 0 if success, negative if error"
 	},
 	END
 };
-
-static bool g_dirty = false;
 
 struct ParamRecord
 {
@@ -84,20 +99,77 @@ struct ParamRecord
 	uint8_t data[PRM_DATA_LEN];
 };
 
+struct Shadow
+{
+	const char *id; // const data
+	uint16_t len;	
+	uint8_t *data;
+	ShadowCallback callback;
+};
+
+static bool g_dirty = false;
+
+static SimpleVector<Shadow> g_shadowTable;
+
+
 int prm_init(Chirp *chirp)
 {
+	int i, count;
 	// check integrity
 	if (!prm_verifyAll())
 	{
+		// take a more stochastic approach becuause there may be power-related issues that would cause us to 
+		// mis-read.  But if we truly are corrupt, count will not increment. 
+		for (i=0, count=0; i<10; i++)
+		{
+			if (prm_verifyAll())
+				count++;
+		}	
 		// if we're corrupt, format, start over
-		prm_format();
-		return -1;
+		if (count==0)
+		{
+			prm_format();
+			return -1;
+		}
 	} 
 
 	chirp->registerModule(g_module);
 		
 	return 0;	
 }
+
+Shadow *prm_findShadow(const char *id)
+{
+	int i;
+
+	for (i=0; i<g_shadowTable.size(); i++)
+	{
+		if (strcmp(g_shadowTable[i].id, id)==0)
+			return &g_shadowTable[i];
+	}
+	return NULL;
+}
+
+
+int32_t prm_resetShadows()
+{
+	int i, n;
+
+	for (i=0, n=0; i<g_shadowTable.size(); i++)
+	{
+		if (g_shadowTable[i].data)
+		{
+			free(g_shadowTable[i].data);
+			g_shadowTable[i].data = NULL;
+			g_shadowTable[i].len = 0;
+			n++;
+		}
+	}
+	if (n>0)
+		g_dirty = true;	// force a reloading of parameters
+	return n;
+}
+
 
 const char *prm_getId(ParamRecord *rec)
 {
@@ -266,7 +338,7 @@ int32_t prm_setChirp(const char *id, const uint32_t &valLen, const uint8_t *val)
 	int32_t res = 0;
 
 	buf = (uint8_t *)malloc(FLASH_SECTOR_SIZE);
-
+   	
 	if (buf==NULL)
 		return -2;
 
@@ -291,7 +363,6 @@ int32_t prm_setChirp(const char *id, const uint32_t &valLen, const uint8_t *val)
 
 	offset = prm_getDataOffset(rec);	
 	memcpy((uint8_t *)rec+offset, val, valLen);
-
 	 	
 	rec->len = valLen;
 	rec->crc = prm_crc(rec);
@@ -311,14 +382,24 @@ int32_t prm_get(const char *id, ...)
 	va_list args;
 	ParamRecord *rec;
 	int res;
+	Shadow *shadow = prm_findShadow(id);
 
-	rec = prm_find(id);
-	if (rec==NULL)
-		return -1;
+	if (shadow && shadow->data)
+	{
+		va_start(args, id);
+		res = Chirp::vdeserialize(shadow->data, shadow->len, &args);
+		va_end(args);
+	}
+	else
+	{
+		rec = prm_find(id);
+		if (rec==NULL)
+			return -1;
 	
-	va_start(args, id);
-	res = Chirp::vdeserialize((uint8_t *)rec+prm_getDataOffset(rec), rec->len, &args);
-	va_end(args);
+		va_start(args, id);
+		res = Chirp::vdeserialize((uint8_t *)rec+prm_getDataOffset(rec), rec->len, &args);
+		va_end(args);
+	}
 	 	
 	return res;
 }
@@ -327,11 +408,18 @@ int32_t prm_getChirp(const char *id, Chirp *chirp)
 {
 	ParamRecord *rec;
 
-	rec = prm_find(id);
-	if (rec==NULL)
-		return -1;
+	Shadow *shadow = prm_findShadow(id);
+
+	if (shadow && shadow->data)
+		CRP_RETURN(chirp, UINTS8(shadow->len, shadow->data), END);
+	else
+	{
+		rec = prm_find(id);
+		if (rec==NULL)
+			return -1;
 	
-	CRP_RETURN(chirp, UINTS8(rec->len, (uint8_t *)rec+prm_getDataOffset(rec)), END);
+		CRP_RETURN(chirp, UINTS8(rec->len, (uint8_t *)rec+prm_getDataOffset(rec)), END);
+	}
 
 	return 0;
 }
@@ -396,5 +484,59 @@ bool prm_dirty()
 void prm_setDirty(bool dirty)
 {
 	g_dirty = dirty;
+}
+
+
+int32_t prm_setShadowChirp(const char *id, const uint32_t &valLen, const uint8_t *val)
+{
+	Shadow *shadow = prm_findShadow(id);
+    void *args[CRP_MAX_ARGS+1];	// +1 for the null arg
+
+	if (shadow==NULL)
+		return -1;
+
+   	if (shadow->data==NULL)
+	{
+		shadow->data = (uint8_t *)malloc(valLen);
+		shadow->len = valLen;
+	}
+	else if (valLen!=shadow->len)
+		return -2;
+
+	memcpy(shadow->data, val, valLen);
+
+	if (shadow->callback)
+	{
+		Chirp::deserializeParse((uint8_t *)val, valLen, args);
+		(*shadow->callback)(id, args[0]);  // only 1 arg for now, but we can add other cases by looking for the null arg
+	}
+
+	return 0;
+}
+
+int prm_setShadowCallback(const char *id, ShadowCallback callback)
+{
+	Shadow shadow, *pshadow;
+
+	// can't create a shadow if it doesn't exist
+	if (prm_find(id)==NULL)
+		return -1;
+
+	pshadow = prm_findShadow(id);
+	if (pshadow) // shadow is already in the table
+		pshadow->callback = callback;
+	else // create new entry
+	{
+		uint32_t len = strlen(id)+1;
+		shadow.id = (const char *)malloc(len);
+		strcpy((char *)shadow.id, id);
+		shadow.len = 0;
+		shadow.data = NULL;
+		shadow.callback = callback;
+
+		g_shadowTable.push_back(shadow);
+	}
+
+	return 0;
 }
 

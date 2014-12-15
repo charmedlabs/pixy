@@ -98,7 +98,6 @@ static const ActionScriptlet actions[]=
 	"Run pan/tilt demo", 
 	"runprog 2\n"
 	}, 
-
 	{
 	"Set signature 1...", 
 	"cam_getFrame 0x21 0 0 320 200\n"
@@ -198,7 +197,7 @@ static const ActionScriptlet actions[]=
 	{
 	"Restore default parameter values", 
     "prm_restore\n"
-	"run\n"
+	"close\n"
 	}
 };
 
@@ -207,10 +206,12 @@ uint8_t g_run = false;
 uint8_t g_program = 0;
 uint8_t g_override = 0;
 int32_t g_execArg = 0;  // this arg mechanism is lame... should introduce an argv type mechanism 
+uint8_t g_debug = 0;
 
 static ChirpProc g_runM0 = -1;
 static ChirpProc g_runningM0 = -1;
 static ChirpProc g_stopM0 = -1;
+static uint8_t g_progM0 = 0;
 static Program *g_progTable[EXEC_MAX_PROGS];
 static void loadParams();
 
@@ -283,7 +284,6 @@ int32_t exec_runprog(const uint8_t &progNum)
 	g_execArg = 0;
 
 	if (progNum==0) // default program!
-
 	{
 		uint8_t program;
 		prm_get("Default program", &program, END);
@@ -320,7 +320,7 @@ int32_t exec_version(Chirp *chirp)
 {
 	uint16_t ver[] = {FW_MAJOR_VER, FW_MINOR_VER, FW_BUILD_VER};
 
-	cprintf("Pixy firmware version %d.%d.%d\n", ver[0], ver[1], ver[2]);
+	//cprintf("Pixy firmware version %d.%d.%d\n", ver[0], ver[1], ver[2]);
 	if (chirp)
 		CRP_RETURN(chirp, UINTS16(sizeof(ver), ver), END);
 
@@ -347,6 +347,8 @@ int exec_runM0(uint8_t prog)
 	g_chirpM0->callSync(g_runM0, UINT8(prog), END_OUT_ARGS,
 		&responseInt, END_IN_ARGS);
 
+	g_progM0 = prog;
+
 	return responseInt;
 }
 
@@ -355,6 +357,16 @@ int exec_stopM0()
 	int responseInt;
 
 	g_chirpM0->callSync(g_stopM0, END_OUT_ARGS,
+		&responseInt, END_IN_ARGS);
+
+	return responseInt;
+}
+
+uint8_t exec_runningM0()
+{
+	uint32_t responseInt;
+
+	g_chirpM0->callSync(g_runningM0, END_OUT_ARGS,
 		&responseInt, END_IN_ARGS);
 
 	return responseInt;
@@ -386,7 +398,11 @@ static void loadParams()
 {
 	// exec's params added here
 	prm_add("Default program", 0, 
-		"Selects the program number that's run by default upon power-up. (default 0)", UINT8(0), END);
+		"@c Expert Selects the program number that's run by default upon power-up. (default 0)", UINT8(0), END);
+	prm_add("Debug", 0, 
+		"@c Expert Sets the debug level for the firmware. (default 0)", UINT8(0), END);
+	
+	prm_get("Debug", &g_debug, END);
 }
 
 void exec_loadParams()
@@ -440,6 +456,7 @@ void exec_loop()
 				state = 3; // stop state
 			else if (prevConnected && !connected) // if we disconnect from pixymon, revert back to default program
 			{
+				prm_resetShadows(); // shadows are no longer valid now that the host is disconnected.
 				exec_runprog(0); // run default program
 				state = 0; // setup state
 			}
@@ -479,3 +496,25 @@ void exec_loop()
 		prevConnected = connected;
 	}
 }
+
+uint8_t exec_pause()
+{
+	uint8_t running;
+  	running = exec_runningM0();
+	if (running)
+		exec_stopM0();
+	return running;
+}
+
+void exec_resume()
+{
+	g_qqueue->flush();
+	exec_runM0(g_progM0);
+}
+
+void exec_sendEvent(Chirp *chirp, uint32_t event)
+{
+	if (chirp)
+		CRP_SEND_XDATA(chirp, HTYPE(FOURCC('E','V','T','1')), INT32(event));
+}
+

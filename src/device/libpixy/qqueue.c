@@ -18,11 +18,11 @@
 
 struct QqueueFields *g_qqueue = (struct QqueueFields *)QQ_LOC;
 
-uint32_t qq_enqueue(Qval val)
+uint32_t qq_enqueue(const Qval *val)
 {
     if (qq_free()>0)
     {
-        g_qqueue->data[g_qqueue->writeIndex++] = val;
+        g_qqueue->data[g_qqueue->writeIndex++] = *val;
         g_qqueue->produced++;
 		if (g_qqueue->writeIndex==QQ_MEM_SIZE)
 			g_qqueue->writeIndex = 0;

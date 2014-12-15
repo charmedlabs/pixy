@@ -23,6 +23,9 @@ ConnectEvent::ConnectEvent(MainWindow *main, unsigned int sleep)
     m_main = main;
     m_sleep = sleep;
     m_run = true;
+    m_state = -1;
+    m_dev = NONE;
+
     libusb_init(&m_context);
     start();
 }
@@ -56,6 +59,19 @@ Device ConnectEvent::getConnected()
     return res;
 }
 
+void ConnectEvent::emitConnected(Device dev, bool state)
+{
+    // this makes sure we only send connect events upon changes
+    // which also prevents late events from coming in after we destroy this class instance.
+    if (dev!=m_dev || state!=m_state)
+    {
+        m_dev = dev;
+        m_state = state;
+
+        emit connected(m_dev, m_state);
+    }
+}
+
 // this polling loop is much more portable between OSs than detecting actual connect/disconnect events
 void ConnectEvent::run()
 {
@@ -68,13 +84,11 @@ void ConnectEvent::run()
     while(m_run)
     {
         dev = getConnected();
-        if (dev!=NONE)
-        {
-            msleep(1000);
-            emit connected(dev, true);
-            return;
-        }
         msleep(1000);
+        if (dev!=NONE)
+            emitConnected(dev, true);
+        else
+            emitConnected(dev, false);
     }
 }
 

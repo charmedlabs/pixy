@@ -18,7 +18,6 @@ SOURCES += main.cpp\
     interpreter.cpp \
     renderer.cpp \
     chirpmon.cpp \
-    calc.cpp \
     dfu.cpp \
     connectevent.cpp \
     flash.cpp \
@@ -27,12 +26,20 @@ SOURCES += main.cpp\
     ../../common/colorlut.cpp \
     ../../common/blob.cpp \
     ../../common/blobs.cpp \
-    processblobs.cpp \
     ../../common/qqueue.cpp \
     configdialog.cpp \
     aboutdialog.cpp \
     parameters.cpp \
-    paramfile.cpp
+    paramfile.cpp \
+    dataexport.cpp \
+    monmodule.cpp \
+    cblobmodule.cpp \
+    colorblob.cpp \
+    monparameterdb.cpp \
+    cccmodule.cpp \
+    debug.cpp \
+    blobs2.cpp \
+    ../../common/calc.cpp
 
 HEADERS  += mainwindow.h \
     videowidget.h \
@@ -55,7 +62,6 @@ HEADERS  += mainwindow.h \
     ../../common/blobs.h \
     ../../common/blob.h \
     ../../common/blobs.h \
-    processblobs.h \
     ../../common/qqueue.h \
     pixymon.h \
     configdialog.h \
@@ -63,7 +69,18 @@ HEADERS  += mainwindow.h \
     sleeper.h \
     aboutdialog.h \
     parameters.h \
-    paramfile.h
+    paramfile.h \
+    dataexport.h \
+    monmodule.h \
+    cblobmodule.h \
+    colorblob.h \
+    monparameterdb.h \
+    simplevector.h \
+    ../../common/simplevector.h \
+    cccmodule.h \
+    debug.h \
+    blobs2.h \
+    ../../common/calc.h
 
 INCLUDEPATH += ../../common
 

@@ -15,16 +15,24 @@
 
 #ifndef RENDERER_H
 #define RENDERER_H
+
 #include <QObject>
 #include <QImage>
 #include "pixytypes.h"
-#include "processblobs.h"
+#include "monmodule.h"
+//#include "processblobs.h"
+
+#include <simplevector.h>
+typedef SimpleVector<Point16> Points;
+
+#define RAWFRAME_SIZE    0x10000
+#define PALETTE_SIZE     7
 
 class Interpreter;
 
 class VideoWidget;
 
-class Renderer : public QObject
+class Renderer : public QObject, public MonModule
 {
     Q_OBJECT
 
@@ -32,54 +40,49 @@ public:
     Renderer(VideoWidget *video, Interpreter *interpreter);
     ~Renderer();
 
-    int render(uint32_t type, void *args[]);
-    int renderBackground();
-    int renderRect(uint16_t width, uint16_t height, const RectA &rect);
-    void emitFlushImage();
-    void regionCommand(int x0, int y0, int width, int height, const QStringList &argv);
+    // MonModule
+    virtual bool render(uint32_t fourcc, const void *args[]);
+    virtual void paramChange();
 
-    void setMode(uint32_t mode)
-    {
-        m_mode = mode;
-    }
-
-    int saveImage(const QString &filename);
-
-    Frame8 m_rawFrame;
-    ProcessBlobs m_blobs;
-
-
-signals:
-    void image(QImage image);
-    void flushImage();
-
-private:
-    inline void interpolateBayer(unsigned int width, unsigned int x, unsigned int y, unsigned char *pixel, unsigned int &r, unsigned int &g, unsigned int &b);
+    int renderBackground(uint8_t renderFlags);
+    QImage *backgroundImage(); // get background from BA81 formatted image data
+    Frame8 *backgroundRaw();
 
     int renderCCQ1(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t numVals, uint32_t *qVals);
     int renderBA81(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame);
     int renderCCB1(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t numBlobs, uint16_t *blobs);
     int renderCCB2(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t numBlobs, uint16_t *blobs, uint32_t numCCBlobs, uint16_t *ccBlobs);
-    int renderCMV1(uint8_t renderFlags, uint32_t cmodelsLen, float *cmodels, uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame);
+    int renderBLT1(uint8_t renderFlags, uint16_t width, uint16_t height,
+                   uint16_t blockWidth, uint16_t blockHeight, uint32_t numPoints, uint16_t *points);
 
-    void renderBlobsB(QImage *image, float scale, BlobB *blobs, uint32_t numBlobs);
-    void renderBlobsA(QImage *image, float scale, BlobA *blobs, uint32_t numBlobs);
+    void renderBlobsB(bool blend, QImage *image, float scale, BlobB *blobs, uint32_t numBlobs);
+    void renderBlobsA(bool blend, QImage *image, float scale, BlobA *blobs, uint32_t numBlobs);
 
-    void emitImage(const QImage &image);
-
-    int renderBA81Filter(uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame);
-
-    void handleRL(QImage *image, uint color, uint row, uint startCol, uint len);
-
+    void renderRects(const Points &points, uint32_t size);
+    void renderRect(const RectA &rect);
+    int saveImage(const QString &filename);
     void pixelsOut(int x0, int y0, int width, int height);
+    void renderRL(QImage *image, uint color, uint row, uint startCol, uint len);
+    void setPalette(const uint32_t palette[]);
+    uint32_t *getPalette();
+
+
+    Frame8 m_rawFrame;
+
+signals:
+    void image(QImage image, uchar renderFlags);
+
+private:
+    inline void interpolateBayer(unsigned int width, unsigned int x, unsigned int y, unsigned char *pixel, unsigned int &r, unsigned int &g, unsigned int &b);
 
     VideoWidget *m_video;
     Interpreter *m_interpreter;
-
-    bool m_backgroundFrame; // our own copy because we're in a different thread (not gui thread)
     QImage m_background;
+    bool m_paletteSet;
+    uint32_t m_palette[PALETTE_SIZE];
+    static const unsigned int m_defaultPalette[PALETTE_SIZE];
 
-    uint32_t m_mode;
+    bool m_highlightOverexp;
 };
 
 #endif // RENDERER_H

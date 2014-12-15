@@ -21,15 +21,16 @@
 #include <QStringList>
 #include <QColor>
 #include <QVariant>
+#include <QList>
 #include <vector>
-#include <queue>
 #include <utility>
+#include "pixytypes.h"
 #include "chirpmon.h"
 #include "videowidget.h"
 #include "connectevent.h"
 #include "disconnectevent.h"
 #include "usblink.h"
-#include "parameters.h"
+#include "monparameterdb.h"
 
 #define PROMPT  ">"
 #define RUN_POLL_PERIOD_SLOW   500 // msecs
@@ -38,12 +39,32 @@
 
 class ConsoleWidget;
 class Renderer;
+class MonModule;
 
-enum CommandType {STOP, RUN, GET_ACTION, LOAD_PARAMS, SAVE_PARAMS};
+enum CommandType {STOP, RUN, STOP_LOCAL, RUN_LOCAL, LOAD_PARAMS, SAVE_PARAMS, UPDATE_PARAM, CLOSE};
 
-typedef std::pair<CommandType,QVariant> Command;
-typedef std::queue<Command> CommandQueue;
+struct Command
+{
+    Command(CommandType type, const QVariant &arg0=0, const QVariant &arg1=0)
+    {
+        m_type = type;
+        m_arg0 = arg0;
+        m_arg1 = arg1;
+    }
 
+    // need to implement this for QList::removeAll()
+    bool operator==(const Command &rhs)
+    {
+        return m_type==rhs.m_type;
+    }
+
+    CommandType m_type;
+    QVariant m_arg0;
+    QVariant m_arg1;
+
+};
+
+typedef QList<Command> CommandQueue;
 typedef std::pair<QString,QString> Arg;
 typedef std::vector<Arg> ArgList;
 
@@ -53,24 +74,23 @@ class Interpreter : public QThread
     Q_OBJECT
 
 public:
-    Interpreter(ConsoleWidget *console, VideoWidget *video, ParameterDB *data);
+    Interpreter(ConsoleWidget *console, VideoWidget *video, MonParameterDB *data);
     ~Interpreter();
 
     // local program business
     int beginLocalProgram();
     int endLocalProgram();
-    int runLocalProgram();
     int clearLocalProgram();
 
     // "remote" program business
-    void runOrStopProgram();
+    void runOrStopProgram(bool local=false);
     uint programRunning();
 
     void execute(const QString &command);
     void execute(QStringList commandList);
-    void getAction(int index);
     void loadParams();
     void saveParams();
+    void updateParam();
     int saveImage(const QString &filename);
     void printHelp();
 
@@ -79,24 +99,32 @@ public:
 
     uint16_t *getVersion();
 
+    void getSelection(RectA *region);
+    void getSelection(Point16 *point);
+    void cprintf(const char *format, ...);
+
     ChirpMon *m_chirp;
+    Renderer *m_renderer;
     ParameterDB m_pixyParameters;
-    ParameterDB *m_pixymonParameters;
+    MonParameterDB *m_pixymonParameters;
 
     friend class ChirpMon;
+    friend class Renderer;
 
 signals:
-    void runState(uint state);
+    void runState(int state);
     void textOut(QString text, QColor color=Qt::black);
     void error(QString text);
+    void consoleCommand(QString text);
     void prompt(QString text);
     void videoInput(VideoWidget::InputMode mode);
     void enableConsole(bool enable);
     void connected(Device device, bool state);
     void actionScriptlet(int index, QString action, QStringList scriptlet);
+    void actionScriptlet(QString action, QStringList scriptlet);
     void parameter(QString id, QByteArray data);
     void paramLoaded();
-    void paramChange();
+    void version(ushort major, ushort minor, ushort build);
 
 public slots:
 
@@ -113,24 +141,29 @@ private:
     void handleCall(const QStringList &argv);
     void listProgram();
     int call(const QStringList &argv, bool interactive=false);
-    void handleResponse(void *args[]);
-    void handleData(void *args[]);
+    void handleResponse(const void *args[]);
+    void handleData(const void *args[]);
 
     int addProgram(ChirpCallData data);
     int addProgram(const QStringList &argv);
-    int execute();
+    void handleLocalProgram();
 
     void getRunning();
     int sendRun();
     int sendStop();
     int sendGetAction(int index);
-    void queueCommand(CommandType type, QVariant arg=QVariant(0));
+    void queueCommand(CommandType type, const QVariant &arg0=0, const QVariant &arg1=0);
     void handlePendingCommand();
 
     void prompt();
 
+    QString extractProperty(const QString &tag, QStringList *words, QString *desc);
+    void handleProperties(const uint8_t *argList, Parameter *parameter, QString *desc);
     void handleSaveParams(); // save to Pixy
+    void handleSaveParams(bool shadow);
     void handleLoadParams(); // load from Pixy
+    void handleUpdateParam();
+    void sendMonModulesParamChange();
 
     QStringList getSections(const QString &id, const QString &string);
     int getArgs(const ProcInfo *info, ArgList *argList);
@@ -142,7 +175,6 @@ private:
 
     ConsoleWidget *m_console;
     VideoWidget *m_video;
-    Renderer *m_renderer;
 
     USBLink m_link;
 
@@ -161,6 +193,8 @@ private:
     ChirpProc m_get_param;
     ChirpProc m_getAll_param;
     ChirpProc m_set_param;
+    ChirpProc m_set_shadow_param;
+    ChirpProc m_reset_shadows;
 
     // for program
     bool m_programming;
@@ -169,20 +203,20 @@ private:
     bool m_run;
     bool m_fastPoll;
     bool m_notified;
-    bool m_paramDirty;
     int m_running;
 
     std::vector<ChirpCallData> m_program;
     std::vector<QStringList> m_programText;
 
     QString m_command;
-    QString m_externalCommand;
     QString m_print;
     Qt::Key m_key;
-    uint32_t m_rcount;
     QStringList m_argv; // executed on Pixy
     QStringList m_argvHost;  // executed on host
     QStringList m_commandList;
+    RectA m_selection;
+
+    QList <MonModule *> m_modules;
 
     uint8_t m_argTypes[0x100];
     uint16_t m_version[3];

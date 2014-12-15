@@ -35,7 +35,7 @@
 									<listOptionValue builtIn="false" value="__LPC43XX__"/>
 									<listOptionValue builtIn="false" value="CORE_M0APP"/>
 								</option>
-								<option id="gnu.c.compiler.option.misc.other.1780065471" name="Other flags" superClass="gnu.c.compiler.option.misc.other" value="-c -fmessage-length=0 -fno-builtin -ffunction-sections -fdata-sections" valueType="string"/>
+								<option id="gnu.c.compiler.option.misc.other.1780065471" name="Other flags" superClass="gnu.c.compiler.option.misc.other" value="-Wa,-ahlnds=${OutputFileBaseName}.asm -c -fmessage-length=0 -fno-builtin -ffunction-sections -fdata-sections" valueType="string"/>
 								<option id="com.crt.advproject.gcc.hdrlib.1190316855" name="Library headers" superClass="com.crt.advproject.gcc.hdrlib" value="com.crt.advproject.gcc.hdrlib.codered" valueType="enumerated"/>
 								<option id="gnu.c.compiler.option.include.paths.28912868" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/inc}&quot;"/>

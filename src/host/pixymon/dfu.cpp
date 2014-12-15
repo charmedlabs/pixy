@@ -269,7 +269,6 @@ static int usb_get_any_descriptor(struct libusb_device_handle *dev_handle,
 
 Dfu::Dfu()
 {
-    int num_devs;
     usb_dfu_func_descriptor func_dfu = {0};
     struct libusb_device_descriptor desc;
     int ret;

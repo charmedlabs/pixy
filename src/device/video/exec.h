@@ -17,10 +17,11 @@
 #define _EXEC_H
 
 #include "chirp.hpp"
+#include "debug_frmwrk.h"
 
-#define FW_MAJOR_VER		1
+#define FW_MAJOR_VER		2
 #define FW_MINOR_VER		0
-#define FW_BUILD_VER		3
+#define FW_BUILD_VER		1
 
 #define EXEC_MAX_PROGS   8
 #define EXEC_VIDEO_PROG  EXEC_MAX_PROGS
@@ -59,6 +60,17 @@ int32_t exec_list();
 int32_t exec_version(Chirp *chirp=NULL);
 int32_t exec_getAction(const uint16_t &index, Chirp *chirp=NULL);
 void exec_loadParams();
+void exec_sendEvent(Chirp *chirp, uint32_t event);
+
+uint8_t exec_pause();
+void exec_resume();
 
 extern int32_t g_execArg; 
+extern uint8_t g_debug;
+
+#define DBG(...)            if (g_debug) cprintf(__VA_ARGS__)
+#define DBGL(level, ...)    if (g_debug>=level) cprintf(__VA_ARGS__)
+#define DBGE(n, ...)        if (g_debug==n) cprintf(__VA_ARGS__)
+
+
 #endif
