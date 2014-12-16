@@ -116,7 +116,7 @@ int prm_init(Chirp *chirp)
 {
 	int i, count;
 	// check integrity
-	if (!prm_verifyAll())
+	if (!prm_verifyAll()) 
 	{
 		// take a more stochastic approach becuause there may be power-related issues that would cause us to 
 		// mis-read.  But if we truly are corrupt, count will not increment. 
@@ -127,10 +127,7 @@ int prm_init(Chirp *chirp)
 		}	
 		// if we're corrupt, format, start over
 		if (count==0)
-		{
 			prm_format();
-			return -1;
-		}
 	} 
 
 	chirp->registerModule(g_module);
