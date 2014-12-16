@@ -86,6 +86,9 @@ void rcs_init()
 	rcs_loadParams();
 		
 	g_chirpUsb->registerModule(g_module);
+
+	rcs_enable(0, 1);
+	rcs_enable(1, 1);
 }
 
 void rcs_loadParams()

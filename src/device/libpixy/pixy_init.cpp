@@ -185,6 +185,10 @@ void pixyInit(uint32_t slaveRomStart, const unsigned char slaveImage[], uint32_t
 
 	IPC_haltSlave();
 
+	// clear RC servo registers to prevent and glitches upon initialization
+	rcs_enable(0, 0);
+	rcs_enable(1, 0);
+
 	ADCInit();
    	SCTInit();
 	CameraInit();
@@ -204,8 +208,7 @@ void pixyInit(uint32_t slaveRomStart, const unsigned char slaveImage[], uint32_t
 
 	// initialize devices/modules
 	led_init();
-	if (prm_init(g_chirpUsb)<0) // error, let user know (don't just continue like nothing's happened)
-		showError(1, 0x0000ff, "Flash is corrupt, parameters have been lost\n");
+	prm_init(g_chirpUsb);
 	pwr_init();
 	cam_init();
 	rcs_init();

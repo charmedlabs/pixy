@@ -26,11 +26,12 @@
 #include "led.h"
 #include "qqueue.h"
 #include "exec.h"
+#include "misc.h"
 #include "calc.h"
-
 
 Qqueue *g_qqueue;
 Blobs *g_blobs;
+uint16_t g_ledBrightness;
 
 int g_loop = 0;
 
@@ -158,6 +159,12 @@ void cc_teachThreshCallback(const char *id, const uint32_t &val)
 	g_blobs->m_clut.setGrowDist(growDist);
 }
 
+void cc_ledBrightnessCallback(const char *id, const uint16_t &val)
+{
+	prm_get("LED brightness", &g_ledBrightness, END);
+	led_setMaxCurrent(g_ledBrightness);
+}
+
 void cc_loadParams(void)
 {
 	int i;
@@ -195,6 +202,9 @@ void cc_loadParams(void)
 	prm_add("Signature teach threshold", PRM_FLAG_SLIDER, 
 		"@c Expert @m 0 @M 10000 Determines how inclusive the growing algorithm is when teaching signatures with button-push method (default 2500)", INT32(2500), END);
 	prm_setShadowCallback("Signature teach threshold", (ShadowCallback)cc_teachThreshCallback);
+	prm_add("LED brightness", PRM_FLAG_SLIDER, 
+		"@c Expert @m 0 @M 20000 Sets the LED brightness -- bear in mind that if the LED is too bright, it can affect teach mode by illuminating the object! (default " STRINGIFY(LED_DEFAULT_MAX_CURRENT) ")", INT16(LED_DEFAULT_MAX_CURRENT), END);
+	prm_setShadowCallback("LED brightness", (ShadowCallback)cc_ledBrightnessCallback);
 
 	prm_add("Max blocks", 0, 
 		"@c Blocks Sets the maximum total blocks sent per frame. (default 1000)", UINT16(1000), END);
@@ -216,10 +226,12 @@ void cc_loadParams(void)
 	prm_get("Min brightness", &miny, END);
 	prm_get("Color code gain", &ccGain, END);
 	prm_get("Signature teach threshold", &growDist, END);
+	prm_get("LED brightness", &g_ledBrightness, END);
 	g_blobs->setParams(maxBlobs, maxBlobsPerModel, minArea, (ColorCodeMode)ccMode);
 	g_blobs->m_clut.setMinBrightness(miny);
 	g_blobs->m_clut.setCCGain(ccGain);
 	g_blobs->m_clut.setGrowDist(growDist);
+	led_setMaxCurrent(g_ledBrightness);
 	
 	cc_loadLut();
 }

@@ -93,6 +93,11 @@ int I2c::receive(uint8_t *buf, uint32_t len)
 	return 0;
 }
 
+int I2c::receiveLen()
+{
+}
+
+
 int I2c::update()
 {
 	// try to recover from out of sync condition between slave (us) and master

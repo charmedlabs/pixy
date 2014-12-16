@@ -151,7 +151,7 @@ bool ButtonMachine::handleSignature()
 		if (bt)
 		{
 			setTimer(&m_timer);
-			led_setMaxCurrent(LED_DEFAULT_MAX_CURRENT);
+			led_setMaxCurrent(g_ledBrightness); // restore default brightness
 			m_goto = 1;
 			led_set(0);
 		}

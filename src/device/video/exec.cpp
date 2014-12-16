@@ -24,6 +24,7 @@
 #include "serial.h"
 #include "rcservo.h"
 #include "progpt.h"
+#include "progblobs.h"
 #include "progchase.h"
 #include "param.h"
 
@@ -436,7 +437,8 @@ void exec_loop()
 		switch (state)
 		{
 		case 0:	// setup state
-			led_set(0);  // turn off any stray led
+			if (!g_ledSet)
+				led_set(0);  // turn off any stray led (but only if we set it, not if someone else has)
 			if ((*g_progTable[g_program]->setup)()<0)
 				state = 3; // stop state
 			else 

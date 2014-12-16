@@ -44,5 +44,6 @@ void cc_setLED();
 extern Qqueue *g_qqueue;
 extern Blobs *g_blobs;
 extern const uint32_t g_colors[];
+extern uint16_t g_ledBrightness;
 
 #endif
