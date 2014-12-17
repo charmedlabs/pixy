@@ -18,11 +18,12 @@
 #include "iserial.h"
 
 // different interfaces
-#define SER_INTERFACE_SPI     0
-#define SER_INTERFACE_I2C     1
-#define SER_INTERFACE_UART    2
-#define SER_INTERFACE_ADX     3
-#define SER_INTERFACE_ADY     4
+#define SER_INTERFACE_ARDUINO_SPI     0	  // arduino ICMP SPI (auto slave select)
+#define SER_INTERFACE_SS_SPI          1	  // spi with slave select
+#define SER_INTERFACE_I2C             2
+#define SER_INTERFACE_UART            3
+#define SER_INTERFACE_ADX             4
+#define SER_INTERFACE_ADY             5 
 
 
 int ser_init();

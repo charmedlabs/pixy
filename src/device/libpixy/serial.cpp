@@ -45,7 +45,7 @@ int ser_init()
 void ser_loadParams()
 {
 	prm_add("Data out port", 0, 
-		"@c Interface Selects the port that's used to output data, 0=SPI, 1=I2C, 2=UART, 3=analog/digital x, 4=analog/digital y (default 0)", UINT8(0), END);
+		"@c Interface Selects the port that's used to output data, 0=Arduino ICSP SPI, 1=SPI with SS, 2=I2C, 3=UART, 4=analog/digital x, 5=analog/digital y (default 0)", UINT8(0), END);
 	prm_add("I2C address", PRM_FLAG_HEX_FORMAT, 
 		"@c Interface Sets the I2C address if you are using I2C data out port. (default 0x54)", UINT8(I2C_DEFAULT_SLAVE_ADDR), END);
 	prm_add("UART baudrate", 0, 
@@ -76,6 +76,11 @@ int ser_setInterface(uint8_t interface)
 
 	switch (interface)
 	{		    
+	case SER_INTERFACE_SS_SPI:
+		g_serial = g_spi;
+		g_spi->setAutoSlaveSelect(false);
+		break;
+
 	case SER_INTERFACE_I2C:     
 		g_serial = g_i2c0;
 		break;
@@ -95,8 +100,9 @@ int ser_setInterface(uint8_t interface)
 		break;		
 
 	default:
-	case SER_INTERFACE_SPI:
+	case SER_INTERFACE_ARDUINO_SPI:
 		g_serial = g_spi;
+		g_spi->setAutoSlaveSelect(true);
 		break;
 	}
 

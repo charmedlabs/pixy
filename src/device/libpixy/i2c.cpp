@@ -39,10 +39,41 @@ void I2c::slaveHandler()
 		m_i2c->CONCLR = I2C_I2CONCLR_SIC;
 		break;
 
+	// Reading phase 
+	// Own SLA+R has been received, ACK has been returned 
+	case I2C_I2STAT_S_RX_SLAW_ACK:
+	// General call address has been received, ACK has been returned 
+	case I2C_I2STAT_S_RX_GENCALL_ACK:
+		m_i2c->CONSET = I2C_I2CONSET_AA;
+		m_i2c->CONCLR = I2C_I2CONCLR_SIC;
+		break;
+
+	// Previously addressed with own SLA
+	// DATA byte has been received
+	// ACK has been returned 
+	case I2C_I2STAT_S_RX_PRE_SLA_DAT_ACK:
+	// DATA has been received, ACK hasn been return 
+	case I2C_I2STAT_S_RX_PRE_GENCALL_DAT_ACK:
+		 // All data bytes that over-flow the specified receive
+		 // data length, just ignore them.
+		m_rq.write((uint8_t)m_i2c->DAT);
+		m_i2c->CONSET = I2C_I2CONSET_AA;
+		m_i2c->CONCLR = I2C_I2CONCLR_SIC;
+		break;
+
+	// Previously addressed with own SLA
+	// DATA byte has been received
+	// NOT ACK has been returned 
+	case I2C_I2STAT_S_RX_PRE_SLA_DAT_NACK:
+	// DATA has been received, NOT ACK has been returned 
+	case I2C_I2STAT_S_RX_PRE_GENCALL_DAT_NACK:
+		m_i2c->CONCLR = I2C_I2CONCLR_SIC;
+		break;
+
 	// Writing phase
 	// Own SLA+R has been received, ACK has been returned 
 	case I2C_I2STAT_S_TX_SLAR_ACK:
-	// Data has been transmitted, ACK has been received */
+	// Data has been transmitted, ACK has been received 
 	case I2C_I2STAT_S_TX_DAT_ACK:
 		if (m_tq.read(&c))
 			m_i2c->DAT = c;
@@ -90,11 +121,20 @@ int I2c::close()
 
 int I2c::receive(uint8_t *buf, uint32_t len)
 {
-	return 0;
+	uint32_t i;
+
+	for (i=0; i<len; i++)
+	{
+		if (m_rq.read(buf+i)==0)
+			break;
+	}
+
+	return i;
 }
 
 int I2c::receiveLen()
 {
+	return m_rq.receiveLen();
 }
 
 

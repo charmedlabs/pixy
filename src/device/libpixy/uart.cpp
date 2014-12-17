@@ -78,13 +78,11 @@ int Uart::close()
 int Uart::receive(uint8_t *buf, uint32_t len)
 {
 	uint32_t i;
-	uint8_t buf8;
 
 	for (i=0; i<len; i++)
 	{
-		if (m_rq.read(&buf8)==0)
+		if (m_rq.read(buf+i)==0)
 			break;
-		buf[i] = buf8;
 	}
 
 	return i;
