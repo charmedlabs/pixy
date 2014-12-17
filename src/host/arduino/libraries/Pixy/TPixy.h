@@ -76,6 +76,8 @@ public:
 	
   uint16_t getBlocks(uint16_t maxBlocks=1000);
   int8_t setServos(uint16_t s0, uint16_t s1);
+  int8_t setBrightness(uint8_t brightness);
+  int8_t setLED(uint8_t r, uint8_t g, uint8_t b);
   void init();
   
   Block *blocks;
@@ -226,5 +228,30 @@ template <class LinkType> int8_t TPixy<LinkType>::setServos(uint16_t s0, uint16_
   
   return link.send(outBuf, 6);
 }
+
+template <class LinkType> int8_t TPixy<LinkType>::setBrightness(uint8_t brightness)
+{
+  uint8_t outBuf[3];
+   
+  outBuf[0] = 0x00;
+  outBuf[1] = 0xfe; 
+  outBuf[2] = brightness;
+  
+  return link.send(outBuf, 3);
+}
+
+template <class LinkType> int8_t TPixy<LinkType>::setLED(uint8_t r, uint8_t g, uint8_t b)
+{
+  uint8_t outBuf[5];
+  
+  outBuf[0] = 0x00;
+  outBuf[1] = 0xfd; 
+  outBuf[2] = r;
+  outBuf[3] = g;
+  outBuf[4] = b;
+  
+  return link.send(outBuf, 5);
+}
+
 
 #endif
