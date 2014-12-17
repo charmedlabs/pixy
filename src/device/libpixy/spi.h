@@ -42,6 +42,7 @@ public:
 	virtual int update();
 
 	void slaveHandler();
+	void setAutoSlaveSelect(bool ass);
 
 private:
 	int checkIdle();
@@ -53,6 +54,7 @@ private:
 	uint32_t m_recvCounter;
 	uint32_t m_lastRecvCounter; 
 	uint8_t m_syncCounter;
+	bool m_autoSlaveSelect;
 };
 
 void spi_init(SerialCallback callback);
