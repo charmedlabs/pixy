@@ -103,6 +103,8 @@ public:
     void getSelection(Point16 *point);
     void cprintf(const char *format, ...);
 
+    void emitActionScriptlet(QString action, QStringList scriptlet);
+
     ChirpMon *m_chirp;
     Renderer *m_renderer;
     ParameterDB m_pixyParameters;

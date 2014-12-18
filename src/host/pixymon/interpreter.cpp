@@ -1382,3 +1382,7 @@ void Interpreter::handleUpdateParam()
     handleSaveParams(true);
 }
 
+void Interpreter::emitActionScriptlet(QString action, QStringList scriptlet)
+{
+    emit actionScriptlet(action, scriptlet);
+}
