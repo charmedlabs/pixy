@@ -74,7 +74,7 @@ void VideoWidget::clear()
 {
     m_images.clear();
     QImage img(m_width, m_height, QImage::Format_RGB32);
-    img.fill(Qt::black);
+    img.fill(0xff000000);
 
     handleImage(img, RENDER_FLAG_FLUSH);
 }

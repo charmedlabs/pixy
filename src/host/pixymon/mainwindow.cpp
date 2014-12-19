@@ -575,8 +575,9 @@ void MainWindow::handleFirmware(ushort major, ushort minor, ushort build)
     QString fwFilename;
     QString maxVerStr;
     ushort fmajor, fminor, fbuild;
-    qlonglong ver, maxVer;
+    qlonglong ver, currVer, maxVer;
 
+    currVer = ((qlonglong)major<<32) | (minor<<16) | build;
     for (i=0, maxVer=0; i<files.size(); i++)
     {
         parts = files[i].split('-');
@@ -589,9 +590,9 @@ void MainWindow::handleFirmware(ushort major, ushort minor, ushort build)
                 fminor = parts[1].toInt();
                 fbuild = parts[2].toInt();
 
-                if (fmajor>major || (fmajor==major && (short)fminor>minor))
+                ver = ((qlonglong)fmajor<<32) | (fminor<<16) | fbuild;
+                if (ver>currVer)
                 {
-                    ver = ((qlonglong)fmajor<<32) | (fminor<<16) | fbuild;
                     if (ver>maxVer)
                     {
                         maxVer = ver;
