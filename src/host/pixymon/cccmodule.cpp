@@ -13,6 +13,7 @@
 // end license header
 //
 
+#include <stdio.h>
 #include "cccmodule.h"
 #include "interpreter.h"
 #include "renderer.h"

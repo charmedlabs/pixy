@@ -18,7 +18,7 @@
 #if QT_VERSION>QT_VERSION_CHECK(5,0,0)
 #include <QStandardPaths>
 #endif
-#include "monparameterDB.h"
+#include "monparameterdb.h"
 #include "pixymon.h"
 #include "paramfile.h"
 #include "pixytypes.h"

@@ -13,6 +13,7 @@
 // end license header
 //
 
+#include <stdio.h>
 #include <stdarg.h>
 #include <QMutexLocker>
 #include "monmodule.h"
