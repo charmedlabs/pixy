@@ -34,6 +34,7 @@ class Flash;
 class ConnectEvent;
 class ConfigDialog;
 class QSettings;
+class QMessageBox;
 
 enum Device {NONE, PIXY, PIXY_DFU};
 
@@ -102,6 +103,7 @@ private:
     bool m_versionIncompatibility;
     QSettings *m_settings;
     MonParameterDB m_parameters;
+    QMessageBox *m_fwinstructions;
 };
 
 #endif // MAINWINDOW_H

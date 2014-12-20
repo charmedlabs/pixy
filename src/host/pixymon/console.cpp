@@ -92,6 +92,7 @@ void ConsoleWidget::print(QString text, QColor color)
         handleColor(color);
         DBG("console: %s", text.toUtf8().constData());
         insertPlainText(text);
+        moveCursor(QTextCursor::End);
 
         m_suppress = false;
     }
@@ -139,11 +140,13 @@ void ConsoleWidget::prompt()
             insertPlainText("\n");
         handleColor(); // change to default color
         insertPlainText(m_prompt);
+        moveCursor(QTextCursor::End);
+
     }
     m_lastLine = "";
     // if we have trouble keeping viewport
-    QScrollBar *sb = verticalScrollBar();
-    sb->setSliderPosition(sb->maximum());
+    //QScrollBar *sb = verticalScrollBar();
+    //sb->setSliderPosition(sb->maximum());
 }
 
 

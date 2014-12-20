@@ -60,6 +60,7 @@ MainWindow::MainWindow(int argc, char *argv[], QWidget *parent) :
     m_pixyConnected = false;
     m_pixyDFUConnected = false;
     m_configDialog = NULL;
+    m_fwinstructions = NULL;
     m_initScriptExecuted = false;
     m_versionIncompatibility = false;
 
@@ -257,6 +258,9 @@ void MainWindow::connectPixyDFU(bool state)
     if (state) // connect
     {
         m_console->print("Pixy programming state detected.\n");
+        // close the instuctions dialog if it's open
+        if (m_fwinstructions)
+            m_fwinstructions->done(0);
         try
         {
             if (!m_pixyDFUConnected)
@@ -612,6 +616,10 @@ void MainWindow::handleFirmware(ushort major, ushort minor, ushort build)
         xp = QSysInfo::WindowsVersion<=QSysInfo::WV_2003;
 #endif
 #endif
+        // if this dialog is already open, close
+        if (m_fwinstructions)
+            m_fwinstructions->done(0);
+
         QString str =
                 "There is a more recent firmware version (" + maxVerStr + ") available.<br>"
                 "Your Pixy is running firmware version " + QString::number(major) + "." + QString::number(minor) + "." + QString::number(build) + ".<br><br>"
@@ -619,13 +627,18 @@ void MainWindow::handleFirmware(ushort major, ushort minor, ushort build)
         if (QMessageBox::question(NULL, "New firmware available!", str, QMessageBox::Yes|QMessageBox::No, QMessageBox::Yes)==QMessageBox::Yes)
         {
             m_firmwareFile = QFileInfo(path, fwFilename).absoluteFilePath();
-            QMessageBox::information(NULL, "Get your Pixy ready!",
-                                     "Please follow these steps to get your Pixy ready to accept new firmware:<br><br>"
-                                     "1. Unplug your Pixy from USB (do this now).<br>"
-                                     "2. Press and hold down the white button on top of Pixy.<br>"
-                                     "3. Plug the USB cable back in while continuing to hold down the button.<br>"
-                                     "4. Release the button after the USB cable is plugged back in.<br>"
-                                     "5. Press OK (below), and wait (the drivers sometimes take time to install).");
+            m_fwinstructions = new QMessageBox(QMessageBox::Information, "Get your Pixy ready!",
+                           "Please follow these steps to get your Pixy ready to accept new firmware:<br><br>"
+                           "1. Unplug your Pixy from USB (do this now).<br>"
+                           "2. Press and hold down the white button on top of Pixy.<br>"
+                           "3. Plug the USB cable back in while continuing to hold down the button.<br>"
+                           "4. Release the button after the USB cable is plugged back in.<br>"
+                           "5. Wait. This message will go away when all is ready to proceed, but be patient,<br>"
+                           "the drivers sometimes take time to install.");
+            m_fwinstructions->setStandardButtons(QMessageBox::NoButton);
+            m_fwinstructions->setModal(false);
+            m_fwinstructions->exec();
+            m_fwinstructions = NULL;
         }
     }
 }
