@@ -74,7 +74,7 @@ class Interpreter : public QThread
     Q_OBJECT
 
 public:
-    Interpreter(ConsoleWidget *console, VideoWidget *video, MonParameterDB *data);
+    Interpreter(ConsoleWidget *console, VideoWidget *video, MonParameterDB *data, const QString &initScript="");
     ~Interpreter();
 
     // local program business
@@ -86,7 +86,7 @@ public:
     void runOrStopProgram(bool local=false);
     uint programRunning();
 
-    void execute(const QString &command);
+    void execute(QString command);
     void execute(QStringList commandList);
     void loadParams();
     void saveParams();
@@ -172,6 +172,7 @@ private:
     QString printProc(const ProcInfo *info,  int level=0);
     QString printArgType(uint8_t *type, int &index);
     QString printArgType(uint8_t type, uint32_t flags);
+    QStringList parseScriptlet(const QString &scriptlet);
 
     void augmentProcInfo(ProcInfo *info);
 
@@ -222,6 +223,7 @@ private:
 
     uint8_t m_argTypes[0x100];
     uint16_t m_version[3];
+    QString m_initScript;
 };
 
 

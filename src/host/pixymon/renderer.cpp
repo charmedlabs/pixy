@@ -45,10 +45,10 @@ Renderer::Renderer(VideoWidget *video, Interpreter *interpreter) : MonModule(int
     m_rawFrame.m_pixels = new uint8_t[RAWFRAME_SIZE];
     m_rawFrame.m_height = 0;
     m_rawFrame.m_width = 0;
-    m_highlightOverexp = true;
+    m_highlightOverexp = false;
     m_paletteSet = false;
 
-    m_interpreter->m_pixymonParameters->addCheckbox("Highlight overexposure", true,
+    m_interpreter->m_pixymonParameters->addCheckbox("Highlight overexposure", false,
         "Highlighting overexposure will overlay black pixels ontop of overexposed pixels in raw and cooked modes");
 
     connect(this, SIGNAL(image(QImage, uchar)), m_video, SLOT(handleImage(QImage, uchar))); // Qt::BlockingQueuedConnection);

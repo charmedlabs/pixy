@@ -583,20 +583,20 @@ void cam_shadowCallback(const char *id, const uint8_t &val)
 void cam_loadParams()
 {
 	prm_add("Camera Brightness", PRM_FLAG_SLIDER, 
-		"@c Signature_Tuning @m 0 @M 255 Sets the average brightness of the camera, can be between 0 and 255 (default 90)", UINT8(CAM_BRIGHTNESS_DEFAULT), END);
+		"@c Signature_Tuning @m 0 @M 255 Sets the average brightness of the camera, can be between 0 and 255 (default " STRINGIFY(CAM_BRIGHTNESS_DEFAULT) ")", UINT8(CAM_BRIGHTNESS_DEFAULT), END);
 	prm_setShadowCallback("Camera Brightness", (ShadowCallback)cam_shadowCallback);
 
-	prm_add("AEC Enable", PRM_FLAG_ADVANCED, 
-		"@c Camera Enables/disables Auto Exposure Correction, 0=disabled, 1=enabled (default 1)", UINT8(1), END);
+	prm_add("AEC Enable", PRM_FLAG_ADVANCED | PRM_FLAG_CHECKBOX, 
+		"@c Camera Enables/disables Auto Exposure Correction (don't modify unless you know what this is!), 0=disabled, 1=enabled (default 1)", UINT8(1), END);
 
 	prm_add("AEC Value", PRM_FLAG_HEX_FORMAT | PRM_FLAG_ADVANCED, 
-		"@c Camera Sets the Auto Exposure Correction value.  The parameter only applies when AEC Enable=0. Use the command \"cam_getECV\" to get the current value (default 0)", UINT32(0), END);
+		"@c Camera Sets the Auto Exposure Correction value.  The parameter only applies when AEC Enable=0. Use the command \"cam_getECV\" to get the current value (don't modify unless you know what this is!) (default 0)", UINT32(0), END);
 																		   
 	prm_add("AWB Enable", PRM_FLAG_ADVANCED, 
-		"@c Camera Enables/disables Auto White Balance, 0=disabled, 1=enabled on startup, 2=always enabled (default 1)", UINT8(1), END);
+		"@c Camera Enables/disables Auto White Balance (don't modify unless you know what this is!), 0=disabled, 1=enabled on startup, 2=always enabled (default 1)", UINT8(1), END);
 
 	prm_add("AWB Value", PRM_FLAG_HEX_FORMAT | PRM_FLAG_ADVANCED, 
-		"@c Camera Sets the Auto White Balance value.  The parameter only applies when AWB Enable=0. Use the command \"cam_getWBV\" to get the current value (default 0x808080)", UINT32(0x808080), END);
+		"@c Camera Sets the Auto White Balance value (don't modify unless you know what this is!).  The parameter only applies when AWB Enable=0. Use the command \"cam_getWBV\" to get the current value (default 0x808080)", UINT32(0x808080), END);
 
 	uint8_t brightness, aec, awb;
 	uint32_t ecv, wbv;

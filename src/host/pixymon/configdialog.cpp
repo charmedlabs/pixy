@@ -278,6 +278,7 @@ void ConfigDialog::render(ParameterDB *data, QGridLayout *layout, QTabWidget *ta
                 cbox = new QCheckBox();
                 cbox->setProperty("Parameter", (qlonglong)&parameter);
                 cbox->setChecked(parameter.value().toBool());
+                cbox->setToolTip(parameter.help());
                 connect(cbox, SIGNAL(clicked()), this, SLOT(handleCheckBox()));
                 parameter.setProperty(PP_WIDGET, (qlonglong)cbox);
                 delete line;
@@ -293,6 +294,7 @@ void ConfigDialog::render(ParameterDB *data, QGridLayout *layout, QTabWidget *ta
                 slider->setMaximumWidth(SLIDER_SIZE);
                 slider->setRange(0, SLIDER_SIZE);
                 slider->setSingleStep(1);
+                slider->setToolTip(parameter.help());
                 parameter.setProperty(PP_WIDGET2, (qlonglong)slider);
                 float pos;
                 // value = min + pos/100(max-min)
@@ -304,6 +306,12 @@ void ConfigDialog::render(ParameterDB *data, QGridLayout *layout, QTabWidget *ta
                 else
                     line->setText(QString::number(parameter.value().toInt()));
                 connect(slider, SIGNAL(sliderMoved(int)), this, SLOT(handleSlider(int)));
+            }
+            else if (type==PT_STRING)
+            {
+                line->setMinimumWidth(200);
+                line->setMaximumWidth(300);
+                line->setText(parameter.value().toString());
             }
             else if (type==PT_FLT32)
             {

@@ -195,8 +195,8 @@ void cc_loadParams(void)
 	prm_add("Min brightness", PRM_FLAG_SLIDER, 
 		"@c Signature_Tuning @m 0.0 @M 0.5 Sets the minimum brightness of all signatures. (default 0.1)", FLT32(0.1f), END);
 	prm_setShadowCallback("Min brightness", (ShadowCallback)cc_shadowCallback);
-	prm_add("Color code gain", 0, 
-		"@c Expert Sets the color gain to be multiplied to each signature range. (default 1.8)", FLT32(1.8f), END);
+	prm_add("Color code multiplier", 0, 
+		"@c Expert Sets the color multiplier to be multiplied to each signature range. (default 1.8)", FLT32(1.8f), END);
 	prm_add("Color code mode", 0,
 		"@c Expert Sets the color code mode, 0=disabled, 1=enabled, 2=color codes only, 3=mixed (default 1)", INT8(1), END);
 	prm_add("Signature teach threshold", PRM_FLAG_SLIDER, 
@@ -224,7 +224,7 @@ void cc_loadParams(void)
 	prm_get("Min block area", &minArea, END);
 	prm_get("Color code mode", &ccMode, END);
 	prm_get("Min brightness", &miny, END);
-	prm_get("Color code gain", &ccGain, END);
+	prm_get("Color code multiplier", &ccGain, END);
 	prm_get("Signature teach threshold", &growDist, END);
 	prm_get("LED brightness", &g_ledBrightness, END);
 	g_blobs->setParams(maxBlobs, maxBlobsPerModel, minArea, (ColorCodeMode)ccMode);

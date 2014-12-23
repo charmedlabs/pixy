@@ -31,9 +31,10 @@
 
 QString printType(uint32_t val, bool parens=false);
 
-Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, MonParameterDB *data) :
+Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, MonParameterDB *data, const QString &initScript) :
     m_mutexProg(QMutex::Recursive)
 {
+    m_initScript = initScript;
     m_console = console;
     m_video = video;
     m_pixymonParameters = data;
@@ -195,6 +196,11 @@ void Interpreter::printHelp()
             break;
         emit textOut(QString::number(p) + ": " + printProc(&info));
     }
+}
+
+QStringList Interpreter::parseScriptlet(const QString &scriptlet)
+{
+    return scriptlet.split(QRegExp("[\\n]"), QString::SkipEmptyParts);
 }
 
 QStringList Interpreter::getSections(const QString &id, const QString &string)
@@ -454,7 +460,7 @@ int Interpreter::sendGetAction(int index)
         return response;
 
     action2 = QString(action);
-    scriptlet2 = QString(scriptlet).split(QRegExp("[\\n]"), QString::SkipEmptyParts);
+    scriptlet2 = parseScriptlet(scriptlet);
 
     emit actionScriptlet(action2, scriptlet2);
     return response;
@@ -605,6 +611,11 @@ void Interpreter::run()
     getRunning();
 
     handleLoadParams(); // load params upon initialization
+    if (m_initScript!="")
+        execute(parseScriptlet(m_initScript));
+    else
+        execute(m_pixymonParameters->value("Pixy start command").toString());
+
 
     while(m_run)
     {
@@ -849,13 +860,16 @@ void Interpreter::handleCall(const QStringList &argv)
     m_mutexProg.unlock();
 }
 
-void Interpreter::execute(const QString &command)
+void Interpreter::execute(QString command)
 {
-    emit consoleCommand(command);
     if (m_running==true)
         queueCommand(STOP);
     if (m_localProgramRunning)
         queueCommand(STOP_LOCAL);
+
+    command.remove(QRegExp("^\\s+")); // remove leading whitespace
+    if (command!="")
+        emit consoleCommand(command);
 }
 
 void Interpreter::execute(QStringList commandList)

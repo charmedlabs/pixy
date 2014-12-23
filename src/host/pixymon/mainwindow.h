@@ -98,12 +98,12 @@ private:
     Ui::MainWindow *m_ui;
 
     QString m_firmwareFile;
-    QStringList m_initScript;
-    bool m_initScriptExecuted;
+    QString m_initScript;
     bool m_versionIncompatibility;
     QSettings *m_settings;
     MonParameterDB m_parameters;
-    QMessageBox *m_fwinstructions;
+    QMessageBox *m_fwInstructions;
+    QMessageBox *m_fwMessage;
 };
 
 #endif // MAINWINDOW_H

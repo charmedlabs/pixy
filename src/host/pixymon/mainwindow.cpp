@@ -60,8 +60,8 @@ MainWindow::MainWindow(int argc, char *argv[], QWidget *parent) :
     m_pixyConnected = false;
     m_pixyDFUConnected = false;
     m_configDialog = NULL;
-    m_fwinstructions = NULL;
-    m_initScriptExecuted = false;
+    m_fwInstructions = NULL;
+    m_fwMessage = NULL;
     m_versionIncompatibility = false;
 
     m_waiting = WAIT_NONE;
@@ -88,6 +88,9 @@ MainWindow::MainWindow(int argc, char *argv[], QWidget *parent) :
     m_ui->toolBar->addAction(m_ui->actionConfigure);
 
     updateButtons();
+
+    m_parameters.add("Pixy start command", PT_STRING, "runprogArg 8 1",
+        "The command that is sent to Pixy upon initialization");
 
     // start looking for devices
     m_connect = new ConnectEvent(this);
@@ -122,9 +125,7 @@ void MainWindow::parseCommandline(int argc, char *argv[])
         else if (!strcmp("-initscript", argv[i]) && i+1<argc)
         {
             i++;
-            QString script = argv[i];
-            script.remove(QRegExp("[\"']"));
-            m_initScript = script.split(QRegExp("[\\\\]"));
+            m_initScript = argv[i];
         }
 
     }
@@ -235,12 +236,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
 void MainWindow::handleRunState(int state)
 {
     updateButtons();
-    if (state==true && m_initScript.size()>0 && !m_initScriptExecuted)
-    {
-        m_interpreter->execute(m_initScript);
-        m_initScriptExecuted = true;
-    }
-    else if (state==-1 && m_interpreter)
+    if (state==-1 && m_interpreter)
     {
         if (m_configDialog)
         {
@@ -259,8 +255,8 @@ void MainWindow::connectPixyDFU(bool state)
     {
         m_console->print("Pixy programming state detected.\n");
         // close the instuctions dialog if it's open
-        if (m_fwinstructions)
-            m_fwinstructions->done(0);
+        if (m_fwInstructions)
+            m_fwInstructions->done(0);
         try
         {
             if (!m_pixyDFUConnected)
@@ -303,7 +299,10 @@ void MainWindow::connectPixy(bool state)
             {
                 m_flash = new Flash();
                 if (m_firmwareFile!="")
+                {
                     program(m_firmwareFile);
+                    m_firmwareFile = "";
+                }
                 else
                 {
                     QString dir;
@@ -328,9 +327,8 @@ void MainWindow::connectPixy(bool state)
             {
                 m_console->print("Pixy detected.\n");
                 clearActions();
-                m_interpreter = new Interpreter(m_console, m_video, &m_parameters);
+                m_interpreter = new Interpreter(m_console, m_video, &m_parameters, m_initScript);
 
-                m_initScriptExecuted = false; // reset so we'll execute for this instance
                 connect(m_interpreter, SIGNAL(runState(int)), this, SLOT(handleRunState(int)));
                 connect(m_interpreter, SIGNAL(finished()), this, SLOT(interpreterFinished())); // thread will send finished event when it exits
                 connect(m_interpreter, SIGNAL(connected(Device,bool)), this, SLOT(handleConnected(Device,bool)));
@@ -617,28 +615,34 @@ void MainWindow::handleFirmware(ushort major, ushort minor, ushort build)
 #endif
 #endif
         // if this dialog is already open, close
-        if (m_fwinstructions)
-            m_fwinstructions->done(0);
-
-        QString str =
-                "There is a more recent firmware version (" + maxVerStr + ") available.<br>"
-                "Your Pixy is running firmware version " + QString::number(major) + "." + QString::number(minor) + "." + QString::number(build) + ".<br><br>"
-                "Would you like to upload this firmware into your Pixy? <i>Psst, click yes!</i>";
-        if (QMessageBox::question(NULL, "New firmware available!", str, QMessageBox::Yes|QMessageBox::No, QMessageBox::Yes)==QMessageBox::Yes)
+        if (m_fwInstructions)
+            m_fwInstructions->done(0);
+        if (m_fwMessage==NULL)
         {
-            m_firmwareFile = QFileInfo(path, fwFilename).absoluteFilePath();
-            m_fwinstructions = new QMessageBox(QMessageBox::Information, "Get your Pixy ready!",
-                           "Please follow these steps to get your Pixy ready to accept new firmware:<br><br>"
-                           "1. Unplug your Pixy from USB (do this now).<br>"
-                           "2. Press and hold down the white button on top of Pixy.<br>"
-                           "3. Plug the USB cable back in while continuing to hold down the button.<br>"
-                           "4. Release the button after the USB cable is plugged back in.<br>"
-                           "5. Wait. This message will go away when all is ready to proceed, but be patient,<br>"
-                           "the drivers sometimes take time to install.");
-            m_fwinstructions->setStandardButtons(QMessageBox::NoButton);
-            m_fwinstructions->setModal(false);
-            m_fwinstructions->exec();
-            m_fwinstructions = NULL;
+            QString str =
+                    "There is a more recent firmware version (" + maxVerStr + ") available.<br>"
+                    "Your Pixy is running firmware version " + QString::number(major) + "." + QString::number(minor) + "." + QString::number(build) + ".<br><br>"
+                    "Would you like to upload this firmware into your Pixy? <i>Psst, click yes!</i>";
+            m_fwMessage = new QMessageBox(QMessageBox::Question, "New firmware available!", str, QMessageBox::Yes|QMessageBox::No);
+            m_fwMessage->setDefaultButton(QMessageBox::Yes);
+            m_fwMessage->exec();
+            if (m_fwMessage->standardButton(m_fwMessage->clickedButton())==QMessageBox::Yes)
+            {
+                m_firmwareFile = QFileInfo(path, fwFilename).absoluteFilePath();
+                m_fwInstructions = new QMessageBox(QMessageBox::Information, "Get your Pixy ready!",
+                                                   "Please follow these steps to get your Pixy ready to accept new firmware:<br><br>"
+                                                   "1. Unplug your Pixy from USB (do this now).<br>"
+                                                   "2. Press and hold down the white button on top of Pixy.<br>"
+                                                   "3. Plug the USB cable back in while continuing to hold down the button.<br>"
+                                                   "4. Release the button after the USB cable is plugged back in.<br>"
+                                                   "5. Wait a bit. This window will go away automatically when all is ready<br>"
+                                                   "to proceed, but the drivers sometimes take a few minutes to install.");
+                //m_fwInstructions->setStandardButtons(QMessageBox::NoButton);
+                m_fwInstructions->setModal(false);
+                m_fwInstructions->exec();
+                m_fwInstructions = NULL;
+            }
+            m_fwMessage = NULL;
         }
     }
 }
@@ -735,7 +739,6 @@ void MainWindow::handleLoadParams()
 }
 
 
-
 void MainWindow::on_actionSave_Image_triggered()
 {
     QString filename;
@@ -755,6 +758,7 @@ void MainWindow::on_actionSave_Pixy_parameters_triggered()
         m_waiting = WAIT_SAVING_PARAMS;
     }
 }
+
 
 void MainWindow::on_actionLoad_Pixy_parameters_triggered()
 {
