@@ -579,11 +579,12 @@ void Interpreter::run()
         m_get_param = m_chirp->getProc("prm_get");
         m_getAll_param = m_chirp->getProc("prm_getAll");
         m_set_param = m_chirp->getProc("prm_set");
+        m_reload_params = m_chirp->getProc("prm_reload");
         m_set_shadow_param = m_chirp->getProc("prm_setShadow");
         m_reset_shadows = m_chirp->getProc("prm_resetShadows");
 
         if (m_exec_run<0 || m_exec_running<0 || m_exec_stop<0 || m_exec_get_action<0 ||
-                m_get_param<0 || m_getAll_param<0 || m_set_param<0 ||
+                m_get_param<0 || m_getAll_param<0 || m_set_param<0 || m_reload_params<0 ||
                 m_set_shadow_param<0 || m_reset_shadows<0)
             throw std::runtime_error("Hmm... missing procedures.");
 
@@ -1250,7 +1251,7 @@ void Interpreter::handleSaveParams(bool shadow)
 {
     int i, res, response;
     QVariant var;
-    bool send;
+    bool send, reload=false;
     Parameters &pixyParameters = m_pixyParameters.parameters();
 
     for (i=0; i<pixyParameters.size(); i++)
@@ -1297,7 +1298,10 @@ void Interpreter::handleSaveParams(bool shadow)
             if (shadow)
                 res = m_chirp->callSync(m_set_shadow_param, STRING(id), UINTS8(len, buf), END_OUT_ARGS, &response, END_IN_ARGS);
             else
+            {
                 res = m_chirp->callSync(m_set_param, STRING(id), UINTS8(len, buf), END_OUT_ARGS, &response, END_IN_ARGS);
+                reload = true;
+            }
             if (res<0 || response<0)
             {
                 emit error("There was a problem setting a parameter.\n");
@@ -1305,6 +1309,9 @@ void Interpreter::handleSaveParams(bool shadow)
             }
         }
     }
+    // reload parameters if we're changed any
+    if (reload)
+         m_chirp->callSync(m_reload_params, END_OUT_ARGS, &response, END_IN_ARGS);
 }
 
 void Interpreter::handleSaveParams()

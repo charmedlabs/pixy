@@ -280,6 +280,7 @@ int32_t cc_setSigRegion(const uint32_t &type, const uint8_t &signum, const uint1
 	// save to flash
 	sprintf(id, "signature%d", signum);
 	prm_set(id, INTS8(sizeof(ColorSignature), sig), END);
+	cc_loadLut();
 
 	cprintf("Signature set!\n");
 
@@ -316,6 +317,7 @@ int32_t cc_setSigPoint(const uint32_t &type, const uint8_t &signum, const uint16
 	// save to flash
 	sprintf(id, "signature%d", signum);
 	prm_set(id, INTS8(sizeof(ColorSignature), sig), END);
+	cc_loadLut();
 
 	cprintf("Signature set!\n");
 
@@ -336,6 +338,7 @@ int32_t cc_clearSig(const uint8_t &signum, Chirp *chirp)
 
 	sprintf(id, "signature%d", signum);
 	res = prm_set(id, INTS8(sizeof(ColorSignature), &sig), END);
+	cc_loadLut();
 
 	// update lut
  	cc_loadLut();
@@ -362,8 +365,8 @@ int32_t cc_clearAllSig(Chirp *chirp)
 			return res;			
 	}
 
-	// update lut
- 	cc_loadLut();
+	// reload lut
+	cc_loadLut();
 
     exec_sendEvent(chirp, EVT_PARAM_CHANGE);
 

@@ -41,7 +41,7 @@ ConfigDialog::ConfigDialog(QWidget *parent, Interpreter *interpreter) : QDialog(
     m_ui->pixyLayout->addWidget(m_pixyTabs);
     m_pixymonTabs = new QTabWidget(this);
     m_ui->pixymonLayout->addWidget(m_pixymonTabs);
-    connect(interpreter, SIGNAL(paramLoaded()), this, SLOT(loaded()));
+    connect(interpreter, SIGNAL(paramLoaded()), this, SLOT(load()));
     connect(m_ui->buttonBox, SIGNAL(clicked(QAbstractButton*)), this, SLOT(apply(QAbstractButton*)));
 
     m_interpreter->loadParams();
@@ -225,7 +225,7 @@ int ConfigDialog::updateDB(ParameterDB *data)
     return 0;
 }
 
-void ConfigDialog::loaded()
+void ConfigDialog::load()
 {
     render(&m_interpreter->m_pixyParameters, NULL, m_pixyTabs);
     show();

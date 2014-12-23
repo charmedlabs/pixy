@@ -196,6 +196,7 @@ private:
     ChirpProc m_get_param;
     ChirpProc m_getAll_param;
     ChirpProc m_set_param;
+    ChirpProc m_reload_params;
     ChirpProc m_set_shadow_param;
     ChirpProc m_reset_shadows;
 

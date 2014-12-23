@@ -732,7 +732,12 @@ void MainWindow::handleLoadParams()
                 pf.close();
 
                 if (res>=0)
-                    m_interpreter->saveParams();
+                {
+                    m_interpreter->saveParams(); // save parapeters back to pixy
+                    // reload config dialog if it's up
+                    if (m_configDialog)
+                        m_configDialog->load();
+                }
             }
         }
     }

@@ -49,6 +49,13 @@ static const ProcModule g_module[] =
 	"@r 0 if success, negative if error"
 	},
 	{
+	"prm_reload",
+	(ProcPtr)prm_setDirty, 
+	{END}, 
+	"Causes all parameters to be reloaded"
+	"@r 0 if success, negative if error"
+	},
+	{
 	"prm_setShadow",
 	(ProcPtr)prm_setShadowChirp, 
 	{CRP_STRING, CRP_INTS8, END}, 
@@ -367,12 +374,13 @@ int32_t prm_setChirp(const char *id, const uint32_t &valLen, const uint8_t *val)
 	flash_erase((uint32_t)sector, FLASH_SECTOR_SIZE); 
 	flash_program((uint32_t)sector, buf, FLASH_SECTOR_SIZE);
 
-	g_dirty = true; // set dirty flag
 
 end:
 	free(buf); 	
 	return res;
 }
+
+
 
 int32_t prm_get(const char *id, ...)
 {
@@ -478,9 +486,10 @@ bool prm_dirty()
 	return res;
 }
 
-void prm_setDirty(bool dirty)
+int32_t prm_setDirty()
 {
-	g_dirty = dirty;
+	g_dirty = true; // set dirty flag
+	return 0;
 }
 
 

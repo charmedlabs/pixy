@@ -39,9 +39,9 @@ public:
 signals:
 
 public slots:
+    void load();
 
 protected slots:
-    void loaded();
     void apply(QAbstractButton *button);
     void handleChangeClicked();
     void handleCheckBox();
