@@ -712,35 +712,6 @@ void MainWindow::handleLoadParams()
             }
         }
     }
-    else if (m_waiting==WAIT_LOADING_PARAMS)
-    {
-        m_waiting = WAIT_NONE;
-        QString dir;
-        QFileDialog fd(this);
-        fd.setWindowTitle("Please choose a parameter file");
-        dir = MonParameterDB::docPath();
-        fd.setDirectory(QDir(dir));
-        fd.setNameFilter("XML file (*.xml)");
-        if (fd.exec())
-        {
-            QStringList flist = fd.selectedFiles();
-            if (flist.size()==1)
-            {
-                ParamFile pf;
-                pf.open(flist[0], true);
-                res = pf.read(PIXY_PARAMFILE_TAG, &m_interpreter->m_pixyParameters);
-                pf.close();
-
-                if (res>=0)
-                {
-                    m_interpreter->saveParams(); // save parapeters back to pixy
-                    // reload config dialog if it's up
-                    if (m_configDialog)
-                        m_configDialog->load();
-                }
-            }
-        }
-    }
 }
 
 
@@ -769,9 +740,32 @@ void MainWindow::on_actionLoad_Pixy_parameters_triggered()
 {
     if (m_interpreter)
     {
-        // we need to load recent params from Pixy to compare to the params file
-        m_interpreter->loadParams();
-        m_waiting = WAIT_LOADING_PARAMS;
+        int res;
+        QString dir;
+        QFileDialog fd(this);
+        fd.setWindowTitle("Please choose a parameter file");
+        dir = MonParameterDB::docPath();
+        fd.setDirectory(QDir(dir));
+        fd.setNameFilter("XML file (*.xml)");
+        if (fd.exec())
+        {
+            QStringList flist = fd.selectedFiles();
+            if (flist.size()==1)
+            {
+                ParamFile pf;
+                pf.open(flist[0], true);
+                res = pf.read(PIXY_PARAMFILE_TAG, &m_interpreter->m_pixyParameters);
+                pf.close();
+
+                if (res>=0)
+                {
+                    m_interpreter->saveParams(); // save parapeters back to pixy
+                    // reload config dialog if it's up
+                    if (m_configDialog)
+                        m_configDialog->load();
+                }
+            }
+        }
     }
 }
 

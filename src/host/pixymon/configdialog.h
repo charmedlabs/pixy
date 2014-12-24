@@ -55,7 +55,7 @@ private:
     int updateDB();
     int updateDB(ParameterDB *data);
 
-    void render(ParameterDB *data, QGridLayout *layout, QTabWidget *tabs);
+    void render(ParameterDB *data, QTabWidget *tabs);
 
     QWidget *findCategory(const QString &category, QTabWidget *tabs);
 

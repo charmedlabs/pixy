@@ -32,7 +32,6 @@
 
 ConfigDialog::ConfigDialog(QWidget *parent, Interpreter *interpreter) : QDialog(parent), m_ui(new Ui::ConfigDialog)
 {
-
     m_ui->setupUi(this);
     m_interpreter = interpreter;
     m_interpreter->unwait(); // unhang interpreter if it's waiting
@@ -46,7 +45,7 @@ ConfigDialog::ConfigDialog(QWidget *parent, Interpreter *interpreter) : QDialog(
 
     m_interpreter->loadParams();
 
-    render(m_interpreter->m_pixymonParameters, m_ui->pixymonLayout, m_pixymonTabs);
+    render(m_interpreter->m_pixymonParameters, m_pixymonTabs);
 
 #ifdef __MACOS__
     setMinimumWidth(650);
@@ -62,6 +61,16 @@ ConfigDialog::ConfigDialog(QWidget *parent, Interpreter *interpreter) : QDialog(
 
 ConfigDialog::~ConfigDialog()
 {
+    int i;
+    Parameters &monParameters = m_interpreter->m_pixymonParameters->parameters();
+    Parameters &pixyParameters = m_interpreter->m_pixyParameters.parameters();
+
+    // reset all PP_WIDGET properties because these are used to indicate whether we've created
+    // the corresponding gui elements.
+    for (i=0; i<monParameters.size(); i++)
+        monParameters[i].setProperty(PP_WIDGET, (qlonglong)0);
+    for (i=0; i<pixyParameters.size(); i++)
+        pixyParameters[i].setProperty(PP_WIDGET, (qlonglong)0);
 }
 
 QWidget *ConfigDialog::findCategory(const QString &category, QTabWidget *tabs)
@@ -227,14 +236,16 @@ int ConfigDialog::updateDB(ParameterDB *data)
 
 void ConfigDialog::load()
 {
-    render(&m_interpreter->m_pixyParameters, NULL, m_pixyTabs);
+    render(&m_interpreter->m_pixyParameters, m_pixyTabs);
     show();
 }
 
-void ConfigDialog::render(ParameterDB *data, QGridLayout *layout, QTabWidget *tabs)
+void ConfigDialog::render(ParameterDB *data, QTabWidget *tabs)
 {
     int i;
     QWidget *tab;
+    QGridLayout *layout;
+    bool created;
 
     DBG("rendering config...");
     Parameters &parameters = data->parameters();
@@ -242,6 +253,7 @@ void ConfigDialog::render(ParameterDB *data, QGridLayout *layout, QTabWidget *ta
     for (i=0; i<parameters.size(); i++)
     {
         Parameter &parameter = parameters[i];
+        created = parameter.property(PP_WIDGET).toLongLong()!=0;
         uint flags = parameter.property(PP_FLAGS).toInt();
 
         if (flags&PRM_FLAG_INTERNAL) // don't render!
@@ -251,52 +263,73 @@ void ConfigDialog::render(ParameterDB *data, QGridLayout *layout, QTabWidget *ta
         QPushButton *button = NULL;
         QCheckBox *cbox = NULL;
         QSlider *slider = NULL;
+        QLineEdit *line;
+        QLabel *label;
 
-        QLineEdit *line = new QLineEdit();
-        QLabel *label = new QLabel(parameter.id());
-        label->setToolTip(parameter.help());
-        label->setAlignment(Qt::AlignRight);
-        parameter.setProperty(PP_WIDGET, (qlonglong)line);
-        line->setMinimumWidth(50);
-        line->setMaximumWidth(75);
-        line->setToolTip(parameter.help());
+        if (!created)
+        {
+            label = new QLabel(parameter.id());
+            line = new QLineEdit();
+            label->setToolTip(parameter.help());
+            label->setAlignment(Qt::AlignRight);
+            line->setMinimumWidth(50);
+            line->setMaximumWidth(75);
+            line->setToolTip(parameter.help());
+            parameter.setProperty(PP_WIDGET, (qlonglong)line);
+        }
+        else
+            line = (QLineEdit *)parameter.property(PP_WIDGET).toLongLong();
 
         if (type!=PT_INTS8) // make sure it's a scalar type
         {
             if (flags&PRM_FLAG_PATH)
             {
-                button = new QPushButton("Change...");
-                button->setProperty("Parameter", (qlonglong)&parameter);
-                connect(button, SIGNAL(clicked()), this, SLOT(handleChangeClicked()));
-                button->setToolTip("Select a new path");
-                line->setMinimumWidth(200);
-                line->setMaximumWidth(300);
+                if (!created)
+                {
+                    button = new QPushButton("Change...");
+                    button->setProperty("Parameter", (qlonglong)&parameter);
+                    connect(button, SIGNAL(clicked()), this, SLOT(handleChangeClicked()));
+                    button->setToolTip("Select a new path");
+                    line->setMinimumWidth(200);
+                    line->setMaximumWidth(300);
+                }
                 line->setText(parameter.value().toString());
             }
             else if (flags&PRM_FLAG_CHECKBOX)
             {
-                cbox = new QCheckBox();
-                cbox->setProperty("Parameter", (qlonglong)&parameter);
+                if (!created)
+                {
+                    cbox = new QCheckBox();
+                    cbox->setProperty("Parameter", (qlonglong)&parameter);
+                    cbox->setToolTip(parameter.help());
+                    connect(cbox, SIGNAL(clicked()), this, SLOT(handleCheckBox()));
+                    parameter.setProperty(PP_WIDGET, (qlonglong)cbox);
+                    delete line;
+                    line = NULL;
+                }
+                else
+                    cbox = (QCheckBox *)line;
                 cbox->setChecked(parameter.value().toBool());
-                cbox->setToolTip(parameter.help());
-                connect(cbox, SIGNAL(clicked()), this, SLOT(handleCheckBox()));
-                parameter.setProperty(PP_WIDGET, (qlonglong)cbox);
-                delete line;
-                line = NULL;
             }
             else if (flags&PRM_FLAG_SLIDER)
             {
+                if (!created)
+                {
+                    slider = new QSlider(Qt::Horizontal);
+                    slider->setProperty("Parameter", (qlonglong)&parameter);
+                    slider->setMinimumWidth(SLIDER_SIZE);
+                    slider->setMaximumWidth(SLIDER_SIZE);
+                    slider->setRange(0, SLIDER_SIZE);
+                    slider->setSingleStep(1);
+                    slider->setToolTip(parameter.help());
+                    parameter.setProperty(PP_WIDGET2, (qlonglong)slider);
+                    connect(slider, SIGNAL(sliderMoved(int)), this, SLOT(handleSlider(int)));
+                }
+                else
+                    slider = (QSlider *)parameter.property(PP_WIDGET2).toLongLong();
+                float pos;
                 float min = parameter.property(PP_MIN).toFloat();
                 float max = parameter.property(PP_MAX).toFloat();
-                slider = new QSlider(Qt::Horizontal);
-                slider->setProperty("Parameter", (qlonglong)&parameter);
-                slider->setMinimumWidth(SLIDER_SIZE);
-                slider->setMaximumWidth(SLIDER_SIZE);
-                slider->setRange(0, SLIDER_SIZE);
-                slider->setSingleStep(1);
-                slider->setToolTip(parameter.help());
-                parameter.setProperty(PP_WIDGET2, (qlonglong)slider);
-                float pos;
                 // value = min + pos/100(max-min)
                 //(value - min)100/(max-min) = pos
                 pos = (parameter.value().toFloat() - min)*SLIDER_SIZE/(max - min);
@@ -305,12 +338,14 @@ void ConfigDialog::render(ParameterDB *data, QGridLayout *layout, QTabWidget *ta
                     line->setText(QString::number(parameter.value().toFloat(), 'f', 6));
                 else
                     line->setText(QString::number(parameter.value().toInt()));
-                connect(slider, SIGNAL(sliderMoved(int)), this, SLOT(handleSlider(int)));
             }
             else if (type==PT_STRING)
             {
-                line->setMinimumWidth(200);
-                line->setMaximumWidth(300);
+                if (!created)
+                {
+                    line->setMinimumWidth(200);
+                    line->setMaximumWidth(300);
+                }
                 line->setText(parameter.value().toString());
             }
             else if (type==PT_FLT32)
@@ -333,7 +368,7 @@ void ConfigDialog::render(ParameterDB *data, QGridLayout *layout, QTabWidget *ta
             }
 
             // deal with categories-- create category tab if needed
-            if (tabs)
+            if (!created)
             {
                 QString category = parameter.property(PP_CATEGORY).toString();
                 if (category=="")
@@ -343,42 +378,23 @@ void ConfigDialog::render(ParameterDB *data, QGridLayout *layout, QTabWidget *ta
                 {
                     tab = new QWidget();
                     layout = new QGridLayout(tab);
+                    layout->setRowStretch(100, 1);
+                    layout->setColumnStretch(100, 1);
                     tabs->addTab(tab, category);
                 }
                 else
                     layout = (QGridLayout *)tab->layout();
+                layout->addWidget(label, i, 0);
+                if (cbox)
+                    layout->addWidget(cbox, i, 1);
+                if (slider)
+                    layout->addWidget(slider, i, 2);
+                if (line)
+                    layout->addWidget(line, i, 1);
+                if (button)
+                    layout->addWidget(button, i, 2);
             }
-            layout->addWidget(label, i, 0);
-            if (cbox)
-                layout->addWidget(cbox, i, 1);
-            if (slider)
-                layout->addWidget(slider, i, 2);
-            if (line)
-                layout->addWidget(line, i, 1);
-            if (button)
-                layout->addWidget(button, i, 2);
         }
-    }
-
-    if (tabs)
-    {
-        // set stretch on all tabs
-        for (i=0; true; i++)
-        {
-            QWidget *tab = tabs->widget(i);
-            if (tab)
-            {
-                ((QGridLayout *)tab->layout())->setRowStretch(100, 1);
-                ((QGridLayout *)tab->layout())->setColumnStretch(100, 1);
-            }
-            else
-                break;
-        }
-    }
-    if (layout)
-    {
-        layout->setRowStretch(100, 1);
-        layout->setColumnStretch(100, 1);
     }
 
     DBG("rendering config done");

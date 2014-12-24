@@ -323,7 +323,11 @@ void ParameterDB::add(Parameter param)
     Parameter *pparam = parameter(param.id());
 
     if (pparam) // if it's in the database, we don't want to add another values
-        *pparam = param;
+    {
+        // copy value and dirty flag, leave everything else intact --- esp the properties, which we're assuming don't change
+        pparam->set(param.value());
+        pparam->setDirty(param.dirty());
+    }
     else  // else put in list
         m_parameters.push_back(param);
 }
