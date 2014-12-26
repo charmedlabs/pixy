@@ -703,10 +703,11 @@ void MainWindow::handleLoadParams()
         QString dir;
         QFileDialog fd(this);
         fd.setWindowTitle("Please provide a filename for the parameter file");
-        dir = MonParameterDB::docPath();
+        dir = m_parameters.value("Document folder").toString();
         fd.setDirectory(QDir(dir));
-        fd.setNameFilter("XML file (*.xml)");
+        fd.setNameFilter("Parameter file (*.prm)");
         fd.setAcceptMode(QFileDialog::AcceptSave);
+        fd.setDefaultSuffix("prm");
         if (fd.exec())
         {
             QStringList flist = fd.selectedFiles();
@@ -753,9 +754,9 @@ void MainWindow::on_actionLoad_Pixy_parameters_triggered()
         QString dir;
         QFileDialog fd(this);
         fd.setWindowTitle("Please choose a parameter file");
-        dir = MonParameterDB::docPath();
+        dir = m_parameters.value("Document folder").toString();
         fd.setDirectory(QDir(dir));
-        fd.setNameFilter("XML file (*.xml)");
+        fd.setNameFilter("Parameter file (*.prm)");
         if (fd.exec())
         {
             QStringList flist = fd.selectedFiles();
