@@ -19,26 +19,26 @@
 #define CRP_RES_ERROR_MEMORY            -5
 #define CRP_RES_ERROR_NOT_CONNECTED     -6
 
-#define CRP_MAX_NAK           		3
+#define CRP_MAX_NAK                     3
 #define CRP_RETRIES                     3
-#define CRP_HEADER_TIMEOUT    		1000
-#define CRP_DATA_TIMEOUT      		500
-#define CRP_IDLE_TIMEOUT      		500
-#define CRP_SEND_TIMEOUT      		1000
-#define CRP_MAX_ARGS          		10
-#define CRP_BUFSIZE           		0x80
-#define CRP_BUFPAD            		8
-#define CRP_PROCTABLE_LEN     		0x40
+#define CRP_HEADER_TIMEOUT    	        1000
+#define CRP_DATA_TIMEOUT                500
+#define CRP_IDLE_TIMEOUT                500
+#define CRP_SEND_TIMEOUT                1000
+#define CRP_MAX_ARGS                    10
+#define CRP_BUFSIZE                     0x80
+#define CRP_BUFPAD                      8
+#define CRP_PROCTABLE_LEN               0x40
 
-#define CRP_START_CODE        		0xaaaa5555
+#define CRP_START_CODE                  0xaaaa5555
 
-#define CRP_CALL              		0x80
-#define CRP_RESPONSE          		0x40
-#define CRP_INTRINSIC          		0x20
+#define CRP_CALL                        0x80
+#define CRP_RESPONSE                    0x40
+#define CRP_INTRINSIC                   0x20
 #define CRP_DATA                        0x10
 #define CRP_XDATA                       0x18 // data not associated with no associated procedure)
-#define CRP_CALL_ENUMERATE    		(CRP_CALL | CRP_INTRINSIC | 0x00)
-#define CRP_CALL_INIT         		(CRP_CALL | CRP_INTRINSIC | 0x01)
+#define CRP_CALL_ENUMERATE              (CRP_CALL | CRP_INTRINSIC | 0x00)
+#define CRP_CALL_INIT                   (CRP_CALL | CRP_INTRINSIC | 0x01)
 #define CRP_CALL_ENUMERATE_INFO         (CRP_CALL | CRP_INTRINSIC | 0x02)
 
 #define CRP_ACK                         0x59
@@ -212,6 +212,8 @@ public:
     int setProc(const char *procName, ProcPtr proc,  ProcTableExtension *extension=NULL);
     int getProcInfo(ChirpProc proc, ProcInfo *info);
     int registerModule(const ProcModule *module);
+    void setSendTimeout(uint32_t timeout);
+    void setRecvTimeout(uint32_t timeout);
 
     int call(uint8_t service, ChirpProc proc, ...);
     int call(uint8_t service, ChirpProc proc, va_list args);

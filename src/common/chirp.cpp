@@ -787,6 +787,16 @@ int Chirp::registerModule(const ProcModule *module)
     return CRP_RES_OK;
 }
 
+void Chirp::setSendTimeout(uint32_t timeout)
+{
+    m_sendTimeout = timeout;
+}
+
+void Chirp::setRecvTimeout(uint32_t timeout)
+{
+    m_headerTimeout = timeout;
+}
+
 int32_t Chirp::handleEnumerate(char *procName, ChirpProc *callback)
 {
     ChirpProc proc;

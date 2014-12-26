@@ -203,6 +203,7 @@ void pixyInit(uint32_t slaveRomStart, const unsigned char slaveImage[], uint32_t
 	// initialize chirp objects
 	USBLink *usbLink = new USBLink;
 	g_chirpUsb = new Chirp(false, false, usbLink);
+	g_chirpUsb->setSendTimeout(3000); // set a high timeout because the host can sometimes go AWOL for a second or two....
 	SMLink *smLink = new SMLink;
   	g_chirpM0 = new Chirp(false, true, smLink);
 

@@ -35,6 +35,7 @@ Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, MonParamete
     m_mutexProg(QMutex::Recursive)
 {
     m_initScript = initScript;
+    m_initScript.remove(QRegExp("^\\s+"));  // remove initial whitespace
     m_console = console;
     m_video = video;
     m_pixymonParameters = data;
@@ -542,6 +543,7 @@ void Interpreter::run()
 {
     int res;
     QTime time;
+    QString paramScriptlet;
 
     // init
     try
@@ -610,12 +612,13 @@ void Interpreter::run()
 
     time.start();
     getRunning();
-
+    paramScriptlet = m_pixymonParameters->value("Pixy start command").toString();
+    paramScriptlet.remove(QRegExp("^\\s+")); // remove initial whitespace
     handleLoadParams(); // load params upon initialization
     if (m_initScript!="")
         execute(parseScriptlet(m_initScript));
-    else
-        execute(m_pixymonParameters->value("Pixy start command").toString());
+    else if (paramScriptlet!="")
+        execute(paramScriptlet);
 
 
     while(m_run)

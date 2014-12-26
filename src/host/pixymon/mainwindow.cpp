@@ -461,7 +461,7 @@ void MainWindow::on_actionAbout_triggered()
 
     contents +=
             "<br>The latest version of PixyMon and Pixy firmware can be downloaded "
-            "<a href=\"http://charmedlabs.com/pixydownload\">here</a>.<br><br>"
+            "<a href=\"http://charmedlabs.com/pixylatest\">here</a>.<br><br>"
             "CMUCam5 Pixy and PixyMon are open hardware and open source software "
             "maintained by Charmed Labs and Carnegie Mellon University. "
             "All software and firmware is provided under the GNU "
@@ -579,6 +579,7 @@ void MainWindow::handleFirmware(ushort major, ushort minor, ushort build)
     ushort fmajor, fminor, fbuild;
     qlonglong ver, currVer, maxVer;
 
+    // find the maximum version in the executable directory
     currVer = ((qlonglong)major<<32) | (minor<<16) | build;
     for (i=0, maxVer=0; i<files.size(); i++)
     {
@@ -606,18 +607,18 @@ void MainWindow::handleFirmware(ushort major, ushort minor, ushort build)
         }
     }
 
-    if (fwFilename!="")
-    {
 #if 0
-        bool xp = false;
+    bool xp = false;
 #ifdef __WINDOWS__
-        xp = QSysInfo::WindowsVersion<=QSysInfo::WV_2003;
+    xp = QSysInfo::WindowsVersion<=QSysInfo::WV_2003;
 #endif
 #endif
-        // if this dialog is already open, close
-        if (m_fwInstructions)
-            m_fwInstructions->done(0);
-        if (m_fwMessage==NULL)
+    // if this dialog is already open, close
+    if (m_fwInstructions)
+        m_fwInstructions->done(0);
+    if (m_fwMessage==NULL)
+    {
+        if (fwFilename!="") // newer version!
         {
             QString str =
                     "There is a more recent firmware version (" + maxVerStr + ") available.<br>"
@@ -642,8 +643,18 @@ void MainWindow::handleFirmware(ushort major, ushort minor, ushort build)
                 m_fwInstructions->exec();
                 m_fwInstructions = NULL;
             }
-            m_fwMessage = NULL;
         }
+        else if (m_versionIncompatibility) // otherwise tell them where to find the latest version
+        {
+            m_fwMessage = new QMessageBox(QMessageBox::Information, "Firmware incompatibility",
+                                          "The firmware installed on Pixy is incompatible with this version of PixyMon<br>"
+                                          "The latest version of PixyMon and Pixy firmware can be downloaded "
+                                          "<a href=\"http://charmedlabs.com/pixylatest\">here</a>.<br><br>"
+                                          "(For instructions on how to upload firmware onto your Pixy, go "
+                                          "<a href=\"http://charmedlabs.com/pixyfirmwarehowto\">here</a>.)");
+            m_fwMessage->exec();
+        }
+        m_fwMessage = NULL;
     }
 }
 
@@ -686,8 +697,6 @@ void MainWindow::on_actionHelp_triggered()
 
 void MainWindow::handleLoadParams()
 {
-    int res;
-
     if (m_waiting==WAIT_SAVING_PARAMS)
     {
         m_waiting = WAIT_NONE;
