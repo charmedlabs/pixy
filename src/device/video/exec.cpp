@@ -426,6 +426,14 @@ void exec_loop()
 	bool prevConnected = false;
 	bool connected;
 
+	// this is a hack--- dirty bit here indicates a format because checksums didn't add up correctly
+	// If we format before we initialize the modules, the parameter ordering is different.  
+	// So we reformat again, which resets the dirty bit and the exec_loadparams is called, which 
+	// results in the desired parameter ordering.
+	// We should revisit this if/when we implement parameter ordering numbers
+	if (prm_dirty())
+		prm_format();
+
 	exec_select();
 
 	while(1)

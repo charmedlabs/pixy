@@ -53,7 +53,9 @@ void __default_signal_handler(int signal, int type)
 
 int main(void) 
 {
- 	pixyInit(SRAM3_LOC, &LR0[0], sizeof(LR0));
+	// main init of hardware plus a version-dependent number for the parameters that will
+	// force a format of parameter between version numbers.  
+ 	pixyInit(SRAM3_LOC, &LR0[0], sizeof(LR0), FW_MAJOR_VER*40*40+FW_MINOR_VER*40+FW_BUILD_VER);
 
 	cc_init(g_chirpUsb);
 	ser_init();

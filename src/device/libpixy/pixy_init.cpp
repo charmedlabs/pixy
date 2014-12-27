@@ -176,7 +176,7 @@ void periodic()
 	handleAWB();
 }
 
-void pixyInit(uint32_t slaveRomStart, const unsigned char slaveImage[], uint32_t imageSize)
+void pixyInit(uint32_t slaveRomStart, const unsigned char slaveImage[], uint32_t imageSize, uint16_t mnumber)
 {
 	// write stack guard word
  	STACK_GUARD = STACK_GUARD_WORD;
@@ -209,7 +209,7 @@ void pixyInit(uint32_t slaveRomStart, const unsigned char slaveImage[], uint32_t
 
 	// initialize devices/modules
 	led_init();
-	prm_init(g_chirpUsb);
+	prm_init(g_chirpUsb, mnumber);
 	pwr_init();
 	cam_init();
 	rcs_init();
