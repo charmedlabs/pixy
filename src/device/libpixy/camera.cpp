@@ -13,6 +13,7 @@
 // end license header
 //
 
+#include <string.h>
 #include <pixy_init.h>
 #include <pixyvals.h>
 #include "camera.h"
@@ -176,6 +177,8 @@ static uint8_t g_aec = 1;
 static uint8_t g_lightMode = 0;
 static uint8_t g_brightness = CAM_BRIGHTNESS_DEFAULT;
 static ChirpProc g_getFrameM0 = -1;
+static uint32_t g_aecValue = 0;
+static uint32_t g_awbValue = 0;
 
 static const uint8_t g_baseRegs[] =
 {
@@ -575,9 +578,20 @@ void cam_setRegs(const uint8_t *rPairs, int len)
 
 void cam_shadowCallback(const char *id, const uint8_t &val)
 {
-	// only callback is for brightness
-	//if (strcmp(id, "Brightness")==0)
-	cam_setBrightness(val);
+	if (strcmp(id, "Camera Brightness")==0)
+		cam_setBrightness(val);
+	else if (strcmp(id, "Auto Exposure Correction")==0)
+	{
+		if (val==0)
+			g_aecValue = cam_getECV();
+		cam_setAEC(val);
+	}
+	else if (strcmp(id, "Auto White Balance")==0)
+	{
+		if (val==0)
+			g_awbValue = cam_getWBV();
+		cam_setAWB(val);
+	} 
 }
 
 void cam_loadParams()
@@ -586,33 +600,58 @@ void cam_loadParams()
 		"@c Signature_Tuning @m 0 @M 255 Sets the average brightness of the camera, can be between 0 and 255 (default " STRINGIFY(CAM_BRIGHTNESS_DEFAULT) ")", UINT8(CAM_BRIGHTNESS_DEFAULT), END);
 	prm_setShadowCallback("Camera Brightness", (ShadowCallback)cam_shadowCallback);
 
-	prm_add("AEC Enable", PRM_FLAG_ADVANCED | PRM_FLAG_CHECKBOX, 
-		"@c Camera Enables/disables Auto Exposure Correction (don't modify unless you know what this is!), 0=disabled, 1=enabled (default 1)", UINT8(1), END);
+	prm_add("Auto Exposure Correction", PRM_FLAG_ADVANCED | PRM_FLAG_CHECKBOX, 
+		"@c Camera Enables/disables Auto Exposure Correction. Note, use this with \"AEC Value\" parameter. (default enabled)", UINT8(1), END);
+	prm_setShadowCallback("Auto Exposure Correction", (ShadowCallback)cam_shadowCallback);
 
-	prm_add("AEC Value", PRM_FLAG_HEX_FORMAT | PRM_FLAG_ADVANCED, 
-		"@c Camera Sets the Auto Exposure Correction value.  The parameter only applies when AEC Enable=0. Use the command \"cam_getECV\" to get the current value (don't modify unless you know what this is!) (default 0)", UINT32(0), END);
+	prm_add("AEC Value", PRM_FLAG_INTERNAL, 
+		"", UINT32(0), END);
 																		   
-	prm_add("AWB Enable", PRM_FLAG_ADVANCED, 
-		"@c Camera Enables/disables Auto White Balance (don't modify unless you know what this is!), 0=disabled, 1=enabled on startup, 2=always enabled (default 1)", UINT8(1), END);
+	prm_add("Auto White Balance", PRM_FLAG_ADVANCED | PRM_FLAG_CHECKBOX, 
+		"@c Camera Enables/disables Auto White Balance. When this is set, AWB is enabled continuously. (default disabled)", UINT8(0), END);
+	prm_setShadowCallback("Auto White Balance", (ShadowCallback)cam_shadowCallback);
 
-	prm_add("AWB Value", PRM_FLAG_HEX_FORMAT | PRM_FLAG_ADVANCED, 
-		"@c Camera Sets the Auto White Balance value (don't modify unless you know what this is!).  The parameter only applies when AWB Enable=0. Use the command \"cam_getWBV\" to get the current value (default 0x808080)", UINT32(0x808080), END);
+	prm_add("Auto White Balance on power-up", PRM_FLAG_ADVANCED | PRM_FLAG_CHECKBOX, 
+		"@c Camera Enables/disables Auto White Balance on power-up. When this is set, AWB is enabled only upon power-up. (default enabled)", UINT8(1), END);
+	prm_setShadowCallback("Auto White Balance on power-up", (ShadowCallback)cam_shadowCallback);
 
-	uint8_t brightness, aec, awb;
+	prm_add("AWB Value", PRM_FLAG_INTERNAL,
+		"", UINT32(0), END);
+
+	uint8_t brightness, aec, awb, awbp;
 	uint32_t ecv, wbv;
 	prm_get("Camera Brightness", &brightness, END);
-	prm_get("AEC Enable", &aec, END);
-	prm_get("AEC Value", &ecv, END);
-	prm_get("AWB Enable", &awb, END);
-	prm_get("AWB Value", &wbv, END);
+	prm_get("Auto Exposure Correction", &aec, END);
+	prm_get("Auto White Balance", &awb, END);
+	prm_get("Auto White Balance on power-up", &awbp, END);
+
 	cam_setBrightness(brightness);
 	cam_setAEC(aec);
 	if (!aec)
-		cam_setECV(ecv);
-	if (awb==0 || awb==1)
-		cam_setAWB(0);
-	else if (awb==2)
-		cam_setAWB(1);
-	if (awb==0)
-		cam_setWBV(wbv);
+	{
+		if (g_aecValue) // save queried ECV 
+		{
+			prm_set("AEC Value", UINT32(g_aecValue), END);
+			g_aecValue = 0;
+		}
+		else
+		{
+			prm_get("AEC Value", &ecv, END); // grab saved ECV and set it
+			cam_setECV(ecv);
+		}
+	}
+	cam_setAWB(awb);
+	if (!awb && !awbp)
+	{
+		if (g_awbValue) // save queried ECV 
+		{
+			prm_set("AWB Value", UINT32(g_awbValue), END);
+			g_awbValue = 0;
+		}
+		else
+		{
+			prm_get("AWB Value", &wbv, END); // grab saved WBV and set it
+			cam_setWBV(wbv);
+		}
+	}
 }

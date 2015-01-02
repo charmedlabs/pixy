@@ -141,14 +141,14 @@ void handleAWB()
 {
 	static uint32_t timer;
 	static uint8_t state = 0;
-	uint8_t awb=0;
+	uint8_t awbp=0;
 
 	if (state==2)
 		return;
 
-	prm_get("AWB Enable", &awb, END);
-	if (awb!=1)
-		return; // exit if auto white balance is disabled or always on
+	prm_get("Auto White Balance on power-up", &awbp, END);
+	if (!awbp)
+		return; // exit if auto white balance on power-up is disabled
 
 	else if (state==0)
 	{
