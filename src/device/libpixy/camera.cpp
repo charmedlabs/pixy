@@ -601,7 +601,7 @@ void cam_loadParams()
 	prm_setShadowCallback("Camera Brightness", (ShadowCallback)cam_shadowCallback);
 
 	prm_add("Auto Exposure Correction", PRM_FLAG_ADVANCED | PRM_FLAG_CHECKBOX, 
-		"@c Camera Enables/disables Auto Exposure Correction. Note, use this with \"AEC Value\" parameter. (default enabled)", UINT8(1), END);
+		"@c Camera Enables/disables Auto Exposure Correction. (default enabled)", UINT8(1), END);
 	prm_setShadowCallback("Auto Exposure Correction", (ShadowCallback)cam_shadowCallback);
 
 	prm_add("AEC Value", PRM_FLAG_INTERNAL, 

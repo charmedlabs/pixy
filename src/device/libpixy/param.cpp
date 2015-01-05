@@ -224,18 +224,31 @@ int32_t  prm_getAll(const uint16_t &index, Chirp *chirp)
 {
 	int res;
 	uint16_t i;
+	uint32_t len;
 	uint8_t *data, argList[CRP_MAX_ARGS];
 	ParamRecord *rec;
+	Shadow *shadow;
 
 	for (i=0, rec=(ParamRecord *)PRM_FLASH_LOC; rec->crc!=0xffff && rec<(ParamRecord *)PRM_ENDREC; i++, rec++)
 	{
 		if(i==index)
 		{
-			data = (uint8_t *)rec+prm_getDataOffset(rec);
+			shadow = prm_findShadow(prm_getId(rec));
+
+			if (shadow && shadow->data)
+			{
+				len = shadow->len;
+				data = shadow->data;
+			}
+			else
+			{
+				len = rec->len;
+				data = (uint8_t *)rec+prm_getDataOffset(rec);
+			}
 			res = Chirp::getArgList(data, rec->len, argList);
 			if (res<0)
 				return res;
-			CRP_RETURN(chirp, UINT32(rec->flags), STRING(argList), STRING(prm_getId(rec)), STRING(prm_getDesc(rec)),  UINTS8(rec->len, data), END);
+			CRP_RETURN(chirp, UINT32(rec->flags), STRING(argList), STRING(prm_getId(rec)), STRING(prm_getDesc(rec)),  UINTS8(len, data), END);
 			return 0;
 		}
 	}
