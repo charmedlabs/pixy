@@ -507,7 +507,7 @@ void Interpreter::handlePendingCommand()
         break;
 
     case SAVE_PARAMS:
-        handleSaveParams();
+        handleSaveParams(command.m_arg0.toBool());
         break;
 
     case UPDATE_PARAM:
@@ -896,9 +896,9 @@ void Interpreter::loadParams()
     queueCommand(LOAD_PARAMS);
 }
 
-void Interpreter::saveParams()
+void Interpreter::saveParams(bool reject)
 {
-    queueCommand(SAVE_PARAMS);
+    queueCommand(SAVE_PARAMS, reject);
 }
 
 void Interpreter::handleSelection(int x0, int y0, int width, int height)
@@ -1250,7 +1250,7 @@ void Interpreter::handleLoadParams()
 
 }
 
-void Interpreter::handleSaveParams(bool shadow)
+void Interpreter::handlePixySaveParams(bool shadow)
 {
     int i, res, response;
     QVariant var;
@@ -1317,7 +1317,7 @@ void Interpreter::handleSaveParams(bool shadow)
          m_chirp->callSync(m_reload_params, END_OUT_ARGS, &response, END_IN_ARGS);
 }
 
-void Interpreter::handleSaveParams()
+void Interpreter::handleSaveParams(bool reject)
 {
     bool running;
     int32_t response;
@@ -1331,7 +1331,8 @@ void Interpreter::handleSaveParams()
     // notify monmodules
     sendMonModulesParamChange();
     // save them in pixy
-    handleSaveParams(false);
+    if (!reject)
+        handlePixySaveParams(false);
 
     // reset the shadow parameters because we've saved all params
     m_chirp->callSync(m_reset_shadows, END_OUT_ARGS, &response, END_IN_ARGS);
@@ -1403,7 +1404,7 @@ void Interpreter::handleUpdateParam()
     m_pixymonParameters->clean();
     m_pixyParameters.mutex()->unlock();
 
-    handleSaveParams(true);
+    handlePixySaveParams(true);
 }
 
 void Interpreter::emitActionScriptlet(QString action, QStringList scriptlet)

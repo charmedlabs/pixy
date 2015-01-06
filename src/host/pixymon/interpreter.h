@@ -89,7 +89,7 @@ public:
     void execute(QString command);
     void execute(QStringList commandList);
     void loadParams();
-    void saveParams();
+    void saveParams(bool reject=false);
     void updateParam();
     int saveImage(const QString &filename);
     void printHelp();
@@ -161,8 +161,8 @@ private:
 
     QString extractProperty(const QString &tag, QStringList *words, QString *desc);
     void handleProperties(const uint8_t *argList, Parameter *parameter, QString *desc);
-    void handleSaveParams(); // save to Pixy
-    void handleSaveParams(bool shadow);
+    void handleSaveParams(bool reject);
+    void handlePixySaveParams(bool shadow);
     void handleLoadParams(); // load from Pixy
     void handleUpdateParam();
     void sendMonModulesParamChange();

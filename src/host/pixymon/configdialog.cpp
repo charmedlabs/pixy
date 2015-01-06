@@ -420,7 +420,7 @@ void ConfigDialog::reject()
     // saving the parameters will cause the dirty bit to be set on pixy and all paramters will
     // be reloaded (remember that parameters on the pixy side don't have dirty bits, but instead
     // we have a global dirty bit.
-    m_interpreter->saveParams();
+    m_interpreter->saveParams(true);
     QDialog::reject();
 }
 
