@@ -5,7 +5,6 @@
 *.axf
 *.map
 *.bin
-*.hex
 *.jtag
 *.swp
 *.swo
