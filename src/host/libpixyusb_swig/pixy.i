@@ -9,6 +9,7 @@
 
 int pixy_init();
 int pixy_get_blocks(uint16_t max_blocks, struct Block *blocks);
+void pixy_close();
 
 struct Block
 {
