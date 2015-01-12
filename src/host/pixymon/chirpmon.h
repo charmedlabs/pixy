@@ -31,10 +31,9 @@ struct ChirpCallData
         memcpy(m_buf, buf, len);
         m_len = len;
     }
-    ~ChirpCallData()
-    {
-        delete [] m_buf;
-    }
+    // no destructor -- need to free the memory explicitly
+    // (freeing mem in destructor is not the correct way to do it in this case unless we
+    // also write a copy constructor.)
 
     uint8_t m_type;
     ChirpProc m_proc;
@@ -53,8 +52,8 @@ public:
     friend class Interpreter;
 
 protected:
-    virtual int handleChirp(uint8_t type, ChirpProc proc, void *args[]); // null pointer terminates
-    virtual void handleXdata(void *data[]);
+    virtual int handleChirp(uint8_t type, ChirpProc proc, const void *args[]); // null pointer terminates
+    virtual void handleXdata(const void *data[]);
     virtual int sendChirp(uint8_t type, ChirpProc proc);
 
 private:

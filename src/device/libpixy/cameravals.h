@@ -23,7 +23,7 @@
 #define CAM_LIGHT_LOW           1
 #define CAM_LIGHT_HIGH          2 // not sure if combining high light and low light exposure is possible, or good
 
-#define CAM_BRIGHTNESS_DEFAULT  90
+#define CAM_BRIGHTNESS_DEFAULT  80
 #define CAM_BRIGHTNESS_RANGE    0x14
 
 

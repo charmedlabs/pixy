@@ -12,6 +12,8 @@
 //
 // end license header
 //
+
+#include <QMutexLocker>
 #include <stdexcept>
 #include "parameters.h"
 
@@ -20,17 +22,15 @@ Parameter::Parameter(const QString &id, PType type, const QString &help)
 {
     m_id = id;
     m_help = help;
-    m_radioValue = 0;
     m_type = type;
     m_dirty = false;
 }
 
-Parameter::Parameter(const QString &id, const QVariant &value, PType type, const QString &help)
+Parameter::Parameter(const QString &id, PType type, const QVariant &value, const QString &help)
 {
    m_value = value;
    m_id = id;
    m_help = help;
-   m_radioValue = 0;
    m_type = type;
    m_dirty = false;
 }
@@ -46,19 +46,7 @@ const QString &Parameter::id()
 
 QString Parameter::typeName()
 {
-    if (m_type==PT_INT8)
-        return "INT8";
-    else if (m_type==PT_INT16)
-        return "INT16";
-    else if (m_type==PT_INT32)
-        return "INT32";
-    else if (m_type==PT_FLT32)
-        return "FLOAT32";
-    else if (m_type==PT_INTS8)
-        return "INT8_ARRAY";
-    else if (m_type==PT_STRING)
-        return "STRING";
-    else if (m_type==PT_INT8_RADIO)
+    if (m_type==PT_INT8_RADIO)
         return "INT8_RADIO";
     else if (m_type==PT_INT16_RADIO)
         return "INT16_RADIO";
@@ -70,8 +58,18 @@ QString Parameter::typeName()
         return "INT8_ARRAY_RADIO";
     else if (m_type==PT_STRING_RADIO)
         return "STRING_RADIO";
-    else if (m_type==PT_PATH)
-        return "PATH";
+    else if ((m_type&PT_DATATYPE_MASK)==PT_INT8)
+        return "INT8";
+    else if ((m_type&PT_DATATYPE_MASK)==PT_INT16)
+        return "INT16";
+    else if ((m_type&PT_DATATYPE_MASK)==PT_INT32)
+        return "INT32";
+    else if ((m_type&PT_DATATYPE_MASK)==PT_FLT32)
+        return "FLOAT32";
+    else if ((m_type&PT_DATATYPE_MASK)==PT_INTS8)
+        return "INT8_ARRAY";
+    else if ((m_type&PT_DATATYPE_MASK)==PT_STRING)
+        return "STRING";
     else
         return "?";
 }
@@ -102,8 +100,6 @@ PType Parameter::typeLookup(const QString &name)
         return PT_INTS8_RADIO;
     else if (name=="STRING_RADIO")
         return PT_STRING_RADIO;
-    else if (name=="PATH")
-        return PT_PATH;
     else
         return PT_UNKNOWN;
 }
@@ -116,7 +112,7 @@ PType Parameter::type()
 const QVariant &Parameter::value()
 {
     if (m_type&PT_RADIO_MASK)
-        return m_radioValues[m_radioValue].m_value;
+        return m_radioValues[m_value.toInt()].m_value;
     else
         return m_value;
 }
@@ -143,19 +139,22 @@ int Parameter::valueInt()
 const QString *Parameter::description()
 {
     if (m_type&PT_RADIO_MASK)
-        return &m_radioValues[m_radioValue].m_description;
+        return &m_radioValues[m_value.toInt()].m_description;
     return NULL;
 }
 
-int Parameter::set(const QVariant &value)
+int Parameter::set(const QVariant &value, bool shadow)
 {
+    if (shadow && m_saved.isNull())
+        m_saved = m_value;
+
     if (m_type&PT_RADIO_MASK)
     {
         for (int i=0; i<m_radioValues.size(); i++)
         {
             if (m_radioValues[i].m_value==value)
             {
-                m_radioValue = i;
+                m_value = i;
                 return 0;
             }
         }
@@ -175,13 +174,18 @@ int Parameter::setRadio(const QString &description)
         {
             if (QString::compare(m_radioValues[i].m_description, description, Qt::CaseInsensitive)==0)
             {
-                m_radioValue = i;
+                m_value = i;
                 return 0;
             }
         }
     }
 
     return -1;
+}
+
+void Parameter::setHelp(const QString &help)
+{
+    m_help = help;
 }
 
 void Parameter::addRadioValue(const RadioValue &value)
@@ -209,6 +213,21 @@ void Parameter::setDirty(bool dirty)
 bool Parameter::dirty()
 {
     return m_dirty;
+}
+
+void Parameter::clearShadow()
+{
+    if (shadow())
+    {
+        m_value = m_saved;
+        m_saved = QVariant();
+        m_dirty = true;  // set dirty bit because we've effectively changed (back)
+    }
+}
+
+bool Parameter::shadow()
+{
+    return !m_saved.isNull();
 }
 
 const QString &Parameter::help()
@@ -240,7 +259,7 @@ QVariant Parameter::property(const QString &label)
 }
 
 
-ParameterDB::ParameterDB()
+ParameterDB::ParameterDB() : m_mutex(QMutex::Recursive)
 {
 }
 
@@ -248,32 +267,25 @@ ParameterDB::~ParameterDB()
 {
 }
 
-const QVariant *ParameterDB::value(const QString &id)
+QVariant ParameterDB::value(const QString &id)
 {
+    QMutexLocker locker(&m_mutex);
     for (int i=0; i<m_parameters.size(); i++)
     {
         if (QString::compare(m_parameters[i].id(), id, Qt::CaseInsensitive)==0)
-            return &m_parameters[i].value();
+            return m_parameters[i].value();
     }
-    return NULL;
+    return QVariant();
 }
 
 Parameter *ParameterDB::parameter(const QString &id)
 {
+    QMutexLocker locker(&m_mutex);
     for (int i=0; i<m_parameters.size(); i++)
     {
         if (QString::compare(m_parameters[i].id(), id, Qt::CaseInsensitive)==0)
             return &m_parameters[i];
     }
-    return NULL;
-}
-
-const QString *ParameterDB::description(const QString &id)
-{
-    Parameter *param = parameter(id);
-
-    if (param)
-        return param->description();
     return NULL;
 }
 
@@ -284,6 +296,7 @@ Parameters &ParameterDB::parameters()
 
 int ParameterDB::set(const QString &id, const QVariant &value)
 {
+    QMutexLocker locker(&m_mutex);
     Parameter *param = parameter(id);
 
     if (param)
@@ -294,6 +307,7 @@ int ParameterDB::set(const QString &id, const QVariant &value)
 
 int ParameterDB::set(const QString &id, const QString &description)
 {
+    QMutexLocker locker(&m_mutex);
     Parameter *param = parameter(id);
 
     if (param)
@@ -304,12 +318,40 @@ int ParameterDB::set(const QString &id, const QString &description)
 
 void ParameterDB::add(Parameter param)
 {
+    QMutexLocker locker(&m_mutex);
+
     Parameter *pparam = parameter(param.id());
 
-    if (pparam)
-        *pparam = param;
+    if (pparam) // if it's in the database, we don't want to add another values
+    {
+        // copy value and dirty flag, leave everything else intact --- esp the properties, which we're assuming don't change
+        pparam->set(param.value());
+        pparam->setDirty(param.dirty());
+    }
     else  // else put in list
         m_parameters.push_back(param);
+}
+
+void ParameterDB::add(const QString &id, PType type, const QVariant &value, const QString &help, const QString &category, uint flags)
+{
+    Parameter param(id, type, value, help);
+    param.setProperty(PP_CATEGORY, category);
+    param.setProperty(PP_FLAGS, flags);
+    add(param);
+}
+
+void ParameterDB::clearShadow()
+{
+    QMutexLocker locker(&m_mutex);
+    for (int i=0; i<m_parameters.size(); i++)
+        m_parameters[i].clearShadow();
+}
+
+void ParameterDB::clean()
+{
+    QMutexLocker locker(&m_mutex);
+    for (int i=0; i<m_parameters.size(); i++)
+        m_parameters[i].setDirty(false);
 }
 
 

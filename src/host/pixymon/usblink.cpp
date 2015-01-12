@@ -13,7 +13,7 @@
 // end license header
 //
 
-#include <QDebug>
+#include "debug.h"
 #include "usblink.h"
 #include "sleeper.h"
 #include "pixydefs.h"
@@ -79,7 +79,7 @@ int USBLink::send(const uint8_t *data, uint32_t len, uint16_t timeoutMs)
 #ifdef __MACOS__
         libusb_clear_halt(m_handle, 0x02);
 #endif
-        qDebug("libusb_bulk_write %d", res);
+        DBG("libusb_bulk_write %d", res);
         return res;
     }
     return transferred;
@@ -99,7 +99,7 @@ int USBLink::receive(uint8_t *data, uint32_t len, uint16_t timeoutMs)
 #ifdef __MACOS__
         libusb_clear_halt(m_handle, 0x82);
 #endif
-        qDebug("libusb_bulk_read %d", res);
+        DBG("libusb_bulk_read %d", res);
         return res;
     }
     return transferred;

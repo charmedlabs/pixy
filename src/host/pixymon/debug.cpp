@@ -13,10 +13,27 @@
 // end license header
 //
 
-#ifndef CALC_H
-#define CALC_H
-#include <inttypes.h>
+#include "debug.h"
+#include "interpreter.h"
+#include "parameters.h"
 
-void hsvc(uint8_t r, uint8_t g, uint8_t b, uint8_t *h, uint8_t *s, uint8_t *v, uint8_t *c);
+MON_MODULE(Debug);
 
-#endif // CALC_H
+uint g_debug = 0;
+
+Debug::Debug(Interpreter *interpreter) : MonModule(interpreter)
+{
+    m_interpreter->m_pixymonParameters->add("Debug", PT_INT32, 0,
+        "This parameter sets the debugging level, 0=no debug info, >0=debugging level (try 1)");
+}
+
+
+void Debug::paramChange()
+{
+    QVariant val;
+
+    if (pixymonParameterChanged("Debug", &val))
+        g_debug = val.toUInt();
+
+}
+

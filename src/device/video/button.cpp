@@ -13,6 +13,7 @@
 // end license header
 //
 
+#include <math.h>
 #include "pixy_init.h"
 #include "button.h"
 #include "camera.h"
@@ -21,100 +22,76 @@
 #include "misc.h"
 #include "colorlut.h"
 #include "conncomp.h"
+#include "exec.h"
+#include "calc.h"
 
 #define BT_CENTER_SIZE   6
 
-void interpolateBayer(uint32_t width, uint32_t x, uint32_t y, uint8_t *pixel, uint32_t &r, uint32_t &g, uint32_t &b)
+
+#define SA_GAIN   0.015f
+#define G_GAIN 1.10f
+
+// this routine needs to provide good feedback to the user as to whether the camera sees and segments the object correctly.
+// The key is to integrate the "growing algorithm" such that the growing algorithm is executed continuously and feedback about
+// the "goodness" of the grown region is returned.  We're choosing goodness to be some combination of size (because the bigger 
+// the grown region the better) and saturation (because more saturation the more likely we've found the intended target, vs 
+// the background, which is typically not saturated.)  
+// In general with an RGB LED, you can only communicate 2 things--- brightness and hue, so you have 2 dof to play with....   
+void scaleLED(uint32_t r, uint32_t g, uint32_t b, uint32_t n)
 {
-    if (y&1)
-    {
-        if (x&1)
-        {
-            r = *pixel;
-            g = *(pixel-1);
-            b = *(pixel-width-1);
-        }
-        else
-        {
-            r = *(pixel-1);
-            g = *pixel;
-            b = *(pixel-width);
-        }
-    }
-    else
-    {
-        if (x&1)
-        {
-            r = *(pixel-width);
-            g = *pixel;
-            b = *(pixel-1);
-        }
-        else
-        {
-            r = *(pixel-width-1);
-            g = *(pixel-1);
-            b = *pixel;
-        }
-    }
-}
+	uint32_t max, min, current, sat, t; 
 
-void getColor(uint8_t *r, uint8_t *g, uint8_t *b)
-{
-	uint32_t x, y, R, G, B, rsum, gsum, bsum, count;
-	uint8_t *frame = g_rawFrame.m_pixels;  // use the correct pointer
-
-	for (rsum=0, gsum=0, bsum=0, count=0, y=(CAM_RES2_HEIGHT-BT_CENTER_SIZE)/2; y<(CAM_RES2_HEIGHT+BT_CENTER_SIZE)/2; y++)
-	{
-		for (x=(CAM_RES2_WIDTH-BT_CENTER_SIZE)/2; x<(CAM_RES2_WIDTH+BT_CENTER_SIZE)/2; x++, count++)
-		{
-			interpolateBayer(CAM_RES2_WIDTH, x, y, frame+CAM_RES2_WIDTH*y+x, R, G, B);
-		 	rsum += R;
-			gsum += G;
-			bsum += B;
-		}
-	}
-	*r = rsum/count;
-	*g = gsum/count;										 
-	*b = bsum/count;	 	
-}
-
-
-void saturate(uint8_t *r, uint8_t *g, uint8_t *b)
-{
-	uint8_t max, min, bias;
-	float m, fr, fg, fb;
+#if 0  // it seems that green is a little attenuated on this sensor
+	t = (uint32_t)(G_GAIN*g);
+	if (t>255)
+		g = 255;
+	else
+		g = t;
+#endif
 
    	// find min
-	if (*r<*b)
-		min = *r;
-	else
-		min = *b;
-	if (*g<min)
-		min = *g;
-
-	// find reasonable bias to subtract out
-	bias = min*3/4;
-	*r -= bias;
-	*g -= bias;
-	*b -= bias;
+	min = MIN(r, g);
+	min = MIN(min, b);
 
 	// find max
-	if (*r>*b)
-		max = *r;
+	max = MAX(r, g);
+	max = MAX(max, b);
+
+	// subtract min and form sataration from the distance from origin
+	sat = sqrt((float)((r-min)*(r-min) + (g-min)*(g-min) + (b-min)*(b-min)));
+	if (sat>30) // limit saturation to preven things from getting too bright
+		sat = 30;
+	if (sat<10) // anything less than 15 is pretty uninteresting, no sense in displaying....
+		current = 0;
 	else
-		max = *b;
-	if (*g>max)
-		max = *g;
+	{
+		//sat2 = exp(sat/13.0f);
+		//current = (uint32_t)(SAT_GAIN*sat2) + (uint32_t)(AREA_GAIN*n) + (uint32_t)(SA_GAIN*n*sat2);
+		current = (uint32_t)(SA_GAIN*n*sat);
+	}
+	if (current>LED_MAX_CURRENT/5)
+		current = LED_MAX_CURRENT/5;
+	led_setMaxCurrent(current);
 
+#if 0
+	// find reasonable bias to subtract out
+	bias = min*75/100;
+	r -= bias;
+	g -= bias;
+	b -= bias;
+	
 	// saturate
-	m = 255.0/max;
-	fr = m**r;
-	fg = m**g;
-	fb = m**b;
-
-	*r = (uint8_t)fr;
-	*g = (uint8_t)fg;				  
-	*b = (uint8_t)fb;
+	m = 255.0f/(max-bias);
+	r = (uint8_t)(m*r);
+	g = (uint8_t)(m*g);
+	b = (uint8_t)(m*b);
+#endif
+#if 1
+	// saturate
+	rgbUnpack(saturate(rgbPack(r, g, b)), &r, &g, &b);
+#endif
+	//cprintf("r %d g %d b %d min %d max %d sat %d sat2 %d n %d\n", r, g, b, min, max, sat, sat2, n);
+	led_setRGB(r, g, b);	 	
 }
 	
 
@@ -129,32 +106,29 @@ ButtonMachine::~ButtonMachine()
 
 void ButtonMachine::ledPipe()
 {
-	uint8_t r, g, b;
+	Points points;
+	RGBPixel rgb;
+	uint32_t color, r, g, b, n;
+	g_blobs->m_clut.growRegion(g_rawFrame, Point16(CAM_RES2_WIDTH/2, CAM_RES2_HEIGHT/2), &points);	
+	cc_sendPoints(points, CL_GROW_INC, CL_GROW_INC, g_chirpUsb);
 
-	BlobA blob(m_index, (CAM_RES2_WIDTH-BT_CENTER_SIZE)/2, (CAM_RES2_WIDTH+BT_CENTER_SIZE)/2, (CAM_RES2_HEIGHT-BT_CENTER_SIZE)/2, (CAM_RES2_HEIGHT+BT_CENTER_SIZE)/2);
-	cc_sendBlobs(g_chirpUsb, &blob, 1);
+	IterPixel ip(g_rawFrame, &points);
+	color = ip.averageRgb(&n);
 
-	getColor(&r, &g, &b);
-	saturate(&r, &g, &b);
-	led_setRGB(r, g, b);	 	
+	rgbUnpack(color, &r, &g, &b);
+	scaleLED(r, g, b, n);
 }
 
 void ButtonMachine::setSignature()
 {
-	uint32_t current, saveCurrent; 
-	int goodness;
+	int res;
 
 	// grow region, create model, save
-	goodness = cc_setSigPoint(0, m_index, CAM_RES2_WIDTH/2, CAM_RES2_HEIGHT/2, g_chirpUsb);
-	if (goodness>0)
-	{
-		cprintf("goodness=%d\n", goodness);
-		saveCurrent = led_getMaxCurrent(); // save off value
-		current = (float)LED_MAX_CURRENT/100.0f*goodness;
-		led_setMaxCurrent(current);
-		flashLED(4); 
-		led_setMaxCurrent(saveCurrent);
-	}
+	res = cc_setSigPoint(0, m_index, CAM_RES2_WIDTH/2, CAM_RES2_HEIGHT/2);
+	if (res<0)
+		return;
+	exec_sendEvent(g_chirpUsb, EVT_PARAM_CHANGE);
+	flashLED(4); 
 }
 
 bool ButtonMachine::handleSignature()
@@ -177,6 +151,7 @@ bool ButtonMachine::handleSignature()
 		if (bt)
 		{
 			setTimer(&m_timer);
+			led_setMaxCurrent(g_ledBrightness); // restore default brightness
 			m_goto = 1;
 			led_set(0);
 		}
@@ -212,7 +187,7 @@ bool ButtonMachine::handleSignature()
 		{
 			setTimer(&m_timer);
 			m_index++;
-			if (m_index==NUM_MODELS+1)
+			if (m_index==CL_NUM_SIGNATURES+1)
 				m_index = 0;
 
 			setLED();

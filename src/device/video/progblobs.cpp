@@ -16,10 +16,13 @@
 #include "progblobs.h"
 #include "pixy_init.h"
 #include "camera.h"
+#include "led.h"
 #include "conncomp.h"
 #include "serial.h"
 #include "rcservo.h"
+#include "exec.h"
 
+bool g_ledSet = false;
 
 Program g_progBlobs =
 {
@@ -38,10 +41,15 @@ int blobsSetup()
 	// setup camera mode
 	cam_setMode(CAM_MODE1);
  	
+#ifdef DA
 	// load lut if we've grabbed any frames lately
 	if (g_rawFrame.m_pixels)
 		cc_loadLut();
+#endif
 
+	// if there have been any parameter changes, we should regenerate the LUT (do it regardless)
+	g_blobs->m_clut.generateLUT();	
+			
 	// setup qqueue and M0
 	g_qqueue->flush();
 	exec_runM0(0);
@@ -55,7 +63,8 @@ int blobsSetup()
 void handleRecv()
 {
 	uint8_t i, a;
-	static uint8_t state=0, b=1;
+	static uint8_t state=0;
+	static uint16_t w=0xffff;
 	uint16_t s0, s1;
 	Iserial *serial = ser_getSerial();
 
@@ -63,26 +72,62 @@ void handleRecv()
 	{
 		switch(state)
 		{	
-		case 0: // look for sync
-			if(serial->receive(&a, 1)<1)
-				return;
-			if (a==0xff && b==0x00)
-				state = 1;
-			b = a;
-			break;
-
-		case 1:	// read rest of data
-			if (serial->receiveLen()>=4)
+		case 0: // look for sync byte 0
+			if(serial->receive(&a, 1))
 			{
-				serial->receive((uint8_t *)&s0, 2);
-				serial->receive((uint8_t *)&s1, 2);
-
-				//cprintf("servo %d %d\n", s0, s1);
-				rcs_setPos(0, s0);
-				rcs_setPos(1, s1);
-
-				state = 0;
+				w = a;
+				w <<= 8;
+				state = 1;
 			}
+		 	break;
+
+		case 1:	// sync byte 1
+			if(serial->receive(&a, 1))
+			{
+ 				w |= a;
+				state = 2;
+			}
+
+		case 2:	 // receive data byte(s)
+			if (w==SYNC_SERVO)
+			{	// read rest of data
+				if (serial->receiveLen()>=4)
+				{
+					serial->receive((uint8_t *)&s0, 2);
+					serial->receive((uint8_t *)&s1, 2);
+
+					//cprintf("servo %d %d\n", s0, s1);
+					rcs_setPos(0, s0);
+					rcs_setPos(1, s1);
+
+					state = 0;
+				}
+			}
+			else if (w==SYNC_CAM_BRIGHTNESS)
+			{
+				if(serial->receive(&a, 1))
+				{
+					cam_setBrightness(a);
+					state = 0;
+				}
+			}
+			else if (w==SYNC_SET_LED)
+			{
+				if (serial->receiveLen()>=3)
+				{
+					uint8_t r, g, b;
+					serial->receive(&r, 1);
+					serial->receive(&g, 1);
+					serial->receive(&b, 1);
+
+					led_setRGB(r, g, b);
+
+					g_ledSet = true; // it will stay true until the next power cycle
+					state = 0;
+				}
+			}
+			else if(serial->receive(&a, 1)) // not supported, receive byte to resync, you know, throw one byte out, receive 2, throw 1 out....
+				state = 0;
 			break;
 
 		default:
@@ -92,15 +137,21 @@ void handleRecv()
 	}
 }
 
+
 int blobsLoop()
 {
+#if 1
 	BlobA *blobs;
 	BlobB *ccBlobs;
 	uint32_t numBlobs, numCCBlobs;
+	static uint32_t drop = 0;
 
 	// create blobs
-	g_blobs->blobify();
-
+	if (g_blobs->blobify()<0)
+	{
+		DBG("drop %d\n", drop++);
+		return 0;
+	}
 	// handle received data immediately
 	handleRecv();
 
@@ -110,11 +161,43 @@ int blobsLoop()
 
 	ser_getSerial()->update();
 
-	cc_setLED();
+	// if user isn't controlling LED, set it here, according to biggest detected object
+	if (!g_ledSet)
+		cc_setLED();
 	
 	// deal with any latent received data until the next frame comes in
 	while(!g_qqueue->queued())
 		handleRecv();
+
+#endif
+#if 0
+	Qval qval;
+	static int i = 0;
+	while(1)
+	{
+		if (g_qqueue->dequeue(&qval) && qval.m_col==0xffff)
+		{
+			cprintf("%d\n", i++);
+			break;
+		}	
+	}
+#endif
+#if 0
+	BlobA *blobs;
+	BlobB *ccBlobs;
+	uint32_t numBlobs, numCCBlobs;
+	static uint32_t drop = 0;
+
+	// create blobs
+	if (g_blobs->blobify()<0)
+	{
+		DBG("drop %d\n", drop++);
+		return 0;
+	}
+	g_blobs->getBlobs(&blobs, &numBlobs, &ccBlobs, &numCCBlobs);
+	cc_sendBlobs(g_chirpUsb, blobs, numBlobs, ccBlobs, numCCBlobs);
+
+#endif
 
 	return 0;
 }

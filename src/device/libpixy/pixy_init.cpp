@@ -141,14 +141,14 @@ void handleAWB()
 {
 	static uint32_t timer;
 	static uint8_t state = 0;
-	uint8_t awb=0;
+	uint8_t awbp=0;
 
 	if (state==2)
 		return;
 
-	prm_get("AWB Enable", &awb, END);
-	if (awb!=1)
-		return; // exit if auto white balance is disabled or always on
+	prm_get("Auto White Balance on power-up", &awbp, END);
+	if (!awbp)
+		return; // exit if auto white balance on power-up is disabled
 
 	else if (state==0)
 	{
@@ -176,7 +176,7 @@ void periodic()
 	handleAWB();
 }
 
-void pixyInit(uint32_t slaveRomStart, const unsigned char slaveImage[], uint32_t imageSize)
+void pixyInit(uint32_t slaveRomStart, const unsigned char slaveImage[], uint32_t imageSize, uint16_t mnumber)
 {
 	// write stack guard word
  	STACK_GUARD = STACK_GUARD_WORD;
@@ -184,6 +184,10 @@ void pixyInit(uint32_t slaveRomStart, const unsigned char slaveImage[], uint32_t
 	commonInit();
 
 	IPC_haltSlave();
+
+	// clear RC servo registers to prevent and glitches upon initialization
+	rcs_enable(0, 0);
+	rcs_enable(1, 0);
 
 	ADCInit();
    	SCTInit();
@@ -199,13 +203,13 @@ void pixyInit(uint32_t slaveRomStart, const unsigned char slaveImage[], uint32_t
 	// initialize chirp objects
 	USBLink *usbLink = new USBLink;
 	g_chirpUsb = new Chirp(false, false, usbLink);
+	g_chirpUsb->setSendTimeout(3000); // set a high timeout because the host can sometimes go AWOL for a second or two....
 	SMLink *smLink = new SMLink;
   	g_chirpM0 = new Chirp(false, true, smLink);
 
 	// initialize devices/modules
 	led_init();
-	if (prm_init(g_chirpUsb)<0) // error, let user know (don't just continue like nothing's happened)
-		showError(1, 0x0000ff, "Flash is corrupt, parameters have been lost\n");
+	prm_init(g_chirpUsb, mnumber);
 	pwr_init();
 	cam_init();
 	rcs_init();

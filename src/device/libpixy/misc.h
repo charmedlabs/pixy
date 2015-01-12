@@ -18,6 +18,10 @@
 
 #include <inttypes.h>
 
+// for stringification of preprocessor values
+#define STR(s)           #s
+#define STRINGIFY(s)     STR(s)
+
 #ifdef __cplusplus
 extern "C"
 {

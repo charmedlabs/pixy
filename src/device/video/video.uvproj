@@ -481,6 +481,11 @@
               <FileType>8</FileType>
               <FilePath>.\progchase.cpp</FilePath>
             </File>
+            <File>
+              <FileName>calc.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\common\calc.cpp</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>
@@ -959,6 +964,11 @@
               <FileName>progchase.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>.\progchase.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>calc.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\common\calc.cpp</FilePath>
             </File>
           </Files>
         </Group>

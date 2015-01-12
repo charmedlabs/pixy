@@ -19,26 +19,26 @@
 #define CRP_RES_ERROR_MEMORY            -5
 #define CRP_RES_ERROR_NOT_CONNECTED     -6
 
-#define CRP_MAX_NAK           		3
+#define CRP_MAX_NAK                     3
 #define CRP_RETRIES                     3
-#define CRP_HEADER_TIMEOUT    		1000
-#define CRP_DATA_TIMEOUT      		500
-#define CRP_IDLE_TIMEOUT      		500
-#define CRP_SEND_TIMEOUT      		1000
-#define CRP_MAX_ARGS          		10
-#define CRP_BUFSIZE           		0x80
-#define CRP_BUFPAD            		8
-#define CRP_PROCTABLE_LEN     		0x40
+#define CRP_HEADER_TIMEOUT    	        1000
+#define CRP_DATA_TIMEOUT                500
+#define CRP_IDLE_TIMEOUT                500
+#define CRP_SEND_TIMEOUT                1000
+#define CRP_MAX_ARGS                    10
+#define CRP_BUFSIZE                     0x80
+#define CRP_BUFPAD                      8
+#define CRP_PROCTABLE_LEN               0x40
 
-#define CRP_START_CODE        		0xaaaa5555
+#define CRP_START_CODE                  0xaaaa5555
 
-#define CRP_CALL              		0x80
-#define CRP_RESPONSE          		0x40
-#define CRP_INTRINSIC          		0x20
+#define CRP_CALL                        0x80
+#define CRP_RESPONSE                    0x40
+#define CRP_INTRINSIC                   0x20
 #define CRP_DATA                        0x10
 #define CRP_XDATA                       0x18 // data not associated with no associated procedure)
-#define CRP_CALL_ENUMERATE    		(CRP_CALL | CRP_INTRINSIC | 0x00)
-#define CRP_CALL_INIT         		(CRP_CALL | CRP_INTRINSIC | 0x01)
+#define CRP_CALL_ENUMERATE              (CRP_CALL | CRP_INTRINSIC | 0x00)
+#define CRP_CALL_INIT                   (CRP_CALL | CRP_INTRINSIC | 0x01)
 #define CRP_CALL_ENUMERATE_INFO         (CRP_CALL | CRP_INTRINSIC | 0x02)
 
 #define CRP_ACK                         0x59
@@ -212,10 +212,12 @@ public:
     int setProc(const char *procName, ProcPtr proc,  ProcTableExtension *extension=NULL);
     int getProcInfo(ChirpProc proc, ProcInfo *info);
     int registerModule(const ProcModule *module);
+    void setSendTimeout(uint32_t timeout);
+    void setRecvTimeout(uint32_t timeout);
 
     int call(uint8_t service, ChirpProc proc, ...);
     int call(uint8_t service, ChirpProc proc, va_list args);
-    static uint8_t getType(void *arg);
+    static uint8_t getType(const void *arg);
     int service(bool all=true);
     int assemble(uint8_t type, ...);
     bool connected();
@@ -225,6 +227,8 @@ public:
     static int deserialize(uint8_t *buf, uint32_t len, ...);
     static int vserialize(Chirp *chirp, uint8_t *buf, uint32_t bufSize, va_list *args);
     static int vdeserialize(uint8_t *buf, uint32_t len, va_list *args);
+    static int deserializeParse(uint8_t *buf, uint32_t len, void *args[]);
+    static int loadArgs(va_list *args, void *recvArgs[]);
     static int getArgList(uint8_t *buf, uint32_t len, uint8_t *argList);
     int useBuffer(uint8_t *buf, uint32_t len);
 
@@ -233,8 +237,8 @@ public:
 protected:
     int remoteInit(bool connect);
     int recvChirp(uint8_t *type, ChirpProc *proc, void *args[], bool wait=false); // null pointer terminates
-    virtual int handleChirp(uint8_t type, ChirpProc proc, void *args[]); // null pointer terminates
-    virtual void handleXdata(void *data[]) {}
+    virtual int handleChirp(uint8_t type, ChirpProc proc, const void *args[]); // null pointer terminates
+    virtual void handleXdata(const void *data[]) {}
     virtual int sendChirp(uint8_t type, ChirpProc proc);
 
     uint8_t *m_buf;
@@ -267,8 +271,6 @@ private:
     int32_t handleInit(uint16_t *blkSize, uint8_t *hintSource);
     int32_t handleEnumerateInfo(ChirpProc *proc);
     int vassemble(va_list *args);
-    static int deserializeParse(uint8_t *buf, uint32_t len, void *args[]);
-    static int loadArgs(va_list *args, void *recvArgs[]);
     void restoreBuffer();
 
     ChirpProc updateTable(const char *procName, ProcPtr procPtr);

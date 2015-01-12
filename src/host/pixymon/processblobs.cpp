@@ -20,7 +20,9 @@ ProcessBlobs::ProcessBlobs(Interpreter *interpreter)
 {
     m_interpreter = interpreter;
     m_qq = new Qqueue();
+#ifdef DEFER
     m_blobs = new Blobs(m_qq);
+#endif
     m_qMem = new uint32_t[0x10000];
 
     connect(m_interpreter, SIGNAL(paramChange()), this, SLOT(handleParamChange()));
@@ -28,13 +30,16 @@ ProcessBlobs::ProcessBlobs(Interpreter *interpreter)
 
 ProcessBlobs::~ProcessBlobs()
 {
+#ifdef DEFER
     delete m_blobs;
+#endif
     delete m_qq;
     delete [] m_qMem;
 }
 
 void ProcessBlobs::process(const Frame8 &frame, uint32_t *numBlobs, BlobA **blobs, uint32_t *numCCBlobs, BlobB **ccBlobs, uint32_t *numQvals, Qval **qMem)
 {
+#if 0
 #if 0
     uint16_t boxes[] = {
         1, 20, 30, 10, 20,
@@ -74,13 +79,14 @@ void ProcessBlobs::process(const Frame8 &frame, uint32_t *numBlobs, BlobA **blob
         }
     }
 #endif
+#endif
 }
 
 void ProcessBlobs::rls(const Frame8 &frame)
 {
+#if 0
     uint32_t x, y, count, index, startCol, model, lutVal, r, g1, g2, b;
     int32_t c1, c2;
-    bool stateIn, stateOut;
     uint32_t prevModel=0;
 
     for (y=1, m_numQvals=0; y<(uint32_t)frame.m_height; y+=2)
@@ -89,7 +95,6 @@ void ProcessBlobs::rls(const Frame8 &frame)
         m_qq->enqueue(0);
         m_qMem[m_numQvals++] = 0;
 
-        stateIn = stateOut = false;
         count = 0;
         prevModel = 0;
         startCol = 0;
@@ -178,12 +183,14 @@ void ProcessBlobs::rls(const Frame8 &frame)
     // indicate end of frame
     m_qq->enqueue(0xffffffff);
     m_qMem[m_numQvals++] = 0xffffffff;
+#endif
 }
 
 void ProcessBlobs::handleParamChange()
 {
     const QVariant *variant;
 
+#ifdef DEFER
     // read from parameter database
     if ((variant=m_interpreter->m_pixyParameters.value("Max blocks")))
         m_maxBlobs = variant->toUInt();
@@ -193,8 +200,11 @@ void ProcessBlobs::handleParamChange()
         m_minArea = variant->toUInt();
     if ((variant=m_interpreter->m_pixyParameters.value("Color code mode")))
         m_ccMode = variant->toUInt();
+#endif
 
+#ifdef DEFER
     // update
     m_blobs->setParams(m_maxBlobs, m_maxBlobsPerModel, m_minArea, (ColorCodeMode)m_ccMode);
+#endif
 }
 

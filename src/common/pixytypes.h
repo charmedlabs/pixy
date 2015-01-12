@@ -12,20 +12,27 @@
 //
 // end license header
 //
+
 #ifndef PIXYTYPES_H
 #define PIXYTYPES_H
 
 #include <stdint.h>
 
-#define RENDER_FLAG_FLUSH            0x01
-#define RENDER_FLAG_BLEND_BG         0x02
+#define RENDER_FLAG_FLUSH            0x01	// add to stack, render immediately
+#define RENDER_FLAG_BLEND            0x02	// blend with a previous images in image stack
 
-#define PRM_FLAG_INTERNAL            0x01
-#define PRM_FLAG_ADVANCED            0x02
-#define PRM_FLAG_HEX_FORMAT          0x10
-#define PRM_FLAG_SIGNED              0x80
+#define PRM_FLAG_INTERNAL            0x00000001
+#define PRM_FLAG_ADVANCED            0x00000002
+#define PRM_FLAG_HEX_FORMAT          0x00000010
+#define PRM_FLAG_SIGNED              0x00000080
 
-typedef uint32_t Qval;
+// render-specific flags
+#define PRM_FLAG_SLIDER              0x00000100
+#define PRM_FLAG_CHECKBOX            0x00000200
+#define PRM_FLAG_PATH                0x00000400
+
+// events
+#define EVT_PARAM_CHANGE             1
 
 struct Point16
 {
@@ -34,14 +41,31 @@ struct Point16
         m_x = m_y = 0;
     }
 
-    Point16(uint16_t x, uint16_t y)
+    Point16(int16_t x, int16_t y)
     {
         m_x = x;
         m_y = y;
     }
 
-    uint16_t m_x;
-    uint16_t m_y;
+    int16_t m_x;
+    int16_t m_y;
+};
+
+struct Point32
+{
+    Point32()
+    {
+        m_x = m_y = 0;
+    }
+
+    Point32(int32_t x, int32_t y)
+    {
+        m_x = x;
+        m_y = y;
+    }
+
+    int32_t m_x;
+    int32_t m_y;
 };
 
 struct Frame8
@@ -189,6 +213,43 @@ struct Fpoint
     float m_y;
 };
 
+struct UVPixel
+{
+    UVPixel()
+    {
+        m_u = m_v = 0;
+    }
+
+    UVPixel(int32_t u, int32_t v)
+    {
+        m_u = u;
+        m_v = v;
+    }
+
+    int32_t m_u;
+    int32_t m_v;
+};
+
+struct RGBPixel
+{
+    RGBPixel()
+    {
+        m_r = m_g = m_b = 0;
+    }
+
+    RGBPixel(uint8_t r, uint8_t g, uint8_t b)
+    {
+        m_r = r;
+        m_g = g;
+        m_b = b;
+    }
+
+    uint8_t m_r;
+	uint8_t m_g;
+	uint8_t m_b;
+};
+
+
 struct Line
 {
     Line()
@@ -204,5 +265,12 @@ struct Line
     float m_slope;
     float m_yi;
 };
+
+#ifdef PIXY
+typedef long long longlong;
+#else
+#include <QtGlobal>
+typedef qlonglong longlong;
+#endif
 
 #endif // PIXYTYPES_H

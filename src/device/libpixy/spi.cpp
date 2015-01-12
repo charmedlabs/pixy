@@ -51,6 +51,9 @@ int Spi::sync()
 	uint32_t timer;
 	int res = 0;
 
+	if (!m_autoSlaveSelect)
+		return 0;
+
 	SSP_IntConfig(LPC_SSP1, SSP_INTCFG_RX, DISABLE);
 
 	setTimer(&timer);
@@ -82,34 +85,58 @@ void Spi::slaveHandler()
 	uint32_t d;
 	uint16_t d16; 
 
-	// toggle SPI_SS so we can receive the next word
-	SS_NEGATE(); // negate SPI_SS
-	SS_ASSERT(); // assert SPI_SS
-
-	d = LPC_SSP1->DR; // grab data
-	// clear interrupt
-	LPC_SSP1->ICR = SSP_INTCFG_RX;  
-
-	// fill fifo
-	while(LPC_SSP1->SR&SSP_SR_TNF) 
+	if (m_autoSlaveSelect)
 	{
-		if (m_tq.read(&d16)==0)
-			break;
-		LPC_SSP1->DR = d16;
-	}
+		// toggle SPI_SS so we can receive the next word
+		SS_NEGATE(); // negate SPI_SS
+		SS_ASSERT(); // assert SPI_SS
+
+		d = LPC_SSP1->DR; // grab data
+		// clear interrupt
+		LPC_SSP1->ICR = SSP_INTCFG_RX;  
+
+		// fill fifo
+		while(LPC_SSP1->SR&SSP_SR_TNF) 
+		{
+			if (m_tq.read(&d16)==0)
+				break;
+			LPC_SSP1->DR = d16;
+		}
 	
-	// receive data
-	if ((d&SPI_SYNC_MASK)==SPI_SYNC_WORD)
-		m_sync = true;
-	else if ((d&SPI_SYNC_MASK)==SPI_SYNC_WORD_DATA)
-	{
-		m_rq.write(d);
-		m_sync = true;
+		// receive data
+		if ((d&SPI_SYNC_MASK)==SPI_SYNC_WORD)
+			m_sync = true;
+		else if ((d&SPI_SYNC_MASK)==SPI_SYNC_WORD_DATA)
+		{
+			m_rq.write(d);
+			m_sync = true;
+		}
+		else
+			m_sync = false;
+
+		m_recvCounter++;
 	}
 	else
-		m_sync = false;
+	{
+		d = LPC_SSP1->DR; // grab data
+		// clear interrupt
+		LPC_SSP1->ICR = SSP_INTCFG_RX;  
 
-	m_recvCounter++;
+		// fill fifo
+		while(LPC_SSP1->SR&SSP_SR_TNF) 
+		{
+			if (m_tq.read(&d16)==0)
+				break;
+			LPC_SSP1->DR = d16;
+		}
+	
+		// receive data
+		if ((d&SPI_SYNC_MASK)==SPI_SYNC_WORD_DATA)
+		{
+			m_rq.write(d);
+			m_sync = true;
+		}
+	}
 }
 
 int Spi::receive(uint8_t *buf, uint32_t len)
@@ -134,15 +161,17 @@ int Spi::receiveLen()
 
 int Spi::open()
 {
-	// configure SGPIO bit as output so we can toggle slave select (SS)
+	// configure SGPIO bit so we can toggle slave select (SS)
 	LPC_SGPIO->OUT_MUX_CFG14 = 4;
-	LPC_SGPIO->GPIO_OENREG = 1<<14;
 	scu_pinmux(0x1, 3, (MD_PLN | MD_EZI | MD_ZI | MD_EHS), FUNC5); // SSP1_MISO
 	scu_pinmux(0x1, 4, (MD_PLN | MD_EZI | MD_ZI | MD_EHS), FUNC5); // SSP1_MOSI 
 	scu_pinmux(0x1, 19, (MD_PLN | MD_EZI | MD_ZI | MD_EHS), FUNC1); // SSP1_SCK 
 
 	// enable interrupt
 	NVIC_EnableIRQ(SSP1_IRQn);
+
+	// sync
+	sync();					
 
 	return 0;
 }
@@ -152,45 +181,54 @@ int Spi::close()
 	// turn off driver for SS
 	LPC_SGPIO->GPIO_OENREG = 0;
 
-	// enable interrupt
+	// disable interrupt
 	NVIC_DisableIRQ(SSP1_IRQn);
 	return 0;
 }
 
 int Spi::update()
 {
-	// check to see if we've received new data (m_rq.m_produced would have increased)
-	if (m_recvCounter-m_lastRecvCounter>0)
+	if (m_autoSlaveSelect)
 	{
-		if (!m_sync) // if received data isn't correct, we're out of sync
+		// check to see if we've received new data (m_rq.m_produced would have increased)
+		if (m_recvCounter-m_lastRecvCounter>0)
 		{
-			m_syncCounter++;
-
-			if (m_syncCounter==SPI_MIN_SYNC_COUNT) // if we receive enough bad syncs in a row, we need to resync 
+			if (!m_sync) // if received data isn't correct, we're out of sync
 			{
-				sync();
-				cprintf("sync\n");
-				m_syncCounter = 0;
+				m_syncCounter++;
+
+				if (m_syncCounter==SPI_MIN_SYNC_COUNT) // if we receive enough bad syncs in a row, we need to resync 
+				{
+					sync();
+					cprintf("sync\n");
+					m_syncCounter = 0;
+				}
 			}
-		}
+			else
+				m_syncCounter = 0;
+		}	
 		else
-			m_syncCounter = 0;
+		{
+			// need to pump up the fifo because we only get an interrupt when fifo is half full
+			// (and we won't receive data if we don't toggle SS)
+			SS_NEGATE();
+			SS_ASSERT();
+		}
+		m_lastRecvCounter = m_recvCounter;
 	}
-	else
-	{
-		// need to pump up the fifo because we only get an interrupt when fifo is half full
-		// (and we won't receive data if we don't toggle SS)
-		SS_NEGATE();
-		SS_ASSERT();
-	}
-	m_lastRecvCounter = m_recvCounter;
 	return 0;
 }
-	
-void spi_init(SerialCallback callback)
+
+
+void Spi::setAutoSlaveSelect(bool ass)
 {
-	g_spi = new Spi(callback);
+	m_autoSlaveSelect = ass;
+	if (m_autoSlaveSelect)
+		LPC_SGPIO->GPIO_OENREG = 1<<14; // use this SGPIO Bit as slave select, so configure as output
+	else
+		LPC_SGPIO->GPIO_OENREG = 0; // tri-state the SGPIO bit so host can assert slave select
 }
+	
 
 Spi::Spi(SerialCallback callback) : m_rq(SPI_RECEIVEBUF_SIZE), m_tq(SPI_TRANSMITBUF_SIZE, callback)
 {
@@ -224,7 +262,12 @@ Spi::Spi(SerialCallback callback) : m_rq(SPI_RECEIVEBUF_SIZE), m_tq(SPI_TRANSMIT
 	m_recvCounter = 0;
 	m_lastRecvCounter = 0; 
 	m_syncCounter = 0;
+	setAutoSlaveSelect(false);
 
-	// sync
-	sync();					
 }
+
+void spi_init(SerialCallback callback)
+{
+	g_spi = new Spi(callback);
+}
+

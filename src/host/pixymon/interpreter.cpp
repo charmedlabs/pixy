@@ -16,9 +16,9 @@
 #include <stdexcept>
 #include <QMessageBox>
 #include <QFile>
-#include <QDebug>
+#include "debug.h"
 #include <QTime>
-
+#include <stdarg.h>
 #include "interpreter.h"
 #include "disconnectevent.h"
 #include "videowidget.h"
@@ -27,22 +27,24 @@
 #include "renderer.h"
 #include "sleeper.h"
 #include "pixymon.h"
+#include "monmodule.h"
 
 QString printType(uint32_t val, bool parens=false);
 
-Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, ParameterDB *data) : m_mutexProg(QMutex::Recursive)
+Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, MonParameterDB *data, const QString &initScript) :
+    m_mutexProg(QMutex::Recursive)
 {
+    m_initScript = initScript;
+    m_initScript.remove(QRegExp("^\\s+"));  // remove initial whitespace
     m_console = console;
     m_video = video;
     m_pixymonParameters = data;
     m_pc = 0;
     m_programming = false;
     m_localProgramRunning = false;
-    m_rcount = 0;
     m_waiting = false;
     m_fastPoll = true;
     m_notified = false;
-    m_paramDirty = true;
     m_running = -1; // set to bogus value to force update
     m_chirp = NULL;
 
@@ -54,23 +56,25 @@ Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, ParameterDB
     connect(this, SIGNAL(error(QString)), m_console, SLOT(error(QString)));
     connect(this, SIGNAL(enableConsole(bool)), m_console, SLOT(acceptInput(bool)));
     connect(this, SIGNAL(prompt(QString)), m_console, SLOT(prompt(QString)));
+    connect(this, SIGNAL(consoleCommand(QString)), m_console, SLOT(command(QString)));
     connect(this, SIGNAL(videoInput(VideoWidget::InputMode)), m_video, SLOT(acceptInput(VideoWidget::InputMode)));
     connect(m_video, SIGNAL(selection(int,int,int,int)), this, SLOT(handleSelection(int,int,int,int)));
 
+    prompt();
+
     m_run = true;
-    start();
 }
 
 Interpreter::~Interpreter()
 {
-    qDebug("destroying interpreter...");
+    DBG("destroying interpreter...");
     close();
     wait();
     clearLocalProgram();
+    MonModuleUtil::destroyModules(&m_modules);
     if (m_chirp)
         delete m_chirp;
-    delete m_renderer;
-    qDebug("done");
+    DBG("done");
 }
 
 void Interpreter::close()
@@ -82,39 +86,24 @@ void Interpreter::close()
     unwait(); // if we're waiting for input, unhang ourselves
 
     m_run = false;
+
+    // save any parameters
+    m_pixymonParameters->save();
 }
 
-int Interpreter::execute()
+void Interpreter::handleLocalProgram()
 {
     int res;
 
-    emit runState(true);
-    emit enableConsole(false);
-
-    QMutexLocker locker(&m_mutexProg);
-
-    while(1)
+    if (m_program.size()>0 && m_localProgramRunning)
     {
-        for (; m_pc<m_program.size(); m_pc++)
-        {
-            if (!m_localProgramRunning)
-            {
-                prompt();
-                res = 0;
-                goto end;
-            }
-            res = m_chirp->execute(m_program[m_pc]);
-            if (res<0)
-                goto end;
-        }
-        m_pc = 0;
+        if (m_pc>=m_program.size())
+            m_pc = 0;
+        res = m_chirp->execute(m_program[m_pc]);
+        if (res<0)
+            queueCommand(STOP_LOCAL);
+        m_pc++;
     }
-end:
-    m_localProgramRunning = false;
-    emit runState(false);
-    emit enableConsole(true);
-
-    return res;
 }
 
 QString Interpreter::printArgType(uint8_t type, uint32_t flags)
@@ -208,6 +197,11 @@ void Interpreter::printHelp()
             break;
         emit textOut(QString::number(p) + ": " + printProc(&info));
     }
+}
+
+QStringList Interpreter::parseScriptlet(const QString &scriptlet)
+{
+    return scriptlet.split(QRegExp("[\\n]"), QString::SkipEmptyParts);
 }
 
 QStringList Interpreter::getSections(const QString &id, const QString &string)
@@ -304,10 +298,9 @@ QString printType(uint32_t val, bool parens)
     return res;
 }
 
-void Interpreter::handleResponse(void *args[])
+void Interpreter::handleResponse(const void *args[])
 {
     // strip off response, add to print string
-    //    m_print = "response " + QString::number(m_rcount++) + ": " +
     m_print = "response: " +
             QString::number(*(int *)args[0]) + " (0x" + QString::number((uint)*(uint *)args[0], 16) + ") ";
 
@@ -315,8 +308,9 @@ void Interpreter::handleResponse(void *args[])
     handleData(args+1);
 }
 
-void Interpreter::handleData(void *args[])
+void Interpreter::handleData(const void *args[])
 {
+    int i;
     uint8_t type;
     QColor color = CW_DEFAULT_COLOR;
 
@@ -325,8 +319,23 @@ void Interpreter::handleData(void *args[])
         type = Chirp::getType(args[0]);
         if (type==CRP_TYPE_HINT)
         {
-            m_print += printType(*(uint32_t *)args[0]) + " frame data\n";
-            m_renderer->render(*(uint32_t *)args[0], args+1);
+            if (g_debug)
+                m_print += printType(*(uint32_t *)args[0]) + " data\n";
+            if (*(uint32_t *)args[0]==FOURCC('E','V','T','1'))
+            {
+                uint32_t event = *(uint32_t *)args[1];
+                if (event==EVT_PARAM_CHANGE)
+                    loadParams();
+            }
+            else
+            {
+                // check modules, see if they handle the fourcc
+                for (i=0; i<m_modules.size(); i++)
+                {
+                    if (m_modules[i]->render(*(uint32_t *)args[0], args+1))
+                        break;
+                }
+            }
         }
         else if (type==CRP_HSTRING)
         {
@@ -334,22 +343,37 @@ void Interpreter::handleData(void *args[])
             color = Qt::blue;
         }
         else
-            qDebug() << "unknown type " << type;
+            DBG("unknown type: %d", type);
     }
-    if (m_print.right(1)!="\n")
-        m_print += "\n";
+    if (m_print.size()>0 && !m_print.endsWith('\n'))
+        m_print += '\n';
+
 
     // wait queue business keeps worker thread from getting too far ahead of gui thread
     // (when this happens, things can get sluggish.)
+    // update: this causes the worker thread to block.  For example, bringing up a file
+    // dialog will cause the gui to block and a block in the gui causes ths console to block
+    // the console blocks and the xdata console print blocks, blocking the worker thread.
+    // Removing this fixes the issue.  But it's now possible for the console prints to queue
+    // up if they are coming in too fast, causing gui sluggishness.  Limit size of queue?
+    // Need some kind of throttling mechanism -- putting sleeps in the worker thread?  Or
+    // a call somewhere to processevents?
+#if 0
     if (m_localProgramRunning || m_running)
         m_console->m_mutexPrint.lock();
-    emit textOut(m_print, color);
-    m_print = "";
+#endif
+    if (m_print.size()>0)
+    {
+        emit textOut(m_print, color);
+        m_print = "";
+    }
+#if 0
     if (m_localProgramRunning || m_running)
     {
         m_console->m_waitPrint.wait(&m_console->m_mutexPrint);
         m_console->m_mutexPrint.unlock();
     }
+#endif
 }
 
 int Interpreter::addProgram(ChirpCallData data)
@@ -376,7 +400,7 @@ void Interpreter::getRunning()
     int res, running;
 
     res = m_chirp->callSync(m_exec_running, END_OUT_ARGS, &running, END_IN_ARGS);
-    qDebug("running %d %d", res, running);
+    DBG("running %d %d", res, running);
     if (res<0 && !m_notified)
     {
         running = false;
@@ -393,9 +417,6 @@ void Interpreter::getRunning()
         m_running = running;
         emit runState(running);
         emit enableConsole(!running);
-        if (!running && m_externalCommand=="")
-            prompt(); // print prompt only if we expect an actual human to be typing into the command window, and we've stopped
-
     }
 }
 
@@ -440,9 +461,9 @@ int Interpreter::sendGetAction(int index)
         return response;
 
     action2 = QString(action);
-    scriptlet2 = QString(scriptlet).split(QRegExp("[\\n]"), QString::SkipEmptyParts);
+    scriptlet2 = parseScriptlet(scriptlet);
 
-    emit actionScriptlet(index, action2, scriptlet2);
+    emit actionScriptlet(action2, scriptlet2);
     return response;
 }
 
@@ -453,10 +474,10 @@ void Interpreter::handlePendingCommand()
     if (m_commandQueue.empty())
         return;
     const Command command = m_commandQueue.front();
-    m_commandQueue.pop();
+    m_commandQueue.pop_front();
     locker.unlock();
 
-    switch (command.first)
+    switch (command.m_type)
     {
     case STOP:
         sendStop();
@@ -466,8 +487,19 @@ void Interpreter::handlePendingCommand()
         sendRun();
         break;
 
-    case GET_ACTION:
-        sendGetAction(command.second.toInt());
+    case STOP_LOCAL:
+        m_localProgramRunning = false;
+        emit runState(false);
+        break;
+
+    case RUN_LOCAL:
+        if (m_program.size()>0)
+        {
+            m_localProgramRunning = true;
+            emit runState(true);
+            emit enableConsole(false);
+            m_pc = 0;
+        }
         break;
 
     case LOAD_PARAMS:
@@ -475,18 +507,29 @@ void Interpreter::handlePendingCommand()
         break;
 
     case SAVE_PARAMS:
-        handleSaveParams();
+        handleSaveParams(command.m_arg0.toBool());
+        break;
+
+    case UPDATE_PARAM:
+        handleUpdateParam();
+        break;
+
+    case CLOSE:
+        emit runState(-1);
         break;
     }
-
 }
 
 
-void Interpreter::queueCommand(CommandType type, QVariant arg)
+void Interpreter::queueCommand(CommandType type, const QVariant &arg0, const QVariant &arg1)
 {
-    Command command(type, arg);
+    Command command(type, arg0, arg1);
     m_mutexQueue.lock();
-    m_commandQueue.push(command);
+    // we only want one type of each command queued up at a time,
+    // otherwise we might "wind up".  And we can't block, or the gui will either deadlock
+    // or become sluggish, so instead remove all of this type of command before adding.
+    m_commandQueue.removeAll(command);
+    m_commandQueue.push_back(command);
     m_mutexQueue.unlock();
 }
 
@@ -500,12 +543,14 @@ void Interpreter::run()
 {
     int res;
     QTime time;
+    QString paramScriptlet;
 
     // init
     try
     {
+        int i;
         ChirpProc versionProc;
-        uint16_t *version;
+        uint16_t *ver;
         uint32_t verLen, responseInt;
 
         if (m_link.open()<0)
@@ -516,10 +561,11 @@ void Interpreter::run()
         versionProc = m_chirp->getProc("version");
         if (versionProc<0)
             throw std::runtime_error("Can't get firmware version.");
-        res = m_chirp->callSync(versionProc, END_OUT_ARGS, &responseInt, &verLen, &version, END_IN_ARGS);
+        res = m_chirp->callSync(versionProc, END_OUT_ARGS, &responseInt, &verLen, &ver, END_IN_ARGS);
         if (res<0)
             throw std::runtime_error("Can't get firmware version.");
-        memcpy(m_version, version, 3*sizeof(uint16_t));
+        memcpy(m_version, ver, 3*sizeof(uint16_t));
+        emit version(m_version[0], m_version[1], m_version[2]);
         if (m_version[0]!=VER_MAJOR || m_version[1]>VER_MINOR)
         {
             char buf[0x100];
@@ -535,25 +581,49 @@ void Interpreter::run()
         m_get_param = m_chirp->getProc("prm_get");
         m_getAll_param = m_chirp->getProc("prm_getAll");
         m_set_param = m_chirp->getProc("prm_set");
+        m_reload_params = m_chirp->getProc("prm_reload");
+        m_set_shadow_param = m_chirp->getProc("prm_setShadow");
+        m_reset_shadows = m_chirp->getProc("prm_resetShadows");
 
         if (m_exec_run<0 || m_exec_running<0 || m_exec_stop<0 || m_exec_get_action<0 ||
-                m_get_param<0 || m_getAll_param<0 || m_set_param<0)
-            throw std::runtime_error("Communication error with Pixy.");
+                m_get_param<0 || m_getAll_param<0 || m_set_param<0 || m_reload_params<0 ||
+                m_set_shadow_param<0 || m_reset_shadows<0)
+            throw std::runtime_error("Hmm... missing procedures.");
+
+        // create pixymon modules
+        m_modules.push_back(m_renderer); // add renderer to monmodule list so we can send it updates, etc
+        MonModuleUtil::createModules(&m_modules, this);
+        // reload any parameters that the mon modules might have created
+        m_pixymonParameters->load();
+        // notify mon modules of parameter change
+        sendMonModulesParamChange();
+        // load debug
+        m_pixymonParameters->clean();
+
+        // get all actions
+        for (i=0; sendGetAction(i)>=0; i++);
     }
     catch (std::runtime_error &exception)
     {
-        emit error(QString(exception.what()));
+        emit error(QString(exception.what()) + '\n');
         return;
     }
-    qDebug() << "*** init done";
+    DBG("*** init done");
 
     time.start();
     getRunning();
-
+    paramScriptlet = m_pixymonParameters->value("Pixy start command").toString();
+    paramScriptlet.remove(QRegExp("^\\s+")); // remove initial whitespace
     handleLoadParams(); // load params upon initialization
+    if (m_initScript!="")
+        execute(parseScriptlet(m_initScript));
+    else if (paramScriptlet!="")
+        execute(paramScriptlet);
+
 
     while(m_run)
     {
+        // poll to see if we're still connected
         if (!m_programming &&
                 ((m_fastPoll && time.elapsed()>RUN_POLL_PERIOD_FAST) ||
                 (!m_fastPoll && time.elapsed()>RUN_POLL_PERIOD_SLOW)))
@@ -561,63 +631,53 @@ void Interpreter::run()
             getRunning();
             time.start();
         }
-        else
+        // service chirps -- but if we're running a local program it just slows things down
+        else if (!m_localProgramRunning)
         {
             m_chirp->service(false);
             msleep(1); // give config thread time to run
         }
         handlePendingCommand();
-        if (!m_running)
+        handleLocalProgram();
+        if (!m_running && !m_localProgramRunning)
         {
-            if (m_localProgramRunning)
-                execute();
-            else
+            emit enableConsole(true);
+            Sleeper::msleep(10);
+            if (m_mutexProg.tryLock())
             {
-                Sleeper::msleep(10);
-                if (m_mutexProg.tryLock())
+                if (m_argv.size())
                 {
-                    if (m_argv.size())
+                    if (m_argv[0]=="help")
+                        handleHelp();
+                    else
                     {
-                        if (m_externalCommand!="") // print command to make things explicit and all pretty
-                            emit textOut(PROMPT " " + m_externalCommand);
-                        if (m_argv[0]=="help")
-                            handleHelp();
-                        else
+                        res = call(m_argv, true);
+                        if (res<0)
                         {
-                            res = call(m_argv, true);
-                            if (res<0)
+                            if (m_programming)
                             {
-                                if (m_programming)
-                                {
-                                    endLocalProgram();
-                                    clearLocalProgram();
-                                }
-                                m_commandList.clear(); // abort our little scriptlet
+                                endLocalProgram();
+                                clearLocalProgram();
                             }
-                        }
-                        m_argv.clear();
-                        if (m_externalCommand=="")
-                            prompt(); // print prompt only if we expect an actual human to be typing into the command window
-                        else
-                            m_externalCommand = "";
-                        // check quickly to see if we're running after this command
-                        if (!m_programming)
-                            getRunning();
-                        // is there another command in our little scriptlet?
-                        if (m_commandList.size())
-                        {
-                            execute(m_commandList[0]);
-                            m_commandList.removeFirst();
+                            m_commandList.clear(); // abort our little scriptlet
                         }
                     }
-                    m_mutexProg.unlock();
+                    m_argv.clear();
+                    // check quickly to see if we're running after this command
+                    if (!m_programming)
+                        getRunning();
+                    // is there another command in our little scriptlet?
+                    if (m_commandList.size())
+                    {
+                        execute(m_commandList[0]);
+                        m_commandList.removeFirst();
+                    }
                 }
+                m_mutexProg.unlock();
             }
         }
     }
-    sendStop();
-    msleep(200); // let things settle a bit
-    qDebug("worker thead exiting");
+    DBG("worker thead exiting");
 }
 
 
@@ -625,6 +685,7 @@ int Interpreter::beginLocalProgram()
 {
     if (m_programming)
         return -1;
+    m_program.clear();
     m_programming = true;
     return 0;
 }
@@ -638,30 +699,28 @@ int Interpreter::endLocalProgram()
     return 0;
 }
 
-int Interpreter::runLocalProgram()
-{
-    QMutexLocker locker(&m_mutexProg);
-
-    if (m_localProgramRunning || m_program.size()==0)
-        return -1;
-
-    m_console->emptyLine(); // don't want to start printing on line with prompt
-
-    m_localProgramRunning = true;
-
-    return 0;
-}
-
-void Interpreter::runOrStopProgram()
+void Interpreter::runOrStopProgram(bool local)
 {
     unwait(); // unhang ourselves if we're waiting
-    if (m_localProgramRunning)
-        m_localProgramRunning = false;
-    else if (m_running==false)
-        queueCommand(RUN);
-    else if (m_running==true)
-        queueCommand(STOP);
-    // no case to run local program because this is sort of an undocumented feature for now
+    if (local)
+    {
+        if (m_running)
+            queueCommand(STOP);
+        else if (m_localProgramRunning)
+            queueCommand(STOP_LOCAL);
+        else
+            queueCommand(RUN_LOCAL);
+    }
+    else
+    {
+        if (m_localProgramRunning)
+            queueCommand(STOP_LOCAL);
+        else if (m_running==false)
+            queueCommand(RUN);
+        else if (m_running==true)
+            queueCommand(STOP);
+        // note m_running has 3 states...
+    }
 }
 
 uint Interpreter::programRunning()
@@ -677,7 +736,10 @@ uint Interpreter::programRunning()
 int Interpreter::clearLocalProgram()
 {
     QMutexLocker locker(&m_mutexProg);
+    uint i;
 
+    for (i=0; i<m_program.size(); i++)
+        delete [] m_program[i].m_buf;
     m_program.clear();
     m_programText.clear();
 
@@ -712,7 +774,7 @@ void Interpreter::listProgram()
 void Interpreter::prompt()
 {
     if (m_programming)
-        emit prompt("prog" + QString::number(m_program.size()+1) + PROMPT);
+        emit prompt(QString("prog") + PROMPT);
     else
         emit prompt(PROMPT);
 }
@@ -724,16 +786,17 @@ void Interpreter::command(const QString &command)
     if (m_localProgramRunning)
         return;
 
+    QStringList words = command.split(QRegExp("[\\s(),\\t]"), QString::SkipEmptyParts);
+
     if (m_waiting)
     {
         m_command = command;
         m_command.remove(QRegExp("[(),\\t]"));
         m_key = (Qt::Key)0;
+        m_selection = RectA(0, 0, 0, 0);
         m_waitInput.wakeAll();
-        return;
+        goto end;
     }
-
-    QStringList words = command.split(QRegExp("[\\s(),\\t]"), QString::SkipEmptyParts);
 
     if (words.size()==0)
         goto end;
@@ -746,44 +809,22 @@ void Interpreter::command(const QString &command)
     else if (words[0]=="done")
     {
         endLocalProgram();
-        runLocalProgram();
-        return;
+        locker.unlock();
+        runOrStopProgram(true);
+        locker.relock();
     }
     else if (words[0]=="list")
         listProgram();
     else if (words[0].left(4)=="cont")
     {
-        if (runLocalProgram()>=0)
-            return;
+        locker.unlock();
+        runOrStopProgram(true);
+        locker.relock();
     }
-    else if (words[0]=="rendermode")
-    {
-        if (words.size()>1)
-            m_renderer->setMode(words[1].toInt());
-        else
-            emit textOut("Missing mode parameter.\n");
-    }
-    else if (words[0]=="region")
-    {
-        emit videoInput(VideoWidget::REGION);
-        m_argvHost = words;
-    }
-#if 0
-    else if (words[0]=="set")
-    {
-        if (words.size()==3)
-        {
-            words[1].remove(QRegExp("[\\s\\D]+"));
-            m_renderer->m_blobs.setLabel(words[1], words[2]);
-        }
-    }
-#endif
+    else if (words[0]=="close")
+        queueCommand(CLOSE);
     else
-    {
         handleCall(words);
-        return; // don't print prompt
-    }
-
 end:
     prompt();
 }
@@ -792,11 +833,10 @@ void Interpreter::controlKey(Qt::Key key)
 {
     m_command = "";
     m_key = key;
+    m_selection = RectA(0, 0, 0, 0);
     m_waitInput.wakeAll();
     if (m_programming)
         endLocalProgram();
-    prompt();
-
 }
 
 
@@ -824,16 +864,16 @@ void Interpreter::handleCall(const QStringList &argv)
     m_mutexProg.unlock();
 }
 
-void Interpreter::execute(const QString &command)
+void Interpreter::execute(QString command)
 {
-    QStringList argv = command.split(QRegExp("[\\s(),\\t]"), QString::SkipEmptyParts);
-    unwait(); // unhang ourselves if we're waiting for input
-    m_mutexProg.lock();
-    m_argv = argv;
-    m_externalCommand = command; // save command so we can print.  This variable also indicates that we're not a human typing a command
-    m_mutexProg.unlock();
     if (m_running==true)
         queueCommand(STOP);
+    if (m_localProgramRunning)
+        queueCommand(STOP_LOCAL);
+
+    command.remove(QRegExp("^\\s+")); // remove leading whitespace
+    if (command!="")
+        emit consoleCommand(command);
 }
 
 void Interpreter::execute(QStringList commandList)
@@ -851,38 +891,25 @@ void Interpreter::execute(QStringList commandList)
 }
 
 
-void Interpreter::getAction(int index)
-{
-    queueCommand(GET_ACTION, index);
-}
-
 void Interpreter::loadParams()
 {
     queueCommand(LOAD_PARAMS);
 }
 
-void Interpreter::saveParams()
+void Interpreter::saveParams(bool reject)
 {
-    queueCommand(SAVE_PARAMS);
+    queueCommand(SAVE_PARAMS, reject);
 }
 
 void Interpreter::handleSelection(int x0, int y0, int width, int height)
 {
-    if (m_argvHost.size()>0 && m_argvHost[0]=="region")
-    {
-        m_renderer->regionCommand(x0, y0, width, height, m_argvHost);
-        m_argvHost.clear();
-    }
-    else
-    {
-        m_mutexInput.lock();
-        m_command = QString::number(x0) + " " + QString::number(y0) +  " " + QString::number(width) +  " " + QString::number(height);
-        m_key = (Qt::Key)0;
-        m_waitInput.wakeAll();
-        m_mutexInput.unlock();
-        m_renderer->regionCommand(x0, y0, width, height, m_argvHost);
-    }
-
+    m_mutexInput.lock();
+    m_command = QString::number(x0) + " " + QString::number(y0) +  " " + QString::number(width) +  " " + QString::number(height) + "\n";
+    textOut(m_command);
+    m_selection = RectA(x0, y0, width, height);
+    m_key = (Qt::Key)0;
+    m_waitInput.wakeAll();
+    m_mutexInput.unlock();
 }
 
 void Interpreter::unwait()
@@ -890,8 +917,9 @@ void Interpreter::unwait()
     QMutexLocker locker(&m_mutexInput);
     if (m_waiting)
     {
-        m_waitInput.wakeAll();
+        m_selection = RectA(0, 0, 0, 0);
         m_key = Qt::Key_Escape;
+        m_waitInput.wakeAll();
         emit videoInput(VideoWidget::NONE);
     }
 }
@@ -914,6 +942,14 @@ int Interpreter::call(const QStringList &argv, bool interactive)
     // not allowed
     if (argv.size()<1)
         return -1;
+
+    // check modules to see if they handle this command, if so, skip to end
+    emit enableConsole(false);
+    for (i=0; i<m_modules.size(); i++)
+    {
+        if (m_modules[i]->command(argv))
+            return 0;
+    }
 
     // a procedure needs extension info (arg info, etc) in order for us to call...
     if ((proc=m_chirp->getProc(argv[0].toLocal8Bit()))>=0 &&
@@ -948,23 +984,21 @@ int Interpreter::call(const QStringList &argv, bool interactive)
                                 emit videoInput(VideoWidget::POINT);
                                 pstring2 = "(select point with mouse)";
                             }
-
-                            emit enableConsole(false);
                         }
-
                     }
                     k = i;
                     pstring = printArgType(&info.argTypes[i], i) + " " + list[k].first +
                             (list[k].second=="" ? "?" : " (" + list[k].second + ")?") + " " + pstring2;
 
+                    emit enableConsole(true);
                     emit prompt(pstring);
                     m_mutexInput.lock();
                     m_waiting = true;
                     m_waitInput.wait(&m_mutexInput);
                     m_waiting = false;
                     m_mutexInput.unlock();
-
-                    emit enableConsole(true);
+                    emit prompt(PROMPT);
+                    emit enableConsole(false);
 
                     if (m_key==Qt::Key_Escape)
                         return -1;
@@ -1094,10 +1128,51 @@ void Interpreter::augmentProcInfo(ProcInfo *info)
     }
 }
 
+QString Interpreter::extractProperty(const QString &tag, QStringList *words, QString *desc)
+{
+    QString property;
+    int i = words->indexOf(tag);
+    if (i>=0 && words->size()>i+1)
+    {
+        property = (*words)[i+1];
+        *desc = desc->remove(tag + " " + property + " "); // remove form description
+        return property;
+    }
+    return "";
+}
+
+void Interpreter::handleProperties(const uint8_t *argList, Parameter *parameter, QString *desc)
+{
+    QString property;
+    QStringList words = QString(*desc).split(QRegExp("\\s+"));
+
+    if ((property=extractProperty("@c", &words, desc))!="")
+    {
+        property = property.replace('_', ' '); // make it look prettier
+        parameter->setProperty(PP_CATEGORY, property);
+    }
+
+    if ((property=extractProperty("@m", &words, desc))!="")
+    {
+        if (argList[0]==CRP_FLT32)
+            parameter->setProperty(PP_MIN, property.toFloat());
+        else
+            parameter->setProperty(PP_MIN, property.toInt());
+    }
+
+    if ((property=extractProperty("@M", &words, desc))!="")
+    {
+        if (argList[0]==CRP_FLT32)
+            parameter->setProperty(PP_MAX, property.toFloat());
+        else
+            parameter->setProperty(PP_MAX, property.toInt());
+    }
+}
+
 
 void Interpreter::handleLoadParams()
 {
-    qDebug("loading...");
+    DBG("loading...");
     uint i;
     char *id, *desc;
     uint32_t len;
@@ -1124,23 +1199,13 @@ void Interpreter::handleLoadParams()
             break;
 
         QString sdesc(desc);
+        Parameter parameter(id, (PType)argList[0]);
+        parameter.setProperty(PP_FLAGS, flags);
+        handleProperties(argList, &parameter, &sdesc);
+        parameter.setHelp(sdesc);
 
         // deal with param category
-        QStringList words = QString(desc).split(QRegExp("\\s+"));
-        int i = words.indexOf("@c");
-        if (i>=0 && words.size()>i+1)
-        {
-            category = words[i+1];
-            sdesc = sdesc.remove("@c "); // remove form description
-            sdesc = sdesc.remove(category + " "); // remove from description
-            category = category.replace('_', ' '); // make it look prettier
-        }
-        else
-            category = CD_GENERAL;
 
-        Parameter parameter(id, (PType)argList[0], "("+printArgType(argList[0], flags)+") "+sdesc);
-        parameter.setProperty(PP_CATEGORY, category);
-        parameter.setProperty(PP_FLAGS, flags);
         if (strlen((char *)argList)>1)
         {
             QByteArray a((char *)data, len);
@@ -1166,6 +1231,8 @@ void Interpreter::handleLoadParams()
                 parameter.set(a);
             }
         }
+        // it's changed! (ie, it's been loaded)
+        parameter.setDirty(true);
         m_pixyParameters.add(parameter);
     }
 
@@ -1176,21 +1243,84 @@ void Interpreter::handleLoadParams()
         m_fastPoll = false; // turn off fast polling...
     }
 
-    qDebug("loaded");
+    DBG("loaded");
     emit paramLoaded();
-    if (m_paramDirty) // emit first time to update any modules waiting to get paramter info
-    {
-        m_paramDirty = false;
-        emit paramChange();
-    }
+    sendMonModulesParamChange();
+    m_pixyParameters.clean();
+
 }
 
-
-void Interpreter::handleSaveParams()
+void Interpreter::handlePixySaveParams(bool shadow)
 {
-    int i;
-    int res, response;
-    bool dirty, running;
+    int i, res, response;
+    QVariant var;
+    bool send, reload=false;
+    Parameters &pixyParameters = m_pixyParameters.parameters();
+
+    for (i=0; i<pixyParameters.size(); i++)
+    {
+        uint8_t buf[0x100];
+
+        send = false;
+
+        m_pixyParameters.mutex()->lock();
+        if (pixyParameters[i].dirty() && (!shadow || pixyParameters[i].shadow()))
+        {
+            var = pixyParameters[i].value();
+            pixyParameters[i].setDirty(false);
+            send = true;
+        }
+        m_pixyParameters.mutex()->unlock();
+
+        if (send)
+        {
+            int len;
+            QByteArray str = pixyParameters[i].id().toUtf8();
+            const char *id = str.constData();
+            PType type = pixyParameters[i].type();
+
+            if (type==PT_INT8 || type==PT_INT16 || type==PT_INT32)
+            {
+                int val = var.toInt();
+                len = Chirp::serialize(NULL, buf, 0x100, type, val, END);
+            }
+            else if (type==PT_FLT32)
+            {
+                float val = var.toFloat();
+                len = Chirp::serialize(NULL, buf, 0x100, type, val, END);
+            }
+            else if (type==PT_INTS8)
+            {
+                QByteArray a = var.toByteArray();
+                len = a.size();
+                memcpy(buf, a.constData(), len);
+            }
+            else
+                continue; // don't know what to do!
+
+            if (shadow)
+                res = m_chirp->callSync(m_set_shadow_param, STRING(id), UINTS8(len, buf), END_OUT_ARGS, &response, END_IN_ARGS);
+            else
+            {
+                res = m_chirp->callSync(m_set_param, STRING(id), UINTS8(len, buf), END_OUT_ARGS, &response, END_IN_ARGS);
+                reload = true;
+            }
+            if (res<0 || response<0)
+            {
+                emit error("There was a problem setting a parameter.\n");
+                break;
+            }
+        }
+    }
+    // reload parameters if we're changed any
+    if (reload)
+         m_chirp->callSync(m_reload_params, END_OUT_ARGS, &response, END_IN_ARGS);
+}
+
+void Interpreter::handleSaveParams(bool reject)
+{
+    bool running;
+    int32_t response;
 
     // if we're running, stop so this doesn't take too long....
     // (ie it would proceed with 1 property to returned frame, which could take 1 second or 2)
@@ -1198,50 +1328,15 @@ void Interpreter::handleSaveParams()
     if (running==1) // only if we're running and not in forced state (running==2)
         sendStop();
 
-    Parameters &parameters = m_pixyParameters.parameters();
+    // notify monmodules
+    sendMonModulesParamChange();
+    // save them in pixy
+    if (!reject)
+        handlePixySaveParams(false);
 
-    for (i=0, dirty=false; i<parameters.size(); i++)
-    {
-        uint8_t buf[0x100];
+    // reset the shadow parameters because we've saved all params
+    m_chirp->callSync(m_reset_shadows, END_OUT_ARGS, &response, END_IN_ARGS);
 
-        if (parameters[i].dirty())
-        {
-            int len;
-            QByteArray str = parameters[i].id().toUtf8();
-            const char *id = str.constData();
-            PType type = parameters[i].type();
-            parameters[i].setDirty(false); // reset
-            dirty = true; // keep track for sending signal
-
-            qDebug() << id;
-
-            if (type==PT_INT8 || type==PT_INT16 || type==PT_INT32)
-            {
-                int val = parameters[i].value().toInt();
-                len = Chirp::serialize(NULL, buf, 0x100, type, val, END);
-            }
-            else if (type==PT_FLT32)
-            {
-                float val = parameters[i].value().toFloat();
-                len = Chirp::serialize(NULL, buf, 0x100, type, val, END);
-            }
-            else if (type==PT_INTS8)
-            {
-                QByteArray a = parameters[i].value().toByteArray();
-                len = a.size();
-                memcpy(buf, a.constData(), len);
-            }
-            else
-                continue; // don't know what to do!
-
-            res = m_chirp->callSync(m_set_param, STRING(id), UINTS8(len, buf), END_OUT_ARGS, &response, END_IN_ARGS);
-            if (res<0 || response<0)
-            {
-                emit error("There was a problem setting a parameter.");
-                break;
-            }
-        }
-    }
 
     // if we're running, we've stopped, now resume
     if (running==1)
@@ -1250,7 +1345,69 @@ void Interpreter::handleSaveParams()
         m_fastPoll = false; // turn off fast polling...
     }
 
-    if (dirty)  // if we updated any parameters, output paramChange signal
-        emit paramChange();
+}
 
+void Interpreter::getSelection(RectA *region)
+{
+    emit videoInput(VideoWidget::REGION);
+
+    m_mutexInput.lock();
+    m_waiting = true;
+    m_waitInput.wait(&m_mutexInput);
+    m_waiting = false;
+    *region = m_selection;
+    m_mutexInput.unlock();
+}
+
+
+void Interpreter::getSelection(Point16 *point)
+{
+    emit videoInput(VideoWidget::POINT);
+
+    m_mutexInput.lock();
+    m_waiting = true;
+    m_waitInput.wait(&m_mutexInput);
+    m_waiting = false;
+    point->m_x = m_selection.m_xOffset;
+    point->m_y = m_selection.m_yOffset;
+    m_mutexInput.unlock();
+}
+
+void Interpreter::sendMonModulesParamChange()
+{
+    for (int i=0; i<m_modules.size(); i++)
+        m_modules[i]->paramChange();
+}
+
+void Interpreter::cprintf(const char *format, ...)
+{
+    char buffer[256];
+    va_list args;
+    va_start (args, format);
+    vsprintf (buffer, format, args);
+    emit textOut(buffer, Qt::blue);
+}
+
+void Interpreter::updateParam()
+{
+    queueCommand(UPDATE_PARAM);
+}
+
+void Interpreter::handleUpdateParam()
+{
+    // use pixyParameters mutex as mutex between the worker thead in interpreter
+    // (here) and the configdialog. If we try to lock both mutexes
+    // (pixymonParameters and pixyParameters) we can get into a double mutex deadlock
+    // (as a rule, never lock more than 1 mutex at a time)
+    m_pixyParameters.mutex()->lock();
+    sendMonModulesParamChange();
+    m_pixymonParameters->clean();
+    m_pixyParameters.mutex()->unlock();
+
+    handlePixySaveParams(true);
+}
+
+void Interpreter::emitActionScriptlet(QString action, QStringList scriptlet)
+{
+    emit actionScriptlet(action, scriptlet);
 }

@@ -18,7 +18,6 @@
 
 #include <QWidget>
 #include <QImage>
-#include <QMutex>
 
 #define VW_ASPECT_RATIO   ((float)1280/(float)800)
 
@@ -57,16 +56,13 @@ signals:
     void selection(int x0, int y0, int width, int height);
 
 public slots:
-    void handleImage(QImage image);
-    void handleFlush();
+    void handleImage(QImage image, uchar renderFlags);
     void acceptInput(VideoWidget::InputMode mode); // need the VideoWidget qualifier, otherwise it won't recognize the metatype!
 
 private slots:
 
 private:
     MainWindow *m_main;
-
-    QMutex m_mutex;
 
     std::vector<QImage> m_images;
     std::vector<QImage> m_renderedImages;

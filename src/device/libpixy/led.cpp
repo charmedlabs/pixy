@@ -66,6 +66,8 @@ static const ProcModule g_module[] =
 
 void led_init()
 {
+	int i;
+
 	// turn on LEDs (max)
 	led_setPWM(LED_RED, LED_MAX_PWM);
 	led_setPWM(LED_GREEN, LED_MAX_PWM);
@@ -76,9 +78,16 @@ void led_init()
 
 	// get current of each led.  This is needed because each LED has a different forward voltage.  But current determines
 	// brightness regardless of voltage drop.  So we normalize with respect to current for best color accuracy. 
-	g_ledOnCurrent[LED_RED] = (float)adc_get(LED_RED_ADCCHAN)/ADC_MAX*ADC_VOLTAGE/LED_RED_RESISTOR;
-	g_ledOnCurrent[LED_GREEN] = (float)adc_get(LED_GREEN_ADCCHAN)/ADC_MAX*ADC_VOLTAGE/LED_GREEN_RESISTOR;
-	g_ledOnCurrent[LED_BLUE] = (float)adc_get(LED_BLUE_ADCCHAN)/ADC_MAX*ADC_VOLTAGE/LED_BLUE_RESISTOR;	
+	// And we average for a goodly amount to try to minimize any noise
+	for (i=0, g_ledOnCurrent[LED_RED]=0.0f, g_ledOnCurrent[LED_GREEN]=0.0f, g_ledOnCurrent[LED_BLUE]=0.0f; i<100; i++)
+	{
+		g_ledOnCurrent[LED_RED] += (float)adc_get(LED_RED_ADCCHAN)/ADC_MAX*ADC_VOLTAGE/LED_RED_RESISTOR;
+		g_ledOnCurrent[LED_GREEN] += (float)adc_get(LED_GREEN_ADCCHAN)/ADC_MAX*ADC_VOLTAGE/LED_GREEN_RESISTOR;
+		g_ledOnCurrent[LED_BLUE] += (float)adc_get(LED_BLUE_ADCCHAN)/ADC_MAX*ADC_VOLTAGE/LED_BLUE_RESISTOR;	
+	}
+	g_ledOnCurrent[LED_RED] /= 100.0f;
+	g_ledOnCurrent[LED_GREEN] /= 100.0f;
+	g_ledOnCurrent[LED_BLUE] /= 100.0f;
 
 	g_ledVal[LED_RED] = 0xff;
 	g_ledVal[LED_GREEN] = 0xff;

@@ -61,6 +61,10 @@ public:
     }
 	return (uint8_t)u;
   }
+  int8_t send(uint8_t *data, uint8_t len)
+  {
+    return Serial1.write(data, len);
+  }  
 };
 
 typedef TPixy<LinkUART> PixyUART;

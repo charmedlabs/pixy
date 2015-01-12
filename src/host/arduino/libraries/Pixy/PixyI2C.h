@@ -46,7 +46,15 @@ public:
 	Wire.requestFrom((int)addr, 1);
 	return Wire.read();
   }
-  
+
+  int8_t send(uint8_t *data, uint8_t len)
+  {
+    Wire.beginTransmission(addr);
+    Wire.write(data, len);
+	Wire.endTransmission();
+	return len;
+  }
+	
 private:
   uint8_t addr;
 };

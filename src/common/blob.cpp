@@ -16,8 +16,10 @@
 #include <new>
 #ifdef PIXY
 #include "pixy_init.h"
+#include "exec.h"
 #else
 #include "pixymon.h"
+#include "debug.h"
 #endif
 #include <blob.h>
 
@@ -28,9 +30,9 @@
 #include <stdio.h>
 #endif
 
-#define DBG(x) x
+#define DBG_BLOB(x) x
 #else
-#define DBG(x) 
+#define DBG_BLOB(x) 
 #endif
 
 bool CBlob::recordSegments= false;
@@ -110,7 +112,7 @@ void SSegment::GetMomentsTest(SMoments &moments) const {
 // CBlob
 CBlob::CBlob() 
 {
-    DBG(leakcheck++);
+    DBG_BLOB(leakcheck++);
     // Setup pointers
     firstSegment= NULL;
     lastSegmentPtr= &firstSegment;
@@ -121,7 +123,7 @@ CBlob::CBlob()
 
 CBlob::~CBlob() 
 {
-    DBG(leakcheck--);
+    DBG_BLOB(leakcheck--);
     // Free segments, if any
     Reset();
 }
@@ -319,7 +321,7 @@ int CBlobAssembler::Add(const SSegment &segment) {
     CBlob *newBlob= new (std::nothrow) CBlob();
     if (newBlob==NULL)
     {
-        cprintf("blobs %d\n", m_blobCount);
+        DBG("blobs %d\nheap full", m_blobCount);
         return -1;
     }
     m_blobCount++;
@@ -418,8 +420,8 @@ void CBlobAssembler::SortFinished() {
         return;
     }
 
-    DBG(int initial_len= ListLength(finishedBlobs));
-    DBG(printf("BSort: Start 0x%x, len=%d\n", finishedBlobs,
+    DBG_BLOB(int initial_len= ListLength(finishedBlobs));
+    DBG_BLOB(printf("BSort: Start 0x%x, len=%d\n", finishedBlobs,
                initial_len));
     SplitList(finishedBlobs, old1, old2);
 
@@ -431,9 +433,9 @@ void CBlobAssembler::SortFinished() {
     for (int blocksize= 1; old2; blocksize <<= 1) {
         CBlob *new1=NULL, *new2=NULL, **newptr1= &new1, **newptr2= &new2;
         while (old1 || old2) {
-            DBG(printf("BSort: o1 0x%x, o2 0x%x, bs=%d\n",
+            DBG_BLOB(printf("BSort: o1 0x%x, o2 0x%x, bs=%d\n",
                        old1, old2, blocksize));
-            DBG(printf("       n1 0x%x, n2 0x%x\n",
+            DBG_BLOB(printf("       n1 0x%x, n2 0x%x\n",
                        new1, new2));
             MergeLists(old1, old2, newptr1, blocksize);
             MergeLists(old1, old2, newptr2, blocksize);
@@ -443,11 +445,11 @@ void CBlobAssembler::SortFinished() {
         old2= new2;
     }
     finishedBlobs= old1;
-    DBG(AssertFinishedSorted());
-    DBG(int final_len= ListLength(finishedBlobs));
-    DBG(printf("BSort: DONE  0x%x, len=%d\n", finishedBlobs,
+    DBG_BLOB(AssertFinishedSorted());
+    DBG_BLOB(int final_len= ListLength(finishedBlobs));
+    DBG_BLOB(printf("BSort: DONE  0x%x, len=%d\n", finishedBlobs,
                ListLength(finishedBlobs)));
-    DBG(if (final_len != initial_len) len_error());
+    DBG_BLOB(if (final_len != initial_len) len_error());
 }
 
 // Assert that finishedBlobs is in fact sorted.  For testing only.
@@ -472,7 +474,7 @@ void CBlobAssembler::Reset() {
         delete finishedBlobs;
         finishedBlobs= tmp;
     }
-    DBG(printf("after CBlobAssember::Reset, leakcheck=%d\n", CBlob::leakcheck));
+    DBG_BLOB(printf("after CBlobAssember::Reset, leakcheck=%d\n", CBlob::leakcheck));
 }
 
 // Manage currentBlob
@@ -502,14 +504,24 @@ void CBlobAssembler::Reset() {
 void 
 CBlobAssembler::BlobNewRow(CBlob **ptr) 
 {
+    short left, top, right, bottom;
+
     while (*ptr) {
         CBlob *blob= *ptr;
         blob->NewRow();
         if (currentRow - blob->lastBottom.row > maxRowDelta) {
-            // Too many rows have elapsed.  Move it to the finished list.
-            *ptr= blob->next;
-            blob->next= finishedBlobs;
-            finishedBlobs= blob;
+            // Too many rows have elapsed.  Move it to the finished list
+            *ptr= blob->next; // cut out of current list
+            // check to see if it meets height and area constraints
+            blob->getBBox(left, top, right, bottom);
+            if (bottom-top>1) //&& blob->GetArea()>=MIN_COLOR_CODE_AREA)
+            {
+                // add to finished blobs
+                blob->next= finishedBlobs;
+                finishedBlobs= blob;
+            }
+            else
+                delete blob;
         } else {
             // Blob is valid
             return;

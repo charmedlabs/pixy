@@ -13,18 +13,14 @@
 // end license header
 //
 
-#ifdef PIXY
-#include "pixy_init.h"
-#include "misc.h"
-#else
-#include "pixymon.h"
+#ifndef PIXY
+#include "debug.h"
 #endif
 #include "blobs.h"
-#include "colorlut.h"
 
-#define CC_SIGNATURE(s) (m_ccMode==CC_ONLY || m_clut->getType(s)==CL_MODEL_TYPE_COLORCODE)
+#define CC_SIGNATURE(s) (m_ccMode==CC_ONLY || m_clut.getType(s)==CL_MODEL_TYPE_COLORCODE)
 
-Blobs::Blobs(Qqueue *qq)
+Blobs::Blobs(Qqueue *qq, uint8_t *lut) : m_clut(lut)
 {
     int i;
 
@@ -33,28 +29,24 @@ Blobs::Blobs(Qqueue *qq)
     m_maxBlobs = MAX_BLOBS;
     m_maxBlobsPerModel = MAX_BLOBS_PER_MODEL;
     m_mergeDist = MAX_MERGE_DIST;
+    m_maxBlob = NULL;
+
+	m_qq = qq;
 #ifdef PIXY
     m_maxCodedDist = MAX_CODED_DIST;
 #else
     m_maxCodedDist = MAX_CODED_DIST/2;
+    m_qvals = new uint32_t[0x8000];
 #endif
-    m_ccMode = ENABLED;
+    m_ccMode = DISABLED;
 
-    m_qq = qq;
     m_blobs = new uint16_t[MAX_BLOBS*5];
     m_numBlobs = 0;
     m_blobReadIndex = 0;
     m_ccBlobReadIndex = 0;
 
-#ifdef PIXY
-    m_clut = new ColorLUT((void *)LUT_MEMORY);
-#else
-    m_lut = new uint8_t[CL_LUT_SIZE];
-    m_clut = new ColorLUT(m_lut);
-#endif
-
     // reset blob assemblers
-    for (i=0; i<NUM_MODELS; i++)
+    for (i=0; i<CL_NUM_SIGNATURES; i++)
         m_assembler[i].Reset();
 }
 
@@ -74,11 +66,32 @@ int Blobs::setParams(uint16_t maxBlobs, uint16_t maxBlobsPerModel, uint32_t minA
 
 Blobs::~Blobs()
 {
-#ifndef PIXY
-    delete [] m_lut;
-#endif
-    delete m_clut;
     delete [] m_blobs;
+#ifndef PIXY
+    delete [] m_qvals;
+#endif
+}
+
+int Blobs::handleSegment(uint8_t signature, uint16_t row, uint16_t startCol, uint16_t length)
+{
+	SSegment s;
+
+    s.model = signature;
+    s.row = row;
+    s.startCol = startCol;
+    s.endCol = startCol+length;
+
+#ifndef PIXY
+    uint32_t qval;
+
+    qval = signature;
+    qval |= startCol<<3;
+    qval |= length<<12;
+
+    m_qvals[m_numQvals++] = qval;
+#endif
+
+    return m_assembler[signature-1].Add(s);
 }
 
 // Blob format:
@@ -87,8 +100,93 @@ Blobs::~Blobs()
 // 2: right X edge
 // 3: top Y edge
 // 4: bottom Y edge
+int Blobs::runlengthAnalysis()
+{
+    int32_t row = -1;
+    uint32_t startCol, sig, prevSig, prevStartCol, segmentStartCol, segmentEndCol, segmentSig=0;
+    bool merge;
+    Qval qval;
+    int32_t res=0;
+	register int32_t u, v, c;
 
-void Blobs::blobify()
+#ifndef PIXY
+    m_numQvals = 0;
+#endif
+
+    while(1)
+    {
+        while (m_qq->dequeue(&qval)==0);
+        if (qval.m_col>=0xfffe)
+            break;
+		if (res<0)
+			continue;
+        if (qval.m_col==0)
+        {
+            prevStartCol = 0xffff;
+            prevSig = 0;
+            if (segmentSig)
+            {
+                res = handleSegment(segmentSig, row, segmentStartCol-1, segmentEndCol - segmentStartCol+1);
+                segmentSig = 0;
+            }
+            row++;
+#ifndef PIXY
+            m_qvals[m_numQvals++] = 0;
+#endif
+            continue;
+        }
+
+        sig = qval.m_col&0x07;
+
+        u = qval.m_u;
+        v = qval.m_v;
+
+        u <<= CL_LUT_ENTRY_SCALE;
+        v <<= CL_LUT_ENTRY_SCALE;
+        c = qval.m_y;
+        if (c==0)
+            c = 1;
+        u /= c;
+        v /= c;
+
+        if (m_clut.m_runtimeSigs[sig-1].m_uMin<u && u<m_clut.m_runtimeSigs[sig-1].m_uMax &&
+                m_clut.m_runtimeSigs[sig-1].m_vMin<v && v<m_clut.m_runtimeSigs[sig-1].m_vMax && c>=(int32_t)m_clut.m_miny)
+        {
+         	qval.m_col >>= 3;
+        	startCol = qval.m_col;
+           	merge = startCol-prevStartCol<=5 && prevSig==sig;
+            if (segmentSig==0 && merge)
+            {
+                segmentSig = sig;
+                segmentStartCol = prevStartCol;
+            }
+            else if (segmentSig!=0 && (segmentSig!=sig || !merge))
+            {
+                res = handleSegment(segmentSig, row, segmentStartCol-1, segmentEndCol - segmentStartCol+1);
+                segmentSig = 0;
+            }
+
+            if (segmentSig!=0 && merge)
+                segmentEndCol = startCol;
+            else if (segmentSig==0 && !merge)
+                res = handleSegment(sig, row, startCol-1, 2);
+            prevSig = sig;
+            prevStartCol = startCol;
+        }
+        else if (segmentSig!=0)
+        {
+            res = handleSegment(segmentSig, row, segmentStartCol-1, segmentEndCol - segmentStartCol+1);
+            segmentSig = 0;
+        }
+    }
+	endFrame();
+
+    if (qval.m_col==0xfffe) // error code, queue overrun
+		return -1;
+	return 0;
+}
+
+int Blobs::blobify()
 {
     uint32_t i, j, k;
     bool colorCode;
@@ -98,13 +196,23 @@ void Blobs::blobify()
     uint16_t left, top, right, bottom;
     //uint32_t timer, timer2=0;
 
-    unpack();
+	if (runlengthAnalysis()<0)
+	{
+   	 	for (i=0; i<CL_NUM_SIGNATURES; i++)
+        	m_assembler[i].Reset();
+    	m_numBlobs = 0;
+		m_numCCBlobs = 0;
+		return -1;
+	}
 
     // copy blobs into memory
     invalid = 0;
     // mutex keeps interrupt routine from stepping on us
     m_mutex = true;
-    for (i=0, m_numBlobs=0, m_numCCBlobs=0; i<NUM_MODELS; i++)
+
+    m_maxBlob = NULL;
+
+    for (i=0, m_numBlobs=0, m_numCCBlobs=0; i<CL_NUM_SIGNATURES; i++)
     {
         colorCode = CC_SIGNATURE(i+1);
 
@@ -115,6 +223,8 @@ void Blobs::blobify()
                 (!colorCode && blob->GetArea()<(int)m_minArea))
                 continue;
             blob->getBBox((short &)left, (short &)top, (short &)right, (short &)bottom);
+            if (bottom-top<=1) // blobs that are 1 line tall
+                continue;
             m_blobs[j + 0] = i+1;
             m_blobs[j + 1] = left;
             m_blobs[j + 2] = right;
@@ -159,7 +269,7 @@ void Blobs::blobify()
     m_mutex = false;
 
     // free memory
-    for (i=0; i<NUM_MODELS; i++)
+    for (i=0; i<CL_NUM_SIGNATURES; i++)
         m_assembler[i].Reset();
 
 #if 0
@@ -170,58 +280,16 @@ void Blobs::blobify()
         cprintf("%d: blobs 0\n", frame);
     frame++;
 #endif
+	return 0;
 }
 
-void Blobs::unpack()
+#ifndef PIXY
+void Blobs::getRunlengths(uint32_t **qvals, uint32_t *len)
 {
-    SSegment s;
-    int32_t row;
-    bool memfull;
-    uint32_t i;
-    Qval qval;
-
-    // q val:
-    // | 4 bits    | 7 bits      | 9 bits | 9 bits    | 3 bits |
-    // | shift val | shifted sum | length | begin col | model  |
-
-    row = -1;
-    memfull = false;
-    i = 0;
-
-    while(1)
-    {
-        while (m_qq->dequeue(&qval)==0);
-        if (qval==0xffffffff)
-            break;
-        i++;
-        if (qval==0)
-        {
-            row++;
-            continue;
-        }
-        s.model = qval&0x07;
-        if (s.model>0 && !memfull)
-        {
-            s.row = row;
-            qval >>= 3;
-            s.startCol = qval&0x1ff;
-            qval >>= 9;
-            s.endCol = (qval&0x1ff) + s.startCol;
-            if (m_assembler[s.model-1].Add(s)<0)
-            {
-                memfull = true;
-                cprintf("heap full %d\n", i);
-            }
-        }
-    }
-    //cprintf("rows %d %d\n", row, i);
-    // finish frame
-    for (i=0; i<NUM_MODELS; i++)
-    {
-        m_assembler[i].EndFrame();
-        m_assembler[i].SortFinished();
-    }
+    *qvals = m_qvals;
+    *len = m_numQvals;
 }
+#endif
 
 uint16_t Blobs::getCCBlock(uint8_t *buf, uint32_t buflen)
 {
@@ -290,7 +358,7 @@ uint16_t Blobs::getCCBlock(uint8_t *buf, uint32_t buflen)
 
 
 uint16_t Blobs::getBlock(uint8_t *buf, uint32_t buflen)
-{							
+{
     uint16_t *buf16 = (uint16_t *)buf;
     uint16_t temp, width, height;
     uint16_t checksum;
@@ -358,39 +426,38 @@ uint16_t Blobs::getBlock(uint8_t *buf, uint32_t buflen)
 BlobA *Blobs::getMaxBlob(uint16_t signature)
 {
     int i, j;
-    uint32_t area=0, ccArea=0;
-    BlobA *blob=NULL, *ccBlob=NULL;
+    uint32_t area, maxArea;
+    BlobA *blob;
+	BlobB *ccBlob;
 
     if (signature==0) // 0 means return the biggest regardless of signature number
     {
-        if (m_numBlobs>0)
+        // if we've already found it, return it
+        if (m_maxBlob)
+            return m_maxBlob;
+
+        // look through all blobs looking for the blob with the biggest area
+        for (i=0, maxArea=0; i<m_numBlobs; i++)
         {
-            blob = (BlobA *)m_blobs;
+            blob = (BlobA *)m_blobs + i;
             area = (blob->m_right - blob->m_left)*(blob->m_bottom - blob->m_top);
+            if (area>maxArea)
+            {
+                maxArea = area;
+                m_maxBlob = blob;
+            }
         }
-        if (m_numCCBlobs>0)
+        for (i=0; i<m_numCCBlobs; i++)
         {
-            ccBlob = (BlobA *)m_ccBlobs;
-            ccArea = (ccBlob->m_right - ccBlob->m_left)*(ccBlob->m_bottom - ccBlob->m_top);
+            ccBlob = (BlobB *)m_ccBlobs + i;
+            area = (ccBlob->m_right - ccBlob->m_left)*(ccBlob->m_bottom - ccBlob->m_top);
+            if (area>maxArea)
+            {
+                maxArea = area;
+                m_maxBlob = (BlobA *)ccBlob;
+            }
         }
-        if (m_ccMode==CC_ONLY)
-        {
-            if (ccBlob)
-                return ccBlob;
-            else
-                return NULL;
-        }
-        else if (m_ccMode==DISABLED)
-        {
-            if (blob)
-                return blob;
-            else
-                return NULL;
-        }
-        else if (area>ccArea)
-            return blob;
-        else if (ccArea>area)
-            return ccBlob;
+		return m_maxBlob;
     }
     else
     {
@@ -402,7 +469,7 @@ BlobA *Blobs::getMaxBlob(uint16_t signature)
     }
 
     return NULL; // no blobs...
-} 
+}
 
 void Blobs::getBlobs(BlobA **blobs, uint32_t *len, BlobB **ccBlobs, uint32_t *ccLen)
 {
@@ -711,7 +778,7 @@ bool Blobs::analyzeDistances(BlobA *blobs0[], int16_t numBlobs0, BlobA *blobs[],
     }
 #ifndef PIXY
     if (!result)
-        qDebug("not set!");
+        DBG("not set!");
 #endif
     return result;
 }
@@ -761,7 +828,7 @@ void Blobs::cleanup(BlobA *blobs[], int16_t *numBlobs)
             newBlobs[numNewBlobs++] = blobs[i];
 #ifndef PIXY
         else if (*numBlobs>=5 && (blobs[i]->m_model&0x07)==2)
-            qDebug("eliminated!");
+            DBG("eliminated!");
 #endif
     }
 
@@ -803,11 +870,11 @@ void Blobs::cleanup2(BlobA *blobs[], int16_t *numBlobs)
 
 void Blobs::printBlobs()
 {
+#ifndef PIXY
     int i;
     BlobA *blobs = (BlobA *)m_blobs;
-#ifndef PIXY
     for (i=0; i<m_numBlobs; i++)
-        qDebug("blob %d: %d %d %d %d %d", i, blobs[i].m_model, blobs[i].m_left, blobs[i].m_right, blobs[i].m_top, blobs[i].m_bottom);
+        DBG("blob %d: %d %d %d %d %d", i, blobs[i].m_model, blobs[i].m_left, blobs[i].m_right, blobs[i].m_top, blobs[i].m_bottom);
 #endif
 }
 
@@ -862,19 +929,19 @@ void Blobs::processCC()
         {
             if (closeby(blob0, blob1))
             {
-                if (blob0->m_model<=NUM_MODELS && blob1->m_model<=NUM_MODELS)
+                if (blob0->m_model<=CL_NUM_SIGNATURES && blob1->m_model<=CL_NUM_SIGNATURES)
                 {
                     count++;
                     scount = count<<3;
                     blob0->m_model |= scount;
                     blob1->m_model |= scount;
                 }
-                else if (blob0->m_model>NUM_MODELS && blob1->m_model<=NUM_MODELS)
+                else if (blob0->m_model>CL_NUM_SIGNATURES && blob1->m_model<=CL_NUM_SIGNATURES)
                 {
                     scount = blob0->m_model & ~0x07;
                     blob1->m_model |= scount;
                 }
-                else if (blob1->m_model>NUM_MODELS && blob0->m_model<=NUM_MODELS)
+                else if (blob1->m_model>CL_NUM_SIGNATURES && blob0->m_model<=CL_NUM_SIGNATURES)
                 {
                     scount = blob1->m_model & ~0x07;
                     blob0->m_model |= scount;
@@ -887,12 +954,12 @@ void Blobs::processCC()
     // 2nd pass: merge blob clumps
     for (blob0=(BlobA *)m_blobs; blob0<endBlob; blob0++)
     {
-        if (blob0->m_model<=NUM_MODELS) // skip normal blobs
+        if (blob0->m_model<=CL_NUM_SIGNATURES) // skip normal blobs
             continue;
         scount = blob0->m_model&~0x07;
         for (blob1=(BlobA *)blob0+1; blob1<endBlob; blob1++)
         {
-            if (blob1->m_model<=NUM_MODELS)
+            if (blob1->m_model<=CL_NUM_SIGNATURES)
                 continue;
 
             scount1 = blob1->m_model&~0x07;
@@ -925,7 +992,7 @@ void Blobs::processCC()
         // find left, right, top, bottom of color coded block
         for (k=0, left=right=top=bottom=0; k<j; k++)
         {
-            //qDebug("* cc %x %d i %d: %d %d %d %d %d", blobs[k], m_numCCBlobs, k, blobs[k]->m_model, blobs[k]->m_left, blobs[k]->m_right, blobs[k]->m_top, blobs[k]->m_bottom);
+            //DBG("* cc %x %d i %d: %d %d %d %d %d", blobs[k], m_numCCBlobs, k, blobs[k]->m_model, blobs[k]->m_left, blobs[k]->m_right, blobs[k]->m_top, blobs[k]->m_bottom);
             if (blobs[left]->m_left > blobs[k]->m_left)
                 left = k;
             if (blobs[top]->m_top > blobs[k]->m_top)
@@ -978,7 +1045,7 @@ void Blobs::processCC()
             codedBlob->m_angle = angle(blobs[j-1], blobs[0]);
         }
 #endif
-        //qDebug("cc %d %d %d %d %d", m_numCCBlobs, codedBlob->m_left, codedBlob->m_right, codedBlob->m_top, codedBlob->m_bottom);
+        //DBG("cc %d %d %d %d %d", m_numCCBlobs, codedBlob->m_left, codedBlob->m_right, codedBlob->m_top, codedBlob->m_bottom);
         codedBlob++;
         m_numCCBlobs++;
     }
@@ -988,51 +1055,21 @@ void Blobs::processCC()
     {
         if (m_ccMode==MIXED)
         {
-            if (blob0->m_model>NUM_MODELS)
+            if (blob0->m_model>CL_NUM_SIGNATURES)
                 blob0->m_model = 0;
         }
-        else if (blob0->m_model>NUM_MODELS || CC_SIGNATURE(blob0->m_model))
+        else if (blob0->m_model>CL_NUM_SIGNATURES || CC_SIGNATURE(blob0->m_model))
             blob0->m_model = 0; // invalidate-- not part of a color code
     }
 }
 
-int Blobs::generateLUT(uint8_t model, const Frame8 &frame, const RectA &region, ColorModel *pcmodel)
+void Blobs::endFrame()
 {
-    int goodness;
-    ColorModel cmodel;
-    if (model>NUM_MODELS)
-        return -1;
-
-    goodness = m_clut->generate(&cmodel, frame, region);
-    if (goodness==0)
-        return -1; // this model sucks!
-
-    if (pcmodel)
-        *pcmodel = cmodel;
-
-    return goodness;
+    int i;
+    for (i=0; i<CL_NUM_SIGNATURES; i++)
+    {
+        m_assembler[i].EndFrame();
+        m_assembler[i].SortFinished();
+    }
 }
-
-int Blobs::generateLUT(uint8_t model, const Frame8 &frame, const Point16 &seed, ColorModel *pcmodel, RectA *region)
-{
-    int goodness;
-    RectA cregion;
-    ColorModel cmodel;
-
-    m_clut->growRegion(&cregion, frame, seed);
-
-    goodness = m_clut->generate(&cmodel, frame, cregion);
-    if (goodness==0)
-        return -1; // this model sucks!
-
-
-    if (region)
-        *region = cregion;
-
-    if (pcmodel)
-        *pcmodel = cmodel;
-
-    return goodness;
-}
-
 

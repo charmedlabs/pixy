@@ -14,16 +14,14 @@
 //
 
 #include <stdexcept>
-#include <QDebug>
+#include "debug.h"
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QMetaType>
 #include <QSettings>
-#include <QDesktopServices>
-#if QT_VERSION>QT_VERSION_CHECK(5,0,0)
-#include <QStandardPaths>
-#endif
 #include <QUrl>
+#include <QDesktopServices>
+#include <QSysInfo>
 #include "mainwindow.h"
 #include "pixymon.h"
 #include "videowidget.h"
@@ -34,6 +32,7 @@
 #include "flash.h"
 #include "ui_mainwindow.h"
 #include "configdialog.h"
+#include "dataexport.h"
 #include "sleeper.h"
 #include "aboutdialog.h"
 
@@ -50,19 +49,20 @@ MainWindow::MainWindow(int argc, char *argv[], QWidget *parent) :
     QCoreApplication::setApplicationName(PIXYMON_TITLE);
 
     parseCommandline(argc, argv);
-    loadParameters();
 
     qRegisterMetaType<Device>("Device");
 
     m_ui->setupUi(this);
     setWindowTitle(PIXYMON_TITLE);
 
-    m_interpreter = 0;
+    m_interpreter = NULL;
     m_flash = NULL;
     m_pixyConnected = false;
     m_pixyDFUConnected = false;
     m_configDialog = NULL;
-    m_initScriptExecuted = false;
+    m_fwInstructions = NULL;
+    m_fwMessage = NULL;
+    m_versionIncompatibility = false;
 
     m_waiting = WAIT_NONE;
 
@@ -89,6 +89,9 @@ MainWindow::MainWindow(int argc, char *argv[], QWidget *parent) :
 
     updateButtons();
 
+    m_parameters.add("Pixy start command", PT_STRING, "runprogArg 8 1",
+        "The command that is sent to Pixy upon initialization");
+
     // start looking for devices
     m_connect = new ConnectEvent(this);
     if (m_connect->getConnected()==NONE)
@@ -100,12 +103,10 @@ MainWindow::~MainWindow()
     if (m_connect)
         delete m_connect;
 
-    qDebug("deleting mainWindow");
+    DBG("deleting mainWindow");
     // we don't delete any of the widgets because the parent deletes it's children upon deletion
 
     delete m_settings;
-
-    saveParameters();
 }
 
 void MainWindow::parseCommandline(int argc, char *argv[])
@@ -124,9 +125,7 @@ void MainWindow::parseCommandline(int argc, char *argv[])
         else if (!strcmp("-initscript", argv[i]) && i+1<argc)
         {
             i++;
-            QString script = argv[i];
-            script.remove(QRegExp("[\"']"));
-            m_initScript = script.split(QRegExp("[\\\\]"));
+            m_initScript = argv[i];
         }
 
     }
@@ -229,37 +228,49 @@ void MainWindow::closeEvent(QCloseEvent *event)
     {
         m_waiting = WAIT_EXITTING;
         event->ignore(); // ignore event
-        qDebug("closing interpreter");
+        DBG("closing interpreter");
         m_interpreter->close();
     }
 }
 
-void MainWindow::handleRunState(uint state)
+void MainWindow::handleRunState(int state)
 {
     updateButtons();
-    if (state==true && m_initScript.size()>0 && !m_initScriptExecuted)
+    if (state==-1 && m_interpreter)
     {
-        m_interpreter->execute(m_initScript);
-        m_initScriptExecuted = true;
+        if (m_configDialog)
+        {
+            m_configDialog->close();
+            m_configDialog = NULL;
+        }
+        DBG("closing interpreter");
+        m_interpreter->close();
     }
 }
+
 
 void MainWindow::connectPixyDFU(bool state)
 {
     if (state) // connect
     {
         m_console->print("Pixy programming state detected.\n");
+        // close the instuctions dialog if it's open
+        if (m_fwInstructions)
+            m_fwInstructions->done(0);
         try
         {
-            Dfu *dfu;
-            dfu = new Dfu();
-            QString path = QFileInfo(QCoreApplication::applicationFilePath()).absolutePath();
-            QString file = QFileInfo(path, "pixyflash.bin.hdr").absoluteFilePath();
-            dfu->download(file);
-            m_pixyDFUConnected = true;
-            delete dfu;
-            Sleeper::msleep(1000);
-            m_connect = new ConnectEvent(this);
+            if (!m_pixyDFUConnected)
+            {
+                Dfu *dfu;
+                dfu = new Dfu();
+                QString path = QFileInfo(QCoreApplication::applicationFilePath()).absolutePath();
+                QString file = QFileInfo(path, "pixyflash.bin.hdr").absoluteFilePath();
+                dfu->download(file);
+                m_pixyDFUConnected = true;
+                delete dfu;
+                Sleeper::msleep(1000);
+                m_connect = new ConnectEvent(this);
+            }
         }
         catch (std::runtime_error &exception)
         {
@@ -288,7 +299,10 @@ void MainWindow::connectPixy(bool state)
             {
                 m_flash = new Flash();
                 if (m_firmwareFile!="")
+                {
                     program(m_firmwareFile);
+                    m_firmwareFile = "";
+                }
                 else
                 {
                     QString dir;
@@ -309,19 +323,19 @@ void MainWindow::connectPixy(bool state)
                     m_settings->setValue("fw_dialog", QVariant(dir));
                 }
             }
-            else
+            else if (m_interpreter==NULL)
             {
                 m_console->print("Pixy detected.\n");
-                m_interpreter = new Interpreter(m_console, m_video, &m_parameters);
-
-                m_initScriptExecuted = false; // reset so we'll execute for this instance
-                connect(m_interpreter, SIGNAL(runState(uint)), this, SLOT(handleRunState(uint)));
-                connect(m_interpreter, SIGNAL(finished()), this, SLOT(interpreterFinished()));
-                connect(m_interpreter, SIGNAL(connected(Device,bool)), this, SLOT(handleConnected(Device,bool)));
-                connect(m_interpreter, SIGNAL(actionScriptlet(int,QString,QStringList)), this, SLOT(handleActionScriptlet(int,QString,QStringList)));
-                connect(m_interpreter, SIGNAL(paramLoaded()), this, SLOT(handleLoadParams()));
                 clearActions();
-                m_interpreter->getAction(0);  // start action query process
+                m_interpreter = new Interpreter(m_console, m_video, &m_parameters, m_initScript);
+
+                connect(m_interpreter, SIGNAL(runState(int)), this, SLOT(handleRunState(int)));
+                connect(m_interpreter, SIGNAL(finished()), this, SLOT(interpreterFinished())); // thread will send finished event when it exits
+                connect(m_interpreter, SIGNAL(connected(Device,bool)), this, SLOT(handleConnected(Device,bool)));
+                connect(m_interpreter, SIGNAL(actionScriptlet(QString,QStringList)), this, SLOT(handleActionScriptlet(QString,QStringList)));
+                connect(m_interpreter, SIGNAL(paramLoaded()), this, SLOT(handleLoadParams()));
+                connect(m_interpreter, SIGNAL(version(ushort,ushort,ushort)), this, SLOT(handleVersion(ushort,ushort,ushort)));
+                m_interpreter->start();
             }
             m_pixyConnected = true;
         }
@@ -338,7 +352,7 @@ void MainWindow::connectPixy(bool state)
         m_console->error("Pixy has stopped working.\n");
         if (m_interpreter)
         {
-            qDebug("closing interpreter");
+            DBG("closing interpreter");
             m_interpreter->close();
         }
     }
@@ -385,15 +399,13 @@ void MainWindow::handleActions()
 }
 
 
-void MainWindow::handleActionScriptlet(int index, QString action, QStringList scriptlet)
+
+void MainWindow::handleActionScriptlet(QString action, QStringList scriptlet)
 {
-    if (m_interpreter)
-    {
-        m_interpreter->getAction(index+1);  // get next action, we'll stop getting called back when there are no more actions
-        addAction(action, scriptlet);
-    }
+    addAction(action, scriptlet);
 }
 
+// this is called from ConnectEvent and from Interpreter
 void MainWindow::handleConnected(Device device, bool state)
 {
     if (m_configDialog)
@@ -402,16 +414,25 @@ void MainWindow::handleConnected(Device device, bool state)
         m_configDialog = NULL;
     }
 
-    // kill connect thread
-    if (m_connect)
+    // reset versionIncompatibility because we've unplugged, so we'll try again
+    if (device==NONE && !state && m_versionIncompatibility)
+        m_versionIncompatibility = false;
+
+    // if we're incompatible, don't create/connect to device... wait for next event
+    if (m_versionIncompatibility)
+        return;
+
+    if (m_connect && state)
     {
         delete m_connect;
         m_connect = NULL;
     }
+
     if (device==PIXY)
         connectPixy(state);
     else if (device==PIXY_DFU)
         connectPixyDFU(state);
+
 }
 
 void MainWindow::handleConfigDialogFinished()
@@ -428,19 +449,30 @@ void MainWindow::on_actionAbout_triggered()
     AboutDialog *about;
     QString contents;
 
-    contents.sprintf("%s version %d.%d.%d\n", PIXYMON_TITLE, VER_MAJOR, VER_MINOR, VER_BUILD);
+    contents.sprintf("<b>%s version %d.%d.%d</b><br>", PIXYMON_TITLE, VER_MAJOR, VER_MINOR, VER_BUILD);
 
     if (m_interpreter)
     {
         QString fwver;
         uint16_t *version;
         version = m_interpreter->getVersion();
-        contents += fwver.sprintf("Pixy firmware version (queried) %d.%d.%d\n", version[0], version[1], version[2]);
+        contents += fwver.sprintf("<b>Pixy firmware version %d.%d.%d</b> (queried)<br>", version[0], version[1], version[2]);
     }
 
-    contents += "\nCMUCam5 Pixy and PixyMon are open hardware and open source software ";
-    contents += "maintained by Charmed Labs and Carnegie Mellon University.\n\n";
-    contents += "Send problems, suggestions, etc. to cmucam@cs.cmu.edu";
+    contents +=
+            "<br>The latest version of PixyMon and Pixy firmware can be downloaded "
+            "<a href=\"http://charmedlabs.com/pixylatest\">here</a>.<br><br>"
+            "CMUCam5 Pixy and PixyMon are open hardware and open source software "
+            "maintained by Charmed Labs and Carnegie Mellon University. "
+            "All software and firmware is provided under the GNU "
+            "General Public License. Complete source code is available at "
+            "<a href=\"http://charmedlabs.com/pixysource\">github.com</a>.<br><br>"
+            "Please send problems, suggestions, ideas, inquiries and feedback, positive or negative "
+            "(although we do love to hear the positive stuff!) "
+            "to <a href=\"mailto:support@charmedlabs.com\">support@charmedlabs.com</a>. "
+            "Additional information can be found <a href=\"http://charmedlabs.com/pixy\">here</a> "
+            "and <a href=\"http://charmedlabs.com/pixywiki\">here</a>.<br><br>"
+            "Thanks for supporting our little Pixy!";
 
     about = new AboutDialog(contents);
     about->setAttribute(Qt::WA_DeleteOnClose);
@@ -469,8 +501,7 @@ void MainWindow::program(const QString &file)
         m_console->print("Programming... (" + file + ")\n");
         QApplication::processEvents(); // render message before we continue
         m_flash->program(file);
-        m_console->print("done!\n");
-
+        m_console->print("done!\nPlease wait a few seconds while Pixy resets...\n");
     }
     catch (std::runtime_error &exception)
     {
@@ -488,35 +519,6 @@ void MainWindow::program(const QString &file)
 
 }
 
-void MainWindow::saveParameters()
-{
-    ParamFile pf;
-    QFileInfo fi(docPath(), CONFIGFILE_FILENAME);
-
-    pf.open(fi.absoluteFilePath(), false);
-    pf.write(CONFIGFILE_TAG, &m_parameters);
-    pf.close();
-}
-
-void MainWindow::loadParameters()
-{
-    // initialize paramters
-    QString dp = docPath();
-
-    m_parameters.add(Parameter("Document folder", dp, PT_PATH,
-                               "The directory where images and other data files are saved"));
-
-    // now see if config file exists
-    QFileInfo fi(dp, CONFIGFILE_FILENAME);
-    ParamFile pf;
-    if (pf.open(fi.absoluteFilePath(), true)>=0)
-    {
-        pf.read(CONFIGFILE_TAG, &m_parameters);
-        pf.close();
-    }
-    else // there was an error, so write (or rewrite) config file
-        saveParameters();
-}
 
 void MainWindow::on_actionConfigure_triggered()
 {
@@ -544,7 +546,7 @@ void MainWindow::on_actionCooked_video_triggered()
 
 void MainWindow::interpreterFinished()
 {
-    qDebug("interpreter finished");
+    DBG("interpreter finished");
     m_interpreter->deleteLater();
     m_interpreter = NULL;
     if (m_waiting==WAIT_EXITTING) // if we're exitting, shut down
@@ -561,6 +563,116 @@ void MainWindow::interpreterFinished()
     updateButtons();
 }
 
+void MainWindow::handleFirmware(ushort major, ushort minor, ushort build)
+{
+    // check executable directory for firmware
+    int i;
+    QStringList filters;
+
+    filters << "*.hex";
+    QString path = QFileInfo(QCoreApplication::applicationFilePath()).absolutePath();
+    QDir dir(path);
+    QStringList files = dir.entryList(filters);
+    QStringList parts;
+    QString fwFilename;
+    QString maxVerStr;
+    ushort fmajor, fminor, fbuild;
+    qlonglong ver, currVer, maxVer;
+
+    // find the maximum version in the executable directory
+    currVer = ((qlonglong)major<<32) | (minor<<16) | build;
+    for (i=0, maxVer=0; i<files.size(); i++)
+    {
+        parts = files[i].split('-');
+        if (parts.size()>1)
+        {
+            parts = parts[1].split('.');
+            if (parts.size()>1)
+            {
+                fmajor = parts[0].toInt();
+                fminor = parts[1].toInt();
+                fbuild = parts[2].toInt();
+
+                ver = ((qlonglong)fmajor<<32) | (fminor<<16) | fbuild;
+                if (ver>currVer)
+                {
+                    if (ver>maxVer)
+                    {
+                        maxVer = ver;
+                        fwFilename = files[i];
+                        maxVerStr = QString::number(fmajor) + "." + QString::number(minor) + "." + QString::number(fbuild);
+                    }
+                }
+            }
+        }
+    }
+
+#if 0
+    bool xp = false;
+#ifdef __WINDOWS__
+    xp = QSysInfo::WindowsVersion<=QSysInfo::WV_2003;
+#endif
+#endif
+    // if this dialog is already open, close
+    if (m_fwInstructions)
+        m_fwInstructions->done(0);
+    if (m_fwMessage==NULL)
+    {
+        if (fwFilename!="") // newer version!
+        {
+            QString str =
+                    "There is a more recent firmware version (" + maxVerStr + ") available.<br>"
+                    "Your Pixy is running firmware version " + QString::number(major) + "." + QString::number(minor) + "." + QString::number(build) + ".<br><br>"
+                    "Would you like to upload this firmware into your Pixy? <i>Psst, click yes!</i>";
+            m_fwMessage = new QMessageBox(QMessageBox::Question, "New firmware available!", str, QMessageBox::Yes|QMessageBox::No);
+            m_fwMessage->setDefaultButton(QMessageBox::Yes);
+            m_fwMessage->exec();
+            if (m_fwMessage->standardButton(m_fwMessage->clickedButton())==QMessageBox::Yes)
+            {
+                m_firmwareFile = QFileInfo(path, fwFilename).absoluteFilePath();
+                m_fwInstructions = new QMessageBox(QMessageBox::Information, "Get your Pixy ready!",
+                                                   "Please follow these steps to get your Pixy ready to accept new firmware:<br><br>"
+                                                   "1. Unplug your Pixy from USB (do this now).<br>"
+                                                   "2. Press and hold down the white button on top of Pixy.<br>"
+                                                   "3. Plug the USB cable back in while continuing to hold down the button.<br>"
+                                                   "4. Release the button after the USB cable is plugged back in.<br>"
+                                                   "5. Wait a bit. This window will go away automatically when all is ready<br>"
+                                                   "to proceed, but the drivers sometimes take a few minutes to install.");
+                //m_fwInstructions->setStandardButtons(QMessageBox::NoButton);
+                m_fwInstructions->setModal(false);
+                m_fwInstructions->exec();
+                m_fwInstructions = NULL;
+            }
+        }
+        else if (m_versionIncompatibility) // otherwise tell them where to find the latest version
+        {
+            m_fwMessage = new QMessageBox(QMessageBox::Information, "Firmware incompatibility",
+                                          "The firmware installed on Pixy is incompatible with this version of PixyMon<br>"
+                                          "The latest version of PixyMon and Pixy firmware can be downloaded "
+                                          "<a href=\"http://charmedlabs.com/pixylatest\">here</a>.<br><br>"
+                                          "(For instructions on how to upload firmware onto your Pixy, go "
+                                          "<a href=\"http://charmedlabs.com/pixyfirmwarehowto\">here</a>.)");
+            m_fwMessage->exec();
+        }
+        m_fwMessage = NULL;
+    }
+}
+
+void MainWindow::handleVersion(ushort major, ushort minor, ushort build)
+{
+    QString str;
+
+    if (major!=VER_MAJOR || minor>VER_MINOR)
+    {
+        // Interpreter will automatically exit if there's a version incompatibility, so no need to close interpreter
+        m_versionIncompatibility = true;
+    }
+    handleFirmware(major, minor, build);
+    //str = str.sprintf("Pixy firmware version %d.%d.%d.\n", major, minor, build);
+    //m_console->print(str);
+}
+
+
 void MainWindow::on_actionExit_triggered()
 {
     if (m_configDialog)
@@ -571,7 +683,7 @@ void MainWindow::on_actionExit_triggered()
     if (m_interpreter)
     {
         m_waiting = WAIT_EXITTING;
-        qDebug("closing interpreter");
+        DBG("closing interpreter");
         m_interpreter->close();
     }
     else
@@ -585,18 +697,17 @@ void MainWindow::on_actionHelp_triggered()
 
 void MainWindow::handleLoadParams()
 {
-    int res;
-
     if (m_waiting==WAIT_SAVING_PARAMS)
     {
         m_waiting = WAIT_NONE;
         QString dir;
         QFileDialog fd(this);
         fd.setWindowTitle("Please provide a filename for the parameter file");
-        dir = docPath();
+        dir = m_parameters.value("Document folder").toString();
         fd.setDirectory(QDir(dir));
-        fd.setNameFilter("XML file (*.xml)");
+        fd.setNameFilter("Parameter file (*.prm)");
         fd.setAcceptMode(QFileDialog::AcceptSave);
+        fd.setDefaultSuffix("prm");
         if (fd.exec())
         {
             QStringList flist = fd.selectedFiles();
@@ -611,61 +722,8 @@ void MainWindow::handleLoadParams()
             }
         }
     }
-    else if (m_waiting==WAIT_LOADING_PARAMS)
-    {
-        m_waiting = WAIT_NONE;
-        QString dir;
-        QFileDialog fd(this);
-        fd.setWindowTitle("Please choose a parameter file");
-        dir = docPath();
-        fd.setDirectory(QDir(dir));
-        fd.setNameFilter("XML file (*.xml)");
-        if (fd.exec())
-        {
-            QStringList flist = fd.selectedFiles();
-            if (flist.size()==1)
-            {
-                ParamFile pf;
-                pf.open(flist[0], true);
-                res = pf.read(PIXY_PARAMFILE_TAG, &m_interpreter->m_pixyParameters);
-                pf.close();
-
-                if (res>=0)
-                    m_interpreter->saveParams();
-            }
-        }
-    }
 }
 
-const QString uniqueFilename(const QDir &dir, const QString &filebase, const QString &extension)
-{
-    int i;
-
-    for (i=1; true; i++)
-    {
-        QFileInfo testFile(dir, filebase + QString::number(i) + "." + extension);
-        if (!testFile.exists())
-            return testFile.absoluteFilePath();
-    }
-}
-
-QString MainWindow::docPath()
-{
-    QString path;
-
-#if QT_VERSION>QT_VERSION_CHECK(5,0,0)
-    path = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
-#else
-    path = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation);
-#endif
-    QDir dir(path);
-
-    if (!dir.exists(PM_DEFAULT_DATA_DIR))
-        dir.mkdir(PM_DEFAULT_DATA_DIR);
-    dir.cd(PM_DEFAULT_DATA_DIR);
-
-    return dir.absolutePath();
-}
 
 void MainWindow::on_actionSave_Image_triggered()
 {
@@ -673,7 +731,7 @@ void MainWindow::on_actionSave_Image_triggered()
 
     if (m_interpreter)
     {
-        filename = uniqueFilename(m_parameters.value("Document folder")->toString(), "image", "png");
+        filename = uniqueFilename(m_parameters.value("Document folder").toString(), "image", "png");
         m_interpreter->saveImage(filename);
     }
 }
@@ -687,13 +745,37 @@ void MainWindow::on_actionSave_Pixy_parameters_triggered()
     }
 }
 
+
 void MainWindow::on_actionLoad_Pixy_parameters_triggered()
 {
     if (m_interpreter)
     {
-        // we need to load recent params from Pixy to compare to the params file
-        m_interpreter->loadParams();
-        m_waiting = WAIT_LOADING_PARAMS;
+        int res;
+        QString dir;
+        QFileDialog fd(this);
+        fd.setWindowTitle("Please choose a parameter file");
+        dir = m_parameters.value("Document folder").toString();
+        fd.setDirectory(QDir(dir));
+        fd.setNameFilter("Parameter file (*.prm)");
+        if (fd.exec())
+        {
+            QStringList flist = fd.selectedFiles();
+            if (flist.size()==1)
+            {
+                ParamFile pf;
+                pf.open(flist[0], true);
+                res = pf.read(PIXY_PARAMFILE_TAG, &m_interpreter->m_pixyParameters);
+                pf.close();
+
+                if (res>=0)
+                {
+                    m_interpreter->saveParams(); // save parapeters back to pixy
+                    // reload config dialog if it's up
+                    if (m_configDialog)
+                        m_configDialog->load();
+                }
+            }
+        }
     }
 }
 

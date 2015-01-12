@@ -16,12 +16,46 @@
 #define _QQUEUE_H
 #include <inttypes.h>
 
-typedef uint32_t Qval;
-struct QqueueFields;
-
 #define QQ_LOC        SRAM4_LOC
-#define QQ_SIZE       0x3000
+#ifdef PIXY
+#define QQ_SIZE       0x3c00
+#else
+#define QQ_SIZE       0x30000
+#endif
 #define QQ_MEM_SIZE  ((QQ_SIZE-sizeof(struct QqueueFields)+sizeof(Qval))/sizeof(Qval))
+
+#ifdef __cplusplus  
+struct Qval
+#else
+typedef struct
+#endif
+{
+#ifdef __cplusplus  
+    Qval()
+    {
+        m_u = m_v = m_y = m_col = 0;
+    }
+
+    Qval(int16_t u, int16_t v, uint16_t y, uint16_t col)
+    {
+        m_u = u;
+        m_v = v;
+        m_y = y;
+        m_col = col;
+    }
+#endif
+
+    uint16_t m_col;
+    int16_t m_v;
+    int16_t m_u;
+    uint16_t m_y;
+
+#ifdef __cplusplus  
+}; 
+#else
+} Qval;
+#endif
+
 
 struct QqueueFields
 {
@@ -49,7 +83,7 @@ public:
 		return m_fields->produced - m_fields->consumed;
 	}
 #ifndef PIXY
-    int enqueue(Qval val);
+    int enqueue(Qval *val);
 #endif
 
     uint32_t readAll(Qval *mem, uint32_t size);
@@ -61,7 +95,7 @@ private:
 
 #else //  M0 is C and the "producer" of data (Qvals)
 
-uint32_t qq_enqueue(Qval val);
+uint32_t qq_enqueue(const Qval *val);
 uint16_t qq_free(void);
 
 extern struct QqueueFields *g_qqueue;

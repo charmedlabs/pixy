@@ -86,6 +86,9 @@ void rcs_init()
 	rcs_loadParams();
 		
 	g_chirpUsb->registerModule(g_module);
+
+	rcs_enable(0, 1);
+	rcs_enable(1, 1);
 }
 
 void rcs_loadParams()
@@ -99,7 +102,7 @@ void rcs_loadParams()
 	prm_add("S1 upper limit", PRM_FLAG_SIGNED, 
 		"@c Servo Sets the upper limit of travel for servo 1 (default 200)", INT16(200), END);
 	prm_add("Servo frequency", PRM_FLAG_ADVANCED, 
-		"@c Servo Sets the PWM frequency of the servos (default 100)", UINT16(100), END);
+		"@c Servo Sets the PWM frequency of the servos (default 60)", UINT16(60), END);
 
 	int16_t lower, upper, freq;
 

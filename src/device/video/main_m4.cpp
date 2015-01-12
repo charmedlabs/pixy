@@ -53,15 +53,15 @@ void __default_signal_handler(int signal, int type)
 
 int main(void) 
 {
- 	pixyInit(SRAM3_LOC, &LR0[0], sizeof(LR0));
+	// main init of hardware plus a version-dependent number for the parameters that will
+	// force a format of parameter between version numbers.  
+ 	pixyInit(SRAM3_LOC, &LR0[0], sizeof(LR0), FW_MAJOR_VER*40*40+FW_MINOR_VER*40+FW_BUILD_VER);
 
 	cc_init(g_chirpUsb);
 	ser_init();
 	exec_init(g_chirpUsb);
 
-#if 1
 	// load programs
-
 	exec_addProg(&g_progBlobs);
 	ptLoadParams();
 	exec_addProg(&g_progPt);
@@ -72,50 +72,7 @@ int main(void)
 	exec_addProg(&g_progVideo, true);
 
 	exec_loop();
-#endif  
 
-#if 0
-
-	//prm_format();
-	ColorModel model, *model2;
-	uint32_t len;
-	model.m_hue[0].m_slope = 1.0;
-	model.m_hue[0].m_yi = 2.0;
-	model.m_hue[1].m_slope = 3.0;
-	model.m_hue[1].m_yi = 4.0;
-	model.m_sat[0].m_slope = 5.0;
-	model.m_sat[0].m_yi = 6.0;
-	model.m_sat[1].m_slope = 7.0;
-	model.m_sat[1].m_yi = 8.0;
-	prm_add("signature1", "Color signature 1", INTS8(sizeof(ColorModel), &model), END);
-	prm_set("signature1", INTS8(sizeof(ColorModel), &model), END);
-	model.m_hue[0].m_slope = 9.0;
-	model.m_hue[0].m_yi = 10.0;
-	model.m_hue[1].m_slope = 11.0;
-	model.m_hue[1].m_yi = 12.0;
-	model.m_sat[0].m_slope = 13.0;
-	model.m_sat[0].m_yi = 14.0;
-	model.m_sat[1].m_slope = 15.0;
-	model.m_sat[1].m_yi = 16.0;
-	prm_add("signature2", "Color signature 2", INTS8(sizeof(ColorModel), &model), END);
-	prm_set("signature2", INTS8(sizeof(ColorModel), &model), END);
-	prm_get("signature1", &len, &model2, END);
-	model.m_hue[0].m_slope = 17.0;
-	model.m_hue[0].m_yi = 18.0;
-	model.m_hue[1].m_slope = 19.0;
-	model.m_hue[1].m_yi = 20.0;
-	model.m_sat[0].m_slope = 21.0;
-	model.m_sat[0].m_yi = 22.0;
-	model.m_sat[1].m_slope = 23.0;
-	model.m_sat[1].m_yi = 24.0;
-	prm_get("signature1", &len, &model2, END);
-
-	prm_set("signature1", INTS8(sizeof(ColorModel), &model), END);
-	prm_get("signature1", &len, &model2, END);
-	prm_get("signature2", &len, &model2, END);
-	 
-
-#endif
 #if 0
 	#define DELAY 1000000
 	rcs_setFreq(100);

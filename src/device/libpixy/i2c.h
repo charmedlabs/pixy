@@ -31,6 +31,7 @@ public:
 	virtual int open();
 	virtual int close();
 	virtual int receive(uint8_t *buf, uint32_t len);
+	virtual int receiveLen();
 	virtual int update();
 
 	int setSlaveAddr(uint8_t addr);
