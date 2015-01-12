@@ -47,7 +47,10 @@ QString MonParameterDB::docPath()
     QDir dir(path);
 
     if (!dir.exists(PM_DEFAULT_DATA_DIR))
+    {
+        dir.mkpath(path); // make dirs if necessary
         dir.mkdir(PM_DEFAULT_DATA_DIR);
+    }
     dir.cd(PM_DEFAULT_DATA_DIR);
 
     return dir.absolutePath();
