@@ -4,6 +4,65 @@
 
 PixyInterpreter interpreter;
 
+/** 
+
+  \mainpage libpixyusb-0.3 API Reference
+
+  \section introduction Introduction
+
+  libpixyusb is an open source library that allows you to communicate with
+  Pixy over the USB protocol.
+
+  This documentation is aimed at application developers wishing to send
+  commands to Pixy or read sensor data from Pixy.
+
+  \section library_features Library features
+
+  - Read blocks with or without color codes
+  - RGB LED control (color/intensity)
+  - Auto white balance control
+  - Auto exposure compensation control
+  - Brightness control
+  - Servo position control/query
+  - Custom commands
+
+  \section dependencies Dependencies
+
+  Required to build:
+
+  - <a href=http://www.cmake.org>cmake</a>
+ 
+  Required for runtime:
+
+  - <a href=http://www.libusb.org>libusb</a>
+  - <a href=http://www.boost.org>libboost</a>
+
+  \section getting_started Getting Started
+ 
+  The libpixyusb API reference documentation can be found here:
+
+  libpixyusb API Reference
+
+  Some tutorials that use libpixyusb can be found here:
+
+  <a href=http://cmucam.org/projects/cmucam5/wiki/Hooking_up_Pixy_to_a_Raspberry_Pi>Hooking up Pixy to a Raspberry Pi</a>
+
+  <a href=http://cmucam.org/projects/cmucam5/wiki/Hooking_up_Pixy_to_a_Beaglebone_Black>Hooking up Pixy to a BeagleBone Black</a>
+
+  \section getting_help Getting Help
+
+  Tutorials, walkthroughs, and more are available on the Pixy wiki page:
+
+  <a href=http://www.cmucam.org/projects/cmucam5/wiki>Pixy Developer Wiki Page</a>
+
+  Our friendly developers and users might be able to answer your question on the forums:
+
+  <a href=http://www.cmucam.org/projects/cmucam5/boards/9>Pixy Software Discussion Forum</a>
+  
+  <a href=http://www.cmucam.org/projects/cmucam5/boards/8>Pixy Hardware Discussion Forum</a>
+
+*/
+
 // Pixy C API //
 
 extern "C" 
