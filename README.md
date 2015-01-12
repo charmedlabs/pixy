@@ -1,3 +1,7 @@
+libpixyusb API Reference:
+
+http://charmedlabs.github.io/pixy/index.html
+
 Pixy README
 
 This directory contains:
