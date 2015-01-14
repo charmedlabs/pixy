@@ -58,7 +58,7 @@ class LinkSPI
     
     uint16_t getWord()
     {
-      // ordering is different because Pixy is sending 16 bits through SPI 
+      // ordering is different (big endian) because Pixy is sending 16 bits through SPI 
       // instead of 2 bytes in a 16-bit word as with I2C
       uint16_t w;
       uint8_t c, cout = 0;

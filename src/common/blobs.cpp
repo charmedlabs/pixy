@@ -895,6 +895,7 @@ void Blobs::processCC()
     uint16_t scount, scount1, count = 0;
     int16_t left, right, top, bottom;
     uint16_t codedModel0, codedModel;
+    int32_t width, height, avgWidth, avgHeight;
     BlobB *codedBlob, *endBlobB;
     BlobA *blob0, *blob1, *endBlob;
     BlobA *blobs[MAX_COLOR_CODE_MODELS*2];
@@ -990,7 +991,7 @@ void Blobs::processCC()
             continue;
 
         // find left, right, top, bottom of color coded block
-        for (k=0, left=right=top=bottom=0; k<j; k++)
+        for (k=0, left=right=top=bottom=avgWidth=avgHeight=0; k<j; k++)
         {
             //DBG("* cc %x %d i %d: %d %d %d %d %d", blobs[k], m_numCCBlobs, k, blobs[k]->m_model, blobs[k]->m_left, blobs[k]->m_right, blobs[k]->m_top, blobs[k]->m_bottom);
             if (blobs[left]->m_left > blobs[k]->m_left)
@@ -1001,7 +1002,11 @@ void Blobs::processCC()
                 right = k;
             if (blobs[bottom]->m_bottom < blobs[k]->m_bottom)
                 bottom = k;
+            avgWidth += blobs[k]->m_right - blobs[k]->m_left;
+            avgHeight += blobs[k]->m_bottom - blobs[k]->m_top;
         }
+        avgWidth /= j;
+        avgHeight /= j;
         codedBlob->m_left = blobs[left]->m_left;
         codedBlob->m_right = blobs[right]->m_right;
         codedBlob->m_top = blobs[top]->m_top;
@@ -1009,7 +1014,12 @@ void Blobs::processCC()
 
 #if 1
         // is it more horizontal than vertical?
-        if (blobs[right]->m_right-blobs[left]->m_left > blobs[bottom]->m_bottom-blobs[top]->m_top)
+        width = (blobs[right]->m_right - blobs[left]->m_left)*100;
+        width /= avgWidth; // scale by average width because our swatches might not be square
+        height = (blobs[bottom]->m_bottom - blobs[top]->m_top)*100;
+        height /= avgHeight; // scale by average height because our swatches might not be square
+
+        if (width > height)
             sort(blobs, j, blobs[left], true);
         else
             sort(blobs, j, blobs[top], false);
