@@ -83,7 +83,7 @@ int PixyInterpreter::get_blocks(int max_blocks, Block * blocks)
   // Copy blocks //
   
   for (index = 0; index != number_of_blocks_to_copy; ++index) {
-    memcpy(&blocks[index], &blocks_[0], sizeof(Block));
+    memcpy(&blocks[index], &blocks_[index], sizeof(Block));
   }
 
   blocks_are_new_ = false;
@@ -271,7 +271,7 @@ void PixyInterpreter::add_normal_blocks(const BlobA * blocks, uint32_t count)
     block.height    = blocks[index].m_bottom - blocks[index].m_top;
     block.x         = blocks[index].m_left + block.width / 2;
     block.y         = blocks[index].m_top + block.height / 2;
-    
+
     // Angle is not a valid parameter for 'Normal'  //
     // signature types. Setting to zero by default. //
     block.angle     = 0;
