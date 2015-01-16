@@ -36,7 +36,7 @@ class ChirpReceiver : public Chirp
 
       @param[in] data  Incoming Chirp protocol data from Pixy.
     */
-    void handleXdata(void * data[]);
+    void handleXdata(const void * data[]);
 };
 
 #endif

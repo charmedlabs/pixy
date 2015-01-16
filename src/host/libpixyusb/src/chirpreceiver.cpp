@@ -24,7 +24,7 @@ ChirpReceiver::ChirpReceiver(USBLink * link, Interpreter * interpreter)
   setLink(link);
 }
 
-void ChirpReceiver::handleXdata(void * data[])
+void ChirpReceiver::handleXdata(const void * data[])
 {
   // Interpret (Chirp) messages from Pixy //
   interpreter_->interpret_data(data);

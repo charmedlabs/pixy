@@ -158,7 +158,7 @@ void PixyInterpreter::interpreter_thread()
 }
 
 
-void PixyInterpreter::interpret_data(void * chirp_data[])
+void PixyInterpreter::interpret_data(const void * chirp_data[])
 {
   uint8_t  chirp_message;
   uint32_t chirp_type;
@@ -171,8 +171,8 @@ void PixyInterpreter::interpret_data(void * chirp_data[])
       
       case CRP_TYPE_HINT:
         
-        chirp_type = * static_cast<uint32_t *>(chirp_data[0]);
-  
+        chirp_type = * static_cast<const uint32_t *>(chirp_data[0]);
+
         switch(chirp_type) {
 
           case FOURCC('B', 'A', '8', '1'):
@@ -206,16 +206,16 @@ void PixyInterpreter::interpret_data(void * chirp_data[])
   } 
 }
 
-void PixyInterpreter::interpret_CCB1(void * CCB1_data[])
+void PixyInterpreter::interpret_CCB1(const void * CCB1_data[])
 {
-  uint32_t   number_of_blobs;
-  BlobA    * blobs;
-  uint32_t   index;
+  uint32_t       number_of_blobs;
+  const BlobA *  blobs;
+  uint32_t       index;
   
   // Add blocks with normal signatures //
   
-  number_of_blobs = * static_cast<uint32_t *>(CCB1_data[3]);
-  blobs           = static_cast<BlobA *>(CCB1_data[4]);
+  number_of_blobs = * static_cast<const uint32_t *>(CCB1_data[3]);
+  blobs           = static_cast<const BlobA *>(CCB1_data[4]);
   
   number_of_blobs /= sizeof(BlobA) / sizeof(uint16_t);
   
@@ -223,17 +223,17 @@ void PixyInterpreter::interpret_CCB1(void * CCB1_data[])
 }
 
 
-void PixyInterpreter::interpret_CCB2(void * CCB2_data[])
+void PixyInterpreter::interpret_CCB2(const void * CCB2_data[])
 {
-  uint32_t   number_of_blobs;
-  BlobA    * A_blobs;
-  BlobB    * B_blobs;
-  uint32_t   index;
+  uint32_t       number_of_blobs;
+  const BlobA *  A_blobs;
+  const BlobB *  B_blobs;
+  uint32_t       index;
 
   // Add blocks with color code signatures //
 
-  number_of_blobs = * static_cast<uint32_t *>(CCB2_data[5]);
-  B_blobs         = static_cast<BlobB *>(CCB2_data[6]);
+  number_of_blobs = * static_cast<const uint32_t *>(CCB2_data[5]);
+  B_blobs         = static_cast<const BlobB *>(CCB2_data[6]);
   
   number_of_blobs /= sizeof(BlobB) / sizeof(uint16_t);
 
@@ -241,15 +241,15 @@ void PixyInterpreter::interpret_CCB2(void * CCB2_data[])
 
   // Add blocks with normal signatures //
 
-  number_of_blobs = * static_cast<uint32_t *>(CCB2_data[3]);
-  A_blobs         = static_cast<BlobA *>(CCB2_data[4]);
+  number_of_blobs = * static_cast<const uint32_t *>(CCB2_data[3]);
+  A_blobs         = static_cast<const BlobA *>(CCB2_data[4]);
   
   number_of_blobs /= sizeof(BlobA) / sizeof(uint16_t);
   
   add_normal_blocks(A_blobs, number_of_blobs);
 }
 
-void PixyInterpreter::add_normal_blocks(BlobA * blocks, uint32_t count)
+void PixyInterpreter::add_normal_blocks(const BlobA * blocks, uint32_t count)
 {
   uint32_t index;
   Block    block;
@@ -287,13 +287,13 @@ void PixyInterpreter::add_normal_blocks(BlobA * blocks, uint32_t count)
   }
 }
 
-void PixyInterpreter::add_color_code_blocks(BlobB * blocks, uint32_t count)
+void PixyInterpreter::add_color_code_blocks(const BlobB * blocks, uint32_t count)
 {
   uint32_t index;
   Block    block;
 
   for (index = 0; index != count; ++index) {
-    
+
     // Decode 'Color Code' Signature Type //
 
     block.type      = TYPE_COLOR_CODE;

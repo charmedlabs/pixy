@@ -20,7 +20,7 @@ class Interpreter
 {
   public:
 
-    virtual void interpret_data(void *data []) = 0;
+    virtual void interpret_data(const void *data []) = 0;
 };
 
 #endif
