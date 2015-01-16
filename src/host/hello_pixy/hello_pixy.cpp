@@ -119,6 +119,11 @@ int main(int argc, char * argv[])
 
   for(;;)
   {
+    // Wait for new blocks to be available //
+    while(!pixy_blocks_are_new()) {
+      usleep(10000);
+    }
+
     // Get blocks from Pixy //
     blocks_copied = pixy_get_blocks(BLOCK_BUFFER_SIZE, &blocks[0]);
 
@@ -128,6 +133,9 @@ int main(int argc, char * argv[])
       pixy_error(blocks_copied);
       usleep(250000);
     }
+
+    printf("-------------------------------\n");
+    fflush(stdout);
 
     // Display received blocks //
     for(index = 0; index != blocks_copied; ++index) {

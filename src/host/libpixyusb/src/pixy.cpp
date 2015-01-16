@@ -103,6 +103,11 @@ extern "C"
     return interpreter.get_blocks(max_blocks, blocks);
   }
 
+  int pixy_blocks_are_new()
+  {
+    return interpreter.blocks_are_new();
+  }
+
   int pixy_command(const char *name, ...)
   {
     va_list arguments;

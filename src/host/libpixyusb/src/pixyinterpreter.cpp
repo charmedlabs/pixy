@@ -84,9 +84,9 @@ int PixyInterpreter::get_blocks(int max_blocks, Block * blocks)
   
   for (index = 0; index != number_of_blocks_to_copy; ++index) {
     memcpy(&blocks[index], &blocks_[0], sizeof(Block));
-    blocks_.erase(blocks_.begin());
   }
 
+  blocks_are_new_ = false;
   blocks_access_mutex_.unlock();
 
   return number_of_blocks_to_copy;
@@ -254,6 +254,13 @@ void PixyInterpreter::add_normal_blocks(const BlobA * blocks, uint32_t count)
   uint32_t index;
   Block    block;
 
+  // Wait for permission to use blocks_ vector //
+  blocks_access_mutex_.lock();
+
+  // The blocks container will only contain the newest //
+  // blocks                                            //
+  blocks_.clear();
+
   for (index = 0; index != count; ++index) {
 
     // Decode CCB1 'Normal' Signature Type //
@@ -271,9 +278,6 @@ void PixyInterpreter::add_normal_blocks(const BlobA * blocks, uint32_t count)
       
     // Store new block in block buffer //
 
-    // Wait for permission to use blocks_ vector //
-    blocks_access_mutex_.lock();
-
     if (blocks_.size() == PIXY_BLOCK_CAPACITY) {
       // Blocks buffer is full - replace oldest received block with newest block //
       blocks_.erase(blocks_.begin());
@@ -282,15 +286,23 @@ void PixyInterpreter::add_normal_blocks(const BlobA * blocks, uint32_t count)
       // Add new block to blocks buffer //
       blocks_.push_back(block);
     }
-    
-    blocks_access_mutex_.unlock();
   }
+
+  blocks_are_new_ = true;
+  blocks_access_mutex_.unlock();
 }
 
 void PixyInterpreter::add_color_code_blocks(const BlobB * blocks, uint32_t count)
 {
   uint32_t index;
   Block    block;
+    
+  // Wait for permission to use blocks_ vector //
+  blocks_access_mutex_.lock();
+    
+  // The blocks container will only contain the newest //
+  // blocks                                            //
+  blocks_.clear();
 
   for (index = 0; index != count; ++index) {
 
@@ -303,11 +315,8 @@ void PixyInterpreter::add_color_code_blocks(const BlobB * blocks, uint32_t count
     block.x         = blocks[index].m_left + block.width / 2;
     block.y         = blocks[index].m_top + block.height / 2;
     block.angle     = blocks[index].m_angle;
-      
-    // Store new block in block buffer //
 
-    // Wait for permission to use blocks_ vector //
-    blocks_access_mutex_.lock();
+    // Store new block in block buffer //
 
     if (blocks_.size() == PIXY_BLOCK_CAPACITY) {
       // Blocks buffer is full - replace oldest received block with newest block //
@@ -317,7 +326,19 @@ void PixyInterpreter::add_color_code_blocks(const BlobB * blocks, uint32_t count
       // Add new block to blocks buffer //
       blocks_.push_back(block);
     }
-    
-    blocks_access_mutex_.unlock();
+  }
+
+  blocks_are_new_ = true;
+  blocks_access_mutex_.unlock();
+}
+
+int PixyInterpreter::blocks_are_new()
+{
+  if (blocks_are_new_) {
+    // Fresh blocks!! :D //
+    return 1;
+  } else {
+    // Stale blocks... :\ //
+    return 0;
   }
 }

@@ -52,6 +52,14 @@ class PixyInterpreter : public Interpreter
     */
     void close();
 
+   /**
+     @brief      Get status of the block data received from Pixy. 
+ 
+     @return  0  Stale Data: Block data has previously been retrieved using 'pixy_get_blocks()'.
+     @return  1  New Data: Pixy sent new data that has not been retrieve yet.
+   */
+    int blocks_are_new();
+
     /**
       @brief      Copies up to 'max_blocks' number of Blocks to the address pointed
                   to by 'blocks'. 
@@ -94,6 +102,7 @@ class PixyInterpreter : public Interpreter
     std::vector<Block> blocks_;
     boost::mutex       blocks_access_mutex_;
     boost::mutex       chirp_access_mutex_;
+    bool               blocks_are_new_;
 
     /**
       @brief  Interpreter thread entry point.
