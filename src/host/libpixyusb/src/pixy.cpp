@@ -6,7 +6,7 @@ PixyInterpreter interpreter;
 
 /** 
 
-  \mainpage libpixyusb-0.3 API Reference
+  \mainpage libpixyusb-0.4 API Reference
 
   \section introduction Introduction
 

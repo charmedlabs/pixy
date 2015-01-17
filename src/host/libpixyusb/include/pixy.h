@@ -52,10 +52,11 @@ extern "C"
   int pixy_init();
 
   /**
-    @brief      Get status of the block data received from Pixy.
+    @brief      Indicates when new block data from Pixy is received.
 
-    @return  0  Stale Data: Block data has previously been retrieved using 'pixy_get_blocks()'.
-    @return  1  New Data: Pixy sent new data that has not been retrieve yet.
+    @return  1  New Data:   Block data has been updated.
+    @return  0  Stale Data: Block data has not changed since pixy_get_blocks() was
+                            last called.
   */
   int pixy_blocks_are_new();
 
