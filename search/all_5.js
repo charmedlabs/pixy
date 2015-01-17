@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['libpixyusb_2d0_2e3_20api_20reference',['libpixyusb-0.3 API Reference',['../index.html',1,'']]]
+  ['libpixyusb_2d0_2e4_20api_20reference',['libpixyusb-0.4 API Reference',['../index.html',1,'']]]
 ];

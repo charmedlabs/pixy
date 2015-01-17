@@ -104,6 +104,9 @@ Functions</h2></td></tr>
 <tr class="memitem:ab4113dedad844bc189466552c75b47a0"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="pixy_8cpp.html#ab4113dedad844bc189466552c75b47a0">pixy_get_blocks</a> (uint16_t max_blocks, struct <a class="el" href="struct_block.html">Block</a> *blocks)</td></tr>
 <tr class="memdesc:ab4113dedad844bc189466552c75b47a0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Copies up to 'max_blocks' number of Blocks to the address pointed to by 'blocks'.  <a href="#ab4113dedad844bc189466552c75b47a0">More...</a><br/></td></tr>
 <tr class="separator:ab4113dedad844bc189466552c75b47a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2df93fdbd04ed434d281a4b9acfa0263"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="pixy_8cpp.html#a2df93fdbd04ed434d281a4b9acfa0263">pixy_blocks_are_new</a> ()</td></tr>
+<tr class="memdesc:a2df93fdbd04ed434d281a4b9acfa0263"><td class="mdescLeft">&#160;</td><td class="mdescRight">Indicates when new block data from Pixy is received.  <a href="#a2df93fdbd04ed434d281a4b9acfa0263">More...</a><br/></td></tr>
+<tr class="separator:a2df93fdbd04ed434d281a4b9acfa0263"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3d55779001cc649ed85be1a92f09892d"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="pixy_8cpp.html#a3d55779001cc649ed85be1a92f09892d">pixy_command</a> (const char *name,...)</td></tr>
 <tr class="memdesc:a3d55779001cc649ed85be1a92f09892d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Send a command to Pixy.  <a href="#a3d55779001cc649ed85be1a92f09892d">More...</a><br/></td></tr>
 <tr class="separator:a3d55779001cc649ed85be1a92f09892d"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -171,6 +174,28 @@ Variables</h2></td></tr>
 <tr class="separator:a612500174a41e385fbe50e504bc78729"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Function Documentation</h2>
+<a class="anchor" id="a2df93fdbd04ed434d281a4b9acfa0263"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int pixy_blocks_are_new </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Indicates when new block data from Pixy is received. </p>
+<dl class="section return"><dt>Returns</dt><dd>1 New Data: <a class="el" href="struct_block.html">Block</a> data has been updated. </dd>
+<dd>
+0 Stale Data: <a class="el" href="struct_block.html">Block</a> data has not changed since <a class="el" href="pixy_8h.html#ab4113dedad844bc189466552c75b47a0" title="Copies up to &#39;max_blocks&#39; number of Blocks to the address pointed to by &#39;blocks&#39;. ...">pixy_get_blocks()</a> was last called. </dd></dl>
+
+<p>Definition at line <a class="el" href="pixy_8cpp_source.html#l00106">106</a> of file <a class="el" href="pixy_8cpp_source.html">pixy.cpp</a>.</p>
+
+</div>
+</div>
 <a class="anchor" id="a80fe76de4eb898969b0921ce53d83a65"></a>
 <div class="memitem">
 <div class="memproto">
@@ -191,7 +216,7 @@ Variables</h2></td></tr>
 <dd>
 Negative Error </dd></dl>
 
-<p>Definition at line <a class="el" href="pixy_8cpp_source.html#l00247">247</a> of file <a class="el" href="pixy_8cpp_source.html">pixy.cpp</a>.</p>
+<p>Definition at line <a class="el" href="pixy_8cpp_source.html#l00252">252</a> of file <a class="el" href="pixy_8cpp_source.html">pixy.cpp</a>.</p>
 
 </div>
 </div>
@@ -215,7 +240,7 @@ Negative Error </dd></dl>
 <dd>
 Negative Error </dd></dl>
 
-<p>Definition at line <a class="el" href="pixy_8cpp_source.html#l00198">198</a> of file <a class="el" href="pixy_8cpp_source.html">pixy.cpp</a>.</p>
+<p>Definition at line <a class="el" href="pixy_8cpp_source.html#l00203">203</a> of file <a class="el" href="pixy_8cpp_source.html">pixy.cpp</a>.</p>
 
 </div>
 </div>
@@ -237,7 +262,7 @@ Negative Error </dd></dl>
 <dd>
 Negative Error </dd></dl>
 
-<p>Definition at line <a class="el" href="pixy_8cpp_source.html#l00311">311</a> of file <a class="el" href="pixy_8cpp_source.html">pixy.cpp</a>.</p>
+<p>Definition at line <a class="el" href="pixy_8cpp_source.html#l00316">316</a> of file <a class="el" href="pixy_8cpp_source.html">pixy.cpp</a>.</p>
 
 </div>
 </div>
@@ -277,7 +302,7 @@ Negative Error </dd></dl>
 <dd>
 Negative Error </dd></dl>
 
-<p>Definition at line <a class="el" href="pixy_8cpp_source.html#l00276">276</a> of file <a class="el" href="pixy_8cpp_source.html">pixy.cpp</a>.</p>
+<p>Definition at line <a class="el" href="pixy_8cpp_source.html#l00281">281</a> of file <a class="el" href="pixy_8cpp_source.html">pixy.cpp</a>.</p>
 
 </div>
 </div>
@@ -297,7 +322,7 @@ Negative Error </dd></dl>
 <p>Get pixy camera white balance() </p>
 <dl class="section return"><dt>Returns</dt><dd>Composite value for RGB white balance: white balance = green_value + (red_value &lt;&lt; 8) + (blue &lt;&lt; 16) </dd></dl>
 
-<p>Definition at line <a class="el" href="pixy_8cpp_source.html#l00214">214</a> of file <a class="el" href="pixy_8cpp_source.html">pixy.cpp</a>.</p>
+<p>Definition at line <a class="el" href="pixy_8cpp_source.html#l00219">219</a> of file <a class="el" href="pixy_8cpp_source.html">pixy.cpp</a>.</p>
 
 </div>
 </div>
@@ -326,7 +351,7 @@ Negative Error </dd></dl>
 <dd>
 Negative Error </dd></dl>
 
-<p>Definition at line <a class="el" href="pixy_8cpp_source.html#l00237">237</a> of file <a class="el" href="pixy_8cpp_source.html">pixy.cpp</a>.</p>
+<p>Definition at line <a class="el" href="pixy_8cpp_source.html#l00242">242</a> of file <a class="el" href="pixy_8cpp_source.html">pixy.cpp</a>.</p>
 
 </div>
 </div>
@@ -355,7 +380,7 @@ Negative Error </dd></dl>
 <dd>
 Negative Error </dd></dl>
 
-<p>Definition at line <a class="el" href="pixy_8cpp_source.html#l00188">188</a> of file <a class="el" href="pixy_8cpp_source.html">pixy.cpp</a>.</p>
+<p>Definition at line <a class="el" href="pixy_8cpp_source.html#l00193">193</a> of file <a class="el" href="pixy_8cpp_source.html">pixy.cpp</a>.</p>
 
 </div>
 </div>
@@ -384,7 +409,7 @@ Negative Error </dd></dl>
 <dd>
 Negative Error </dd></dl>
 
-<p>Definition at line <a class="el" href="pixy_8cpp_source.html#l00301">301</a> of file <a class="el" href="pixy_8cpp_source.html">pixy.cpp</a>.</p>
+<p>Definition at line <a class="el" href="pixy_8cpp_source.html#l00306">306</a> of file <a class="el" href="pixy_8cpp_source.html">pixy.cpp</a>.</p>
 
 </div>
 </div>
@@ -424,7 +449,7 @@ Negative Error </dd></dl>
 <dd>
 Negative Error </dd></dl>
 
-<p>Definition at line <a class="el" href="pixy_8cpp_source.html#l00263">263</a> of file <a class="el" href="pixy_8cpp_source.html">pixy.cpp</a>.</p>
+<p>Definition at line <a class="el" href="pixy_8cpp_source.html#l00268">268</a> of file <a class="el" href="pixy_8cpp_source.html">pixy.cpp</a>.</p>
 
 </div>
 </div>
@@ -471,7 +496,7 @@ Negative Error </dd></dl>
 <dd>
 Negative Error </dd></dl>
 
-<p>Definition at line <a class="el" href="pixy_8cpp_source.html#l00224">224</a> of file <a class="el" href="pixy_8cpp_source.html">pixy.cpp</a>.</p>
+<p>Definition at line <a class="el" href="pixy_8cpp_source.html#l00229">229</a> of file <a class="el" href="pixy_8cpp_source.html">pixy.cpp</a>.</p>
 
 </div>
 </div>
@@ -490,7 +515,7 @@ Negative Error </dd></dl>
 
 <p>Terminates connection with Pixy. </p>
 
-<p>Definition at line <a class="el" href="pixy_8cpp_source.html#l00120">120</a> of file <a class="el" href="pixy_8cpp_source.html">pixy.cpp</a>.</p>
+<p>Definition at line <a class="el" href="pixy_8cpp_source.html#l00125">125</a> of file <a class="el" href="pixy_8cpp_source.html">pixy.cpp</a>.</p>
 
 </div>
 </div>
@@ -527,7 +552,7 @@ Negative Error </dd></dl>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>-1 Error </dd></dl>
 
-<p>Definition at line <a class="el" href="pixy_8cpp_source.html#l00106">106</a> of file <a class="el" href="pixy_8cpp_source.html">pixy.cpp</a>.</p>
+<p>Definition at line <a class="el" href="pixy_8cpp_source.html#l00111">111</a> of file <a class="el" href="pixy_8cpp_source.html">pixy.cpp</a>.</p>
 
 </div>
 </div>
@@ -553,7 +578,7 @@ Negative Error </dd></dl>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="pixy_8cpp_source.html#l00127">127</a> of file <a class="el" href="pixy_8cpp_source.html">pixy.cpp</a>.</p>
+<p>Definition at line <a class="el" href="pixy_8cpp_source.html#l00132">132</a> of file <a class="el" href="pixy_8cpp_source.html">pixy.cpp</a>.</p>
 
 </div>
 </div>
@@ -648,7 +673,7 @@ PIXY_ERROR_INVALID_PARAMETER Invalid pararmeter specified </dd></dl>
 <dd>
 Negative Error </dd></dl>
 
-<p>Definition at line <a class="el" href="pixy_8cpp_source.html#l00371">371</a> of file <a class="el" href="pixy_8cpp_source.html">pixy.cpp</a>.</p>
+<p>Definition at line <a class="el" href="pixy_8cpp_source.html#l00376">376</a> of file <a class="el" href="pixy_8cpp_source.html">pixy.cpp</a>.</p>
 
 </div>
 </div>
@@ -698,7 +723,7 @@ PIXY_ERROR_USB_NO_DEVICE USB Error: No device </dd></dl>
 <dd>
 Negative Error </dd></dl>
 
-<p>Definition at line <a class="el" href="pixy_8cpp_source.html#l00172">172</a> of file <a class="el" href="pixy_8cpp_source.html">pixy.cpp</a>.</p>
+<p>Definition at line <a class="el" href="pixy_8cpp_source.html#l00177">177</a> of file <a class="el" href="pixy_8cpp_source.html">pixy.cpp</a>.</p>
 
 </div>
 </div>
@@ -727,7 +752,7 @@ Negative Error </dd></dl>
 <dd>
 Negative Error </dd></dl>
 
-<p>Definition at line <a class="el" href="pixy_8cpp_source.html#l00162">162</a> of file <a class="el" href="pixy_8cpp_source.html">pixy.cpp</a>.</p>
+<p>Definition at line <a class="el" href="pixy_8cpp_source.html#l00167">167</a> of file <a class="el" href="pixy_8cpp_source.html">pixy.cpp</a>.</p>
 
 </div>
 </div>
@@ -774,7 +799,7 @@ Negative Error </dd></dl>
 <dd>
 Negative Error </dd></dl>
 
-<p>Definition at line <a class="el" href="pixy_8cpp_source.html#l00148">148</a> of file <a class="el" href="pixy_8cpp_source.html">pixy.cpp</a>.</p>
+<p>Definition at line <a class="el" href="pixy_8cpp_source.html#l00153">153</a> of file <a class="el" href="pixy_8cpp_source.html">pixy.cpp</a>.</p>
 
 </div>
 </div>
@@ -803,7 +828,7 @@ Negative Error </dd></dl>
 <dd>
 Negative Error </dd></dl>
 
-<p>Definition at line <a class="el" href="pixy_8cpp_source.html#l00327">327</a> of file <a class="el" href="pixy_8cpp_source.html">pixy.cpp</a>.</p>
+<p>Definition at line <a class="el" href="pixy_8cpp_source.html#l00332">332</a> of file <a class="el" href="pixy_8cpp_source.html">pixy.cpp</a>.</p>
 
 </div>
 </div>
@@ -829,7 +854,7 @@ Negative Error </dd></dl>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="pixy_8cpp_source.html#l00357">357</a> of file <a class="el" href="pixy_8cpp_source.html">pixy.cpp</a>.</p>
+<p>Definition at line <a class="el" href="pixy_8cpp_source.html#l00362">362</a> of file <a class="el" href="pixy_8cpp_source.html">pixy.cpp</a>.</p>
 
 </div>
 </div>
@@ -869,7 +894,7 @@ Negative Error </dd></dl>
 <dd>
 Negative Error </dd></dl>
 
-<p>Definition at line <a class="el" href="pixy_8cpp_source.html#l00343">343</a> of file <a class="el" href="pixy_8cpp_source.html">pixy.cpp</a>.</p>
+<p>Definition at line <a class="el" href="pixy_8cpp_source.html#l00348">348</a> of file <a class="el" href="pixy_8cpp_source.html">pixy.cpp</a>.</p>
 
 </div>
 </div>
@@ -919,7 +944,7 @@ Negative Error </dd></dl>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sun Jan 11 2015 18:38:31 by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jan 16 2015 20:45:52 by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

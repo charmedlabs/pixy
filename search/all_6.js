@@ -2,6 +2,7 @@ var searchData=
 [
   ['pixy_2ecpp',['pixy.cpp',['../pixy_8cpp.html',1,'']]],
   ['pixy_2eh',['pixy.h',['../pixy_8h.html',1,'']]],
+  ['pixy_5fblocks_5fare_5fnew',['pixy_blocks_are_new',['../pixy_8h.html#a2df93fdbd04ed434d281a4b9acfa0263',1,'pixy_blocks_are_new():&#160;pixy.cpp'],['../pixy_8cpp.html#a2df93fdbd04ed434d281a4b9acfa0263',1,'pixy_blocks_are_new():&#160;pixy.cpp']]],
   ['pixy_5fcam_5fget_5fauto_5fexposure_5fcompensation',['pixy_cam_get_auto_exposure_compensation',['../pixy_8h.html#a80fe76de4eb898969b0921ce53d83a65',1,'pixy_cam_get_auto_exposure_compensation():&#160;pixy.cpp'],['../pixy_8cpp.html#a80fe76de4eb898969b0921ce53d83a65',1,'pixy_cam_get_auto_exposure_compensation():&#160;pixy.cpp']]],
   ['pixy_5fcam_5fget_5fauto_5fwhite_5fbalance',['pixy_cam_get_auto_white_balance',['../pixy_8h.html#a3eb84125292a5bf39f63e8a9378ba5ad',1,'pixy_cam_get_auto_white_balance():&#160;pixy.cpp'],['../pixy_8cpp.html#a3eb84125292a5bf39f63e8a9378ba5ad',1,'pixy_cam_get_auto_white_balance():&#160;pixy.cpp']]],
   ['pixy_5fcam_5fget_5fbrightness',['pixy_cam_get_brightness',['../pixy_8h.html#a9fda296a7a69f42625faf2e675b762ae',1,'pixy_cam_get_brightness():&#160;pixy.cpp'],['../pixy_8cpp.html#a9fda296a7a69f42625faf2e675b762ae',1,'pixy_cam_get_brightness():&#160;pixy.cpp']]],
