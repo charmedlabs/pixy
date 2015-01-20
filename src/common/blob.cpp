@@ -321,7 +321,7 @@ int CBlobAssembler::Add(const SSegment &segment) {
     CBlob *newBlob= new (std::nothrow) CBlob();
     if (newBlob==NULL)
     {
-        DBG("blobs %d\nheap full", m_blobCount);
+//        DBG("blobs %d\nheap full", m_blobCount);
         return -1;
     }
     m_blobCount++;
