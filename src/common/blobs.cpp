@@ -14,9 +14,10 @@
 //
 
 #ifndef PIXY
-#include "debug.h"
+#include "debuglog.h"
 #endif
 #include "blobs.h"
+#include "../host/pixymon/debug.h"
 
 #define CC_SIGNATURE(s) (m_ccMode==CC_ONLY || m_clut.getType(s)==CL_MODEL_TYPE_COLORCODE)
 
@@ -777,8 +778,8 @@ bool Blobs::analyzeDistances(BlobA *blobs0[], int16_t numBlobs0, BlobA *blobs[],
         }
     }
 #ifndef PIXY
-//    if (!result)
-//        DBG("not set!");
+    if (!result)
+        DBG("not set!");
 #endif
     return result;
 }
@@ -827,8 +828,8 @@ void Blobs::cleanup(BlobA *blobs[], int16_t *numBlobs)
         if (lowerArea<=maxEqualArea && maxEqualArea<=upperArea)
             newBlobs[numNewBlobs++] = blobs[i];
 #ifndef PIXY
-//        else if (*numBlobs>=5 && (blobs[i]->m_model&0x07)==2)
-//            DBG("eliminated!");
+        else if (*numBlobs>=5 && (blobs[i]->m_model&0x07)==2)
+            DBG("eliminated!");
 #endif
     }
 
@@ -873,8 +874,8 @@ void Blobs::printBlobs()
 #ifndef PIXY
     int i;
     BlobA *blobs = (BlobA *)m_blobs;
-//    for (i=0; i<m_numBlobs; i++)
-//        DBG("blob %d: %d %d %d %d %d", i, blobs[i].m_model, blobs[i].m_left, blobs[i].m_right, blobs[i].m_top, blobs[i].m_bottom);
+    for (i=0; i<m_numBlobs; i++)
+        DBG("blob %d: %d %d %d %d %d", i, blobs[i].m_model, blobs[i].m_left, blobs[i].m_right, blobs[i].m_top, blobs[i].m_bottom);
 #endif
 }
 
