@@ -19,9 +19,10 @@
 #include "exec.h"
 #else
 #include "pixymon.h"
-#include "debug.h"
+#include "debuglog.h"
 #endif
 #include <blob.h>
+#include "../host/pixymon/debug.h"
 
 #ifdef DEBUG
 #ifndef HOST

@@ -14,9 +14,10 @@
 //
 
 #ifndef PIXY
-#include "debug.h"
+#include "debuglog.h"
 #endif
 #include "blobs.h"
+#include "../host/pixymon/debug.h"
 
 #define CC_SIGNATURE(s) (m_ccMode==CC_ONLY || m_clut.getType(s)==CL_MODEL_TYPE_COLORCODE)
 

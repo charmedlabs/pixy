@@ -96,7 +96,7 @@ win32 {
     LIBS += ../windows/libusb-1.0.dll.a
     HEADERS += ../windows/libusb.h
     INCLUDEPATH += ../windows
-
+    QMAKE_CXXFLAGS += -mno-ms-bitfields
 }
 
 macx {

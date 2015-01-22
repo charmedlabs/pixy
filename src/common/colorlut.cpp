@@ -17,7 +17,7 @@
 #include <math.h>
 #include <string.h>
 #ifndef PIXY
-#include "debug.h"
+#include "debuglog.h"
 #endif
 #include "colorlut.h"
 #include "calc.h"
