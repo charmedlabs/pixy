@@ -37,7 +37,7 @@
 
 #define PIXY_SYNC_BYTE              0x5a
 #define PIXY_SYNC_BYTE_DATA         0x5b
-#define PIXY_OUTBUF_SIZE            6
+#define PIXY_OUTBUF_SIZE            64
 
 class LinkSPI
 {
@@ -45,6 +45,8 @@ class LinkSPI
     void init()
     {
       outLen = 0;
+      outWriteIndex = 0;
+      outReadIndex = 0;
       SPI.begin();
 
       #ifdef __SAM3X8E__
@@ -66,9 +68,10 @@ class LinkSPI
       if (outLen)
       {
         w = SPI.transfer(PIXY_SYNC_BYTE_DATA);
-        cout = outBuf[outIndex++];
-        if (outIndex==outLen)
-          outLen = 0; 
+        cout = outBuf[outReadIndex++];
+        outLen--;
+        if (outReadIndex==PIXY_OUTBUF_SIZE)
+          outReadIndex = 0;
       }
       else
         w = SPI.transfer(PIXY_SYNC_BYTE);
@@ -86,24 +89,32 @@ class LinkSPI
     
     int8_t send(uint8_t *data, uint8_t len)
     {
-      if (len>PIXY_OUTBUF_SIZE || outLen!=0)
+      int i;
+
+      // check to see if we have enough space in our circular queue
+      if (outLen+len>PIXY_OUTBUF_SIZE)
         return -1;
-      memcpy(outBuf, data, len);
-      outLen = len;
-      outIndex = 0;
+
+      outLen += len;
+      for (i=0; i<len; i++)
+      {
+        outBuf[outWriteIndex++] = data[i];
+        if (outWriteIndex==PIXY_OUTBUF_SIZE)
+          outWriteIndex = 0;
+      }
       return len;
     }
 
     void setAddress(uint8_t addr)
     {
-      addr_ = addr;
     }
 
   private:
+	// we need a little circular queue for outputting data
     uint8_t outBuf[PIXY_OUTBUF_SIZE];
     uint8_t outLen;
-    uint8_t outIndex;
-    uint8_t addr_;
+    uint8_t outWriteIndex;
+    uint8_t outReadIndex;
 };
 
 

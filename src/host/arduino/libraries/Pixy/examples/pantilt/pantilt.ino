@@ -16,8 +16,8 @@
 #include <SPI.h>  
 #include <Pixy.h>
 
-#define X_CENTER    160L
-#define Y_CENTER    100L
+#define X_CENTER        160L
+#define Y_CENTER        100L
 #define RCS_MIN_POS     0L
 #define RCS_MAX_POS     1000L
 #define RCS_CENTER_POS	((RCS_MAX_POS-RCS_MIN_POS)/2)
@@ -61,8 +61,6 @@ void ServoLoop::update(int32_t error)
       m_pos = RCS_MAX_POS; 
     else if (m_pos<RCS_MIN_POS) 
       m_pos = RCS_MIN_POS;
-
-    //cprintf("%d %d %d\n", m_axis, m_pos, vel);
   }
   m_prevError = error;
 }
@@ -100,7 +98,9 @@ void loop()
     
     i++;
     
-    if (i%50==0)
+    // do this (print) every 50 frames because printing every
+    // frame would bog down the Arduino
+    if (i%50==0) 
     {
       sprintf(buf, "Detected %d:\n", blocks);
       Serial.print(buf);

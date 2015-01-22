@@ -34,9 +34,9 @@
      <string>File</string>
     </property>
     <addaction name="actionConfigure"/>
-    <addaction name="actionSave_Image"/>
     <addaction name="actionSave_Pixy_parameters"/>
     <addaction name="actionLoad_Pixy_parameters"/>
+    <addaction name="actionSave_Image"/>
     <addaction name="actionExit"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
@@ -81,7 +81,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Save Image...</string>
+    <string>Save Image</string>
    </property>
   </action>
   <action name="actionPlay_Pause">
