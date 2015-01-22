@@ -84,7 +84,6 @@ INCLUDEPATH += ../../common
 
 QMAKE_CXXFLAGS_DEBUG += -O0
 QMAKE_CXXFLAGS += -Wno-unused-parameter
-QMAKE_CXXFLAGS += -mno-ms-bitfields
 FORMS    += mainwindow.ui \
     configdialog.ui \
     about.ui
@@ -93,6 +92,7 @@ FORMS    += mainwindow.ui \
 
 win32 {
     DEFINES += __WINDOWS__
+    QMAKE_CXXFLAGS += -mno-ms-bitfields
     LIBS += ../windows/libusb-1.0.dll.a
     HEADERS += ../windows/libusb.h
     INCLUDEPATH += ../windows

@@ -472,7 +472,7 @@ void MainWindow::on_actionAbout_triggered()
             "to <a href=\"mailto:support@charmedlabs.com\">support@charmedlabs.com</a>. "
             "Additional information can be found <a href=\"http://charmedlabs.com/pixy\">here</a> "
             "and <a href=\"http://charmedlabs.com/pixywiki\">here</a>.<br><br>"
-            "Thanks for supporting our little Pixy!";
+            "Thanks for supporting our little guy!";
 
     about = new AboutDialog(contents);
     about->setAttribute(Qt::WA_DeleteOnClose);
