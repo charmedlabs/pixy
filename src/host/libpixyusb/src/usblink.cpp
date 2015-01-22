@@ -18,7 +18,7 @@
 #include "usblink.h"
 #include "pixy.h"
 #include "utils/timer.hpp"
-#include "debug.h"
+#include "debuglog.h"
 
 USBLink::USBLink()
 {
