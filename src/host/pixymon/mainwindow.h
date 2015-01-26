@@ -98,6 +98,7 @@ private:
     Ui::MainWindow *m_ui;
 
     QString m_firmwareFile;
+    QString m_argvFirmwareFile;
     QString m_initScript;
     bool m_versionIncompatibility;
     QSettings *m_settings;

@@ -119,8 +119,8 @@ void MainWindow::parseCommandline(int argc, char *argv[])
         if (!strcmp("-firmware", argv[i]) && i+1<argc)
         {
             i++;
-            m_firmwareFile = argv[i];
-            m_firmwareFile.remove(QRegExp("[\"']"));
+            m_argvFirmwareFile = argv[i];
+            m_argvFirmwareFile.remove(QRegExp("[\"']"));
         }
         else if (!strcmp("-initscript", argv[i]) && i+1<argc)
         {
@@ -298,7 +298,9 @@ void MainWindow::connectPixy(bool state)
             if (m_pixyDFUConnected) // we're in programming mode
             {
                 m_flash = new Flash();
-                if (m_firmwareFile!="")
+                if (m_argvFirmwareFile!="")
+                    program(m_argvFirmwareFile);
+                else if (m_firmwareFile!="")
                 {
                     program(m_firmwareFile);
                     m_firmwareFile = "";

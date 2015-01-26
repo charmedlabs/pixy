@@ -201,6 +201,8 @@ void Interpreter::printHelp()
 
 QStringList Interpreter::parseScriptlet(const QString &scriptlet)
 {
+    if (scriptlet.contains(QString("\\") + "n"))
+        return scriptlet.split(QString("\\") + "n", QString::SkipEmptyParts);
     return scriptlet.split(QRegExp("[\\n]"), QString::SkipEmptyParts);
 }
 
