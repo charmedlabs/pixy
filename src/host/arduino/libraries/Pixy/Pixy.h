@@ -37,16 +37,59 @@
 
 #define PIXY_SYNC_BYTE              0x5a
 #define PIXY_SYNC_BYTE_DATA         0x5b
-#define PIXY_OUTBUF_SIZE            64
+#define PIXY_BUF_SIZE               16
+
+template <class BufType> struct CircularQ
+{
+  CircularQ()
+  {
+    len = 0;
+	writeIndex = 0;
+	readIndex = 0;
+  }
+  
+  bool read(BufType *c)
+  {
+    if (len)
+	{
+      *c = buf[readIndex++];
+      len--;
+      if (readIndex==PIXY_BUF_SIZE)
+        readIndex = 0;
+	  return true;
+	}
+	else
+	  return false;
+  }
+  
+  uint8_t freeLen()
+  {
+    return PIXY_BUF_SIZE-len;
+  } 
+  
+  bool write(BufType c)
+  {
+    if (freeLen()==0)
+      return false;
+
+    buf[writeIndex++] = c;
+	len++;
+    if (writeIndex==PIXY_BUF_SIZE)
+      writeIndex = 0;
+    return true;
+  }
+
+    BufType buf[PIXY_BUF_SIZE];
+    uint8_t len;
+    uint8_t writeIndex;
+    uint8_t readIndex;
+};
 
 class LinkSPI
 {
   public:
     void init()
     {
-      outLen = 0;
-      outWriteIndex = 0;
-      outReadIndex = 0;
       SPI.begin();
 
       #ifdef __SAM3X8E__
@@ -58,28 +101,16 @@ class LinkSPI
       #endif
     }
     
-    uint16_t getWord()
+	uint16_t getWord()
     {
       // ordering is different (big endian) because Pixy is sending 16 bits through SPI 
       // instead of 2 bytes in a 16-bit word as with I2C
       uint16_t w;
-      uint8_t c, cout = 0;
 
-      if (outLen)
-      {
-        w = SPI.transfer(PIXY_SYNC_BYTE_DATA);
-        cout = outBuf[outReadIndex++];
-        outLen--;
-        if (outReadIndex==PIXY_OUTBUF_SIZE)
-          outReadIndex = 0;
-      }
-      else
-        w = SPI.transfer(PIXY_SYNC_BYTE);
-      w <<= 8;
-      c = SPI.transfer(cout);
-      w |= c;
-
-      return w;
+	  if (inQ.read(&w))
+	    return w;
+		
+	  return getWordHw();
     }
 
     uint8_t getByte()
@@ -92,16 +123,12 @@ class LinkSPI
       int i;
 
       // check to see if we have enough space in our circular queue
-      if (outLen+len>PIXY_OUTBUF_SIZE)
+      if (outQ.freeLen()<len)
         return -1;
 
-      outLen += len;
       for (i=0; i<len; i++)
-      {
-        outBuf[outWriteIndex++] = data[i];
-        if (outWriteIndex==PIXY_OUTBUF_SIZE)
-          outWriteIndex = 0;
-      }
+		outQ.write(data[i]);
+	  flushSend();
       return len;
     }
 
@@ -110,11 +137,38 @@ class LinkSPI
     }
 
   private:
-	// we need a little circular queue for outputting data
-    uint8_t outBuf[PIXY_OUTBUF_SIZE];
-    uint8_t outLen;
-    uint8_t outWriteIndex;
-    uint8_t outReadIndex;
+    uint16_t getWordHw()
+    {
+      // ordering is different (big endian) because Pixy is sending 16 bits through SPI 
+      // instead of 2 bytes in a 16-bit word as with I2C
+      uint16_t w;
+      uint8_t c, cout = 0;
+		
+	  if (outQ.read(&cout))
+        w = SPI.transfer(PIXY_SYNC_BYTE_DATA);
+      else
+        w = SPI.transfer(PIXY_SYNC_BYTE);
+		
+      w <<= 8;
+      c = SPI.transfer(cout);
+      w |= c;
+
+      return w;
+    }
+
+	void flushSend()
+    {
+      uint16_t w;
+      while(outQ.len)
+      {
+        w = getWordHw();
+		inQ.write(w);
+	  }
+	}
+	
+	// we need a little circular queues for both directions
+	CircularQ<uint8_t> outQ;
+	CircularQ<uint16_t> inQ;
 };
 
 

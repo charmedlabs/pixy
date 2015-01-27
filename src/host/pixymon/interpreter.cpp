@@ -201,9 +201,11 @@ void Interpreter::printHelp()
 
 QStringList Interpreter::parseScriptlet(const QString &scriptlet)
 {
-    if (scriptlet.contains(QString("\\") + "n"))
+    if (scriptlet.contains(QString("\\") + "n")) // this is comming from the commandline -- we are looking for
+        // the backslash followed by the n character, which the c-compiler will always substitute CR character
         return scriptlet.split(QString("\\") + "n", QString::SkipEmptyParts);
-    return scriptlet.split(QRegExp("[\\n]"), QString::SkipEmptyParts);
+    else
+        return scriptlet.split(QRegExp("[\\n]"), QString::SkipEmptyParts);
 }
 
 QStringList Interpreter::getSections(const QString &id, const QString &string)

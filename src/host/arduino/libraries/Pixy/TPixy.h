@@ -253,5 +253,4 @@ template <class LinkType> int8_t TPixy<LinkType>::setLED(uint8_t r, uint8_t g, u
   return link.send(outBuf, 5);
 }
 
-
 #endif
