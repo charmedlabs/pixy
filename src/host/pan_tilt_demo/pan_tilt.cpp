@@ -32,13 +32,15 @@
 #define RCS_TILT_CHANNEL          1
 
 // PID control parameters //
-#define PAN_PROPORTIONAL_GAIN     300
-#define PAN_DERIVATIVE_GAIN       500
+#define PAN_PROPORTIONAL_GAIN     400
+#define PAN_DERIVATIVE_GAIN       300
 #define TILT_PROPORTIONAL_GAIN    500
-#define TILT_DERIVATIVE_GAIN      700
+#define TILT_DERIVATIVE_GAIN      400
 
 // Pixy Block Buffer //
 struct Block  blocks [BLOCK_BUFFER_SIZE];
+
+static bool run_flag = true;
 
 struct Gimbal {
   int32_t position;
@@ -63,8 +65,7 @@ void handle_SIGINT(int unused)
 {
   // On CTRL+C - abort! //
 
-  printf("\nBye!\n");
-  exit(0);
+  run_flag = false;
 }
 
 void gimbal_update(struct Gimbal *  gimbal, int32_t error)
@@ -99,6 +100,11 @@ void gimbal_update(struct Gimbal *  gimbal, int32_t error)
 int main(int argc, char *  argv[])
 {
   int pixy_init_status;
+  char buf[128];
+  int res, i=0;
+
+  // Catch CTRL+C (SIGINT) signals //
+  signal(SIGINT, handle_SIGINT);
 
   // Connect to Pixy //
   pixy_init_status = pixy_init();
@@ -113,38 +119,15 @@ int main(int argc, char *  argv[])
     return pixy_init_status;
   }
 
-  // Request Pixy firmware version //
-  {
-    uint16_t major;
-    uint16_t minor;
-    uint16_t build;
-    int      return_value;
-
-    return_value = pixy_get_firmware_version(&major, &minor, &build);
-
-    if (return_value) {
-      // Error //
-      printf("Failed to retrieve Pixy firmware version. ");
-      pixy_error(return_value);
-
-      return return_value;
-    } else {
-      // Success //
-      printf(" Pixy Firmware Version: %d.%d.%d\n", major, minor, build);
-    }
-  }
-
-  for(;;) {
+ 
+  while(run_flag) {
     int32_t pan_error;
     int32_t tilt_error;
     int     blocks_copied;
 
     // Wait for new blocks to be available //
 
-    while(!pixy_blocks_are_new()) {
-      usleep(10000);
-      printf(".");
-    }
+    while(!pixy_blocks_are_new());
 
     // Get blocks from Pixy //
 
@@ -154,7 +137,6 @@ int main(int argc, char *  argv[])
       // Error: pixy_get_blocks //
       printf("pixy_get_blocks(): ");
       pixy_error(blocks_copied);
-      usleep(250000);
     }
 
     // Calculate the difference between the   //
@@ -170,19 +152,16 @@ int main(int argc, char *  argv[])
     gimbal_update(&pan, pan_error);
     gimbal_update(&tilt, tilt_error);
 
-    // XXX XXX DEBUG XXX XXX //
-    // XXX XXX DEBUG XXX XXX //
-    printf("p:%4d t:%4d -- pErr:%5d tErr:%5d\n",
-           pan.position,
-           tilt.position,
-           pan_error,
-           tilt_error);
-    // XXX XXX DEBUG XXX XXX //
-    // XXX XXX DEBUG XXX XXX //
-
-    printf("[p:%d]\n", pixy_rcs_set_position(RCS_PAN_CHANNEL, pan.position));
-    usleep(100000);
-    printf("[t:%d]\n", pixy_rcs_set_position(RCS_TILT_CHANNEL, tilt.position));
-    usleep(100000);
+#if 1
+    res = pixy_rcs_set_position(RCS_PAN_CHANNEL, pan.position);
+    if (res<0)
+      printf("pan position error %d\n", res);
+    res = pixy_rcs_set_position(RCS_TILT_CHANNEL, tilt.position);
+    if (res<0)
+      printf("tilt position error %d\n", res);
+#endif    
+    blocks[0].print(buf);
+    printf("%d: %s", i++, buf);
   }
+  pixy_close();
 }

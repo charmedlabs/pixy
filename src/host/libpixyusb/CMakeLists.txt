@@ -7,7 +7,7 @@ set (Boost_USE_STATIC_LIBS OFF)
 set (Boost_USE_MULTITHREADED ON)
 
 find_package ( libusb-1.0 REQUIRED )
-find_package ( Boost 1.49 COMPONENTS thread system chrono REQUIRED)
+find_package ( Boost 1.49 COMPONENTS thread system REQUIRED)
 
 # Define Operating System #
 
