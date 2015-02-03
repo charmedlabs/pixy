@@ -118,13 +118,10 @@ static bool g_dirty = false;
 
 static SimpleVector<Shadow> g_shadowTable;
 
-static uint16_t g_mnumber;
-
-int prm_init(Chirp *chirp, uint16_t mnumber)
+int prm_init(Chirp *chirp)
 {
+#if 0
 	int i, count;
-	g_mnumber = mnumber;
-
 	// check integrity
 	if (!prm_verifyAll()) 
 	{
@@ -139,6 +136,7 @@ int prm_init(Chirp *chirp, uint16_t mnumber)
 		if (count==0)
 			prm_format();
 	} 
+#endif
 
 	chirp->registerModule(g_module);
 		
@@ -277,7 +275,7 @@ uint16_t prm_crc(const ParamRecord *rec)
 	if (crc==0xffff)
 		crc = 0;
 
-	return crc + g_mnumber;
+	return crc;
 }
 
 ParamRecord *prm_find(const char *id, uint8_t *buf=NULL)
