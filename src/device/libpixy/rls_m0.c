@@ -891,7 +891,7 @@ int32_t getRLSFrame(uint32_t *m0Mem, uint32_t *lut)
 		{
 			frameEnd.m_col = 0xfffe;
 			qq_enqueue(&frameEnd);
-			printf("*\n");
+			//printf("*\n");
 			return -1;
 		} 
 		qq_enqueue(&lineBegin); 

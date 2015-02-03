@@ -15,7 +15,10 @@
 
 #ifndef PIXY
 #include "debug.h"
+#else
+#include "pixy_init.h"
 #endif
+
 #include "blobs.h"
 
 #define CC_SIGNATURE(s) (m_ccMode==CC_ONLY || m_clut.getType(s)==CL_MODEL_TYPE_COLORCODE)
@@ -102,7 +105,7 @@ int Blobs::handleSegment(uint8_t signature, uint16_t row, uint16_t startCol, uin
 // 4: bottom Y edge
 int Blobs::runlengthAnalysis()
 {
-    int32_t row = -1;
+    int32_t row=-1, icount=0;
     uint32_t startCol, sig, prevSig, prevStartCol, segmentStartCol, segmentEndCol, segmentSig=0;
     bool merge;
     Qval qval;
@@ -132,6 +135,12 @@ int Blobs::runlengthAnalysis()
             row++;
 #ifndef PIXY
             m_qvals[m_numQvals++] = 0;
+#else
+			if (icount++==5) // an interleave of every 5 lines or about every 175us seems good
+			{
+				g_chirpUsb->service();
+				icount = 0;
+			}
 #endif
             continue;
         }

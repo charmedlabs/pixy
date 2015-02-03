@@ -320,7 +320,7 @@ int ColorLUT::generateLUT()
 
     // recalc bounds for each signature
     for (r=0; r<CL_NUM_SIGNATURES; r++)
-        updateSignature(r);
+        updateSignature(r+1);
 
     for (r=0; r<1<<8; r+=1<<(8-CL_LUT_COMPONENT_SCALE))
     {

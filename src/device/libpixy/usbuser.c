@@ -216,15 +216,28 @@ void testWrite()
 void USB_EndPoint2 (uint32_t event) {
 
   switch (event) {
+#if 0
      case USB_EVT_OUT_NAK:
       //bulkOutNak();
       break;
+	case USB_EVT_IN_NAK:
+	  break;		
+#endif
     case USB_EVT_OUT:
 	  recvChunk();
       break;
     case USB_EVT_IN:  // this gets called upon completion
 	  sendChunk();
       break;
+#if 0
+	default:
+	  printf("* %d\n", event);
+	  USB_ClrStallEP(USB_BULK_OUT_EP);
+	  USB_ResetEP(USB_BULK_OUT_EP);
+	  USB_ClrStallEP(USB_BULK_IN_EP);
+	  USB_ResetEP(USB_BULK_IN_EP);
+	  break;		
+#endif
   }
 }
 
@@ -364,7 +377,7 @@ void recvChunk(void)
 	USB_ReadReqEP(USB_BULK_OUT_EP, (uint8_t *)g_recvData + g_recvOffset, chunk);
 
 	g_recvOffset += chunk;
-}
+}								 
 
 void USB_Send(const uint8_t *data, uint32_t len)
 {
