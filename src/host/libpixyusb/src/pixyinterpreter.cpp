@@ -128,7 +128,7 @@ int PixyInterpreter::send_command(const char * name, va_list args)
   procedure_id = receiver_->getProc(name);
 
   // Was there an error requesting procedure id? //
-  if (procedure_id == -1) {
+  if (procedure_id < 0) {
     // Request error //
     va_end(arguments);
     return PIXY_ERROR_INVALID_COMMAND;
@@ -147,7 +147,6 @@ int PixyInterpreter::send_command(const char * name, va_list args)
 void PixyInterpreter::interpreter_thread()
 {
   thread_dead_ = false;
-
   // Read from Pixy USB connection using the Chirp //
   // protocol until we're told to stop.            //
   while(!thread_die_) {
@@ -158,7 +157,7 @@ void PixyInterpreter::interpreter_thread()
 
     // Mutual exclusion for receiver_ object (Unlock) //
     chirp_access_mutex_.unlock();
-    usleep(1000);
+    usleep(15000); // wait for 15ms, ie give time for 
   }
 
   thread_dead_ = true;

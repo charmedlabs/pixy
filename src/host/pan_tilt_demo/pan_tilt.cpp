@@ -126,7 +126,6 @@ int main(int argc, char *  argv[])
     int     blocks_copied;
 
     // Wait for new blocks to be available //
-
     while(!pixy_blocks_are_new());
 
     // Get blocks from Pixy //
@@ -152,16 +151,15 @@ int main(int argc, char *  argv[])
     gimbal_update(&pan, pan_error);
     gimbal_update(&tilt, tilt_error);
 
-#if 1
     res = pixy_rcs_set_position(RCS_PAN_CHANNEL, pan.position);
     if (res<0)
-      printf("pan position error %d\n", res);
+      printf("Pan position error %d\n", res);
     res = pixy_rcs_set_position(RCS_TILT_CHANNEL, tilt.position);
     if (res<0)
-      printf("tilt position error %d\n", res);
-#endif    
+      printf("Tilt position error %d\n", res);
+
     blocks[0].print(buf);
-    printf("%d: %s", i++, buf);
+    printf("frame %d: %s", i++, buf);
   }
   pixy_close();
 }

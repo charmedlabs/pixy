@@ -134,7 +134,7 @@ int USBLink::receive(uint8_t *data, uint32_t len, uint16_t timeoutMs)
     log("pixydebug: USBLink::receive()\n");
 
     if (timeoutMs==0) // 0 equals infinity
-        timeoutMs = 5;
+        timeoutMs = 50;
 
     if ((res=libusb_bulk_transfer(m_handle, 0x82, (unsigned char *)data, len, &transferred, timeoutMs))<0)
     {
