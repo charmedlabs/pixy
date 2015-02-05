@@ -37,10 +37,12 @@ bool FdModule::render(uint32_t fourcc, const void *args[])
 
 bool FdModule::command(const QStringList &argv)
 {
+#if 0 // insert your command here
     if (argv[0]=="someCommand")
     {
         return true;
     }
+#endif
     return false;
 }
 
