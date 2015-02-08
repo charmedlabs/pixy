@@ -51,21 +51,26 @@ struct Gimbal {
 
 // PID control variables //
 
-struct Gimbal pan  = { .position          = RCS_CENTER_POSITION,
-                       .previous_error    = 0x80000000L,
-                       .proportional_gain = PAN_PROPORTIONAL_GAIN,
-                       .derivative_gain   = PAN_DERIVATIVE_GAIN    };
-
-struct Gimbal tilt = { .position          = RCS_CENTER_POSITION,
-                       .previous_error    = 0x80000000L,
-                       .proportional_gain = TILT_PROPORTIONAL_GAIN,
-                       .derivative_gain   = TILT_DERIVATIVE_GAIN   };
+struct Gimbal pan;
+struct Gimbal tilt;
 
 void handle_SIGINT(int unused)
 {
   // On CTRL+C - abort! //
 
   run_flag = false;
+}
+
+void initialize_gimbals()
+{
+  pan.position           = RCS_CENTER_POSITION;
+  pan.previous_error     = 0x80000000L;
+  pan.proportional_gain  = PAN_PROPORTIONAL_GAIN;
+  pan.derivative_gain    = PAN_DERIVATIVE_GAIN;
+  tilt.position          = RCS_CENTER_POSITION;
+  tilt.previous_error    = 0x80000000L;
+  tilt.proportional_gain = TILT_PROPORTIONAL_GAIN;
+  tilt.derivative_gain   = TILT_DERIVATIVE_GAIN;
 }
 
 void gimbal_update(struct Gimbal *  gimbal, int32_t error)
@@ -103,6 +108,8 @@ int main(int argc, char *  argv[])
   char buf[128];
   int res, i=0;
 
+  initialize_gimbals();
+
   // Catch CTRL+C (SIGINT) signals //
   signal(SIGINT, handle_SIGINT);
 
@@ -119,7 +126,6 @@ int main(int argc, char *  argv[])
     return pixy_init_status;
   }
 
- 
   while(run_flag) {
     int32_t pan_error;
     int32_t tilt_error;
