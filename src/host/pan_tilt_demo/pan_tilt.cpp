@@ -104,11 +104,13 @@ void gimbal_update(struct Gimbal *  gimbal, int32_t error)
 
 int main(int argc, char *  argv[])
 {
-  int pixy_init_status;
-  char buf[128];
-  int res, i=0;
+  int  pixy_init_status;
+  char block_buffer[128];
+  int  block_index;
+  int  result;
 
   initialize_gimbals();
+  block_index = 0;
 
   // Catch CTRL+C (SIGINT) signals //
   signal(SIGINT, handle_SIGINT);
@@ -157,15 +159,24 @@ int main(int argc, char *  argv[])
     gimbal_update(&pan, pan_error);
     gimbal_update(&tilt, tilt_error);
 
-    res = pixy_rcs_set_position(RCS_PAN_CHANNEL, pan.position);
-    if (res<0)
-      printf("Pan position error %d\n", res);
-    res = pixy_rcs_set_position(RCS_TILT_CHANNEL, tilt.position);
-    if (res<0)
-      printf("Tilt position error %d\n", res);
+    result = pixy_rcs_set_position(RCS_PAN_CHANNEL, pan.position);
+    if (result < 0) {
+      printf("Pan position error %d\n", result);
+      fflush(stdout);
+    }
 
-    blocks[0].print(buf);
-    printf("frame %d: %s", i++, buf);
+    result = pixy_rcs_set_position(RCS_TILT_CHANNEL, tilt.position);
+    if (result<0) {
+      printf("Tilt position error %d\n", result);
+      fflush(stdout);
+    }
+
+    if(block_index % 50 == 0) {
+      printf(".");
+      fflush(stdout);
+    }
+
+    block_index += 1;
   }
   pixy_close();
 }

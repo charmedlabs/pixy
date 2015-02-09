@@ -25,9 +25,10 @@ class ChirpReceiver : public Chirp
   public:
 
     ChirpReceiver(USBLink * link, Interpreter * interpreter);
+    ~ChirpReceiver();
 
   private:
-    
+
     Interpreter * interpreter_;
 
     /**
