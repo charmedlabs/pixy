@@ -12,6 +12,7 @@ set -e
 if [ "$1" == "debug" ]
 then
   # Build with debug symbols and logging
+  echo "Building DEBUG version."
   cmake ../../src/host/libpixyusb -DCMAKE_CXX_FLAGS="-DDEBUG -g"
   make VERBOSE=1
 else

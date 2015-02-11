@@ -32,6 +32,7 @@ class PixyInterpreter : public Interpreter
   public:
 
     PixyInterpreter();
+    ~PixyInterpreter();
 
     /**
       @brief  Spawns an 'interpreter' thread which attempts to 
@@ -44,6 +45,7 @@ class PixyInterpreter : public Interpreter
        @return  -1    Error: Unable to open pixy USB device
 
     */
+  
     int init();
     
     /**

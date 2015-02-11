@@ -24,6 +24,13 @@ ChirpReceiver::ChirpReceiver(USBLink * link, Interpreter * interpreter)
   setLink(link);
 }
 
+ChirpReceiver::~ChirpReceiver()
+{
+  // This destructor does nothing but is necessary  //
+  // for successful linkage on some combinations of //
+  // compilers and platforms.                       //
+}
+
 void ChirpReceiver::handleXdata(const void * data[])
 {
   // Interpret (Chirp) messages from Pixy //

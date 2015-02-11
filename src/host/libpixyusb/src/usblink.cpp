@@ -30,16 +30,18 @@ USBLink::USBLink()
 
 USBLink::~USBLink()
 {
-  fflush(stdout);
-    if (m_handle)
-        libusb_close(m_handle);
-    if (m_context)
-        libusb_exit(m_context);
+  if (m_handle)
+    libusb_close(m_handle);
+  if (m_context)
+    libusb_exit(m_context);
 }
 
 int USBLink::open()
 {
   int return_value;
+#ifdef __MACOS__
+  const unsigned int MILLISECONDS_TO_SLEEP = 100;
+#endif
 
   log("pixydebug: USBLink::open()\n");
 
@@ -60,7 +62,6 @@ int USBLink::open()
   }
 
 #ifdef __MACOS__
-  const unsigned int MILLISECONDS_TO_SLEEP = 100;
   return_value = libusb_reset_device(m_handle);
   log("pixydebug:  libusb_reset_device() = %d\n", return_value);
   usleep(MILLISECONDS_TO_SLEEP * 1000);

@@ -25,19 +25,22 @@
 // Pixy Block buffer // 
 struct Block blocks[BLOCK_BUFFER_SIZE];
 
+static bool run_flag = true;
+
 void handle_SIGINT(int unused)
 {
   // On CTRL+C - abort! //
 
-  printf("\nBye!\n");
-  exit(0);
+  run_flag = false;
 }
 
 int main(int argc, char * argv[])
 {
+  int      i = 0;
   int      index;
   int      blocks_copied;
   int      pixy_init_status;
+  char     buf[128];
 
   // Catch CTRL+C (SIGINT) signals //
   signal(SIGINT, handle_SIGINT);
@@ -78,6 +81,7 @@ int main(int argc, char * argv[])
     }
   }
 
+#if 0
   // Pixy Command Examples //
   {
     int32_t response;
@@ -96,7 +100,7 @@ int main(int argc, char * argv[])
     //
 
     // Enable auto white balance //
-    return_value = pixy_command("cam_setAWB", 0x01, 1, 0, &response, 0);
+    pixy_command("cam_setAWB", UINT8(0x01), END_OUT_ARGS,  &response, END_IN_ARGS);
 
     // Execute remote procedure call "cam_getAWB" with no output (host->pixy) parameters
     //
@@ -109,20 +113,18 @@ int main(int argc, char * argv[])
     //
 
     // Get auto white balance //
-    return_value = pixy_command("cam_getAWB", 0, &response, 0);
+    return_value = pixy_command("cam_getAWB", END_OUT_ARGS, &response, END_IN_ARGS);
 
     // Set auto white balance back to disabled //
-    pixy_command("cam_setAWB", 0x01, 0, 0, &response, 0);
+    pixy_command("cam_setAWB", UINT8(0x00), END_OUT_ARGS,  &response, END_IN_ARGS);
   }
+#endif
 
   printf("Detecting blocks...\n");
-
-  for(;;)
+  while(run_flag)
   {
     // Wait for new blocks to be available //
-    while(!pixy_blocks_are_new()) {
-      usleep(10000);
-    }
+    while(!pixy_blocks_are_new()); 
 
     // Get blocks from Pixy //
     blocks_copied = pixy_get_blocks(BLOCK_BUFFER_SIZE, &blocks[0]);
@@ -131,38 +133,15 @@ int main(int argc, char * argv[])
       // Error: pixy_get_blocks //
       printf("pixy_get_blocks(): ");
       pixy_error(blocks_copied);
-      usleep(250000);
     }
-
-    printf("-------------------------------\n");
-    fflush(stdout);
 
     // Display received blocks //
     for(index = 0; index != blocks_copied; ++index) {
-
-      switch (blocks[index].type) {
-        case TYPE_NORMAL:
-          printf("[sig:%2u w:%3u h:%3u x:%3u y:%3u]\n",
-                 blocks[index].signature,
-                 blocks[index].width,
-                 blocks[index].height,
-                 blocks[index].x,
-                 blocks[index].y);
-        break;
-
-        case TYPE_COLOR_CODE:
-          printf("[sig:%2u w:%3u h:%3u x:%3u y:%3u ang:%3i]\n",
-                 blocks[index].signature,
-                 blocks[index].width,
-                 blocks[index].height,
-                 blocks[index].x,
-                 blocks[index].y,
-                 blocks[index].angle);
-        break;
-      }
+      
+       blocks[index].print(buf);
+       printf("frame %d: %s", i, buf);
     }
-
-    // Sleep for 1/10 sec //
-    usleep(100000);
+    i++;
   }
+  pixy_close();
 }

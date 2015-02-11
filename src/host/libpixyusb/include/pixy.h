@@ -32,6 +32,23 @@ extern "C"
 
   struct Block
   {
+    void print(char *buf)
+    {
+      int i, j;
+      char sig[6], d;
+      bool flag;
+      // convert signature to octal for color codes
+      for (i=12, j=0, flag=false; i>=0; i-=3)
+	{
+	  d = (signature>>i)&0x07;
+	  if (d>0 && !flag)
+	    flag = true;
+	  if (flag)
+	    sig[j++] = d + '0';
+	}
+      sig[j] = '\0';
+      sprintf(buf, "sig: %s x: %d y: %d width: %d height: %d angle %d\n", sig, x, y, width, height, angle);
+    }
     uint16_t type;
     uint16_t signature;
     uint16_t x;
