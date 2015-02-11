@@ -38,6 +38,8 @@ void loop()
   {
     i++;
     
+    // do this (print) every 50 frames because printing every
+    // frame would bog down the Arduino
     if (i%50==0)
     {
       sprintf(buf, "Detected %d:\n", blocks);
