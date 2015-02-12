@@ -22,11 +22,8 @@
 
 #define BLOCK_BUFFER_SIZE         25
 
-#define PIXY_X_CENTER             160L
-#define PIXY_Y_CENTER             100L
-#define RCS_MIN_POSITION          0L
-#define RCS_MAX_POSITION          1000L
-#define RCS_CENTER_POSITION       500L
+#define PIXY_X_CENTER             ((PIXY_MAX_X-PIXY_MIN_X)/2)
+#define PIXY_Y_CENTER             ((PIXY_MAX_Y-PIXY_MIN_Y)/2)
 
 #define RCS_PAN_CHANNEL           0
 #define RCS_TILT_CHANNEL          1
@@ -63,11 +60,11 @@ void handle_SIGINT(int unused)
 
 void initialize_gimbals()
 {
-  pan.position           = RCS_CENTER_POSITION;
+  pan.position           = PIXY_RCS_CENTER_POS;
   pan.previous_error     = 0x80000000L;
   pan.proportional_gain  = PAN_PROPORTIONAL_GAIN;
   pan.derivative_gain    = PAN_DERIVATIVE_GAIN;
-  tilt.position          = RCS_CENTER_POSITION;
+  tilt.position          = PIXY_RCS_CENTER_POS;
   tilt.previous_error    = 0x80000000L;
   tilt.proportional_gain = TILT_PROPORTIONAL_GAIN;
   tilt.derivative_gain   = TILT_DERIVATIVE_GAIN;
@@ -92,10 +89,10 @@ void gimbal_update(struct Gimbal *  gimbal, int32_t error)
 
     gimbal->position += velocity;
 
-    if (gimbal->position > RCS_MAX_POSITION) {
-      gimbal->position = RCS_MAX_POSITION;
-    } else if (gimbal->position < RCS_MIN_POSITION) {
-      gimbal->position = RCS_MIN_POSITION;
+    if (gimbal->position > PIXY_RCS_MAX_POS) {
+      gimbal->position = PIXY_RCS_MAX_POS;
+    } else if (gimbal->position < PIXY_RCS_MIN_POS) {
+      gimbal->position = PIXY_RCS_MIN_POS;
     }
   }
 
@@ -104,13 +101,17 @@ void gimbal_update(struct Gimbal *  gimbal, int32_t error)
 
 int main(int argc, char *  argv[])
 {
-  int  pixy_init_status;
-  char block_buffer[128];
-  int  block_index;
-  int  result;
+  int     pixy_init_status;
+  char    buf[128];
+  int     frame_index = 0;
+  int     result;
+  int     pan_error;
+  int     tilt_error;
+  int     blocks_copied;
+  int     index;
+
 
   initialize_gimbals();
-  block_index = 0;
 
   // Catch CTRL+C (SIGINT) signals //
   signal(SIGINT, handle_SIGINT);
@@ -129,12 +130,9 @@ int main(int argc, char *  argv[])
   }
 
   while(run_flag) {
-    int32_t pan_error;
-    int32_t tilt_error;
-    int     blocks_copied;
 
     // Wait for new blocks to be available //
-    while(!pixy_blocks_are_new());
+    while(!pixy_blocks_are_new() && run_flag);
 
     // Get blocks from Pixy //
 
@@ -146,37 +144,44 @@ int main(int argc, char *  argv[])
       pixy_error(blocks_copied);
     }
 
-    // Calculate the difference between the   //
-    // center of Pixy's focus and the target. //
+    if (blocks_copied>0) {
+      // Calculate the difference between the   //
+      // center of Pixy's focus and the target. //
 
-    pan_error  = PIXY_X_CENTER - blocks[0].x;
-    tilt_error = blocks[0].y - PIXY_Y_CENTER;
+      pan_error  = PIXY_X_CENTER - blocks[0].x;
+      tilt_error = blocks[0].y - PIXY_Y_CENTER;
 
-    // Apply corrections to the pan/tilt with the goal //
-    // of putting the target in the center of          //
-    // Pixy's focus.                                   //
+      // Apply corrections to the pan/tilt with the goal //
+      // of putting the target in the center of          //
+      // Pixy's focus.                                   //
 
-    gimbal_update(&pan, pan_error);
-    gimbal_update(&tilt, tilt_error);
+      gimbal_update(&pan, pan_error);
+      gimbal_update(&tilt, tilt_error);
 
-    result = pixy_rcs_set_position(RCS_PAN_CHANNEL, pan.position);
-    if (result < 0) {
-      printf("Pan position error %d\n", result);
+      result = pixy_rcs_set_position(RCS_PAN_CHANNEL, pan.position);
+      if (result < 0) {
+        printf("Pan position error %d\n", result);
+        fflush(stdout);
+      }
+
+      result = pixy_rcs_set_position(RCS_TILT_CHANNEL, tilt.position);
+      if (result<0) {
+        printf("Tilt position error %d\n", result);
+        fflush(stdout);
+      }
+    }
+
+    if(frame_index % 50 == 0) {
+      // Display received blocks //
+      printf("frame %d:\n", frame_index);
+      for(index = 0; index != blocks_copied; ++index) {    
+        blocks[index].print(buf);
+        printf("  %s\n", buf);
+      }
       fflush(stdout);
     }
 
-    result = pixy_rcs_set_position(RCS_TILT_CHANNEL, tilt.position);
-    if (result<0) {
-      printf("Tilt position error %d\n", result);
-      fflush(stdout);
-    }
-
-    if(block_index % 50 == 0) {
-      printf(".");
-      fflush(stdout);
-    }
-
-    block_index += 1;
+    frame_index++;
   }
   pixy_close();
 }

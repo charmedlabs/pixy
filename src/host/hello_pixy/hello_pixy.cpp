@@ -124,7 +124,7 @@ int main(int argc, char * argv[])
   while(run_flag)
   {
     // Wait for new blocks to be available //
-    while(!pixy_blocks_are_new()); 
+    while(!pixy_blocks_are_new() && run_flag); 
 
     // Get blocks from Pixy //
     blocks_copied = pixy_get_blocks(BLOCK_BUFFER_SIZE, &blocks[0]);
@@ -136,10 +136,10 @@ int main(int argc, char * argv[])
     }
 
     // Display received blocks //
-    for(index = 0; index != blocks_copied; ++index) {
-      
+    printf("frame %d:\n", i);
+    for(index = 0; index != blocks_copied; ++index) {    
        blocks[index].print(buf);
-       printf("frame %d: %s", i, buf);
+       printf("  %s\n", buf);
     }
     i++;
   }

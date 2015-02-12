@@ -276,7 +276,7 @@ void PixyInterpreter::add_normal_blocks(const BlobA * blocks, uint32_t count)
 
     // Decode CCB1 'Normal' Signature Type //
 
-    block.type      = TYPE_NORMAL;
+    block.type      = PIXY_BLOCKTYPE_NORMAL;
     block.signature = blocks[index].m_model;
     block.width     = blocks[index].m_right - blocks[index].m_left;
     block.height    = blocks[index].m_bottom - blocks[index].m_top;
@@ -309,7 +309,7 @@ void PixyInterpreter::add_color_code_blocks(const BlobB * blocks, uint32_t count
 
     // Decode 'Color Code' Signature Type //
 
-    block.type      = TYPE_COLOR_CODE;
+    block.type      = PIXY_BLOCKTYPE_COLOR_CODE;
     block.signature = blocks[index].m_model;
     block.width     = blocks[index].m_right - blocks[index].m_left;
     block.height    = blocks[index].m_bottom - blocks[index].m_top;
