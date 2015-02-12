@@ -12,26 +12,37 @@
 //
 // end license header
 //
-
-/*
-  06.04.2014 v0.1.3 John Leimon 
-    + Added init() for initializing Pixy, which should
-      be called from the setup() function. See comment
-      in Pixy.h for details.
-*/
+// This file is for defining the Block struct and the Pixy template class.
+// (TPixy).  TPixy takes a communication link as a template parameter so that 
+// all communication modes (SPI, I2C and UART) can share the same code.  
+//
 
 #ifndef _TPIXY_H
 #define _TPIXY_H
 
 #include "Arduino.h"
 
+// Communication/misc parameters
 #define PIXY_INITIAL_ARRAYSIZE      30
 #define PIXY_MAXIMUM_ARRAYSIZE      130
 #define PIXY_START_WORD             0xaa55
 #define PIXY_START_WORD_CC          0xaa56
 #define PIXY_START_WORDX            0x55aa
-#define PIXY_DEFAULT_ADDR           0x54  // I2C
+#define PIXY_MAX_SIGNATURE          7
+#define PIXY_DEFAULT_ARGVAL         0xffff
 
+// Pixy x-y position values
+#define PIXY_MIN_X                  0L
+#define PIXY_MAX_X                  319L
+#define PIXY_MIN_Y                  0L
+#define PIXY_MAX_Y                  199L
+
+// RC-servo values
+#define PIXY_RCS_MIN_POS            0L
+#define PIXY_RCS_MAX_POS            1000L
+#define PIXY_RCS_CENTER_POS         ((PIXY_RCS_MAX_POS-PIXY_RCS_MIN_POS)/2)
+
+ 
 enum BlockType
 {
 	NORMAL_BLOCK,
@@ -40,23 +51,29 @@ enum BlockType
 
 struct Block 
 {
+  // print block structure!
   void print()
   {
     int i, j;
-    char buf[64], sig[6], d;
-	bool flag;
-	
-	for (i=12, j=0, flag=false; i>=0; i-=3)
+    char buf[128], sig[6], d;
+	bool flag;	
+    if (signature>PIXY_MAX_SIGNATURE) // color code! (CC)
 	{
-	  d = (signature>>i)&0x07;
-      if (d>0 && !flag)
-	    flag = true;
-	  if (flag)
-	     sig[j++] = d + '0';
-	}
-    sig[j] = '\0';	
-    sprintf(buf, "sig: %s x: %d y: %d width: %d height: %d angle %d\n", sig, x, y, width, height, angle);
-    Serial.print(buf);  
+      // convert signature number to an octal string
+      for (i=12, j=0, flag=false; i>=0; i-=3)
+      {
+        d = (signature>>i)&0x07;
+        if (d>0 && !flag)
+          flag = true;
+        if (flag)
+          sig[j++] = d + '0';
+      }
+      sig[j] = '\0';	
+      sprintf(buf, "CC block! sig: %s (%d decimal) x: %d y: %d width: %d height: %d angle %d\n", sig, signature, x, y, width, height, angle);
+    }			
+	else // regular block.  Note, angle is always zero, so no need to print
+      sprintf(buf, "sig: %d x: %d y: %d width: %d height: %d\n", signature, x, y, width, height);		
+    Serial.print(buf); 
   }
   uint16_t signature;
   uint16_t x;
@@ -71,7 +88,7 @@ struct Block
 template <class LinkType> class TPixy
 {
 public:
-  TPixy(uint8_t addr=PIXY_DEFAULT_ADDR);
+  TPixy(uint16_t arg=PIXY_DEFAULT_ARGVAL);
   ~TPixy();
 	
   uint16_t getBlocks(uint16_t maxBlocks=1000);
@@ -94,13 +111,13 @@ private:
 };
 
 
-template <class LinkType> TPixy<LinkType>::TPixy(uint8_t addr)
+template <class LinkType> TPixy<LinkType>::TPixy(uint16_t arg)
 {
   skipStart = false;
   blockCount = 0;
   blockArraySize = PIXY_INITIAL_ARRAYSIZE;
   blocks = (Block *)malloc(sizeof(Block)*blockArraySize);
-  link.setAddress(addr);
+  link.setArg(arg);
 }
 
 template <class LinkType> void TPixy<LinkType>::init()
@@ -136,7 +153,7 @@ template <class LinkType> boolean TPixy<LinkType>::getStart()
 	{
       blockType = CC_BLOCK;
       return true;
-	}	
+	}
 	else if (w==PIXY_START_WORDX)
 	{
 	  Serial.println("reorder");
@@ -252,6 +269,5 @@ template <class LinkType> int8_t TPixy<LinkType>::setLED(uint8_t r, uint8_t g, u
   
   return link.send(outBuf, 5);
 }
-
 
 #endif

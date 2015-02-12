@@ -12,20 +12,25 @@
 //
 // end license header
 //
-
-/* 
-   06.04.2014 v0.1.3 John Leimon
-     + Now using pixy.init() to initialize Pixy in setup().
-*/
-
+// This sketch is a good place to start if you're just getting started with 
+// Pixy and Arduino.  This program simply prints the detected object blocks 
+// (including color codes) through the serial console.  It uses the Arduino's 
+// ICSP port.  For more information go here:
+//
+// http://cmucam.org/projects/cmucam5/wiki/Hooking_up_Pixy_to_a_Microcontroller_(like_an_Arduino)
+//
+// It prints the detected blocks once per second because printing all of the 
+// blocks for all 50 frames per second would overwhelm the Arduino's serial port.
+//
+   
 #include <SPI.h>  
 #include <Pixy.h>
 
+// This is the main Pixy object 
 Pixy pixy;
 
 void setup()
 {
-
   Serial.begin(9600);
   Serial.print("Starting...\n");
 
@@ -39,8 +44,10 @@ void loop()
   uint16_t blocks;
   char buf[32]; 
   
+  // grab blocks!
   blocks = pixy.getBlocks();
   
+  // If there are detect blocks, print them!
   if (blocks)
   {
     i++;

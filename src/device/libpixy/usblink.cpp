@@ -93,7 +93,7 @@ int USBLink::receive(uint8_t *data, uint32_t len, uint16_t timeoutMs)
 			g_bufUsed = 0;
 			return len;
 		}
-		return 0;
+		return LINK_RESULT_ERROR_RECV_TIMEOUT; // if the data isn't there, return a timeout error -- this is consistent with libusb
 	}
 	else
 	{

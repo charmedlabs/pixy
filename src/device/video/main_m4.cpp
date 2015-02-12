@@ -53,9 +53,12 @@ void __default_signal_handler(int signal, int type)
 
 int main(void) 
 {
+	uint16_t major, minor, build;
+	int i, res, count;
+
 	// main init of hardware plus a version-dependent number for the parameters that will
 	// force a format of parameter between version numbers.  
- 	pixyInit(SRAM3_LOC, &LR0[0], sizeof(LR0), FW_MAJOR_VER*40*40+FW_MINOR_VER*40+FW_BUILD_VER);
+ 	pixyInit(SRAM3_LOC, &LR0[0], sizeof(LR0));
 
 	cc_init(g_chirpUsb);
 	ser_init();
@@ -70,6 +73,19 @@ int main(void)
 	exec_addProg(&g_progChase);
 #endif
 	exec_addProg(&g_progVideo, true);
+
+	// this code formats if the version has changed
+	for (i=0, count=0; i<25; i++)
+	{
+		res = prm_get("fwver", &major, &minor, &build, END);
+		if (res>=0 && major==FW_MAJOR_VER && minor==FW_MINOR_VER && build==FW_BUILD_VER)
+			count++;
+	}
+	if (count==0)
+		prm_format();
+
+   	// check version
+	prm_add("fwver", PRM_FLAG_INTERNAL, "", UINT16(FW_MAJOR_VER), UINT16(FW_MINOR_VER), UINT16(FW_BUILD_VER), END);
 
 	exec_loop();
 

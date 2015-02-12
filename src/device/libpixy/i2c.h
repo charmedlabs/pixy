@@ -39,7 +39,7 @@ public:
 
 private:
 	void startSlave();
-
+	bool m_pad0;
 	LPC_I2Cn_Type *m_i2c;	
 	ReceiveQ<uint8_t> m_rq;
 	TransmitQ<uint8_t> m_tq;

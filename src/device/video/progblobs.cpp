@@ -23,6 +23,7 @@
 #include "exec.h"
 
 bool g_ledSet = false;
+static uint8_t g_state=0;
 
 Program g_progBlobs =
 {
@@ -57,36 +58,36 @@ int blobsSetup()
 	// flush serial receive queue
 	while(ser_getSerial()->receive(&c, 1));
 
+	g_state = 0; // reset recv state machine
 	return 0;
 }
 
 void handleRecv()
 {
 	uint8_t i, a;
-	static uint8_t state=0;
 	static uint16_t w=0xffff;
+	static uint8_t lastByte;
 	uint16_t s0, s1;
 	Iserial *serial = ser_getSerial();
 
 	for (i=0; i<10; i++)
 	{
-		switch(state)
+		switch(g_state)
 		{	
-		case 0: // look for sync byte 0
-			if(serial->receive(&a, 1))
-			{
-				w = a;
-				w <<= 8;
-				state = 1;
-			}
+		case 0: // reset 
+			lastByte = 0xff;  // This is not part of any of the sync word most significant bytes
+			g_state = 1;
 		 	break;
 
-		case 1:	// sync byte 1
+		case 1:	// sync word
 			if(serial->receive(&a, 1))
 			{
- 				w |= a;
-				state = 2;
+				w = lastByte << 8;
+				w |= a;
+				lastByte = a;
+				g_state = 2;	// compare
 			}
+			break;
 
 		case 2:	 // receive data byte(s)
 			if (w==SYNC_SERVO)
@@ -100,7 +101,7 @@ void handleRecv()
 					rcs_setPos(0, s0);
 					rcs_setPos(1, s1);
 
-					state = 0;
+					g_state = 0;
 				}
 			}
 			else if (w==SYNC_CAM_BRIGHTNESS)
@@ -108,7 +109,7 @@ void handleRecv()
 				if(serial->receive(&a, 1))
 				{
 					cam_setBrightness(a);
-					state = 0;
+					g_state = 0;
 				}
 			}
 			else if (w==SYNC_SET_LED)
@@ -121,17 +122,18 @@ void handleRecv()
 					serial->receive(&b, 1);
 
 					led_setRGB(r, g, b);
+					//cprintf("%x %x %x\n", r, g ,b);
 
 					g_ledSet = true; // it will stay true until the next power cycle
-					state = 0;
+					g_state = 0;
 				}
 			}
-			else if(serial->receive(&a, 1)) // not supported, receive byte to resync, you know, throw one byte out, receive 2, throw 1 out....
-				state = 0;
+			else 
+				g_state = 1; // try another word, but read only a byte
 			break;
 
 		default:
-			state = 0;
+			g_state = 0; // try another whole word
 			break;
 		}
 	}

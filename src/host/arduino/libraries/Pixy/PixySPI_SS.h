@@ -12,21 +12,18 @@
 //
 // end license header
 //
-
-/*
-  Pixy.h - Library for interfacing with Pixy.
-  Created by Scott Robinson, October 22, 2013.
-  Released into the public domain.
-
-  06.04.2014 v0.1.3 John Leimon 
-    + LinkSPI.init() should be called from the setup() 
-      function instead of being called automatically from
-      the TPixy<LinkSPI> constructor in global scope. This
-      is a workaround for a bug (?) in the Arduino DUE in which
-      calling SPI.begin() from global scope (via a constructor)
-      inhibits the operation of the Serial peripheral in the
-      DUE. [As of: Arduino 1.5.6-r2]
-*/
+// This file is for defining the link class for SPI with Slave Select.  The 
+// default communication for Arduino is through the ICSP connector, which uses
+// SPI without a slave select.  The LinkSPI_SS allows you to use a slave select
+// so you can share the SPI port with other devices, or use multiple Pixys. 
+//
+// Note, the PixySPI_SS class takes an optional argument, which is the pin 
+// number of the slave select signal you wish to use.  The default pin is the 
+// SS pin (used when no argument is used.)  So, for example, if you wished to 
+// use pin 14 for slave select, declare like this:
+//
+// PixySPI_SS pixy(14);
+//
 
 #ifndef PIXYSPI_SS_H
 #define PIXYSPI_SS_H
@@ -64,7 +61,7 @@ class LinkSPI_SS
       uint8_t c, cout = 0;
 	  
 	  // assert slave select
-	  digitalWrite(SS, LOW);
+	  digitalWrite(ssPin, LOW);
 
       if (outLen)
       {
@@ -81,7 +78,7 @@ class LinkSPI_SS
       w |= c;
 
 	  // negate slave select
-	  digitalWrite(SS, HIGH);
+	  digitalWrite(ssPin, HIGH);
       return w;
     }
 	
@@ -91,10 +88,10 @@ class LinkSPI_SS
     {
 	  uint8_t c;
  	  // assert slave select
-	  digitalWrite(SS, LOW);
+	  digitalWrite(ssPin, LOW);
       c = SPI.transfer(0x00);
  	  // negate slave select
-	  digitalWrite(SS, HIGH);
+	  digitalWrite(ssPin, HIGH);
 	  
 	  return c;
    }
@@ -109,16 +106,19 @@ class LinkSPI_SS
       return len;
     }
 
-    void setAddress(uint8_t addr)
+    void setArg(uint16_t arg)
     {
-      addr_ = addr;
+      if (arg==PIXY_DEFAULT_ARGVAL)
+        ssPin = SS; // default slave select pin
+	  else
+	    ssPin = arg;
     }
 
   private:
     uint8_t outBuf[PIXY_OUTBUF_SIZE];
     uint8_t outLen;
     uint8_t outIndex;
-    uint8_t addr_;
+	uint16_t ssPin;
 };
 
 

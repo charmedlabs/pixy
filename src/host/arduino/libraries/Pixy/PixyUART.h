@@ -12,6 +12,8 @@
 //
 // end license header
 //
+// This file is for defining the link class for UART communications.  
+//
 
 #ifndef _PIXYUART_H
 #define _PIXYUART_H
@@ -26,7 +28,7 @@ public:
   {
     Serial1.begin(19200);
   }
-  void setAddress(uint8_t addr)
+  void setArg(uint16_t arg)
   {
   }
   uint16_t getWord()

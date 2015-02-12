@@ -33,7 +33,7 @@ extern uint8_t *__Vectors;
 #define STACK_GUARD           *(uint16_t *)(__Vectors - 0x600)
 #define STACK_GUARD_WORD      0xABCD
 
-void pixyInit(uint32_t slaveRomStart, const unsigned char slaveImage[], uint32_t imageSize, uint16_t mnumber=1);
+void pixyInit(uint32_t slaveRomStart, const unsigned char slaveImage[], uint32_t imageSize);
 void pixySimpleInit(void);
 
 void cprintf(const char *format, ...);

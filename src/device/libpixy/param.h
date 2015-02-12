@@ -21,7 +21,7 @@
 
 typedef void (*ShadowCallback)(const char *id, const void *arg0);
 
-int prm_init(Chirp *chirp, uint16_t mnumber);
+int prm_init(Chirp *chirp);
 
 int32_t prm_set(const char *id, ...);
 int32_t prm_setDirty();

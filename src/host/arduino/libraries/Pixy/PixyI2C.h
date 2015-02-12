@@ -12,12 +12,23 @@
 //
 // end license header
 //
+// This file is for defining the link class for I2C communications.  
+//
+// Note, the PixyI2C class takes an optional argument, which is the I2C address 
+// of the Pixy you want to talk to.  The default address is 0x54 (used when no 
+// argument is used.)  So, for example, if you wished to talk to Pixy at I2C 
+// address 0x55, declare like this:
+//
+// PixyI2C pixy(0x55);
+//
 
 #ifndef _PIXYI2C_H
 #define _PIXYI2C_H
 
 #include "TPixy.h"
 #include "Wire.h"
+
+#define PIXY_I2C_DEFAULT_ADDR           0x54  
 
 class LinkI2C
 {
@@ -26,9 +37,12 @@ public:
   {
     Wire.begin();
   }
-  void setAddress(uint8_t address)
+  void setArg(uint16_t arg)
   {
-	addr = address;
+    if (arg==PIXY_DEFAULT_ARGVAL)
+      addr = PIXY_I2C_DEFAULT_ADDR;
+	else
+	  addr = arg;
   }
   uint16_t getWord()
   {
