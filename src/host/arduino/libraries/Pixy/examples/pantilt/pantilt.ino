@@ -12,15 +12,19 @@
 //
 // end license header
 //
+// This sketch is a simple tracking demo that uses the pan/tilt unit.  For
+// more information, go here:
+//
+// http://cmucam.org/projects/cmucam5/wiki/Run_the_Pantilt_Demo
+//
 
 #include <SPI.h>  
 #include <Pixy.h>
 
-#define X_CENTER        160L
-#define Y_CENTER        100L
-#define RCS_MIN_POS     0L
-#define RCS_MAX_POS     1000L
-#define RCS_CENTER_POS	((RCS_MAX_POS-RCS_MIN_POS)/2)
+Pixy pixy;
+
+#define X_CENTER        ((PIXY_MAX_X-PIXY_MIN_X)/2)       
+#define Y_CENTER        ((PIXY_MAX_Y-PIXY_MIN_Y)/2)
 
 class ServoLoop
 {
@@ -41,7 +45,7 @@ ServoLoop tiltLoop(500, 700);
 
 ServoLoop::ServoLoop(int32_t pgain, int32_t dgain)
 {
-  m_pos = RCS_CENTER_POS;
+  m_pos = PIXY_RCS_CENTER_POS;
   m_pgain = pgain;
   m_dgain = dgain;
   m_prevError = 0x80000000L;
@@ -57,16 +61,15 @@ void ServoLoop::update(int32_t error)
     //sprintf(buf, "%ld\n", vel);
     //Serial.print(buf);
     m_pos += vel;
-    if (m_pos>RCS_MAX_POS) 
-      m_pos = RCS_MAX_POS; 
-    else if (m_pos<RCS_MIN_POS) 
-      m_pos = RCS_MIN_POS;
+    if (m_pos>PIXY_RCS_MAX_POS) 
+      m_pos = PIXY_RCS_MAX_POS; 
+    else if (m_pos<PIXY_RCS_MIN_POS) 
+      m_pos = PIXY_RCS_MIN_POS;
   }
   m_prevError = error;
 }
 
 
-Pixy pixy;
 
 void setup()
 {

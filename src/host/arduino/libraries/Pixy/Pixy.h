@@ -12,21 +12,13 @@
 //
 // end license header
 //
-
-/*
-  Pixy.h - Library for interfacing with Pixy.
-  Created by Scott Robinson, October 22, 2013.
-  Released into the public domain.
-
-  06.04.2014 v0.1.3 John Leimon 
-    + LinkSPI.init() should be called from the setup() 
-      function instead of being called automatically from
-      the TPixy<LinkSPI> constructor in global scope. This
-      is a workaround for a bug (?) in the Arduino DUE in which
-      calling SPI.begin() from global scope (via a constructor)
-      inhibits the operation of the Serial peripheral in the
-      DUE. [As of: Arduino 1.5.6-r2]
-*/
+// This file is for defining the SPI-related classes.  It's called Pixy.h instead
+// of Pixy_SPI.h because it's the default/recommended communication method
+// with Arduino.  This class assumes you are using the ICSP connector to talk to 
+// Pixy from your Arduino.  For more information go to:
+//
+//http://cmucam.org/projects/cmucam5/wiki/Hooking_up_Pixy_to_a_Microcontroller_(like_an_Arduino)
+//
 
 #ifndef PIXY_H
 #define PIXY_H
@@ -132,7 +124,7 @@ class LinkSPI
       return len;
     }
 
-    void setAddress(uint8_t addr)
+    void setArg(uint16_t arg)
     {
     }
 

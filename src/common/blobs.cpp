@@ -381,12 +381,7 @@ uint16_t Blobs::getBlock(uint8_t *buf, uint32_t buflen)
         return getCCBlock(buf, buflen);
 
     if (m_mutex || m_blobReadIndex>=m_numBlobs) // we're copying, so no blocks for now....
-    {	// return a couple null words to give us time to copy
-        // (otherwise we may spend too much time in the ISR)
-        buf16[0] = 0;
-        buf16[1] = 0;
-        return 2;
-    }
+		return 0;
 
     if (m_blobReadIndex==0)	// beginning of frame, mark it with empty block
     {

@@ -99,7 +99,7 @@ void Spi::slaveHandler()
 		while(LPC_SSP1->SR&SSP_SR_TNF) 
 		{
 			if (m_tq.read(&d16)==0)
-				break;
+				d16 = 0; // stuff fifo with 0s
 			LPC_SSP1->DR = d16;
 		}
 	

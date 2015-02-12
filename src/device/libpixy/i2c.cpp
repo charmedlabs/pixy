@@ -67,6 +67,8 @@ void I2c::slaveHandler()
 	case I2C_I2STAT_S_RX_PRE_SLA_DAT_NACK:
 	// DATA has been received, NOT ACK has been returned 
 	case I2C_I2STAT_S_RX_PRE_GENCALL_DAT_NACK:
+	case I2C_I2STAT_S_RX_STA_STO_SLVREC_SLVTRX:
+		m_i2c->CONSET = I2C_I2CONSET_AA;
 		m_i2c->CONCLR = I2C_I2CONCLR_SIC;
 		break;
 
@@ -75,10 +77,18 @@ void I2c::slaveHandler()
 	case I2C_I2STAT_S_TX_SLAR_ACK:
 	// Data has been transmitted, ACK has been received 
 	case I2C_I2STAT_S_TX_DAT_ACK:
-		if (m_tq.read(&c))
+		if (m_pad0) // m_pad0 is there so we make sure to send 0's in pairs so we don't get out of byte-sync
+		{
+			m_i2c->DAT = 0;
+			m_pad0 = false;
+		}
+		else if (m_tq.read(&c))
 			m_i2c->DAT = c;
 		else 
+		{
 			m_i2c->DAT = 0;
+			m_pad0 = true;
+		}
 		m_i2c->CONSET = I2C_I2CONSET_AA;
 		m_i2c->CONCLR = I2C_I2CONCLR_SIC;
 		break;
@@ -107,8 +117,11 @@ int I2c::open()
 	// turn off driver for SS signal so we can wire-or them together
 	LPC_SGPIO->GPIO_OENREG = 0;
 
+ 	m_pad0 = false;
+
 	NVIC_EnableIRQ(I2C0_IRQn);
 	startSlave(); 
+
 
 	return 0;
 }
