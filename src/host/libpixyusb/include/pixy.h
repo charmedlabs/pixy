@@ -50,7 +50,7 @@ extern "C"
     {
       int i, j;
       char sig[6], d;
-      bool flag;	
+      bool flag;
       if (type==PIXY_BLOCKTYPE_COLOR_CODE)
       {
         // convert signature number to an octal string
@@ -64,7 +64,7 @@ extern "C"
         }
         sig[j] = '\0';	
         sprintf(buf, "CC block! sig: %s (%d decimal) x: %d y: %d width: %d height: %d angle %d", sig, signature, x, y, width, height, angle);
-      }			
+      }
       else // regular block.  Note, angle is always zero, so no need to print
         sprintf(buf, "sig: %d x: %d y: %d width: %d height: %d", signature, x, y, width, height);		
     }
