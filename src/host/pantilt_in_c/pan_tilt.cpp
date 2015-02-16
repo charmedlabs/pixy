@@ -111,6 +111,9 @@ int main(int argc, char *  argv[])
   int     index;
 
 
+  printf("+ Pixy Tracking Demo Started +\n");
+  fflush(stdout);
+
   initialize_gimbals();
 
   // Catch CTRL+C (SIGINT) signals //
@@ -174,7 +177,7 @@ int main(int argc, char *  argv[])
     if(frame_index % 50 == 0) {
       // Display received blocks //
       printf("frame %d:\n", frame_index);
-      for(index = 0; index != blocks_copied; ++index) {    
+      for(index = 0; index != blocks_copied; ++index) {
         blocks[index].print(buf);
         printf("  %s\n", buf);
       }
@@ -185,3 +188,5 @@ int main(int argc, char *  argv[])
   }
   pixy_close();
 }
+
+// LEIMON 2015 //
