@@ -20,13 +20,13 @@
 #include <string.h>
 #include "pixy.h"
 
-#define BLOCK_BUFFER_SIZE         25
+#define BLOCK_BUFFER_SIZE          25
 
-#define PIXY_X_CENTER             ((PIXY_MAX_X-PIXY_MIN_X)/2)
-#define PIXY_Y_CENTER             ((PIXY_MAX_Y-PIXY_MIN_Y)/2)
+#define PIXY_X_CENTER              ((PIXY_MAX_X-PIXY_MIN_X)/2)
+#define PIXY_Y_CENTER              ((PIXY_MAX_Y-PIXY_MIN_Y)/2)
 
-#define RCS_PAN_CHANNEL           0
-#define RCS_TILT_CHANNEL          1
+#define PIXY_RCS_PAN_CHANNEL        0
+#define PIXY_RCS_TILT_CHANNEL       1
 
 // PID control parameters //
 #define PAN_PROPORTIONAL_GAIN     400
@@ -158,13 +158,13 @@ int main(int argc, char *  argv[])
       gimbal_update(&pan, pan_error);
       gimbal_update(&tilt, tilt_error);
 
-      result = pixy_rcs_set_position(RCS_PAN_CHANNEL, pan.position);
+      result = pixy_rcs_set_position(PIXY_RCS_PAN_CHANNEL, pan.position);
       if (result < 0) {
         printf("Pan position error %d\n", result);
         fflush(stdout);
       }
 
-      result = pixy_rcs_set_position(RCS_TILT_CHANNEL, tilt.position);
+      result = pixy_rcs_set_position(PIXY_RCS_TILT_CHANNEL, tilt.position);
       if (result<0) {
         printf("Tilt position error %d\n", result);
         fflush(stdout);
