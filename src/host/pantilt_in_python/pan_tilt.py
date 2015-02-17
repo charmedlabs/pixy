@@ -72,7 +72,7 @@ class Gimbal ():
     self.first_update      = True
 
   def update(self, error):
-    if self.first_update == True:
+    if self.first_update == False:
       error_delta = error - self.previous_error
       P_gain      = self.proportional_gain;
       D_gain      = self.derivative_gain;
@@ -87,6 +87,7 @@ class Gimbal ():
         self.position = PIXY_RCS_MAX_POS
       elif self.position < PIXY_RCS_MIN_POS:
         self.position = PIXY_RCS_MIN_POS
+    else:
       self.first_update = False
 
     self.previous_error = error
@@ -132,7 +133,7 @@ def main():
       pixy_error(count)
       sys.exit(1)
 
-    if count == 1:
+    if count > 0:
       # We found a block #
 
       # Calculate the difference between Pixy's center of focus #
@@ -152,7 +153,7 @@ def main():
         pixy_error(result)
         sys.exit(2)
 
-      position_result = pixy_rcs_set_position(PIXY_RCS_TILT_CHANNEL, tilt_gimbal.position)
+      set_position_result = pixy_rcs_set_position(PIXY_RCS_TILT_CHANNEL, tilt_gimbal.position)
 
       if set_position_result < 0:
         print 'Error: pixy_rcs_set_position() '
