@@ -1189,8 +1189,11 @@ void Interpreter::handleLoadParams()
     // (ie it would proceed with 1 property to returned frame, which could take 1 second or 2)
     running = m_running;
     if (running==1) // only if we're running and not in forced state (running==2)
+    {
         sendStop();
-
+        while(m_running) // poll for stop
+            getRunning();
+    }
     for (i=0; true; i++)
     {
         QString category;
@@ -1330,7 +1333,11 @@ void Interpreter::handleSaveParams(bool reject)
     // (ie it would proceed with 1 property to returned frame, which could take 1 second or 2)
     running = m_running;
     if (running==1) // only if we're running and not in forced state (running==2)
+    {
         sendStop();
+        while(m_running) // poll for stop
+            getRunning();
+    }
 
     // notify monmodules
     sendMonModulesParamChange();
@@ -1348,7 +1355,6 @@ void Interpreter::handleSaveParams(bool reject)
         sendRun();
         m_fastPoll = false; // turn off fast polling...
     }
-
 }
 
 void Interpreter::getSelection(RectA *region)
