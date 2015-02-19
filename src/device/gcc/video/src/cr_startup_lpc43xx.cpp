@@ -272,8 +272,7 @@ void (* const g_pfnVectors[])(void) = {
 // ResetISR() function in order to cope with MCUs with multiple banks of
 // memory.
 //*****************************************************************************
-        __attribute__((section(".after_vectors"
-)))
+__attribute__((section(".after_vectors")))
 void data_init(unsigned int romstart, unsigned int start, unsigned int len) {
     unsigned int *pulDest = (unsigned int*) start;
     unsigned int *pulSrc = (unsigned int*) romstart;
@@ -321,6 +320,7 @@ void ResetISR(void) {
 // (for example when creating a final executable which you will
 // not debug) by setting the define 'DONT_RESET_ON_RESTART'.
 //
+
 #ifndef DONT_RESET_ON_RESTART
 
     // Disable interrupts

@@ -58,11 +58,9 @@ void __default_signal_handler(int signal, int type)
 }
 }
 
-
-int main(void) 
+int main(void)
 {
 
-// 	pixyInit(SRAM3_LOC, &LR0[0], sizeof(LR0));
 #if 0
 	pixyInit();
 
