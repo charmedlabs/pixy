@@ -8,21 +8,21 @@
   <WorkspaceName>WorkSpace</WorkspaceName>
 
   <project>
-    <PathAndName>.\video.uvproj</PathAndName>
+    <PathAndName>.\main_m4.uvproj</PathAndName>
     <NodeIsActive>1</NodeIsActive>
     <NodeIsExpanded>1</NodeIsExpanded>
   </project>
 
   <project>
-    <PathAndName>.\m0.uvproj</PathAndName>
+    <PathAndName>..\main_m0\main_m0.uvproj</PathAndName>
   </project>
 
   <project>
-    <PathAndName>..\libpixy\libpixy_m0.uvproj</PathAndName>
+    <PathAndName>..\libpixy_m0\libpixy_m0.uvproj</PathAndName>
   </project>
 
   <project>
-    <PathAndName>..\libpixy\libpixy_m4.uvproj</PathAndName>
+    <PathAndName>..\libpixy_m4\libpixy_m4.uvproj</PathAndName>
   </project>
 
 </ProjectWorkspace>

@@ -290,7 +290,7 @@ int32_t exec_runprog(const uint8_t &progNum)
 		prm_get("Default program", &program, END);
 		if (program==0 || program>EXEC_MAX_PROGS)
 			g_program = 0;
-		if (g_progTable[program-1]!=NULL)
+		if (program>0 && g_progTable[program-1]!=NULL)
 			g_program = program-1;
 	}
   	else

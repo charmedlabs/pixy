@@ -33,7 +33,7 @@
 
 // M0 code 
 const // so m0 program goes into RO memory
-#include "m0_image.c"
+#include "../main_m0/m0_image.c"
 
 
 extern "C" 

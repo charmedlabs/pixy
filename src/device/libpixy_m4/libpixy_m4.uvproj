@@ -346,7 +346,7 @@
               <MiscControls></MiscControls>
               <Define>CORE_M4 IPC_MASTER PIXY</Define>
               <Undefine></Undefine>
-              <IncludePath>., ..\..\common</IncludePath>
+              <IncludePath>., ..\..\common\inc, ..\common\inc, inc</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -387,139 +387,159 @@
           <GroupName>Source Code</GroupName>
           <Files>
             <File>
-              <FileName>debug_frmwrk.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\debug_frmwrk.c</FilePath>
-            </File>
-            <File>
-              <FileName>fpu_init.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\fpu_init.c</FilePath>
-            </File>
-            <File>
-              <FileName>lpc43xx_adc.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\lpc43xx_adc.c</FilePath>
-            </File>
-            <File>
-              <FileName>lpc43xx_cgu.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\lpc43xx_cgu.c</FilePath>
-            </File>
-            <File>
-              <FileName>lpc43xx_scu.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\lpc43xx_scu.c</FilePath>
-            </File>
-            <File>
-              <FileName>lpc43xx_uart.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\lpc43xx_uart.c</FilePath>
-            </File>
-            <File>
-              <FileName>platform_config.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\platform_config.c</FilePath>
-            </File>
-            <File>
-              <FileName>system_LPC43xx.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\system_LPC43xx.c</FilePath>
-            </File>
-            <File>
-              <FileName>usbcore.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\usbcore.c</FilePath>
-            </File>
-            <File>
-              <FileName>usbdesc.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\usbdesc.c</FilePath>
-            </File>
-            <File>
-              <FileName>usbhw.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\usbhw.c</FilePath>
-            </File>
-            <File>
-              <FileName>usbuser.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\usbuser.c</FilePath>
-            </File>
-            <File>
-              <FileName>sccb.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>.\sccb.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>usblink.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>.\usblink.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>ipc_mbx.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\ipc_mbx.c</FilePath>
-            </File>
-            <File>
-              <FileName>pixy_init.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>.\pixy_init.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>startup_LPC43xx_m4.s</FileName>
-              <FileType>2</FileType>
-              <FilePath>.\startup_LPC43xx_m4.s</FilePath>
-            </File>
-            <File>
-              <FileName>smlink.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>.\smlink.cpp</FilePath>
-            </File>
-            <File>
               <FileName>camera.cpp</FileName>
               <FileType>8</FileType>
-              <FilePath>.\camera.cpp</FilePath>
+              <FilePath>.\src\camera.cpp</FilePath>
             </File>
             <File>
-              <FileName>led.cpp</FileName>
+              <FileName>chirpm0.cpp</FileName>
               <FileType>8</FileType>
-              <FilePath>.\led.cpp</FilePath>
+              <FilePath>.\src\chirpm0.cpp</FilePath>
             </File>
             <File>
-              <FileName>rcservo.cpp</FileName>
+              <FileName>chirpusb.cpp</FileName>
               <FileType>8</FileType>
-              <FilePath>.\rcservo.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>misc.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>.\misc.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>power.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>.\power.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>lpc43xx_ssp.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\lpc43xx_ssp.c</FilePath>
-            </File>
-            <File>
-              <FileName>param.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>.\param.cpp</FilePath>
+              <FilePath>.\src\chirpusb.cpp</FilePath>
             </File>
             <File>
               <FileName>flash.cpp</FileName>
               <FileType>8</FileType>
-              <FilePath>.\flash.cpp</FilePath>
+              <FilePath>.\src\flash.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>fpu_init.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\fpu_init.c</FilePath>
+            </File>
+            <File>
+              <FileName>led.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>.\src\led.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>misc.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>.\src\misc.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>param.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>.\src\param.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>pixy_init.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>.\src\pixy_init.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>platform_config.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\platform_config.c</FilePath>
+            </File>
+            <File>
+              <FileName>power.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>.\src\power.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>rcservo.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>.\src\rcservo.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>sccb.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>.\src\sccb.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>smlink.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>.\src\smlink.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>startup_LPC43xx_m4.s</FileName>
+              <FileType>2</FileType>
+              <FilePath>.\src\startup_LPC43xx_m4.s</FilePath>
+            </File>
+            <File>
+              <FileName>usbcore.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\usbcore.c</FilePath>
+            </File>
+            <File>
+              <FileName>usbdesc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\usbdesc.c</FilePath>
+            </File>
+            <File>
+              <FileName>usbhw.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\usbhw.c</FilePath>
+            </File>
+            <File>
+              <FileName>usblink.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>.\src\usblink.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>usbuser.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\usbuser.c</FilePath>
+            </File>
+            <File>
+              <FileName>debug_frmwrk.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\common\src\debug_frmwrk.c</FilePath>
+            </File>
+            <File>
+              <FileName>ipc_mbx.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\common\src\ipc_mbx.c</FilePath>
+            </File>
+            <File>
+              <FileName>lpc43xx_adc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\common\src\lpc43xx_adc.c</FilePath>
+            </File>
+            <File>
+              <FileName>lpc43xx_cgu.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\common\src\lpc43xx_cgu.c</FilePath>
+            </File>
+            <File>
+              <FileName>lpc43xx_i2c.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\common\src\lpc43xx_i2c.c</FilePath>
+            </File>
+            <File>
+              <FileName>lpc43xx_scu.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\common\src\lpc43xx_scu.c</FilePath>
+            </File>
+            <File>
+              <FileName>lpc43xx_ssp.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\common\src\lpc43xx_ssp.c</FilePath>
+            </File>
+            <File>
+              <FileName>lpc43xx_uart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\common\src\lpc43xx_uart.c</FilePath>
+            </File>
+            <File>
+              <FileName>system_LPC43xx.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\common\src\system_LPC43xx.c</FilePath>
+            </File>
+            <File>
+              <FileName>calc.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\common\src\calc.cpp</FilePath>
             </File>
             <File>
               <FileName>chirp.cpp</FileName>
               <FileType>8</FileType>
-              <FilePath>..\..\common\chirp.cpp</FilePath>
+              <FilePath>..\..\common\src\chirp.cpp</FilePath>
             </File>
           </Files>
         </Group>

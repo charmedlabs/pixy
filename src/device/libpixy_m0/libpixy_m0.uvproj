@@ -346,7 +346,7 @@
               <MiscControls></MiscControls>
               <Define>CORE_M0  IPC_SLAVE PIXY</Define>
               <Undefine></Undefine>
-              <IncludePath>., ..\..\common</IncludePath>
+              <IncludePath>., ..\..\common\inc, ..\common\inc, inc</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -387,34 +387,54 @@
           <GroupName>Source Code</GroupName>
           <Files>
             <File>
-              <FileName>debug_frmwrk.c</FileName>
+              <FileName>chirp.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\debug_frmwrk.c</FilePath>
-            </File>
-            <File>
-              <FileName>ipc_mbx.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\ipc_mbx.c</FilePath>
-            </File>
-            <File>
-              <FileName>lpc43xx_uart.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\lpc43xx_uart.c</FilePath>
+              <FilePath>.\src\chirp.c</FilePath>
             </File>
             <File>
               <FileName>debug.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\debug.c</FilePath>
+              <FilePath>.\src\debug.c</FilePath>
             </File>
             <File>
-              <FileName>chirp.c</FileName>
+              <FileName>exec_m0.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\chirp.c</FilePath>
+              <FilePath>.\src\exec_m0.c</FilePath>
+            </File>
+            <File>
+              <FileName>frame_m0.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\frame_m0.c</FilePath>
+            </File>
+            <File>
+              <FileName>rls_m0.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\rls_m0.c</FilePath>
             </File>
             <File>
               <FileName>smlink.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\smlink.c</FilePath>
+              <FilePath>.\src\smlink.c</FilePath>
+            </File>
+            <File>
+              <FileName>debug_frmwrk.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\common\src\debug_frmwrk.c</FilePath>
+            </File>
+            <File>
+              <FileName>ipc_mbx.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\common\src\ipc_mbx.c</FilePath>
+            </File>
+            <File>
+              <FileName>lpc43xx_uart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\common\src\lpc43xx_uart.c</FilePath>
+            </File>
+            <File>
+              <FileName>qqueue.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\qqueue.c</FilePath>
             </File>
           </Files>
         </Group>

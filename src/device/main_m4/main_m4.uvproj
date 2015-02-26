@@ -346,7 +346,7 @@
               <MiscControls></MiscControls>
               <Define>CORE_M4 IPC_MASTER PIXY</Define>
               <Undefine></Undefine>
-              <IncludePath>., ..\libpixy, ..\..\common</IncludePath>
+              <IncludePath>., ..\libpixy_m4\inc, ..\..\common\inc, ..\common\inc, inc</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -387,104 +387,99 @@
           <GroupName>Source Code</GroupName>
           <Files>
             <File>
-              <FileName>main_m4.cpp</FileName>
+              <FileName>analogdig.cpp</FileName>
               <FileType>8</FileType>
-              <FilePath>.\main_m4.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>libpixy_m4.lib</FileName>
-              <FileType>4</FileType>
-              <FilePath>..\libpixy\libpixy_m4.lib</FilePath>
-            </File>
-            <File>
-              <FileName>conncomp.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>.\conncomp.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>exec.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>.\exec.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>progblobs.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>.\progblobs.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>progvideo.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>.\progvideo.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>progpt.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>.\progpt.cpp</FilePath>
+              <FilePath>.\src\analogdig.cpp</FilePath>
             </File>
             <File>
               <FileName>button.cpp</FileName>
               <FileType>8</FileType>
-              <FilePath>.\button.cpp</FilePath>
+              <FilePath>.\src\button.cpp</FilePath>
             </File>
             <File>
-              <FileName>blob.cpp</FileName>
+              <FileName>conncomp.cpp</FileName>
               <FileType>8</FileType>
-              <FilePath>..\..\common\blob.cpp</FilePath>
+              <FilePath>.\src\conncomp.cpp</FilePath>
             </File>
             <File>
-              <FileName>blobs.cpp</FileName>
+              <FileName>exec.cpp</FileName>
               <FileType>8</FileType>
-              <FilePath>..\..\common\blobs.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>colorlut.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\..\common\colorlut.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>qqueue.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\..\common\qqueue.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>lpc43xx_i2c.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\libpixy\lpc43xx_i2c.c</FilePath>
+              <FilePath>.\src\exec.cpp</FilePath>
             </File>
             <File>
               <FileName>i2c.cpp</FileName>
               <FileType>8</FileType>
-              <FilePath>..\libpixy\i2c.cpp</FilePath>
+              <FilePath>.\src\i2c.cpp</FilePath>
             </File>
             <File>
-              <FileName>serial.cpp</FileName>
+              <FileName>progblobs.cpp</FileName>
               <FileType>8</FileType>
-              <FilePath>..\libpixy\serial.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>analogdig.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\libpixy\analogdig.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>spi.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\libpixy\spi.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>uart.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\libpixy\uart.cpp</FilePath>
+              <FilePath>.\src\progblobs.cpp</FilePath>
             </File>
             <File>
               <FileName>progchase.cpp</FileName>
               <FileType>8</FileType>
-              <FilePath>.\progchase.cpp</FilePath>
+              <FilePath>.\src\progchase.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>progpt.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>.\src\progpt.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>progvideo.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>.\src\progvideo.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>serial.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>.\src\serial.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>spi.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>.\src\spi.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>uart.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>.\src\uart.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>main_m4.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>.\src\main_m4.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>libpixy_m4.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\libpixy_m4\libpixy_m4.lib</FilePath>
+            </File>
+            <File>
+              <FileName>blob.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\common\src\blob.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>blobs.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\common\src\blobs.cpp</FilePath>
             </File>
             <File>
               <FileName>calc.cpp</FileName>
               <FileType>8</FileType>
-              <FilePath>..\..\common\calc.cpp</FilePath>
+              <FilePath>..\..\common\src\calc.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>colorlut.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\common\src\colorlut.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>qqueue.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\common\src\qqueue.cpp</FilePath>
             </File>
           </Files>
         </Group>
@@ -528,7 +523,7 @@
             <InvalidFlash>1</InvalidFlash>
           </TargetStatus>
           <OutputDirectory>.\RAM\</OutputDirectory>
-          <OutputName>video</OutputName>
+          <OutputName>main_m4</OutputName>
           <CreateExecutable>1</CreateExecutable>
           <CreateLib>0</CreateLib>
           <CreateHexFile>1</CreateHexFile>
@@ -830,7 +825,7 @@
               <MiscControls></MiscControls>
               <Define>CORE_M4 IPC_MASTER PIXY</Define>
               <Undefine></Undefine>
-              <IncludePath>., ..\libpixy, ..\..\common</IncludePath>
+              <IncludePath>., ..\libpixy_m4\inc, ..\..\common\inc, ..\common\inc, inc</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -871,104 +866,99 @@
           <GroupName>Source Code</GroupName>
           <Files>
             <File>
-              <FileName>main_m4.cpp</FileName>
+              <FileName>analogdig.cpp</FileName>
               <FileType>8</FileType>
-              <FilePath>.\main_m4.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>libpixy_m4.lib</FileName>
-              <FileType>4</FileType>
-              <FilePath>..\libpixy\libpixy_m4.lib</FilePath>
-            </File>
-            <File>
-              <FileName>conncomp.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>.\conncomp.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>exec.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>.\exec.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>progblobs.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>.\progblobs.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>progvideo.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>.\progvideo.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>progpt.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>.\progpt.cpp</FilePath>
+              <FilePath>.\src\analogdig.cpp</FilePath>
             </File>
             <File>
               <FileName>button.cpp</FileName>
               <FileType>8</FileType>
-              <FilePath>.\button.cpp</FilePath>
+              <FilePath>.\src\button.cpp</FilePath>
             </File>
             <File>
-              <FileName>blob.cpp</FileName>
+              <FileName>conncomp.cpp</FileName>
               <FileType>8</FileType>
-              <FilePath>..\..\common\blob.cpp</FilePath>
+              <FilePath>.\src\conncomp.cpp</FilePath>
             </File>
             <File>
-              <FileName>blobs.cpp</FileName>
+              <FileName>exec.cpp</FileName>
               <FileType>8</FileType>
-              <FilePath>..\..\common\blobs.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>colorlut.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\..\common\colorlut.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>qqueue.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\..\common\qqueue.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>lpc43xx_i2c.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\libpixy\lpc43xx_i2c.c</FilePath>
+              <FilePath>.\src\exec.cpp</FilePath>
             </File>
             <File>
               <FileName>i2c.cpp</FileName>
               <FileType>8</FileType>
-              <FilePath>..\libpixy\i2c.cpp</FilePath>
+              <FilePath>.\src\i2c.cpp</FilePath>
             </File>
             <File>
-              <FileName>serial.cpp</FileName>
+              <FileName>progblobs.cpp</FileName>
               <FileType>8</FileType>
-              <FilePath>..\libpixy\serial.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>analogdig.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\libpixy\analogdig.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>spi.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\libpixy\spi.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>uart.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\libpixy\uart.cpp</FilePath>
+              <FilePath>.\src\progblobs.cpp</FilePath>
             </File>
             <File>
               <FileName>progchase.cpp</FileName>
               <FileType>8</FileType>
-              <FilePath>.\progchase.cpp</FilePath>
+              <FilePath>.\src\progchase.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>progpt.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>.\src\progpt.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>progvideo.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>.\src\progvideo.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>serial.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>.\src\serial.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>spi.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>.\src\spi.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>uart.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>.\src\uart.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>main_m4.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>.\src\main_m4.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>libpixy_m4.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\libpixy_m4\libpixy_m4.lib</FilePath>
+            </File>
+            <File>
+              <FileName>blob.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\common\src\blob.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>blobs.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\common\src\blobs.cpp</FilePath>
             </File>
             <File>
               <FileName>calc.cpp</FileName>
               <FileType>8</FileType>
-              <FilePath>..\..\common\calc.cpp</FilePath>
+              <FilePath>..\..\common\src\calc.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>colorlut.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\common\src\colorlut.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>qqueue.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\common\src\qqueue.cpp</FilePath>
             </File>
           </Files>
         </Group>
