@@ -64,6 +64,27 @@ int main(void)
 	frame_init();
 	rls_init();
 
+#if 0
+	vsync();
+#endif
+#if 0
+	//while(g_loop);
+	uint8_t type = CAM_GRAB_M1R2;
+	uint32_t memory = SRAM1_LOC;
+	uint16_t offset = 0;
+	uint16_t width = 320;
+	uint16_t height = 200;
+	while(1)
+	{
+		 getFrame(&type, &memory, &offset, &offset, &width, &height);
+		 i++;
+
+		 if (i%50==0)
+		 {
+			 _DBD32(i), _CR();
+		 }
+	}
+#endif
 	//printf("M0 ready\n");
 	exec_loop();
 #endif
@@ -100,4 +121,6 @@ int main(void)
  		getRLSFrame(&memory, &size); //, (uint32_t *)&lut);
 }
 #endif
+
+return 0;
 }

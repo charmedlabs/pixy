@@ -32,9 +32,10 @@
 #include "serial.h"
 
 // M0 code 
+#ifdef KEIL
 const // so m0 program goes into RO memory
 #include "../main_m0/m0_image.c"
-
+#endif
 
 extern "C" 
 {
@@ -51,19 +52,32 @@ void __default_signal_handler(int signal, int type)
 }
 }
 
-int main(void) 
+int main(void)
 {
 	uint16_t major, minor, build;
 	int i, res, count;
 
 	// main init of hardware plus a version-dependent number for the parameters that will
 	// force a format of parameter between version numbers.  
+#ifdef KEIL
  	pixyInit(SRAM3_LOC, &LR0[0], sizeof(LR0));
+#else
+	pixyInit();
+#endif
 
 	cc_init(g_chirpUsb);
 	ser_init();
 	exec_init(g_chirpUsb);
 
+#if 1
+    exec_addProg(&g_progBlobs);
+    ptLoadParams();
+    exec_addProg(&g_progPt);
+    exec_addProg(&g_progVideo, true);
+    exec_loop();
+#endif
+
+#if 0
 	// load programs
 	exec_addProg(&g_progBlobs);
 	ptLoadParams();
@@ -88,7 +102,7 @@ int main(void)
 	prm_add("fwver", PRM_FLAG_INTERNAL, "", UINT16(FW_MAJOR_VER), UINT16(FW_MINOR_VER), UINT16(FW_BUILD_VER), END);
 
 	exec_loop();
-
+#endif
 #if 0
 	#define DELAY 1000000
 	rcs_setFreq(100);

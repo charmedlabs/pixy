@@ -41,12 +41,6 @@ int blobsSetup()
 
 	// setup camera mode
 	cam_setMode(CAM_MODE1);
- 	
-#ifdef DA
-	// load lut if we've grabbed any frames lately
-	if (g_rawFrame.m_pixels)
-		cc_loadLut();
-#endif
 
 	// if there have been any parameter changes, we should regenerate the LUT (do it regardless)
 	g_blobs->m_clut.generateLUT();	
@@ -138,7 +132,6 @@ void handleRecv()
 		}
 	}
 }
-
 
 int blobsLoop()
 {

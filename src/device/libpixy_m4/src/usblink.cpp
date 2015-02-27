@@ -78,7 +78,7 @@ int USBLink::receive(uint8_t *data, uint32_t len, uint16_t timeoutMs)
 
 	if (timeout==0) // this is special case... 
 	{
-		if (len>GBUF_SIZE || g_bufUsed!=0&&g_bufUsed!=len)
+		if ((len>GBUF_SIZE) || (g_bufUsed!=0) && (g_bufUsed!=len))
 			return LINK_RESULT_ERROR;
 
 		if (g_bufUsed==0)

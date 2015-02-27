@@ -29,11 +29,20 @@
 #include "chirpusb.h"
 #include "pixyvals.h"
 
+#ifdef KEIL
 extern uint8_t *__Vectors;
 #define STACK_GUARD           *(uint16_t *)(__Vectors - 0x600)
+#else
+extern uint8_t *g_pfnVectors;
+#define STACK_GUARD           *(uint16_t *)(g_pfnVectors - 0x600)
+#endif
 #define STACK_GUARD_WORD      0xABCD
 
+#ifdef KEIL
 void pixyInit(uint32_t slaveRomStart, const unsigned char slaveImage[], uint32_t imageSize);
+#else
+void pixyInit(void);
+#endif
 void pixySimpleInit(void);
 
 void cprintf(const char *format, ...);

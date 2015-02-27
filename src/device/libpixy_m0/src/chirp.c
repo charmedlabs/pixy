@@ -64,17 +64,17 @@ static int reallocTable(void);
 
 // weak definitions (need to change this keyword for different compiler)
 // for gcc-- void __attribute__((weak)) foo()
-__weak uint32_t linkBlockSize()
+uint32_t __attribute__((weak)) linkBlockSize()
 {
     return CRP_BLK_SIZE;
 }
 
-__weak uint32_t linkGetFlags(uint8_t index)
+uint32_t __attribute__((weak)) linkGetFlags(uint8_t index)
 {
     return 0;
 }
 
-__weak int32_t chirpInit(void)
+uint32_t __attribute__((weak)) chirpInit(void)
 {
     return 0;
 }
@@ -140,7 +140,7 @@ int assembleHelper(va_list *args)
 
     for (i=CRP_HEADER_LEN+g_len; TRUE;)
     {
-#if defined(__WIN32__) || defined(__arm)
+#if defined(__WIN32__) || defined(__arm__)
         type = va_arg(*args, int);
 #else
         type = va_arg(*args, uint8_t);
@@ -160,7 +160,7 @@ int assembleHelper(va_list *args)
 
         if (type==CRP_INT8)
         {
-#if defined(__WIN32__) || defined(__arm)
+#if defined(__WIN32__) || defined(__arm__)
             int8_t val = va_arg(*args, int);
 #else
             int8_t val = va_arg(*args, int8_t);
@@ -170,10 +170,10 @@ int assembleHelper(va_list *args)
         }
         else if (type==CRP_INT16)
         {
-#if defined(__WIN32__) || defined(__arm)
+#if defined(__WIN32__) || defined(__arm__)
             int16_t val = va_arg(*args, int);
 #else
-            int16_t val = va_arg(*args, int16_t);
+            int16_t val = va_arg(*args, int);
 #endif
             ALIGN(i, 2);
             // rewrite type so chirpGetType will work (even though we might add padding between type and data)
@@ -191,7 +191,7 @@ int assembleHelper(va_list *args)
         }
         else if (type==CRP_FLT32)
         {
-#if defined(__WIN32__) || defined(__arm)
+#if defined(__WIN32__) || defined(__arm__)
             float val = va_arg(*args, double);
 #else
             float val = va_arg(*args, float);

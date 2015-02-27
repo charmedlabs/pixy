@@ -41,13 +41,15 @@
 #include "usbcfg.h"
 #include "usbdesc.h"
 
+#define ALIGNED(n)  __attribute__((aligned (n)))
+
 #ifdef __cplusplus
  extern "C" {
 #endif
 
 
 /* USB Standard Device Descriptor */
-const uint8_t USB_DeviceDescriptor[] = {
+ ALIGNED(4) const uint8_t USB_DeviceDescriptor[] = {
   USB_DEVICE_DESC_SIZE,              /* bLength */
   USB_DEVICE_DESCRIPTOR_TYPE,        /* bDescriptorType */
   WBVAL(0x0200), /* 2.0 */           /* bcdUSB */
@@ -66,16 +68,16 @@ const uint8_t USB_DeviceDescriptor[] = {
 
 /* USB FSConfiguration Descriptor */
 /*   All Descriptors (Configuration, Interface, Endpoint, Class, Vendor */
-const uint8_t USB_FSConfigDescriptor[] = {
+ALIGNED(4) const uint8_t USB_FSConfigDescriptor[] = {
 /* Configuration 1 */
   USB_CONFIGUARTION_DESC_SIZE,       /* bLength */
   USB_CONFIGURATION_DESCRIPTOR_TYPE, /* bDescriptorType */
   WBVAL(                             /* wTotalLength */
-    1*USB_CONFIGUARTION_DESC_SIZE +
-    1*USB_INTERFACE_DESC_SIZE     +  /* communication interface */
-    1*USB_ENDPOINT_DESC_SIZE      +  /* interrupt endpoint */
-    1*USB_INTERFACE_DESC_SIZE     +  /* data interface */
-    2*USB_ENDPOINT_DESC_SIZE         /* bulk endpoints */
+    (1 * USB_CONFIGUARTION_DESC_SIZE) +
+    (1 * USB_INTERFACE_DESC_SIZE)     +  /* communication interface */
+    (1 * USB_ENDPOINT_DESC_SIZE)      +  /* interrupt endpoint */
+    (1 * USB_INTERFACE_DESC_SIZE)     +  /* data interface */
+    (2 * USB_ENDPOINT_DESC_SIZE)         /* bulk endpoints */
       ),
   0x02,                              /* bNumInterfaces */
   0x01,                              /* bConfigurationValue: 0x01 is used to select this configuration */
@@ -131,16 +133,16 @@ const uint8_t USB_FSConfigDescriptor[] = {
 
 /* USB HSConfiguration Descriptor */
 /*   All Descriptors (Configuration, Interface, Endpoint, Class, Vendor */
-const uint8_t USB_HSConfigDescriptor[] = {
+ALIGNED(4) const uint8_t USB_HSConfigDescriptor[] = {
 /* Configuration 1 */
   USB_CONFIGUARTION_DESC_SIZE,       /* bLength */
   USB_CONFIGURATION_DESCRIPTOR_TYPE, /* bDescriptorType */
   WBVAL(                             /* wTotalLength */
-    1*USB_CONFIGUARTION_DESC_SIZE +
-    1*USB_INTERFACE_DESC_SIZE     +  /* communication interface */
-    1*USB_ENDPOINT_DESC_SIZE      +  /* interrupt endpoint */
-    1*USB_INTERFACE_DESC_SIZE     +  /* data interface */
-    2*USB_ENDPOINT_DESC_SIZE         /* bulk endpoints */
+    (1 * USB_CONFIGUARTION_DESC_SIZE) +
+    (1 * USB_INTERFACE_DESC_SIZE)     +  /* communication interface */
+    (1 * USB_ENDPOINT_DESC_SIZE)      +  /* interrupt endpoint */
+    (1 * USB_INTERFACE_DESC_SIZE)     +  /* data interface */
+    (2 * USB_ENDPOINT_DESC_SIZE)         /* bulk endpoints */
       ),
   0x02,                              /* bNumInterfaces */
   0x01,                              /* bConfigurationValue: 0x01 is used to select this configuration */
@@ -195,7 +197,7 @@ const uint8_t USB_HSConfigDescriptor[] = {
 };
 
 /* USB String Descriptor (optional) */
-const uint8_t USB_StringDescriptor[] = {
+ALIGNED(4) const uint8_t USB_StringDescriptor[] = {
 /* Index 0x00: LANGID Codes */
   0x04,                              /* bLength */
   USB_STRING_DESCRIPTOR_TYPE,        /* bDescriptorType */
@@ -245,7 +247,7 @@ const uint8_t USB_StringDescriptor[] = {
 };
 
 /* USB Device Qualifier */
-const uint8_t USB_DeviceQualifier[] = {
+ALIGNED(4) const uint8_t USB_DeviceQualifier[] = {
   USB_DEVICE_QUALI_SIZE,             	/* bLength */
   USB_DEVICE_QUALIFIER_DESCRIPTOR_TYPE,	/* bDescriptorType */
   WBVAL(0x0200), /* 2.00 */          /* bcdUSB */
@@ -259,16 +261,16 @@ const uint8_t USB_DeviceQualifier[] = {
 
 /* USB Configuration Descriptor */
 /*   All Descriptors (Configuration, Interface, Endpoint, Class, Vendor */
-const uint8_t USB_FSOtherSpeedConfiguration[] = {
+ALIGNED(4) const uint8_t USB_FSOtherSpeedConfiguration[] = {
 /* Configuration 1 */
   USB_CONFIGUARTION_DESC_SIZE,       /* bLength */
   USB_CONFIGURATION_DESCRIPTOR_TYPE, /* bDescriptorType */
   WBVAL(                             /* wTotalLength */
-    1*USB_CONFIGUARTION_DESC_SIZE +
-    1*USB_INTERFACE_DESC_SIZE     +  /* communication interface */
-    1*USB_ENDPOINT_DESC_SIZE      +  /* interrupt endpoint */
-    1*USB_INTERFACE_DESC_SIZE     +  /* data interface */
-    2*USB_ENDPOINT_DESC_SIZE         /* bulk endpoints */
+    (1 * USB_CONFIGUARTION_DESC_SIZE) +
+    (1 * USB_INTERFACE_DESC_SIZE)     +  /* communication interface */
+    (1 * USB_ENDPOINT_DESC_SIZE)      +  /* interrupt endpoint */
+    (1 * USB_INTERFACE_DESC_SIZE)     +  /* data interface */
+    (2 * USB_ENDPOINT_DESC_SIZE)         /* bulk endpoints */
       ),
   0x02,                              /* bNumInterfaces */
   0x01,                              /* bConfigurationValue: 0x01 is used to select this configuration */
@@ -323,16 +325,16 @@ const uint8_t USB_FSOtherSpeedConfiguration[] = {
 
 /* USB Configuration Descriptor */
 /*   All Descriptors (Configuration, Interface, Endpoint, Class, Vendor */
-const uint8_t USB_HSOtherSpeedConfiguration[] = {
+ALIGNED(4) const uint8_t USB_HSOtherSpeedConfiguration[] = {
 /* Configuration 1 */
   USB_CONFIGUARTION_DESC_SIZE,       /* bLength */
   USB_CONFIGURATION_DESCRIPTOR_TYPE, /* bDescriptorType */
   WBVAL(                             /* wTotalLength */
-    1*USB_CONFIGUARTION_DESC_SIZE +
-    1*USB_INTERFACE_DESC_SIZE     +  /* communication interface */
-    1*USB_ENDPOINT_DESC_SIZE      +  /* interrupt endpoint */
-    1*USB_INTERFACE_DESC_SIZE     +  /* data interface */
-    2*USB_ENDPOINT_DESC_SIZE         /* bulk endpoints */
+    (1 * USB_CONFIGUARTION_DESC_SIZE) +
+    (1 * USB_INTERFACE_DESC_SIZE)     +  /* communication interface */
+    (1 * USB_ENDPOINT_DESC_SIZE)      +  /* interrupt endpoint */
+    (1 * USB_INTERFACE_DESC_SIZE)     +  /* data interface */
+    (2 * USB_ENDPOINT_DESC_SIZE)         /* bulk endpoints */
       ),
   0x02,                              /* bNumInterfaces */
   0x01,                              /* bConfigurationValue: 0x01 is used to select this configuration */

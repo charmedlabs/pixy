@@ -15,6 +15,9 @@
 
 #include <stdio.h>
 #include "pixy_init.h"
+#ifndef KEIL
+#include "cr_start_m0.h"
+#endif
 #include "platform_config.h"
 #include "param.h"
 #include "camera.h"
@@ -169,17 +172,21 @@ void handleAWB()
 void periodic()
 {
 	// check to see if guard data still there
-	if (STACK_GUARD!=STACK_GUARD_WORD)
-		showError(1, 0xffff00, "stack corruption\n");
+//	if (STACK_GUARD != STACK_GUARD_WORD)
+//		showError(1, 0xffff00, "stack corruption\n");
 
 	while(g_chirpUsb->service());
 	handleAWB();
 }
 
+#ifdef KEIL
 void pixyInit(uint32_t slaveRomStart, const unsigned char slaveImage[], uint32_t imageSize)
+#endif
+void pixyInit(void)
+#else
 {
 	// write stack guard word
- 	STACK_GUARD = STACK_GUARD_WORD;
+ //	STACK_GUARD = STACK_GUARD_WORD;
 
 	commonInit();
 
@@ -193,18 +200,25 @@ void pixyInit(uint32_t slaveRomStart, const unsigned char slaveImage[], uint32_t
    	SCTInit();
 	CameraInit();
 
+	// initialize shared memory interface before running M0
+	SMLink *smLink = new SMLink;
+
 	// start slave
+#ifdef KEIL
 	if (slaveRomStart && slaveImage && imageSize)
 	{
 		IPC_downloadSlaveImage(slaveRomStart, slaveImage, imageSize);
 		IPC_startSlave();
 	}
+#else
+    cr_start_m0(SLAVE_M0APP,&__core_m0app_START__);
+#endif
 
 	// initialize chirp objects
 	USBLink *usbLink = new USBLink;
 	g_chirpUsb = new Chirp(false, false, usbLink);
 	g_chirpUsb->setSendTimeout(3000); // set a high timeout because the host can sometimes go AWOL for a second or two....
-	SMLink *smLink = new SMLink;
+
   	g_chirpM0 = new Chirp(false, true, smLink);
 
 	// initialize devices/modules
