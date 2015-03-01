@@ -1,9 +1,28 @@
-ENTRY(ResetISR)
-
-INCLUDE "video_Release_lib.ld"
-INCLUDE "video_Release_mem.ld"
+INCLUDE "video_SPIFI_lib.ld"
 
 GROUP(libcr_nohost.a libcr_eabihelpers.a)
+
+MEMORY
+{
+  /* Define each memory region */
+  SPIflash (rx) : ORIGIN = 0x14000000, LENGTH = 0x20000 /* 128K bytes */
+  RamLoc128 (rwx) : ORIGIN = 0x10000000, LENGTH = 0x20000 /* 128K bytes */
+  RamAHB32 (rwx) : ORIGIN = 0x20000000, LENGTH = 0x8000 /* 32K bytes */
+  RamLoc72 (rwx) : ORIGIN = 0x10080000, LENGTH = 0x12000 /* 72K bytes */
+  RamAHB16 (rwx) : ORIGIN = 0x20008000, LENGTH = 0x4000 /* 16K bytes */
+  RamAHB_ETB16 (rwx) : ORIGIN = 0x2000c000, LENGTH = 0x4000 /* 16K bytes */
+
+
+}
+  /* Define a symbol for the top of each memory region */
+  __top_SPIflash = 0x14000000 + 0x20000;
+  __top_RamLoc128 = 0x10000000 + 0x20000;
+  __top_RamAHB32 = 0x20000000 + 0x8000;
+  __top_RamLoc72 = 0x10080000 + 0x12000;
+  __top_RamAHB16 = 0x20008000 + 0x4000;
+  __top_RamAHB_ETB16 = 0x2000c000 + 0x4000;
+
+ENTRY(ResetISR)
 
 SECTIONS
 {
@@ -34,6 +53,13 @@ SECTIONS
         LONG(LOADADDR(.data_RAM5));
         LONG(    ADDR(.data_RAM5));
         LONG(  SIZEOF(.data_RAM5));
+
+/* RUN_FROM_RAM */
+        LONG(LOADADDR(.text_ram));
+        LONG(    ADDR(.text_ram)) ;
+        LONG(  SIZEOF(.text_ram));
+/* END RUN_FROM_RAM */
+
         __data_section_table_end = .;
         __bss_section_table = .;
         LONG(    ADDR(.bss));
@@ -52,10 +78,17 @@ SECTIONS
         
 
         *(.after_vectors*)
+
+ /* RUN_FROM_RAM */    
+        *cr_startup_lpc43xx.o (.text* .rodata .rodata.* .constdata .constdata.*)
+        *(.text.main)        
+/* END RUN_FROM_RAM */ 
         
-    } >RamLoc128
-    
-    .text : ALIGN(4)    
+    } >SPIflash
+
+ /* RUN_FROM_RAM */    
+    .text_ram : ALIGN(4)
+/* END RUN_FROM_RAM */     
     {
          *(.text*)
         *(.rodata .rodata.* .constdata .constdata.*)
@@ -91,7 +124,9 @@ SECTIONS
         KEEP (*crtend.o(.dtors))
         . = ALIGN(4);
         /* End C++ */
-    } > RamLoc128
+/* RUN_FROM_RAM */          
+    } > RamLoc128 AT>SPIflash
+/* END RUN_FROM_RAM */
 
     /*
      * for exception handling/unwind - some Newlib functions (in common
@@ -100,13 +135,19 @@ SECTIONS
     .ARM.extab : ALIGN(4)
     {
     	*(.ARM.extab* .gnu.linkonce.armextab.*)
-    } > RamLoc128
+/* RUN_FROM_RAM */          
+    } > RamLoc128 AT>SPIflash
+/* END RUN_FROM_RAM */
+
     __exidx_start = .;
     
     .ARM.exidx : ALIGN(4)
     {
     	*(.ARM.exidx* .gnu.linkonce.armexidx.*)
-    } > RamLoc128
+/* RUN_FROM_RAM */          
+    } > RamLoc128 AT>SPIflash
+/* END RUN_FROM_RAM */
+
     __exidx_end = .;
     
     _etext = .;
@@ -121,7 +162,7 @@ SECTIONS
     	*(.data.$RAM2*)
     	*(.data.$RamAHB32*)
        . = ALIGN(4) ;
-    } > RamAHB32 AT>RamLoc128
+    } > RamAHB32 AT>SPIflash
     
     /* DATA section for RamLoc72 */
     .data_RAM3 : ALIGN(4)
@@ -132,7 +173,7 @@ SECTIONS
     	*(.data.$RAM3*)
     	*(.data.$RamLoc72*)
        . = ALIGN(4) ;
-    } > RamLoc72 AT>RamLoc128
+    } > RamLoc72 AT>SPIflash
     
     /* DATA section for RamAHB16 */
     .data_RAM4 : ALIGN(4)
@@ -148,7 +189,7 @@ SECTIONS
     	*(.data.$RAM4*)
     	*(.data.$RamAHB16*)
        . = ALIGN(4) ;
-    } > RamAHB16 AT>RamLoc128
+    } > RamAHB16 AT>SPIflash
     
     /* DATA section for RamAHB_ETB16 */
     .data_RAM5 : ALIGN(4)
@@ -159,7 +200,7 @@ SECTIONS
     	*(.data.$RAM5*)
     	*(.data.$RamAHB_ETB16*)
        . = ALIGN(4) ;
-    } > RamAHB_ETB16 AT>RamLoc128
+    } > RamAHB_ETB16 AT>SPIflash
     
     /* MAIN DATA SECTION */
     
@@ -182,7 +223,7 @@ SECTIONS
 	   *(.data*)
 	   . = ALIGN(4) ;
 	   _edata = . ;
-	} > RamLoc128 AT>RamLoc128
+	} > RamLoc128 AT>SPIflash
 
     /* BSS section for RamAHB32 */
     .bss_RAM2 : ALIGN(4)
@@ -262,6 +303,7 @@ SECTIONS
         _end_noinit = .;
     } > RamLoc128
     
-    PROVIDE(${heap_symbol} = ADDR(.data_RAM2));
-	PROVIDE(_vStackTop = __top_RamAHB32 - ${STACK_OFFSET});
+PROVIDE(_pvHeapStart = ADDR(.data_RAM2));
+PROVIDE(_vStackTop = __top_RamAHB32);
+
 }

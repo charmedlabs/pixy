@@ -1,9 +1,9 @@
-ENTRY(ResetISR)
-
-INCLUDE "video_Release_lib.ld"
-INCLUDE "video_Release_mem.ld"
+INCLUDE "video_RAM_lib.ld"
+INCLUDE "video_RAM_mem.ld"
 
 GROUP(libcr_nohost.a libcr_eabihelpers.a)
+
+ENTRY(ResetISR)
 
 SECTIONS
 {
@@ -262,6 +262,6 @@ SECTIONS
         _end_noinit = .;
     } > RamLoc128
     
-    PROVIDE(_pvHeapStart = ADDR(.data_RAM2));
-	PROVIDE(_vStackTop = __top_RamAHB32 - 0);
+PROVIDE(_pvHeapStart = ADDR(.data_RAM2));
+PROVIDE(_vStackTop = __top_RamAHB32);
 }

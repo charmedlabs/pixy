@@ -168,6 +168,7 @@ void ConsoleWidget::acceptInput(bool accept)
 void ConsoleWidget::handleHistory(bool down)
 {
     int index;
+    moveCursor(QTextCursor::End);
     QTextCursor cursor = textCursor();
 
     if (m_history.size()==0)
@@ -189,6 +190,7 @@ void ConsoleWidget::handleHistory(bool down)
 
     handleColor();
     insertPlainText(m_prompt + m_history[index]);
+    moveCursor(QTextCursor::End);
 }
 
 void ConsoleWidget::keyPressEvent(QKeyEvent *event)
