@@ -126,7 +126,7 @@ int main(int argc, char *  argv[])
   if(!pixy_init_status == 0)
   {
     // Error initializing Pixy //
-    printf("pixy_init(): ");
+    printf("Error: pixy_init() [%d] ", pixy_init_status);
     pixy_error(pixy_init_status);
 
     return pixy_init_status;
@@ -143,8 +143,9 @@ int main(int argc, char *  argv[])
 
     if(blocks_copied < 0) {
       // Error: pixy_get_blocks //
-      printf("pixy_get_blocks(): ");
+      printf("Error: pixy_get_blocks() [%d] ", result);
       pixy_error(blocks_copied);
+      fflush(stdout);
     }
 
     if (blocks_copied>0) {
@@ -163,13 +164,15 @@ int main(int argc, char *  argv[])
 
       result = pixy_rcs_set_position(PIXY_RCS_PAN_CHANNEL, pan.position);
       if (result < 0) {
-        printf("Pan position error %d\n", result);
+        printf("Error: pixy_rcs_set_position() [%d] ", result);
+        pixy_error(result);
         fflush(stdout);
       }
 
       result = pixy_rcs_set_position(PIXY_RCS_TILT_CHANNEL, tilt.position);
       if (result<0) {
-        printf("Tilt position error %d\n", result);
+        printf("Error: pixy_rcs_set_position() [%d] ", result);
+        pixy_error(result);
         fflush(stdout);
       }
     }
@@ -178,8 +181,12 @@ int main(int argc, char *  argv[])
       // Display received blocks //
       printf("frame %d:\n", frame_index);
       for(index = 0; index != blocks_copied; ++index) {
-        blocks[index].print(buf);
-        printf("  %s\n", buf);
+        printf("  sig:%2d x:%4d y:%4d width:%4d height:%4d\n",
+               blocks[index].signature,
+               blocks[index].x,
+               blocks[index].y,
+               blocks[index].width,
+               blocks[index].height);
       }
       fflush(stdout);
     }

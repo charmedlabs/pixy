@@ -105,15 +105,18 @@ def main():
   pixy_init_status = pixy_init()
 
   if pixy_init_status != 0:
+    print 'Error: pixy_init() [%d] ' % pixy_init_status
     pixy_error(pixy_init_status)
     return
+
 
   #  Initialize Gimbals #
   pan_gimbal  = Gimbal(PIXY_RCS_CENTER_POS, PAN_PROPORTIONAL_GAIN, PAN_DERIVATIVE_GAIN)
   tilt_gimbal = Gimbal(PIXY_RCS_CENTER_POS, TILT_PROPORTIONAL_GAIN, TILT_DERIVATIVE_GAIN)
 
   # Initialize block #
-  block = Block()
+  block       = Block()
+  frame_index = 0
 
   signal.signal(signal.SIGINT, handle_SIGINT)
 
@@ -129,7 +132,7 @@ def main():
 
     # Was there an error? #
     if count < 0:
-      print 'Error: pixy_get_blocks()'
+      print 'Error: pixy_get_blocks() [%d] ' % count
       pixy_error(count)
       sys.exit(1)
 
@@ -149,20 +152,26 @@ def main():
       set_position_result = pixy_rcs_set_position(PIXY_RCS_PAN_CHANNEL, pan_gimbal.position)
 
       if set_position_result < 0:
-        print 'Error: pixy_rcs_set_position() '
+        print 'Error: pixy_rcs_set_position() [%d] ' % result
         pixy_error(result)
         sys.exit(2)
 
       set_position_result = pixy_rcs_set_position(PIXY_RCS_TILT_CHANNEL, tilt_gimbal.position)
 
       if set_position_result < 0:
-        print 'Error: pixy_rcs_set_position() '
+        print 'Error: pixy_rcs_set_position() [%d] ' % result
         pixy_error(result)
         sys.exit(2)
 
-      print '[Pan error / Tilt Error] : [%3d / %3d]' % (pan_error, tilt_error)
+    if (frame_index % 50) == 0:
+      # If available, display block data once a second #
+      print 'frame %d:' % frame_index
 
-  print 'Exit!!!'
+      if count == 1:
+        print '  sig:%2d x:%4d y:%4d width:%4d height:%4d' % (block.signature, block.x, block.y, block.width, block.height)
+
+    frame_index = frame_index + 1
+
   pixy_close()
 
 if __name__ == "__main__":
