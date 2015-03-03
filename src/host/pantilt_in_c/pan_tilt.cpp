@@ -123,7 +123,7 @@ int main(int argc, char *  argv[])
   pixy_init_status = pixy_init();
 
   // Was there an error initializing pixy? //
-  if(!pixy_init_status == 0)
+  if(pixy_init_status != 0)
   {
     // Error initializing Pixy //
     printf("Error: pixy_init() [%d] ", pixy_init_status);
@@ -143,7 +143,7 @@ int main(int argc, char *  argv[])
 
     if(blocks_copied < 0) {
       // Error: pixy_get_blocks //
-      printf("Error: pixy_get_blocks() [%d] ", result);
+      printf("Error: pixy_get_blocks() [%d] ", blocks_copied);
       pixy_error(blocks_copied);
       fflush(stdout);
     }
@@ -194,6 +194,8 @@ int main(int argc, char *  argv[])
     frame_index++;
   }
   pixy_close();
+
+  return 0;
 }
 
 // LEIMON 2015 //
