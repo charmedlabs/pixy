@@ -74,7 +74,7 @@ uint32_t __attribute__((weak)) linkGetFlags(uint8_t index)
     return 0;
 }
 
-uint32_t __attribute__((weak)) chirpInit(void)
+int32_t __attribute__((weak)) chirpInit(void)
 {
     return 0;
 }

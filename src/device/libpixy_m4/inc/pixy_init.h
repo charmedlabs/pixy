@@ -25,8 +25,7 @@
 #include "usbcore.h"
 #include "usbuser.h"
 #include "ipc_mbx.h"
-#include "chirpm0.h"
-#include "chirpusb.h"
+#include "chirp.hpp"
 #include "pixyvals.h"
 
 #ifdef KEIL

@@ -19,6 +19,8 @@
 #include "cr_start_m0.h"
 #endif
 #include "platform_config.h"
+#include "smlink.hpp"
+#include "usblink.h"
 #include "param.h"
 #include "camera.h"
 #include "rcservo.h"
@@ -181,9 +183,9 @@ void periodic()
 
 #ifdef KEIL
 void pixyInit(uint32_t slaveRomStart, const unsigned char slaveImage[], uint32_t imageSize)
-#endif
-void pixyInit(void)
 #else
+void pixyInit(void)
+#endif
 {
 	// write stack guard word
  //	STACK_GUARD = STACK_GUARD_WORD;

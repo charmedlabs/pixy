@@ -16,11 +16,10 @@
 #include <new>
 #ifdef PIXY
 #include "pixy_init.h"
-#include "exec.h"
 #else
 #include "pixymon.h"
-#include "debug.h"
 #endif
+#include "debug.h"
 #include <blob.h>
 
 #ifdef DEBUG

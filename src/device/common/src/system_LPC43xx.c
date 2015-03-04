@@ -38,10 +38,12 @@
 * use without further testing or modification.
 **********************************************************************/
 
-#include "lpc43xx.h"
+#include "LPC43xx.h"
+#include "lpc43xx_cgu.h"
 
-
+#ifdef KEIL
 extern uint32_t getPC(void);
+#endif
 
 /**
  * Initialize the system
@@ -54,8 +56,27 @@ extern uint32_t getPC(void);
  */
 void SystemInit (void)
 {
+#ifdef KEIL
+
 #if defined(CORE_M4) || defined(CORE_M3)
 	// Enable VTOR register to point to vector table
 	SCB->VTOR = getPC() & 0xFFFF0000;
+
+#else // code red
+    // CodeRed startup code will modify VTOR register to match
+    // when code has been linked to run from.
+
+    // Check whether we are running from external flash
+    if (SCB->VTOR == 0x1C000000)
+        /*Enable Buffer for External Flash*/
+        LPC_EMC->STATICCONFIG0 |= 1<<19;
+
+    // Call clock initialisation code
+    CGU_Init();
+
+#endif
+
+    /*Enable Buffer for External Flash*/
+    LPC_EMC->STATICCONFIG0 |= 1<<19;
 #endif
 }

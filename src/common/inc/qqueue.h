@@ -14,7 +14,7 @@
 //
 #ifndef _QQUEUE_H
 #define _QQUEUE_H
-#include <inttypes.h>
+#include <stdint.h>
 
 #define QQ_LOC        SRAM4_LOC
 #ifdef PIXY
@@ -66,7 +66,7 @@ struct QqueueFields
     volatile uint16_t consumed;
 
     // (array size below doesn't matter-- we're just going to cast a pointer to this struct)
-    volatile Qval data[1]; // data
+    Qval data[1]; // data
 };
 
 #ifdef __cplusplus  // M4 is C++ and the "consumer" of data

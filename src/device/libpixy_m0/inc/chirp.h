@@ -198,7 +198,7 @@ int chirpRemoteInit(void);
 #define LINK_FLAG_INDEX_SHARED_MEMORY_LOCATION          0x01
 #define LINK_FLAG_INDEX_SHARED_MEMORY_SIZE              0x02
 
-extern int32_t chirpInit(void);
+extern int32_t __attribute__((weak)) chirpInit(void);
 extern int linkSend(const uint8_t *data, uint32_t len, uint16_t timeoutMs);
 extern int linkReceive(uint8_t *data, uint32_t len, uint16_t timeoutMs);
 extern uint32_t linkBlockSize(void);

@@ -22,7 +22,7 @@
 
 /* definitions */
 /* perform a callback when mailbox flag gets signaled - within IRQ - */
-void _mbxProcess(mbxId_t mbxNum);
+static void _mbxProcess(mbxId_t mbxNum);
 
 void dummyCallback(msg_t message, msgId_t idNum, mbxParam_t parameter);
 
@@ -42,11 +42,15 @@ void dummyCallback(msg_t message, msgId_t idNum, mbxParam_t parameter);
 
 //	/* do not remove this, it is only to make the code compile on slave side */
 //	const unsigned char LR0[1];
-
+#ifdef KEIL
 	#define _lockInts() 	do {\
 	wasMasked = __disable_irq();\
 	} while(0)
-
+#else
+	#define _lockInts() 	do {\
+	__disable_irq();\
+	} while(0)
+#endif
 	#define _unlockInts() do {\
 	if(!wasMasked) 	__enable_irq();\
 	} while(0)
@@ -174,7 +178,11 @@ void IPC_sendMsg(mbxId_t mbxNum, msg_t msg, msgId_t msgNum, mbxParam_t param) {
 	__DSB();  	
 							
 	// now trigger the remote processor
+#ifdef KEIL
 	__sev();
+#else
+	__SEV();
+#endif
 }
 
 

@@ -18,6 +18,10 @@
 
 #ifdef CORE_M0
 #include <stdio.h>
+#else
+#ifdef __cplusplus  
+#include "chirp.hpp"
+#endif
 #endif
 #include "debug_frmwrk.h"
 
@@ -25,6 +29,14 @@
 #define printf(...)  printf(__VA_ARGS__)
 #else
 #define printf(...)  lpc_printf(__VA_ARGS__)
+
+#ifdef __cplusplus  
+extern uint8_t g_debug;
+
+#define DBG(...)            if (g_debug) cprintf(__VA_ARGS__)
+#define DBGL(level, ...)    if (g_debug>=level) cprintf(__VA_ARGS__)
+#define DBGE(n, ...)        if (g_debug==n) cprintf(__VA_ARGS__)
+#endif
 #endif
 
 #endif

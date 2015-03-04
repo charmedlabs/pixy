@@ -45,7 +45,6 @@
 extern "C" {
 #endif
 
-extern uint32_t SystemCoreClock;     /*!< System Clock Frequency (Core Clock)  */
 
 /**
  * Initialize the system
