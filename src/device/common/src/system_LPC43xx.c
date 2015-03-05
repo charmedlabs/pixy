@@ -41,6 +41,7 @@
 #include "LPC43xx.h"
 #include "lpc43xx_cgu.h"
 
+
 #ifdef KEIL
 extern uint32_t getPC(void);
 #endif
@@ -60,7 +61,7 @@ void SystemInit (void)
 
 #if defined(CORE_M4) || defined(CORE_M3)
 	// Enable VTOR register to point to vector table
-	SCB->VTOR = getPC() & 0xFFFF0000;
+	SCB->VTOR = getPC() & 0xFFF00000;
 
 #else // code red
     // CodeRed startup code will modify VTOR register to match
