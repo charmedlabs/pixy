@@ -3,8 +3,6 @@
 	<name>main_m4</name>
 	<comment></comment>
 	<projects>
-		<project>m0</project>
-		<project>pixy_m4</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

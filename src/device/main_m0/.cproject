@@ -64,6 +64,8 @@
 								<option id="gnu.c.compiler.option.include.paths.28912868" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/libpixy_m0/inc}&quot;"/>
+									<listOptionValue builtIn="false" value="../../common/inc"/>
+									<listOptionValue builtIn="false" value="../../../common/inc"/>
 								</option>
 								<option id="com.crt.advproject.gcc.exe.release.option.optimization.level.446872009" name="Optimization Level" superClass="com.crt.advproject.gcc.exe.release.option.optimization.level" value="gnu.c.optimization.level.none" valueType="enumerated"/>
 								<inputType id="com.crt.advproject.compiler.input.1673312753" superClass="com.crt.advproject.compiler.input"/>
@@ -80,9 +82,6 @@
 			</storageModule>
 			<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
 		</cconfiguration>
-	</storageModule>
-	<storageModule moduleId="scannerConfiguration">
-		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
 	</storageModule>
 	<storageModule moduleId="cdtBuildSystem" version="4.0.0">
 		<project id="m0.com.crt.advproject.projecttype.exe.1844261436" name="Executable" projectType="com.crt.advproject.projecttype.exe"/>
@@ -170,5 +169,11 @@
 		<configuration configurationName="Release">
 			<resource resourceType="PROJECT" workspacePath="/m0"/>
 		</configuration>
+	</storageModule>
+	<storageModule moduleId="scannerConfiguration">
+		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		<scannerConfigBuildInfo instanceId="com.crt.advproject.config.exe.release.885980906;com.crt.advproject.config.exe.release.885980906.;com.crt.advproject.gcc.exe.release.1448280732;com.crt.advproject.compiler.input.1673312753">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="com.crt.advproject.GCCManagedMakePerProjectProfile"/>
+		</scannerConfigBuildInfo>
 	</storageModule>
 </cproject>

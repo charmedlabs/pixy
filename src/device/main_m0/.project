@@ -3,7 +3,6 @@
 	<name>main_m0</name>
 	<comment></comment>
 	<projects>
-		<project>pixy_m0</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
