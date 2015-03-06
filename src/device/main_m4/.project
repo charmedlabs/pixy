@@ -3,6 +3,7 @@
 	<name>main_m4</name>
 	<comment></comment>
 	<projects>
+		<project>main_m0</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
