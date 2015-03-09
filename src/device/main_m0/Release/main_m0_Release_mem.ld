@@ -4,7 +4,7 @@
  * (c) NXP Semiconductors 2013-2015
  * Linker script memory definitions
  * Created from LinkMemoryTemplate
- * By LPCXpresso v7.3.0 [Build 186] [2014-07-09]  on Fri Mar 06 17:54:46 CST 2015)
+ * By LPCXpresso v7.3.0 [Build 186] [2014-07-09]  on Mon Mar 09 16:54:55 CDT 2015)
 */
 
 MEMORY
