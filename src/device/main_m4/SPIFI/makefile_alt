@@ -50,7 +50,7 @@ clean:
 
 post-build:
 	-@echo 'Performing post-build steps'
-	-arm-none-eabi-size "main_m4.axf" ; arm-none-eabi-objcopy -v -O binary "main_m4.axf" "main_m4.bin" ; arm-none-eabi-objcopy -I binary -O ihex main_m4.bin pixy_firmware.hex
+	-arm-none-eabi-size "main_m4.axf" ; arm-none-eabi-objcopy -v -O binary "main_m4.axf" "main_m4.bin" ; arm-none-eabi-objcopy -v -O ihex "main_m4.axf" "pixy_firmware.hex"
 	-@echo ' '
 
 .PHONY: all clean dependents
