@@ -344,7 +344,7 @@
             <uThumb>0</uThumb>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>CORE_M0  IPC_SLAVE PIXY</Define>
+              <Define>CORE_M0  IPC_SLAVE PIXY KEIL</Define>
               <Undefine></Undefine>
               <IncludePath>., ..\..\common\inc, ..\common\inc, inc</IncludePath>
             </VariousControls>

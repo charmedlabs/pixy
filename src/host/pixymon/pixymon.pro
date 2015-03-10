@@ -11,7 +11,7 @@ TEMPLATE = app
 RC_FILE = resources.rc
 
 SOURCES += main.cpp\
-        mainwindow.cpp \
+    mainwindow.cpp \
     videowidget.cpp \
     usblink.cpp \
     console.cpp \
@@ -22,12 +22,12 @@ SOURCES += main.cpp\
     connectevent.cpp \
     flash.cpp \
     reader.cpp \
-    ../../common/chirp.cpp \
-    ../../common/colorlut.cpp \
-    ../../common/blob.cpp \
-    ../../common/blobs.cpp \
-    ../../common/qqueue.cpp \
-    ../../common/calc.cpp \
+    ../../common/src/chirp.cpp \
+    ../../common/src/colorlut.cpp \
+    ../../common/src/blob.cpp \
+    ../../common/src/blobs.cpp \
+    ../../common/src/qqueue.cpp \
+    ../../common/src/calc.cpp \
     configdialog.cpp \
     aboutdialog.cpp \
     parameters.cpp \
@@ -54,17 +54,17 @@ HEADERS  += mainwindow.h \
     connectevent.h \
     flash.h \
     reader.h \
-    ../../common/pixytypes.h \
-    ../../common/pixydefs.h \
-    ../../common/chirp.hpp \
-    ../../common/colorlut.h \
-    ../../common/blobs.h \
-    ../../common/blob.h \
-    ../../common/blobs.h \
-    ../../common/qqueue.h \
-    ../../common/link.h \
-    ../../common/calc.h \
-    ../../common/simplevector.h \
+    ../../common/inc/pixytypes.h \
+    ../../common/inc/pixydefs.h \
+    ../../common/inc/chirp.hpp \
+    ../../common/inc/colorlut.h \
+    ../../common/inc/blobs.h \
+    ../../common/inc/blob.h \
+    ../../common/inc/blobs.h \
+    ../../common/inc/qqueue.h \
+    ../../common/inc/link.h \
+    ../../common/inc/calc.h \
+    ../../common/inc/simplevector.h \
     pixymon.h \
     configdialog.h \
     sleeper.h \
@@ -80,7 +80,7 @@ HEADERS  += mainwindow.h \
     debug.h \
     blobs2.h
 
-INCLUDEPATH += ../../common
+INCLUDEPATH += ../../common/inc
 
 QMAKE_CXXFLAGS_DEBUG += -O0
 QMAKE_CXXFLAGS += -Wno-unused-parameter
