@@ -13,9 +13,9 @@
 // end license header
 //
 
-#include "debug_frmwrk.h"
 #include "chirp.h"
 #include "frame_m0.h"
+#include "assembly.h"
 
 #define CAM_PCLK_MASK   0x2000
 
@@ -33,8 +33,8 @@ void vsync()
 		{
 			while(CAM_HSYNC()==0)
 			{
-			if (CAM_VSYNC()!=0)
-				goto end;
+				if (CAM_VSYNC()!=0)
+					goto end;
 			}
 			while(CAM_HSYNC()!=0); //grab data
 			h++;
@@ -46,14 +46,12 @@ end:
 	}
 }
 
-
-void syncM0(uint32_t *gpioIn, uint32_t clkMask)
+_ASM_FUNC void syncM0(uint32_t *gpioIn, uint32_t clkMask)
 {
-asm(".syntax unified");
+_ASM_START
+	_ASM(PUSH	{r4})
 
-	asm("PUSH	{r4}");
-
-asm("start:");
+_ASM_LABEL(start)
 	// This sequence can be extended to reduce probability of false phase detection.
 	// This routine acts as a "sieve", only letting a specific phase through.  
 	// In practice, 2 different phases separated by 1 clock are permitted through
@@ -62,481 +60,503 @@ asm("start:");
 	// If the pixel clock is perfectly in line with the cpu clock, 1 phase will match.  
 	// Worst case will aways be 2 possible phases. 
 	// It takes between 50 and 200 cpu clock cycles to complete.  	
-	asm("LDR 	r2, [r0]"); // high
-	asm("NOP");
-	asm("LDR 	r3, [r0]"); // low
-	asm("BICS	r2, r3");
-	asm("LDR 	r3, [r0]"); // high
-	asm("ANDS	r3, r2");
-	asm("LDR 	r2, [r0]"); // low
-	asm("LDR 	r4, [r0]"); // high
-	asm("BICS 	r4, r2");
-	asm("LDR 	r2, [r0]"); // low
-	asm("BICS	r4, r2");
-	asm("LDR 	r2, [r0]"); // high
-	asm("ANDS	r4, r2");
-	asm("LDR 	r2, [r0]"); // low
+	_ASM(LDR 	r2, [r0]) // high
+	_ASM(NOP)
+	_ASM(LDR 	r3, [r0]) // low
+	_ASM(BICS	r2, r3)
+	_ASM(LDR 	r3, [r0]) // high
+	_ASM(ANDS	r3, r2)
+	_ASM(LDR 	r2, [r0]) // low
+	_ASM(LDR 	r4, [r0]) // high
+	_ASM(BICS 	r4, r2)
+	_ASM(LDR 	r2, [r0]) // low
+	_ASM(BICS	r4, r2)		
+	_ASM(LDR 	r2, [r0]) // high
+	_ASM(ANDS	r4, r2)		
+	_ASM(LDR 	r2, [r0]) // low
 	
-	asm("BICS	r4, r2");
-	asm("ANDS	r4, r3");
+	_ASM(BICS	r4, r2)
+	_ASM(ANDS	r4, r3)
 
-	asm("TST	r4, r1");
-	asm("BEQ	start");
-
-	// in-phase begins here
-	asm("POP   	{r4}");
-
-	asm(".syntax divided");
-}
-
-
-void syncM1(uint32_t *gpioIn, uint32_t clkMask)
-{
-asm(".syntax unified");
-
-	asm("PUSH	{r4}");
-
-asm("startSyncM1:");
-	asm("LDR 	r2, [r0]"); // high
-	asm("NOP");
-	asm("NOP");
-	asm("NOP");
-	asm("NOP");
-	asm("LDR 	r3, [r0]"); // low
-	asm("BICS	r2, r3");
-	asm("NOP");
-	asm("NOP");
-	asm("NOP");
-	asm("LDR 	r3, [r0]"); // high
-	asm("ANDS	r3, r2");
-	asm("NOP");
-	asm("NOP");
-	asm("NOP");
-	asm("LDR 	r2, [r0]"); // low
-	asm("LDR 	r4, [r0]"); // high
-	asm("BICS 	r4, r2");
-	asm("NOP");
-	asm("NOP");
-	asm("NOP");
-	asm("LDR 	r2, [r0]"); // low
-	asm("BICS	r4, r2");
-	asm("NOP");
-	asm("NOP");
-	asm("NOP");
-	asm("LDR 	r2, [r0]"); // high
-	asm("ANDS	r4, r2");
-	asm("NOP");
-	asm("NOP");
-	asm("NOP");
-	asm("LDR 	r2, [r0]"); // low
-	
-	asm("BICS	r4, r2");
-	asm("ANDS	r4, r3");
-
-	asm("TST		r4, r1");
-	asm("NOP");		// an extra NOP makes us converge faster, worst case 400 cycles.
-	asm("NOP");
-	asm("NOP");
-	asm("BEQ		startSyncM1");
+	_ASM(TST	r4, r1)
+	_ASM(BEQ	start)
 
 	// in-phase begins here
 
 
-	asm("POP   	{r4}");
-
-	asm(".syntax divided");
+	_ASM(POP   	{r4})
+#ifdef KEIL
+	_ASM(BX 	lr)
+#endif
+_ASM_END
 }
 
-
-void lineM0(uint32_t *gpio, uint8_t *memory, uint32_t xoffset, uint32_t xwidth)
+_ASM_FUNC void syncM1(uint32_t *gpioIn, uint32_t clkMask)
 {
-//	asm("PRESERVE8");
-//	asm("IMPORT callSyncM0");
-asm(".syntax unified");
+_ASM_START
+	_ASM(PUSH	{r4})
 
-	asm("PUSH	{r4-r5}");
+_ASM_LABEL(startSyncM1)
+	_ASM(LDR 	r2, [r0]) // high
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(LDR 	r3, [r0]) // low
+	_ASM(BICS	r2, r3)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(LDR 	r3, [r0]) // high
+	_ASM(ANDS	r3, r2)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(LDR 	r2, [r0]) // low
+	_ASM(LDR 	r4, [r0]) // high
+	_ASM(BICS 	r4, r2)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(LDR 	r2, [r0]) // low
+	_ASM(BICS	r4, r2)		
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(LDR 	r2, [r0]) // high
+	_ASM(ANDS	r4, r2)		
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(LDR 	r2, [r0]) // low
+	
+	_ASM(BICS	r4, r2)
+	_ASM(ANDS	r4, r3)
+
+	_ASM(TST		r4, r1)
+	_ASM(NOP)		// an extra NOP makes us converge faster, worst case 400 cycles.  
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(BEQ		startSyncM1)
+
+	// in-phase begins here
+
+	_ASM(POP   	{r4})
+#ifdef KEIL
+	_ASM(BX 	lr)
+#endif
+_ASM_END
+}
+
+_ASM_FUNC void lineM0(uint32_t *gpio, uint8_t *memory, uint32_t xoffset, uint32_t xwidth)
+{
+_ASM_START
+	_ASM_IMPORT(callSyncM0)
+
+#ifdef KEIL
+	_ASM(PUSH	{r4-r5, lr})
+#else
+	_ASM(PUSH	{r4-r5})
+#endif
 
 	// add width to memory pointer so we can compare
-	asm("ADDS	r3, r1");
+	_ASM(ADDS	r3, r1)
 	// generate hsync bit
-	asm("MOVS	r4, #0x1");
-	asm("LSLS	r4, #11");
+	_ASM(MOVS	r4, #0x1)
+	_ASM(LSLS	r4, #11)
 
-	asm("PUSH	{r0-r3}");	 	// save args
-	asm("BL		callSyncM0");	// get pixel sync
-	asm("POP	{r0-r3}");		// restore args
+	_ASM(PUSH	{r0-r3}) // save args
+	_ASM(BL.W	callSyncM0) // get pixel sync
+	_ASM(POP	{r0-r3})	// restore args
 	   
 	// pixel sync starts here
 
-    // these nops are set us up for sampling hsync reliably
-	asm("NOP");
-	asm("NOP");
+	// these nops are set us up for sampling hsync reliably
+	_ASM(NOP) // 1
+	_ASM(NOP) // 1
 
 	// wait for hsync to go high
-asm("dest21:");
-    asm("LDR 	r5, [r0]");	 	// 2
-	asm("TST	r5, r4");			// 1
-	asm("BEQ	dest21");			// 3
+_ASM_LABEL(dest21)
+	_ASM(LDR 	r5, [r0]) 	// 2
+	_ASM(TST	r5, r4)		// 1
+	_ASM(BEQ	dest21)		// 3
 
 		// skip pixels
-asm("dest22:");
-	asm("SUBS	r2, #0x1");	// 1
-    asm("NOP");				// 1
-    asm("NOP");				// 1
-    asm("NOP");				// 1
-    asm("NOP");				// 1
-    asm("NOP");				// 1
-    asm("NOP");				// 1
-    asm("NOP");				// 1
-    asm("NOP");				// 1
-    asm("BGE	dest22");	// 3
+_ASM_LABEL(dest22)
+	_ASM(SUBS	r2, #0x1)	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(BGE	dest22)		// 3
 
 	// variable delay --- get correct phase for sampling
 
-    asm("LDRB 	r2, [r0]");	 	  // 0
-    asm("STRB 	r2, [r1, #0x00]");
-    asm("NOP");
-    asm("NOP");
+	_ASM(LDRB 	r2, [r0]) 	  // 0
+	_ASM(STRB 	r2, [r1, #0x00])
+	_ASM(NOP)
+	_ASM(NOP)
+	
+	_ASM(LDRB 	r2, [r0]) 	  // 0
+	_ASM(STRB 	r2, [r1, #0x01])
+	_ASM(NOP)
+	_ASM(NOP)
 
-    asm("LDRB 	r2, [r0]");	 	  // 0
-    asm("STRB 	r2, [r1, #0x01]");
-    asm("NOP");
-    asm("NOP");
+_ASM_LABEL(loop11)
+	_ASM(LDRB 	r2, [r0]) 	  // 0
+	_ASM(STRB 	r2, [r1, #0x2])
 
-asm("loop11:");
-	asm("LDRB 	r2, [r0]"); 	  // 0
-	asm("STRB 	r2, [r1, #0x2]");
+	_ASM(ADDS	r1, #0x03)
+	_ASM(NOP)
 
-	asm("ADDS	r1, #0x03");
-	asm("NOP");
+	_ASM(LDRB 	r2, [r0])	  // 0
+	_ASM(STRB 	r2, [r1, #0x0])
 
-	asm("LDRB 	r2, [r0]");	  // 0
-	asm("STRB 	r2, [r1, #0x0]");
+	_ASM(CMP		r1, r3)
 
-	asm("CMP	r1, r3");
+	_ASM(LDRB 	r2, [r0])	  // -1
+	_ASM(STRB 	r2, [r1, #0x1]) 
 
-	asm("LDRB 	r2, [r0]");	  // -1
-	asm("STRB 	r2, [r1, #0x1]");
-
-	asm("BLT	loop11");
+	_ASM(BLT		loop11)
 
 	// wait for hsync to go low (end of line)
-asm("dest13:");
-    asm("LDR 	r5, [r0]"); 	// 2
-	asm("TST	r5, r4");		// 1
-	asm("BNE	dest13");		// 3
+_ASM_LABEL(dest13)
+	_ASM(LDR 	r5, [r0]) 	// 2
+	_ASM(TST		r5, r4)		// 1
+	_ASM(BNE		dest13)		// 3
 
-	asm("POP	{r4-r5}");
-
-	asm(".syntax divided");
+#ifdef KEIL
+	_ASM(POP		{r4-r5, pc})
+#else
+	_ASM(POP		{r4-r5})
+#endif
+_ASM_END
 }
 
-
-void lineM1R1(uint32_t *gpio, uint8_t *memory, uint32_t xoffset, uint32_t xwidth)
+_ASM_FUNC void lineM1R1(uint32_t *gpio, uint8_t *memory, uint32_t xoffset, uint32_t xwidth)
 {
-//	asm("PRESERVE8");
-//	asm("IMPORT	callSyncM1");
-asm(".syntax unified");
+_ASM_START
+	_ASM_IMPORT(callSyncM1)
 
-	asm("PUSH	{r4-r5}");
+#ifdef KEIL
+	_ASM(PUSH	{r4-r5, lr})
+#else
+	_ASM(PUSH	{r4-r5})
+#endif
 
 	// add width to memory pointer so we can compare
-	asm("ADDS	r3, r1");
+	_ASM(ADDS	r3, r1)
 	// generate hsync bit
-	asm("MOVS	r4, #0x1");
-	asm("LSLS	r4, #11");
+	_ASM(MOVS	r4, #0x1)
+	_ASM(LSLS	r4, #11)
 
-	asm("PUSH	{r0-r3}"); // save args
-	asm("BL 	callSyncM1"); // get pixel sync
-	asm("POP	{r0-r3}");	// restore args
+	_ASM(PUSH	{r0-r3}) // save args
+	_ASM(BL.W	callSyncM1 )// get pixel sync
+	_ASM(POP	{r0-r3})	// restore args
 	   
 	// pixel sync starts here
 
 	// wait for hsync to go high
-asm("dest1:");
-    asm("LDR	r5, [r0]"); // 2
-	asm("TST	r5, r4");	// 1
-	asm("BEQ	dest1");	// 3
+_ASM_LABEL(dest1)
+	_ASM(LDR 	r5, [r0]) 	// 2
+	_ASM(TST	r5, r4)		// 1
+	_ASM(BEQ	dest1)		// 3
 
-	// skip pixels
-asm("dest2:");
-	asm("SUBS	r2, #0x1");	// 1
-	asm("NOP");				// 1
-	asm("NOP");				// 1
-	asm("NOP");				// 1
-	asm("NOP");				// 1
-	asm("NOP");				// 1
-	asm("NOP");				// 1
-	asm("NOP");				// 1
-	asm("NOP");				// 1
-	asm("NOP");				// 1
-	asm("NOP");				// 1
-	asm("NOP");				// 1
-	asm("NOP");				// 1
-	asm("NOP");				// 1
-	asm("NOP");				// 1
-	asm("NOP");				// 1
-	asm("NOP");				// 1
-	asm("NOP");				// 1
-	asm("NOP");				// 1
-	asm("NOP");				// 1
-	asm("NOP");				// 1
-	asm("BGE	dest2");		// 3
+		// skip pixels
+_ASM_LABEL(dest2)
+	_ASM(SUBS	r2, #0x1)	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(BGE	dest2)		// 3
 
 	// variable delay --- get correct phase for sampling
-	asm("NOP");
-	asm("NOP");
+	_ASM(NOP)
+	_ASM(NOP)
 
-asm("loop1:");
-	asm("LDRB 	r2, [r0]");
-	asm("STRB 	r2, [r1]");
-	asm("NOP");
-	asm("NOP");
-	asm("NOP");
-	asm("ADDS	r1, #0x01");
-	asm("CMP	r1, r3");
-	asm("BLT	loop1");
+_ASM_LABEL(loop1)
+	_ASM(LDRB 	r2, [r0]) 	  
+	_ASM(STRB 	r2, [r1])
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(ADDS	r1, #0x01)
+	_ASM(CMP	r1, r3)
+	_ASM(BLT	loop1)
 
 	// wait for hsync to go low (end of line)
-asm("dest3:");
-    asm("LDR 	r5, [r0]"); 	// 2
-	asm("TST	r5, r4");		// 1
-	asm("BNE	dest3");		// 3
+_ASM_LABEL(dest3)
+	_ASM(LDR 	r5, [r0]) 	// 2
+	_ASM(TST	r5, r4)		// 1
+	_ASM(BNE	dest3)		// 3
 
-	asm("POP	{r4-r5}");
-
-	asm(".syntax divided");
+#ifdef KEIL
+	_ASM(POP	{r4-r5, pc})
+#else
+	_ASM(POP	{r4-r5})
+#endif
+_ASM_END
 }
 
-
-void lineM1R2(uint32_t *gpio, uint16_t *memory, uint32_t xoffset, uint32_t xwidth)
+_ASM_FUNC void lineM1R2(uint32_t *gpio, uint16_t *memory, uint32_t xoffset, uint32_t xwidth)
 {
-//	asm("PRESERVE8");
-//	asm("IMPORT callSyncM1");
-asm(".syntax unified");
+_ASM_START
+	_ASM_IMPORT(callSyncM1)
 
-	asm("PUSH	{r4-r6}");
+#ifdef KEIL
+	_ASM(PUSH	{r4-r6, lr})
+#else
+	_ASM(PUSH	{r4-r6})
+#endif
 
 	// add width to memory pointer so we can compare
-	asm("LSLS	r3, #1");
-	asm("ADDS	r3, r1");
+	_ASM(LSLS	r3, #1)
+	_ASM(ADDS	r3, r1)
 	// generate hsync bit
-	asm("MOVS	r4, #0x1");
-	asm("LSLS	r4, #11");
+	_ASM(MOVS	r4, #0x1)
+	_ASM(LSLS	r4, #11)
 
-	asm("PUSH	{r0-r3}"); // save args
-	asm("BL		callSyncM1"); // get pixel sync
-	asm("POP	{r0-r3}");	// restore args
-	   
+	_ASM(PUSH	{r0-r3}) // save args
+	_ASM(BL.W	callSyncM1) // get pixel sync
+	_ASM(POP	{r0-r3})	// restore args
+	  
 	// pixel sync starts here
-asm("dest7:");
-   asm("LDR 	r5, [r0]"); // 2
-   asm("TST		r5, r4");	// 1
-   asm("BEQ		dest7");	// 3
 
-   // skip pixels
-asm("dest8:");
-    asm("SUBS	r2, #0x1");	// 1
-	asm("NOP");				// 1
-	asm("NOP");				// 1
-	asm("NOP");				// 1
-	asm("NOP");				// 1
-	asm("NOP");				// 1
-	asm("NOP");				// 1
-	asm("NOP");				// 1
-	asm("NOP");				// 1
-	asm("NOP");				// 1
-	asm("NOP");				// 1
-	asm("NOP");				// 1
-	asm("NOP");				// 1
-	asm("NOP");				// 1
-	asm("NOP");				// 1
-	asm("NOP");				// 1
-	asm("NOP");				// 1
-	asm("NOP");				// 1
-	asm("NOP");				// 1
-	asm("NOP");				// 1
-	asm("NOP");				// 1
-	asm("BGE	dest8");		// 3
+_ASM_LABEL(dest7)
+	_ASM(LDR 	r5, [r0]) 	// 2
+	_ASM(TST	r5, r4)		// 1
+	_ASM(BEQ	dest7)		// 3
+
+		// skip pixels
+_ASM_LABEL(dest8)
+	_ASM(SUBS	r2, #0x1)	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(BGE	dest8)		// 3
 
 	// variable delay --- get correct phase for sampling
-	asm("NOP");
-	asm("NOP");
+	_ASM(NOP)
+	_ASM(NOP)
 
-asm("loop3:");
-	asm("LDRB 	r2, [r0]");
-	asm("NOP");
-	asm("NOP");
-	asm("NOP");
-	asm("NOP");
-	asm("NOP");
-	asm("NOP");
-	asm("NOP");
-	asm("NOP");
-	asm("NOP");
-	asm("NOP");
+_ASM_LABEL(loop3)
+	_ASM(LDRB 	r2, [r0])
+	_ASM(NOP)
+	_ASM(NOP) 	  
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(LDRB 	r5, [r0]) 	  
+	_ASM(NOP)
+	_ASM(NOP) 	  
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
 
-	asm("LDRB 	r5, [r0]");
-    asm("NOP");
-	asm("NOP");
-	asm("NOP");
-	asm("NOP");
-	asm("NOP");
-	asm("NOP");
-	asm("NOP");
-	asm("NOP");
-	asm("NOP");
-	asm("NOP");
+	_ASM(LDRB 	r6, [r0]) 	  
+	_ASM(ADDS   r6, r2)
+	_ASM(STRH 	r6, [r1, #0x00])
+	_ASM(NOP)
+	_ASM(NOP) 	  
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
 
-	asm("LDRB 	r6, [r0]");
-	asm("ADDS   r6, r2");
-	asm("STRH 	r6, [r1, #0x00]");
-    asm("NOP");
-	asm("NOP");
-	asm("NOP");
-	asm("NOP");
-	asm("NOP");
-	asm("NOP");
-	asm("NOP");
-
-	asm("LDRB 	r6, [r0]");
-	asm("ADDS   r6, r5");
-	asm("STRH 	r6, [r1, #0x02]");
-	asm("NOP");
-	asm("NOP");
-	asm("ADDS	r1, #0x04");
-	asm("CMP	r1, r3");
-	asm("BLT	loop3");
+	_ASM(LDRB 	r6, [r0]) 	  
+	_ASM(ADDS   r6, r5)
+	_ASM(STRH 	r6, [r1, #0x02])
+	_ASM(NOP)
+	_ASM(NOP)	  
+	_ASM(ADDS	r1, #0x04)
+	_ASM(CMP	r1, r3)
+	_ASM(BLT	loop3)
 
 		// wait for hsync to go low (end of line)
-asm("dest9:");
-	asm("LDR 	r5, [r0]"); 	// 2
-	asm("TST	r5, r4");		// 1
-	asm("BNE	dest9");		// 3
+_ASM_LABEL(dest9)
+	_ASM(LDR 	r5, [r0]) 	// 2
+	_ASM(TST	r5, r4)		// 1
+	_ASM(BNE	dest9)		// 3
 
-	asm("POP	{r4-r6}");
-
-	asm(".syntax divided");
+#ifdef KEIL
+	_ASM(POP	{r4-r6, pc})
+#else
+	_ASM(POP	{r4-r6})
+#endif
+_ASM_END
 }
 
-
-void lineM1R2Merge(uint32_t *gpio, uint16_t *lineMemory, uint8_t *memory, uint32_t xoffset, uint32_t xwidth)
+_ASM_FUNC void lineM1R2Merge(uint32_t *gpio, uint16_t *lineMemory, uint8_t *memory, uint32_t xoffset, uint32_t xwidth)
 {
-//	asm("PRESERVE8");
-//	asm("IMPORT callSyncM1");
-asm(".syntax unified");
+_ASM_START
+	_ASM_IMPORT(callSyncM1)
 
-	asm("PUSH	{r4-r7}");
-	asm("LDR	r4, [sp, #0x28]"); // *** keil
+#ifdef KEIL
+	_ASM(PUSH	{r4-r7, lr})
+	_ASM(LDR	r4, [sp, #0x14])
+#else
+	_ASM(PUSH	{r4-r7})
+	_ASM(LDR	r4, [sp, #0x28])
+#endif
 
-   	// add width to memory pointer so we can compare
-	asm("ADDS	r4, r2");
+	// add width to memory pointer so we can compare
+	_ASM(ADDS	r4, r2)
 	// generate hsync bit
-	asm("MOVS	r5, #0x1");
-	asm("LSLS	r5, #11");
+	_ASM(MOVS	r5, #0x1)
+	_ASM(LSLS	r5, #11)
 
-	asm("PUSH	{r0-r3}"); // save args
-	asm("BL 	callSyncM1"); // get pixel sync
-	asm("POP	{r0-r3}");	// restore args
+	_ASM(PUSH	{r0-r3}) // save args
+	_ASM(BL.W	callSyncM1) // get pixel sync
+	_ASM(POP	{r0-r3})	// restore args
 	   
 	// pixel sync starts here
 
-	// wait for hsync to go high
-asm("dest4:");
-	asm("LDR 	r6, [r0]"); 	// 2
-	asm("TST	r6, r5");		// 1
-	asm("BEQ	dest4");		// 3
+		// wait for hsync to go high
+_ASM_LABEL(dest4)
+	_ASM(LDR 	r6, [r0]) 	// 2
+	_ASM(TST	r6, r5)		// 1
+	_ASM(BEQ	dest4)		// 3
 
 		// skip pixels
-asm("dest5:");
-	asm("SUBS	r3, #0x1");	    // 1
-	asm("NOP");				 	// 1
-	asm("NOP");				 	// 1
-	asm("NOP");				 	// 1
-	asm("NOP");				 	// 1
-	asm("NOP");				 	// 1
-	asm("NOP");				 	// 1
-	asm("NOP");				 	// 1
-	asm("NOP");				 	// 1
-	asm("NOP");				 	// 1
-	asm("NOP");				 	// 1
-	asm("NOP");				 	// 1
-	asm("NOP");				 	// 1
-	asm("NOP");				 	// 1
-	asm("NOP");				 	// 1
-	asm("NOP");				 	// 1
-	asm("NOP");				 	// 1
-	asm("NOP");				 	// 1
-	asm("NOP");				 	// 1
-	asm("NOP");				 	// 1
-	asm("NOP");				 	// 1
-	asm("BGE	dest5");		// 3
+_ASM_LABEL(dest5)
+	_ASM(SUBS	r3, #0x1)	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(NOP)				 	// 1
+	_ASM(BGE	dest5)		// 3
 
 	// variable delay --- get correct phase for sampling
-	asm("NOP");
-	asm("NOP");
+	_ASM(NOP)
+	_ASM(NOP)
 
-asm("loop4:");
-	asm("LDRB 	r3, [r0]"); // 0
-	asm("LDRH	r6, [r1, #0x00]");
-	asm("ADDS   r6, r3");
-	asm("NOP");
-	asm("NOP");
-	asm("NOP");
-	asm("NOP");
-	asm("NOP");
-	asm("NOP");
-	asm("NOP");
+_ASM_LABEL(loop4)
+	_ASM(LDRB 	r3, [r0]) // 0
+	_ASM(LDRH	r6, [r1, #0x00])
+	_ASM(ADDS   r6, r3)
+	_ASM(NOP)
+	_ASM(NOP)	  
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
+	
+	_ASM(LDRB 	r3, [r0]) // 0
+	_ASM(LDRH	r7, [r1, #0x02])
+	_ASM(ADDS   r7, r3)
+	_ASM(NOP)
+	_ASM(NOP) 	  
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
 
-	asm("LDRB 	r3, [r0]"); // 0
-	asm("LDRH	r7, [r1, #0x02]");
-	asm("ADDS   r7, r3");
-	asm("NOP");
-	asm("NOP");
-	asm("NOP");
-	asm("NOP");
-	asm("NOP");
-	asm("NOP");
-	asm("NOP");
+	_ASM(LDRB 	r3, [r0]) 	  // 0
+	_ASM(ADDS   r6, r3)
+	_ASM(LSRS   r6, #2)
+	_ASM(STRB 	r6, [r2, #0x00])
+	_ASM(NOP) 	
+	_ASM(NOP)
+	_ASM(NOP)  
+	_ASM(NOP) 	
+	_ASM(NOP)
+	_ASM(NOP)  
 
-	asm("LDRB	r3, [r0]"); 	  // 0
-	asm("ADDS   r6, r3");
-	asm("LSRS   r6, #2");
-	asm("STRB 	r6, [r2, #0x00]");
-	asm("NOP");
-	asm("NOP");
-	asm("NOP");
-	asm("NOP");
-	asm("NOP");
-	asm("NOP");
-
-	asm("LDRB	r3, [r0]"); 	 // 0
-	asm("ADDS	r7, r3");
-	asm("LSRS	r7, #2");
-	asm("STRB	r7, [r2, #0x01]");
-	asm("ADDS	r1, #0x04");
-	asm("ADDS	r2, #0x02");
-	asm("CMP	r2, r4");
-	asm("BLT	loop4");
+	_ASM(LDRB 	r3, [r0]) 	 // 0 
+	_ASM(ADDS   r7, r3)
+	_ASM(LSRS   r7, #2)
+	_ASM(STRB 	r7, [r2, #0x01])
+	_ASM(ADDS   r1, #0x04)
+	_ASM(ADDS	r2, #0x02)
+	_ASM(CMP	r2, r4)
+	_ASM(BLT	loop4)
 
 	// wait for hsync to go low (end of line)
-asm("dest6:");
-	asm("LDR	r6, [r0]"); 	// 2
-	asm("TST	r6, r5");		// 1
-	asm("BNE	dest6");		// 3
-
-	asm("POP	{r4-r7}");
-
-	asm(".syntax divided");
+_ASM_LABEL(dest6)
+	_ASM(LDR 	r6, [r0]) 	// 2
+	_ASM(TST	r6, r5)		// 1
+	_ASM(BNE	dest6)		// 3
+	
+#ifdef KEIL
+	_ASM(POP	{r4-r7, pc})
+#else
+	_ASM(POP	{r4-r7})
+#endif
+_ASM_END
 }
-
 
 void skipLine()
 {
 	while(!CAM_HSYNC());
 	while(CAM_HSYNC());
 }
-
 
 void skipLines(uint32_t lines)
 {
@@ -551,7 +571,6 @@ void skipLines(uint32_t lines)
 		skipLine();
 }
 
-
 void grabM0R0(uint32_t xoffset, uint32_t yoffset, uint32_t xwidth, uint32_t ywidth, uint8_t *memory)
 {
 	uint32_t line;
@@ -564,7 +583,6 @@ void grabM0R0(uint32_t xoffset, uint32_t yoffset, uint32_t xwidth, uint32_t ywid
 		lineM0((uint32_t *)&CAM_PORT, memory, xoffset, xwidth); // wait, grab, wait
 }
 
-
 void grabM1R1(uint32_t xoffset, uint32_t yoffset, uint32_t xwidth, uint32_t ywidth, uint8_t *memory)
 {
 	uint32_t line;
@@ -576,7 +594,6 @@ void grabM1R1(uint32_t xoffset, uint32_t yoffset, uint32_t xwidth, uint32_t ywid
 	for (line=0; line<ywidth; line++, memory+=xwidth)
 		lineM1R1((uint32_t *)&CAM_PORT, memory, xoffset, xwidth); // wait, grab, wait
 }
-
 
 void grabM1R2(uint32_t xoffset, uint32_t yoffset, uint32_t xwidth, uint32_t ywidth, uint8_t *memory)
 {
@@ -601,23 +618,19 @@ void grabM1R2(uint32_t xoffset, uint32_t yoffset, uint32_t xwidth, uint32_t ywid
 		lineM1R2((uint32_t *)&CAM_PORT, lineStore, xoffset, xwidth); // wait, grab, wait
 		lineM1R2((uint32_t *)&CAM_PORT, lineStore+xwidth, xoffset, xwidth); // wait, grab, wait
 		lineM1R2Merge((uint32_t *)&CAM_PORT, lineStore, memory, xoffset, xwidth); // wait, grab, wait
-		if (line<CAM_RES2_HEIGHT-2)
-			lineM1R2Merge((uint32_t *)&CAM_PORT, lineStore+xwidth, memory+xwidth, xoffset, xwidth); // wait, grab, wait
+		lineM1R2Merge((uint32_t *)&CAM_PORT, lineStore+xwidth, memory+xwidth, xoffset, xwidth); // wait, grab, wait
 	}					
 }
-
 
 void callSyncM0(void)
 {
 	syncM0((uint32_t *)&CAM_PORT, CAM_PCLK_MASK);
 }
 
-
 void callSyncM1(void)
 {
 	syncM1((uint32_t *)&CAM_PORT, CAM_PCLK_MASK);
 }
-
 
 int32_t getFrame(uint8_t *type, uint32_t *memory, uint16_t *xoffset, uint16_t *yoffset, uint16_t *xwidth, uint16_t *ywidth)
 {
@@ -634,6 +647,8 @@ int32_t getFrame(uint8_t *type, uint32_t *memory, uint16_t *xoffset, uint16_t *y
 
 	return 0;
 }
+
+
 
 
 int frame_init(void)
