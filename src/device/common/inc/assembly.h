@@ -6,10 +6,11 @@
 #define _ASM(...)            __VA_ARGS__
 #define _ASM_FUNC            __asm
 #define _ASM_LABEL(label)    label
-#define _ASM_START 
+#define _ASM_START\
+	PRESERVE8
 #define _ASM_END
-#define _ASM_IMPORT(func)    PRESERVE8\
-     IMPORT func
+#define _ASM_IMPORT(func)\
+	IMPORT func
 
 #else
 

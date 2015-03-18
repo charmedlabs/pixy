@@ -17,269 +17,114 @@
 #include "frame_m0.h"
 #include "chirp.h"
 #include "qqueue.h"
-
+#include "pixyvals.h"
+#include "assembly.h"
 
 //#define RLTEST
-#define MAX_QVALS_PER_LINE 	CAM_RES2_WIDTH/5	 // width/5 because that's the worst case with noise filtering
+#define MAX_NEW_QVALS_PER_LINE   ((CAM_RES2_WIDTH/3)+2)
 
-uint8_t *g_logLut = NULL;
-
-#if 0 // this is the old method, might have use down the road....
-// assemble blue-green words to look like this
-// 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0
-//                                                  B  B  B  B  B  G G G G G
-__asm void lineProcessedRL0(uint32_t *gpio, uint16_t *memory, uint32_t width)
+_ASM_FUNC void lineProcessedRL0A(uint32_t *gpio, uint8_t *memory, uint32_t width) // width in bytes
 { 
-		PRESERVE8
-		IMPORT 	callSyncM1
-
-		PUSH	{r4-r5, lr}
-
-		// add width to memory pointer so we can compare
-		ADDS	r2, r1
-		// generate hsync bit
-	  	MOVS	r5, #0x1
-		LSLS	r5, #11
-
-		PUSH	{r0-r3} // save args
-		BL.W	callSyncM1 // get pixel sync
-		POP		{r0-r3}	// restore args
-	   
-	   	// pixel sync starts here
-
-		// wait for hsync to go high
-dest10	LDR 	r3, [r0] 	// 2
-		TST		r3, r5		// 1
-		BEQ		dest10		// 3
-
-		// variable delay --- get correct phase for sampling
-		asm("NOP");
-		asm("NOP");
-
-#if 0
-loop5
-		LDRB 	r3, [r0] 	  
-		STRB 	r3, [r1]
-		asm("NOP");
-		asm("NOP");
-		asm("NOP");
-		ADDS	r1, #0x01
-		CMP		r1, r2
-		BLT		loop5
-#else
-loop5
-		LDRB 	r3, [r0] // blue
-		LSRS    r3, #3
-		LSLS    r3, #10
-		asm("NOP");
-		asm("NOP");
-		asm("NOP");
-		asm("NOP");
-		asm("NOP");
-		asm("NOP");
-		asm("NOP");
-		asm("NOP");
-
-		LDRB 	r4, [r0] // green 	  
-		LSRS    r4, #3
-		LSLS    r4, #5
-		ORRS	r3, r4
-		STRH    r3,	[r1] // store blue/green
-		ADDS    r1, #0x02
-		CMP		r1, r2
-		BLT		loop5
-
-#endif
-		// wait for hsync to go low (end of line)
-dest11	LDR 	r3, [r0] 	// 2
-		TST		r3, r5		// 1
-		BNE		dest11		// 3
-
-		POP		{r4-r5, pc}
-}
-
-__asm uint16_t *lineProcessedRL1(uint32_t *gpio, uint16_t *memory, uint8_t *lut, uint16_t *linestore, uint32_t width)
-{
 // r0: gpio
-// r1: q memory
-// r2: lut
-// r3: prev line
-// r4: col 
+// r1: memory
+// r2: end mem
+// r3: scratch
+// r4: scratch
 // r5: scratch
-// r6: scratch
-// r7: prev m val
-		PRESERVE8
-		IMPORT 	callSyncM1
+// r6: lastv
+// r7: lastb+g
+_ASM_START
+	_ASM_IMPORT(callSyncM1)
 
-		PUSH	{r4-r7, lr}
-		LDR		r4, [sp, #0x14]
-
-		// add width to memory pointer so we can compare
-		ADDS	r4, r3
-	   	MOV		r8, r4
-		// generate hsync bit
-	  	MOVS	r5, #0x1
-		LSLS	r5, #11
-
-		PUSH	{r0-r3} // save args
-		BL.W	callSyncM1 // get pixel sync
-		POP		{r0-r3}	// restore args
-	   
-	   	// pixel sync starts here
-		
-		// wait for hsync to go high
-dest12	LDR 	r6, [r0] 	// 2
-		TST		r6, r5		// 1
-		BEQ		dest12		// 3
-
-		// variable delay --- get correct phase for sampling
-	    asm("NOP");
-		//(borrow asm("NOP"); below)
-		// skip green pixel
-		MOVS    r5, #0x00 // clear r5 (which will be copied to r7) This will force a write of a q val 
-		MOVS	r4, #0x00 // clear col (col is numbered 1 to 320)
-// 2
-loop6	MOV		r7, r5 // copy lut val (lutPrev)
-		MOV		r5, r8
-		CMP		r3, r5
-		BGE		dest30
-		asm("NOP");
-		asm("NOP");
-		asm("NOP");
-		asm("NOP");
-		asm("NOP");
-// 9
-loop7	
-		LDRH	r5, [r3] // load blue green val
-// 2
-		LDRB 	r6, [r0] // load red pixel
-		LSRS    r6, #3	 // shift into place (5 bits of red)
-		ORRS	r5, r6 // form 15-bit lut index
-		ADDS    r3, #0x02 // inc prev line pointer
-		ADDS	r4, #0x01 // inc col
-		asm("NOP");
-		LDRB	r5, [r2, r5] // load lut val
-		EORS  	r7, r5 // compare with previous	lut val
-// 10
-		BEQ	   	loop6 // if lut vals have haven't changed proceed (else store q val)
-// 1, 3
-		// calc, store q val
-		LSLS	r5, #0x09
-		ORRS	r5, r4 // make q val
-		STRH	r5, [r1] // write q val
-		ADDS	r1, #0x02 // inc q mem
-		MOV		r7, r5 // copy lut val (qPrev)
-// 6
-
-		MOV 	r5, r8 // bring in end of row compare val
-		CMP		r3, r5
-		BLT		loop7
-// 5
-dest30
-	  	MOVS	r5, #0x1
-		LSLS	r5, #11
-dest20	LDR 	r6, [r0] 	// 2
-		TST		r6, r5		// 1
-		BNE		dest20		// 3
-
-		MOV     r0, r1 // move result
-		POP		{r4-r7, pc}
-} 
+#ifdef KEIL
+	_ASM(PUSH	{r4-r7, lr})
+#else
+	_ASM(PUSH	{r4-r7})
 #endif
 
-void lineProcessedRL0A(uint32_t *gpio, uint8_t *memory, uint32_t width) // width in bytes
-{ 
-//		PRESERVE8
+	_ASM(LSLS	r2, #3) // scale ending by 8
+	// add width to memory pointer so we can compare
+	_ASM(ADDS	r2, r1)
+	// generate hsync bit
+  	_ASM(MOVS	r7, #0x1)
+	_ASM(LSLS	r7, #11)
 
-	asm(".syntax unified");
-
-		asm("PUSH	{r4-r5}");
-
-		// add width to memory pointer so we can compare
-		asm("ADDS	r2, r1");
-		// generate hsync bit
-		asm("MOVS	r5, #0x1");
-		asm("LSLS	r5, #11");
-
-		asm("PUSH	{r0-r3}"); // save args
-		asm("BL.W	callSyncM1"); // get pixel sync
-		asm("POP	{r0-r3}");	// restore args
+	_ASM(PUSH	{r0-r3}) // save args
+	_ASM(BL.W	callSyncM1) // get pixel sync
+	_ASM(POP	{r0-r3})	// restore args
 	   
-	   	// pixel sync starts here
+   	// pixel sync starts here
 
-		// wait for hsync to go high
-asm("dest10A:");
-		asm("LDR 	r3, [r0]"); 	// 2
-		asm("TST	r3, r5");		// 1
-		asm("BEQ	dest10A");		// 3
+	// wait for hsync to go high
+_ASM_LABEL(dest10B)	
+	_ASM(LDR 	r3, [r0]) 	// 2
+	_ASM(TST	r3, r7)		// 1
+	_ASM(BEQ	dest10B)		// 3
 
-		// variable delay --- get correct phase for sampling
-		asm("NOP");
-		asm("NOP");
+	// variable delay --- get correct phase for sampling
+	_ASM(NOP)
+	_ASM(NOP)
 
-asm("loop5A:");
-		asm("LDRB 	r3, [r0]"); // blue
-		// cycle
-		asm("NOP");
-		asm("NOP");
-		asm("NOP");
-		asm("NOP");
-		asm("NOP");
-		asm("NOP");
-		asm("NOP");
-		asm("NOP");
-		asm("NOP");
-		asm("NOP");
+_ASM_LABEL(loop5B)
+	_ASM(LDRB 	r3, [r0]) // blue
+	// cycle
+	_ASM(EORS	r6, r6)
+	_ASM(EORS	r7, r7)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
 
-		asm("LDRB 	r4, [r0]"); // green
-		// cycle 
-		asm("SUBS	r3, r4");   // blue-green
-		asm("ASRS   r3, #1");
-		asm("STRB   r3, [r1]"); // store blue-green
-		// cycle 
-		asm("ADDS   r1, #0x01");
-		asm("CMP	r1, r2");
-		asm("NOP");
-		asm("BLT	loop5A");
+_ASM_LABEL(loop6B)
+	_ASM(LDRB 	r4, [r0]) // green 	 
+	// cycle 
+	_ASM(ADDS   r5, r3, r4)	// blue+green
+	_ASM(ADDS	r7, r5)	// blue+green+lastb+g
+	_ASM(STRH 	r7, [r1, #2]) // store b+gsum
+	// cycle
+	_ASM(MOV	r7, r5) // save lastb+g
+	_ASM(SUBS	r4, r3, r4)   // blue-green (v)
+	_ASM(ADDS	r6, r4)
+	_ASM(LSLS	r6, #16)
+	_ASM(STR	r6,	[r1, #4]) // store vsum
+	// cycle 
+	// pixel sync
+ 	_ASM(LDRB 	r3, [r0]) // blue
+	// cycle
+	_ASM(MOV	r6, r4) // save lastv
+	_ASM(LSLS	r4, #23)  // shift b-g and get rid of higher-order bits
+	_ASM(LSRS	r4, #26)  // shift it back down and throw out the 3 lsbs
+	_ASM(STRH   r4,	[r1, #0]) // store shifted v
+	// cycle
+	_ASM(ADDS	r1, #8)
+	_ASM(CMP	r1, r2)
+	_ASM(BLT	loop6B)
 
-		// wait for hsync to go low (end of line)
-asm("dest11A:");
-		asm("LDR 	r3, [r0]"); 	// 2
-		asm("TST	r3, r5");		// 1
-		asm("BNE	dest11A");		// 3
+	// generate hsync bit
+	_ASM(MOVS	r7, #0x1)
+	_ASM(LSLS	r7, #11)
+	// wait for hsync to go low (end of line)	
+_ASM_LABEL(dest11B)
+	_ASM(LDR 	r3, [r0]) 	// 2
+	_ASM(TST	r3, r7)		// 1
+	_ASM(BNE	dest11B)		// 3
 
-		asm("POP	{r4-r5}");
+#ifdef KEIL
+	_ASM(POP	{r4-r7, pc})
+#else
+	_ASM(POP	{r4-r7})
+#endif
 
-		asm(".syntax divided");
+	_ASM_END
 }
 
-
-uint32_t lineProcessedRL1A(uint32_t *gpio, Qval *memory, uint8_t *lut, uint8_t *linestore, uint32_t width, uint8_t *shiftLut,
+_ASM_FUNC uint32_t lineProcessedRL1A(uint32_t *gpio, Qval *memory, uint8_t *lut, uint8_t *linestore, uint32_t width, 
 	Qval *qqMem, uint32_t qqIndex, uint32_t qqSize) // width in bytes
 {
-// The code below does the following---
-// -- maintain pixel sync, read red and green pixels
-// -- create r-g, b-g index and look up value in lut
-// -- filter out noise within the line.  An on pixel surrounded by off pixels will be ignored.
-//    An off pixel surrounded by on pixels will be ignored.
-// -- generate hue line sum	and pseudo average
-// -- generate run-length segments
-// 
-// Notes:
-// Run-length segments are 1 pixel larger than actual, and the last hue line value is added twice in the sum.
-// Spurious noise pixels within a run-length segment present a problem.  When this happens the last hue line value 
-// is added to the sum to keep things unbiased.  ie, think of the case where a run-length consists of half 
-// spurious noise pixels.  We don't want the noise to affect the average--- only the pixels that agree with
-// the model number for that run-length.
-// All pixels are read and used--- the opponent color space (r-g, b-g) works well with the bayer pattern.
-// After the red pixel is read, about 12 cycles are used to create the index and look it up.  When the q val is 
-// created and written it takes about 24 cycles, so a green/red pixel pair is skipped, but the green pixel is 
-// grabbed and put in r5 so that it can be used when we resume. 
-// A shift lut is provided-- it's 321 entries containing the log2 of the index, so it's basically a log function
-// that helps us fit the hue line sum in the q value.  This value indicates how many bits to shift off to 
-// the right to reduce the size of the sum.  That number is also stored in the q val so that it can be 
-// reversed on the m4 side and a real division can take place.   
-//
 // r0: gpio	register
 // r1: scratch 
 // r2: lut
@@ -288,263 +133,246 @@ uint32_t lineProcessedRL1A(uint32_t *gpio, Qval *memory, uint8_t *lut, uint8_t *
 // r5: scratch
 // r6: scratch
 // r7: prev model
-// r8: sum
+// r8: red pixel sum (for ysum)
 // r9: ending column
-// r10: beginning column of run-length
-// r11: last lut val
-// r12:	q memory
+// r10: usum
+// r11: ?
+// r12:	q memory 
+   
+	_ASM_START
+	_ASM_IMPORT(callSyncM1)
 
-//		PRESERVE8
+#ifdef KEIL
+	_ASM(PUSH	{r1-r7, lr})
+#else
+	_ASM(PUSH	{r1-r7})
+#endif
 
-asm(".syntax unified");
-	asm("PUSH	{r1-r7}");
 	// bring in ending column
-	asm("LDR	r4, [sp, #0x20]");
-	asm("MOV	r9, r4");
-	asm("MOVS	r5, #0x1");
-	asm("LSLS	r5, #11");
+#ifdef KEIL
+	_ASM(LDR	r4, [sp, #0x20])
+#else
+	_ASM(LDR	r4, [sp, #0x34])
+#endif
+	_ASM(LSLS	r4, #3) // scale ending count by 8
+	_ASM(MOV	r9, r4)  // move into r9
+	_ASM(MOVS	r5, #0x1)
+	_ASM(LSLS	r5, #11)	 // create hsync bit mask
 
-	asm("PUSH	{r0-r3}"); // save args
-	asm("BL.W	callSyncM1"); // get pixel sync
-	asm("POP	{r0-r3}");	// restore args
+	_ASM(PUSH	{r0-r3}) // save args
+	_ASM(BL.W	callSyncM1) // get pixel sync
+	_ASM(POP	{r0-r3})	// restore args
 
 	// pixel sync starts here
-
+		
 	// wait for hsync to go high
-asm("dest12A:");
-	asm("LDR 	r6, [r0]"); 	// 2
-	asm("TST	r6, r5");		// 1
-	asm("BEQ	dest12A");	// 3
+_ASM_LABEL(dest12A)
+	_ASM(LDR 	r6, [r0]) 	// 2
+	_ASM(TST	r6, r5)		// 1
+	_ASM(BEQ	dest12A)		// 3
 
 	// variable delay --- get correct phase for sampling
-	asm("MOV	r12, r1"); // save q memory
-	asm("MOVS	r4, #0"); // clear column value
+	_ASM(MOV	r12, r1) // save q memory
+	_ASM(MOVS	r4, #0) // clear column value
 
 	// *** PIXEL SYNC (start reading pixels)
-	asm(GREEN);
+	_ASM(LDRB 	r5, [r0]) // load green pixel 
 	// cycle
-	asm("NOP");
-	asm("NOP");
-	asm("NOP");
-	asm("NOP");
-	asm("NOP");
-	asm("NOP");
-
-asm("zero0:");
-	asm("MOVS	r6, #0");
-	asm("MOV	r8, r6");	// clear sum (so we don't think we have an outstanding segment)
-	EOL_CHECK;
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(SUBS	r4, #8)
+_ASM_LABEL(beg0)
+	_ASM(ADDS 	r4, #8) // inc col 
+_ASM_LABEL(beg1)
+	// EOL CHECK
+	_ASM(CMP	r4, r9)
+	_ASM(BGE	eol)
 	// cycle
-	// *** PIXEL SYNC (check for nonzero lut value)
-asm("zero1:");
-	//LEXT r7
-//	MACRO // create index, lookup, inc col, extract model
-//	$lx		LEXT	$rx
-	asm(RED);
+	// *** PIXEL SYNC 
+	_ASM(LDRB 	r6, [r0]) // load red pixel 
 	// cycle
-	asm("SUBS	r6, r5");   // red-green
-	asm("ASRS	r6, #1");	 // reduce 9 to 8 bits arithmetically
-	asm("LSLS	r6, #24");  // shift red-green and get rid of higher-order bits
-	asm("LSRS	r6, #16");  // shift red-green back, make it the higher 8 bits of the index
-	asm("LDRB	r5, [r3, r4]"); // load blue-green val
+	_ASM(SUBS	r5, r6, r5)   // red-green
+	_ASM(MOV	r10, r5) // save red-green
+	_ASM(ASRS	r5, #3)	 // reduce 9 to 6 bits arithmetically
+	_ASM(LSLS	r5, #26)  // shift red-green and get rid of higher-order bits
+	_ASM(LSRS	r5, #20)  // shift red-green back, make it the higher 6 bits of the index
+	_ASM(LDRH	r1, [r3, r4]) // load shifted blue-green val
 	// cycle
-	asm("ORRS	r5, r6");   // form 16-bit index
-	asm("LDRB	r1, [r2, r5]"); // load lut val
+	_ASM(ORRS	r1, r5)   // form 12-bit index
+	_ASM(LDRB	r7, [r2, r1]) // load lut val
 	// cycle
-	asm("ADDS 	r4, #1"); // inc col
 	// *** PIXEL SYNC
-	asm(GREEN);
+	_ASM(LDRB 	r5, [r0]) // load green pixel 
 	// cycle
-	asm("LSLS	r7, r1, #29"); // knock off msb's
-	asm("LSRS	r7, #29"); // extract model, put in rx
-	//MEND
-
+	_ASM(MOV	r8, r6) // save red
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(CMP	r7, #0)
+	_ASM(BEQ	beg0)
+	_ASM(ADDS 	r4, #8) // inc col 
+	// EOL CHECK
+	_ASM(CMP	r4, r9)
+	_ASM(BGE	eol)
 	// cycle
-	// cycle
-	// cycle
-	asm("CMP 	r7, #0");
-	asm("BEQ 	zero0");
-	asm("MOV	r10, r4"); // save start column
-	asm("ADD	r8, r1"); // add to sum
-	EOL_CHECK;
-	// cycle
-	asm("NOP");
-	asm("NOP");
-	// *** PIXEL SYNC (check nonzero value for consistency)
-//	LEXT r6;
-	asm(RED);
-	asm("SUBS	r6, r5");   // red-green
-	asm("ASRS	r6, #1");	 // reduce 9 to 8 bits arithmetically
-	asm("LSLS	r6, #24");  // shift red-green and get rid of higher-order bits
-	asm("LSRS	r6, #16");  // shift red-green back, make it the higher 8 bits of the index
-	asm("LDRB	r5, [r3, r4]"); // load blue-green val
-	asm("ORRS	r5, r6");   // form 16-bit index
-	asm("LDRB	r1, [r2, r5]"); // load lut val
-	asm("ADDS 	r4, #1"); // inc col
+	_ASM(NOP)
+	_ASM(NOP)
+	// 2nd pixel
 	// *** PIXEL SYNC
-	asm(GREEN);
+	_ASM(LDRB 	r6, [r0]) // load red pixel 
 	// cycle
-	asm("LSLS	r6, r1, #29"); // knock off msb's
-	asm("LSRS	r6, #29"); // extract model, put in rx
-// end of LEXT r6
-
+	_ASM(SUBS	r5, r6, r5)   // red-green
+	_ASM(ADD 	r10, r5)	 // usum
+	_ASM(ASRS	r5, #3)	 // reduce 9 to 6 bits arithmetically
+	_ASM(LSLS	r5, #26)  // shift red-green and get rid of higher-order bits
+	_ASM(LSRS	r5, #20)  // shift red-green back, make it the higher 8 bits of the index
+	_ASM(LDRB	r1, [r3, r4]) // load shifted blue-green val
 	// cycle
+	_ASM(ORRS	r1, r5)   // form 12-bit index
+	_ASM(LDRB	r1, [r2, r1]) // load lut val
 	// cycle
-	// cycle
-	asm("CMP	r6, r7");
-	asm("BNE	zero0");
-	asm("NOP");
-	asm("NOP");
-asm("one:");
-	asm("MOV	r11, r1");	// save last lut val
-	asm("ADD	r8, r1"); // add to sum
-	EOL_CHECK;
-	// cycle
-	// *** PIXEL SYNC (run-length segment)
-
-//	LEXT r6
-	asm(RED);
-	// cycle
-	asm("SUBS	r6, r5");   // red-green
-	asm("ASRS	r6, #1");	 // reduce 9 to 8 bits arithmetically
-	asm("LSLS	r6, #24");  // shift red-green and get rid of higher-order bits
-	asm("LSRS	r6, #16");  // shift red-green back, make it the higher 8 bits of the index
-	asm("LDRB	r5, [r3, r4]"); // load blue-green val
-	// cycle
-	asm("ORRS	r5, r6");   // form 16-bit index
-	asm("LDRB	r1, [r2, r5]"); // load lut val
-	// cycle
-	asm("ADDS 	r4, #1"); // inc col
 	// *** PIXEL SYNC
-	asm(GREEN);
+	_ASM(LDRB 	r5, [r0]) // load green pixel 
 	// cycle
-	asm("LSLS	r6, r1, #29"); // knock off msb's
-	asm("LSRS	r6, #29"); // extract model, put in rx
-// end of LEXT
+	_ASM(ADD	r8, r6)   // add red
+	_ASM(NOP)
+	_ASM(MOV	r6, r10)	 // bring in usum
+	_ASM(CMP	r1, r7)
+	_ASM(BNE	beg0)  
+	// ************ store qvals 
+ 	_ASM(MOV	r5, r12)	 // bring in qmem pointer
+ 	_ASM(STRH	r6, [r5, #4]) // store usum
+	// cycle
+	_ASM(ORRS	r7, r4, r7)  // combine signature and index
+	_ASM(ADDS	r4, #2)	 // increment line mem
+	// *** PIXEL SYNC RED
+	_ASM(LDRH	r1, [r3, r4]) // load b+gsum
+	// cycle 
+	_ASM(ADD	r1, r8)   // add red sum to b+gsum to create ysum
+	_ASM(STRH	r1, [r5, #6]) // store ysum
+	// cycle
+	_ASM(ADDS	r4, #2)	 // increment line mem
+	_ASM(LDR	r1, [r3, r4]) // load vsum which is shifted by 16
+	// cycle
+	_ASM(ORRS	r1, r7) // combine vsum with signature and index
+	_ASM(STR	r1, [r5]) // store vsum
+	// cycle
+	_ASM(NOP)
+	// *** PIXEL SYNC GREEN
+	_ASM(LDRB 	r5, [r0]) // load green pixel 
+	// cycle
+	_ASM(MOVS	r1, #8)
+	_ASM(ADD	r12, r1)	// inc qmem
+	_ASM(ADDS 	r4, #12)  // inc col, skipped pixel
+	_ASM(NOP)
+	_ASM(NOP)
 
-	// cycle
-	// cycle
-	// cycle
-	asm("CMP	r6, r7");
-	asm("BEQ	one");
-	asm("ADD	r8, r11"); // need to add something-- use last lut val
-	EOL_CHECK;
-	// cycle
-	asm("NOP");
-	asm("NOP");
-	asm("NOP");
-	// *** PIXEL SYNC (1st pixel not equal)
+#if 1
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
 
-//	LEXT r6
-	asm(RED);
-	// cycle
-	asm("SUBS	r6, r5");   // red-green
-	asm("ASRS	r6, #1");	 // reduce 9 to 8 bits arithmetically
-	asm("LSLS	r6, #24");  // shift red-green and get rid of higher-order bits
-	asm("LSRS	r6, #16");  // shift red-green back, make it the higher 8 bits of the index
-	asm("LDRB	r5, [r3, r4]"); // load blue-green val
-	// cycle
-	asm("ORRS	r5, r6");   // form 16-bit index
-	asm("LDRB	r1, [r2, r5]"); // load lut val
-	// cycle
-	asm("ADDS 	r4, #1"); // inc col
-	// *** PIXEL SYNC
-	asm(GREEN);
-	// cycle
-	asm("LSLS	r6, r1, #29"); // knock off msb's
-	asm("LSRS	r6, #29"); // extract model, put in rx
-// end of LEXT
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
 
-	// cycle
-	// cycle
-	// cycle
-	asm("CMP	r6, r7");
-	asm("BEQ	one");
-	// 2nd pixel not equal--- run length is done
-	QVAL;
-	asm("MOVS	r6, #0");
-	asm("MOV	r8, r6"); // clear sum
-	asm("ADDS	r4, #1"); // add column
-	asm("NOP");
-	asm("B 		zero1");
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(NOP)
+	_ASM(ADDS 	r4, #8)  // inc col, skipped pixel
+#endif
 
-asm("eol:");
-	// check r8 for unfinished q val
-	asm("MOVS	r6, #0");
-	asm("CMP	r8, r6");
-	asm("BEQ	eol0");
-	QVAL;
+	_ASM(B		beg1)
 
 	// wait for hsync to go low
-asm("eol0:");
-	asm("MOVS	r5, #0x1");
-	asm("LSLS	r5, #11");
+_ASM_LABEL(eol)	
+	_ASM(MOVS	r5, #0x1)
+	_ASM(LSLS	r5, #11)
+_ASM_LABEL(dest20A)
+	_ASM(LDR 	r6, [r0]) 	// 2
+	_ASM(TST	r6, r5)		// 1
+	_ASM(BNE	dest20A)	// 3
 
-asm("dest20A:");
-	asm("LDR 	r6, [r0]"); 	// 2
-	asm("TST	r6, r5");		// 1
-	asm("BNE	dest20A");	// 3
+	// we have approx 1800 cycles to do something here
+	// The advantage of doing this is that we don't need to buffer much data
+	// and it reduces the latency-- we can start processing qvals immediately
+	// We need to copy these because the memory the qvals comes from must not be 
+	// accessed by the M4, or wait states will be thrown in and we'll lose pixel sync for that line
+#ifdef KEIL
+	_ASM(LDR	r1, [sp]) // bring in original q memory location 
+	_ASM(LDR	r2, [sp, #0x24]) // bring in qq memory pointer 
+	_ASM(LDR	r3, [sp, #0x28]) // bring in qq index
+#else
+	_ASM(LDR	r1, [sp]) // bring in original q memory location
+	_ASM(LDR	r2, [sp, #0x38]) // bring in qq memory pointer
+	_ASM(LDR	r3, [sp, #0x3c]) // bring in qq index
+#endif
+	_ASM(LSLS 	r3, #3) // qq index in bytes (4 bytes/qval)
+	_ASM(ADDS	r3, r2)
+#ifdef KEIL
+	_ASM(LDR	r4, [sp, #0x2c]) // bring in qq size
+#else
+	_ASM(LDR	r4, [sp, #0x40]) // bring in qq size
+#endif
+	_ASM(LSLS 	r4, #3) // qq size in bytes (4 bytes/qval)
+	_ASM(ADDS	r4, r2)
 
-// we have approx 1800 cycles to do something here
-// which is enough time to copy 64 qvals (256 bytes), maximum qvals/line = 320/5
-// (this has been verified/tested)
-// The advantage of doing this is that we don't need to buffer much data
-// and it reduces the latency-- we can start processing qvals immediately
-// We need to copy these because the memory the qvals comes from must not be
-// accessed by the M4, or wait states will be thrown in and we'll lose pixel sync for that line
-	asm("MOV	r0, r12");  // qval pointer
-	asm("LDR	r1, [sp]"); // bring in original q memory location
-	asm("SUBS	r0, r1"); // get number of qvals*4
+_ASM_LABEL(lcpy)
+	_ASM(CMP	r1, r12)	  // 1 end condition
+	_ASM(BEQ	ecpy)	  // 1 exit
 
-	asm("LDR	r2, [sp, #0x28]"); // bring in qq memory pointer
-	asm("LDR	r3, [sp, #0x2c]"); // bring in qq index
-	asm("LSLS 	r3, #2"); // qq index in bytes (4 bytes/qval)
-	asm("LDR	r4, [sp, #0x30]");; // bring in qq size
-	asm("LSLS 	r4, #2"); // qq size in bytes (4 bytes/qval)
+	_ASM(LDR	r0, [r1, #0])  // 2 copy (read)
+	_ASM(STR	r0, [r3, #0])  // 2 copy (write)
+	_ASM(LDR	r0, [r1, #4])  // 2 copy (read)
+	_ASM(STR	r0, [r3, #4])  // 2 copy (write)
 
-	asm("MOVS	r5, #0");
+	_ASM(ADDS	r1, #8)	  // 1 inc qval index
+	_ASM(ADDS	r3, #8)	  // 1 inc qq counter
 
-asm("lcpy:");
-	asm("CMP	r0, r5");	  // 1 end condition
-	asm("BEQ	ecpy");	  // 1 exit
+	_ASM(CMP	r4, r3)    // 1 check for qq index wrap
+	_ASM(BEQ	wrap)	  // 1
+	_ASM(B		lcpy)	  // 3
 
-	asm("LDR	r6, [r1, r5]");  // 2 copy (read)
-	asm("STR	r6, [r2, r3]");  // 2 copy (write)
-
-	asm("ADDS	r3, #4");	  // 1 inc qq index
-	asm("ADDS	r5, #4");	  // 1 inc counter
-
-	asm("CMP	r4, r3");    // 1 check for qq index wrap
-	asm("BEQ	wrap");	  // 1
-	asm("B		lcpy");	  // 3
-
-asm("wrap:");
-	asm("MOVS	r3, #0");    // reset qq index
-	asm("B 		lcpy");
-
-asm("ecpy:");
-	asm("LSRS   r0, #2"); // return number of qvals
-	asm("POP	{r1-r7}");
-
-	asm(".syntax divided");
-
-}
-
-
-uint8_t intLog(int i)
-{
-	return 0;
-}
+_ASM_LABEL(wrap)
+#ifdef KEIL
+	_ASM(LDR	r3, [sp, #0x24]) // bring in qq memory pointer 
+#else
+	_ASM(LDR	r3, [sp, #0x38]) // bring in qq memory pointer
+#endif
+	_ASM(B 		lcpy)
 
 
-void createLogLut(void)
-{
-	int i;
-	
-	for (i=0; i<CAM_RES2_WIDTH; i++)
-		g_logLut[i] = intLog(i) + 3;
-}
-
+_ASM_LABEL(ecpy)
+	_ASM(MOV	r0, r12)  // qval pointer
+#ifdef KEIL
+	_ASM(LDR	r1, [sp]) // bring in original q memory location 
+#else
+	_ASM(LDR	r1, [sp]) // bring in original q memory location
+#endif
+	_ASM(SUBS	r0, r1) // get number of qvals*8, return this number
+	_ASM(LSRS	r0, #3) // divide by 8, this is the return value
+#ifdef KEIL
+	_ASM(POP	{r1-r7, pc})
+#else
+	_ASM(POP	{r1-r7})
+#endif
+	_ASM_END
+} 
+						
 #ifdef RLTEST
 uint8_t bgData[] = 
 {
@@ -557,54 +385,47 @@ uint32_t rgData[] =
 };
 #endif
 
+int g_foo = 0;
 
 int32_t getRLSFrame(uint32_t *m0Mem, uint32_t *lut)
 {
 	uint8_t *lut2 = (uint8_t *)*lut;
-	Qval *qvalStore = (Qval *)*m0Mem;
 	uint32_t line;
+	Qval *qvalStore;
 	uint32_t numQvals;
-	uint32_t totalQvals;
 	uint8_t *lineStore;
-	uint8_t *logLut;
+	Qval lineBegin, frameEnd;
+	lineBegin.m_col = lineBegin.m_u = lineBegin.m_v = lineBegin.m_y = 0;
+	frameEnd.m_col = 0xffff;
+	frameEnd.m_u = frameEnd.m_v = frameEnd.m_y = 0;
 
-	lineStore = (uint8_t *)(qvalStore + MAX_QVALS_PER_LINE);
-	logLut = lineStore + CAM_RES2_WIDTH + 4;
-	// m0mem needs to be at least 64*4 + CAM_RES2_WIDTH*2 + 4 =	900 ~ 1024
-
-	if (g_logLut!=logLut)
-	{
-		g_logLut = logLut; 
-	 	createLogLut();
-	}
-
-	// don't even attempt to grab lines if we're lacking space...
-	if (qq_free()<MAX_QVALS_PER_LINE)
-		return -1; 
-
-	// indicate start of frame
-	qq_enqueue(0xffffffff); 
+//	if (!g_foo)
+//		return 0;
+   	qvalStore =	(Qval *)*m0Mem;
+	lineStore = (uint8_t *)*m0Mem + MAX_NEW_QVALS_PER_LINE*sizeof(Qval);
 	skipLines(0);
-	for (line=0, totalQvals=1; line<CAM_RES2_HEIGHT; line++)  // start totalQvals at 1 because of start of frame value
+	for (line=0; line<CAM_RES2_HEIGHT; line++) 
 	{
 		// not enough space--- return error
-		if (qq_free()<MAX_QVALS_PER_LINE)
-			return -1; 
-		// mark beginning of this row (column 0 = 0)
-		// column 1 is the first real column of pixels
-		qq_enqueue(0); 
+		if (qq_free()<MAX_NEW_QVALS_PER_LINE)
+		{
+			frameEnd.m_col = 0xfffe;
+			qq_enqueue(&frameEnd);
+			//printf("*\n");
+			return -1;
+		} 
+		qq_enqueue(&lineBegin); 
 		lineProcessedRL0A((uint32_t *)&CAM_PORT, lineStore, CAM_RES2_WIDTH); 
-		numQvals = lineProcessedRL1A((uint32_t *)&CAM_PORT, qvalStore, lut2, lineStore, CAM_RES2_WIDTH, g_logLut, g_qqueue->data, g_qqueue->writeIndex, QQ_MEM_SIZE);
-		// modify qq to reflect added data
+		numQvals = lineProcessedRL1A((uint32_t *)&CAM_PORT, qvalStore, lut2, lineStore, CAM_RES2_WIDTH, g_qqueue->data, g_qqueue->writeIndex, QQ_MEM_SIZE);
 		g_qqueue->writeIndex += numQvals;
 		if (g_qqueue->writeIndex>=QQ_MEM_SIZE)
 			g_qqueue->writeIndex -= QQ_MEM_SIZE;
 		g_qqueue->produced += numQvals;
-		totalQvals += numQvals+1; // +1 because of beginning of line 
 	}
+	qq_enqueue(&frameEnd);
+
 	return 0;
 }
-
 
 int rls_init(void)
 {

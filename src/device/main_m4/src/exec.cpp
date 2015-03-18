@@ -430,7 +430,7 @@ void exec_loop()
 
 	while(1)
 	{
-#ifndef KEIL
+#if 0 //ndef KEIL
 		g_program = EXEC_VIDEO_PROG-1;
 #endif
 		connected = g_chirpUsb->connected();

@@ -93,7 +93,7 @@ _ASM_END
 
 _ASM_FUNC void syncM1(uint32_t *gpioIn, uint32_t clkMask)
 {
-_ASM_START
+	_ASM_START
 	_ASM(PUSH	{r4})
 
 _ASM_LABEL(startSyncM1)
@@ -145,13 +145,13 @@ _ASM_LABEL(startSyncM1)
 #ifdef KEIL
 	_ASM(BX 	lr)
 #endif
-_ASM_END
+	_ASM_END
 }
 
 _ASM_FUNC void lineM0(uint32_t *gpio, uint8_t *memory, uint32_t xoffset, uint32_t xwidth)
 {
-_ASM_START
-	_ASM_IMPORT(callSyncM0)
+	_ASM_START
+ 	_ASM_IMPORT(callSyncM0)
 
 #ifdef KEIL
 	_ASM(PUSH	{r4-r5, lr})
@@ -234,12 +234,12 @@ _ASM_LABEL(dest13)
 #else
 	_ASM(POP		{r4-r5})
 #endif
-_ASM_END
+	_ASM_END
 }
 
 _ASM_FUNC void lineM1R1(uint32_t *gpio, uint8_t *memory, uint32_t xoffset, uint32_t xwidth)
 {
-_ASM_START
+	_ASM_START
 	_ASM_IMPORT(callSyncM1)
 
 #ifdef KEIL
@@ -321,7 +321,7 @@ _ASM_END
 
 _ASM_FUNC void lineM1R2(uint32_t *gpio, uint16_t *memory, uint32_t xoffset, uint32_t xwidth)
 {
-_ASM_START
+	_ASM_START
 	_ASM_IMPORT(callSyncM1)
 
 #ifdef KEIL
@@ -437,7 +437,7 @@ _ASM_END
 
 _ASM_FUNC void lineM1R2Merge(uint32_t *gpio, uint16_t *lineMemory, uint8_t *memory, uint32_t xoffset, uint32_t xwidth)
 {
-_ASM_START
+	_ASM_START
 	_ASM_IMPORT(callSyncM1)
 
 #ifdef KEIL

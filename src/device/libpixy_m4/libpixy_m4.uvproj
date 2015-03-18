@@ -392,16 +392,6 @@
               <FilePath>.\src\camera.cpp</FilePath>
             </File>
             <File>
-              <FileName>chirpm0.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>.\src\chirpm0.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>chirpusb.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>.\src\chirpusb.cpp</FilePath>
-            </File>
-            <File>
               <FileName>flash.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>.\src\flash.cpp</FilePath>

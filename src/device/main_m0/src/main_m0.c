@@ -21,6 +21,7 @@
 #include "frame_m0.h"
 #include "rls_m0.h"
 
+//int g_foo = 0;
 
 int main(void)
 {
@@ -63,6 +64,14 @@ int main(void)
 	exec_init();
 	frame_init();
 	rls_init();
+
+#if 0
+	while(1)
+	{
+		if (g_foo)
+			loop0();
+	}
+#endif
 
 #if 0
 	vsync();

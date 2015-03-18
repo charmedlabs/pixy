@@ -74,7 +74,13 @@ int main(void)
     ptLoadParams();
     exec_addProg(&g_progPt);
     exec_addProg(&g_progVideo, true);
+#if 0
+    cam_setMode(CAM_MODE1);
+    while(1)
+    	periodic();
+#else
     exec_loop();
+#endif
 #endif
 
 #if 0
