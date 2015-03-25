@@ -358,20 +358,18 @@ _ASM_LABEL(wrap)
 
 _ASM_LABEL(ecpy)
 	_ASM(MOV	r0, r12)  // qval pointer
-#ifdef KEIL
 	_ASM(LDR	r1, [sp]) // bring in original q memory location 
-#else
-	_ASM(LDR	r1, [sp]) // bring in original q memory location
-#endif
 	_ASM(SUBS	r0, r1) // get number of qvals*8, return this number
 	_ASM(LSRS	r0, #3) // divide by 8, this is the return value
 #ifdef KEIL
 	_ASM(POP	{r1-r7, pc})
 #else
 	_ASM(POP	{r1-r7})
+	_ASM(MOVS	r3, r0) // gcc is using r3 to return values?
 #endif
 	_ASM_END
 } 
+
 						
 #ifdef RLTEST
 uint8_t bgData[] = 

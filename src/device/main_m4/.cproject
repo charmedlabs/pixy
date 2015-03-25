@@ -34,6 +34,7 @@
 									<listOptionValue builtIn="false" value="CPP_USE_HEAP"/>
 									<listOptionValue builtIn="false" value="__LPC43XX__"/>
 									<listOptionValue builtIn="false" value="LPC43_MULTICORE_M0APP"/>
+									<listOptionValue builtIn="false" value="__MULTICORE_MASTER_SLAVE_M0APP"/>
 								</option>
 								<option id="gnu.cpp.compiler.option.other.other.1655361527" name="Other flags" superClass="gnu.cpp.compiler.option.other.other" value="-c -fmessage-length=0 -fno-builtin -ffunction-sections -fdata-sections -fno-rtti -fno-exceptions -fsingle-precision-constant" valueType="string"/>
 								<option id="gnu.cpp.compiler.option.optimization.flags.1818677911" name="Other optimization flags" superClass="gnu.cpp.compiler.option.optimization.flags" value="-Os" valueType="string"/>
@@ -63,6 +64,7 @@
 									<listOptionValue builtIn="false" value="CPP_USE_HEAP"/>
 									<listOptionValue builtIn="false" value="__LPC43XX__"/>
 									<listOptionValue builtIn="false" value="LPC43_MULTICORE_M0APP"/>
+									<listOptionValue builtIn="false" value="__MULTICORE_MASTER_SLAVE_M0APP"/>
 								</option>
 								<option id="gnu.c.compiler.option.misc.other.980921953" name="Other flags" superClass="gnu.c.compiler.option.misc.other" value="-c -fmessage-length=0 -fno-builtin -ffunction-sections -fdata-sections -fsingle-precision-constant" valueType="string"/>
 								<option id="gnu.c.compiler.option.include.paths.1960889797" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
@@ -79,7 +81,7 @@
 								<option id="com.crt.advproject.gas.hdrlib.1412209429" name="Library headers" superClass="com.crt.advproject.gas.hdrlib" value="com.crt.advproject.gas.hdrlib.newlib" valueType="enumerated"/>
 								<option id="com.crt.advproject.gas.arch.1386115974" name="Architecture" superClass="com.crt.advproject.gas.arch" value="com.crt.advproject.gas.target.cm4" valueType="enumerated"/>
 								<option id="com.crt.advproject.gas.thumb.1280215976" name="Thumb mode" superClass="com.crt.advproject.gas.thumb" value="true" valueType="boolean"/>
-								<option id="gnu.both.asm.option.flags.crt.1042982584" name="Assembler flags" superClass="gnu.both.asm.option.flags.crt" value="-c -x assembler-with-cpp -D__NEWLIB__ -D__MULTICORE_MASTER -DNDEBUG -D__CODE_RED" valueType="string"/>
+								<option id="gnu.both.asm.option.flags.crt.1042982584" name="Assembler flags" superClass="gnu.both.asm.option.flags.crt" value="-c -x assembler-with-cpp -D__NEWLIB__ -D__MULTICORE_MASTER -DNDEBUG -D__CODE_RED -D__MULTICORE_MASTER_SLAVE_M0APP" valueType="string"/>
 								<option id="com.crt.advproject.gas.fpu.1437988019" name="Floating point" superClass="com.crt.advproject.gas.fpu" value="com.crt.advproject.gas.fpu.fpv4" valueType="enumerated"/>
 								<option id="gnu.both.asm.option.include.paths.1984283879" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths"/>
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.1694349202" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
@@ -161,6 +163,7 @@
 									<listOptionValue builtIn="false" value="CPP_USE_HEAP"/>
 									<listOptionValue builtIn="false" value="__LPC43XX__"/>
 									<listOptionValue builtIn="false" value="LPC43_MULTICORE_M0APP"/>
+									<listOptionValue builtIn="false" value="__MULTICORE_MASTER_SLAVE_M0APP"/>
 								</option>
 								<option id="gnu.cpp.compiler.option.other.other.1774933490" name="Other flags" superClass="gnu.cpp.compiler.option.other.other" value="-c -fmessage-length=0 -fno-builtin -ffunction-sections -fdata-sections -fno-rtti -fno-exceptions -fsingle-precision-constant" valueType="string"/>
 								<option id="gnu.cpp.compiler.option.optimization.flags.565613502" name="Other optimization flags" superClass="gnu.cpp.compiler.option.optimization.flags" value="-Os" valueType="string"/>
@@ -190,6 +193,7 @@
 									<listOptionValue builtIn="false" value="CPP_USE_HEAP"/>
 									<listOptionValue builtIn="false" value="__LPC43XX__"/>
 									<listOptionValue builtIn="false" value="LPC43_MULTICORE_M0APP"/>
+									<listOptionValue builtIn="false" value="__MULTICORE_MASTER_SLAVE_M0APP"/>
 								</option>
 								<option id="gnu.c.compiler.option.misc.other.2117150250" name="Other flags" superClass="gnu.c.compiler.option.misc.other" value="-c -fmessage-length=0 -fno-builtin -ffunction-sections -fdata-sections -fsingle-precision-constant" valueType="string"/>
 								<option id="gnu.c.compiler.option.include.paths.411885136" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
@@ -206,7 +210,7 @@
 								<option id="com.crt.advproject.gas.hdrlib.836156930" name="Library headers" superClass="com.crt.advproject.gas.hdrlib" value="com.crt.advproject.gas.hdrlib.newlib" valueType="enumerated"/>
 								<option id="com.crt.advproject.gas.arch.368039152" name="Architecture" superClass="com.crt.advproject.gas.arch" value="com.crt.advproject.gas.target.cm4" valueType="enumerated"/>
 								<option id="com.crt.advproject.gas.thumb.668840043" name="Thumb mode" superClass="com.crt.advproject.gas.thumb" value="true" valueType="boolean"/>
-								<option id="gnu.both.asm.option.flags.crt.1738860963" name="Assembler flags" superClass="gnu.both.asm.option.flags.crt" value="-c -x assembler-with-cpp -D__NEWLIB__ -D__MULTICORE_MASTER -DNDEBUG -D__CODE_RED" valueType="string"/>
+								<option id="gnu.both.asm.option.flags.crt.1738860963" name="Assembler flags" superClass="gnu.both.asm.option.flags.crt" value="-c -x assembler-with-cpp -D__NEWLIB__ -D__MULTICORE_MASTER -DNDEBUG -D__CODE_RED -D__MULTICORE_MASTER_SLAVE_M0APP" valueType="string"/>
 								<option id="com.crt.advproject.gas.fpu.1431181284" name="Floating point" superClass="com.crt.advproject.gas.fpu" value="com.crt.advproject.gas.fpu.fpv4" valueType="enumerated"/>
 								<option id="gnu.both.asm.option.include.paths.386358003" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths"/>
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.1709058442" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>

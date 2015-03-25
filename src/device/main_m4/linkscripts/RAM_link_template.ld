@@ -139,7 +139,7 @@ SECTIONS
     {
        FILL(0xff)
        __core_m0app_START__ = .; /* start of slave image */
-         KEEP(*(.core_m0app))
+         KEEP(*(.core_m0app*))
        __core_m0app_END__ = .; /* end of slave image */
        ASSERT(!(__core_m0app_START__ == __core_m0app_END__), "No slave code for _core_m0app");
        ASSERT( (ABSOLUTE(__core_m0app_START__) == __vectors_start___core_m0app), "M0APP execute address differs from address provided in source image");

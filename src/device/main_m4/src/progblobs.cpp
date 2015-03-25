@@ -167,14 +167,19 @@ int blobsLoop()
 #endif
 #if 0
 	Qval qval;
+	int j = 0;
 	static int i = 0;
 	while(1)
 	{
-		if (g_qqueue->dequeue(&qval) && qval.m_col==0xffff)
+		if (g_qqueue->dequeue(&qval))
 		{
-			cprintf("%d\n", i++);
-			break;
-		}	
+			j++;
+			if (qval.m_col>=0xfffe)
+			{
+				cprintf("%d: %d %x\n", i++, j, qval.m_col);
+				break;
+			}
+		}
 	}
 #endif
 #if 0

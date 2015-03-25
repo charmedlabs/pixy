@@ -192,7 +192,9 @@ void pixyInit(void)
 
 	commonInit();
 
+#ifdef KEIL
 	IPC_haltSlave();
+#endif
 
 	// clear RC servo registers to prevent and glitches upon initialization
 	rcs_enable(0, 0);

@@ -3,8 +3,8 @@
  * (c) Code Red Technologies Ltd, 2008-13
  * (c) NXP Semiconductors 2013-2015
  * Generated linker script file for LPC4330-M0
- * Created from generic_c.ld (LPCXpresso v7.3 (0 [Build 186] [2014-07-09] ))
- * By LPCXpresso v7.3.0 [Build 186] [2014-07-09]  on Tue Mar 17 16:53:40 CDT 2015
+ * Created from generic_c.ld (LPCXpresso v7.6 (2 [Build 326] [2015-02-02] ))
+ * By LPCXpresso v7.6.2 [Build 326] [2015-02-02]  on Wed Mar 25 09:19:02 CDT 2015
  */
 
 
@@ -94,44 +94,52 @@ SECTIONS
     .data_RAM2 : ALIGN(4)
     {
        FILL(0xff)
+       PROVIDE(__start_data_RAM2 = .) ;
        *(.ramfunc.$RAM2)
        *(.ramfunc.$RamAHB32)
     	*(.data.$RAM2*)
     	*(.data.$RamAHB32*)
        . = ALIGN(4) ;
+       PROVIDE(__end_data_RAM2 = .) ;
     } > RamAHB32 AT>RamAHB16
     
     /* DATA section for RamLoc128 */
     .data_RAM3 : ALIGN(4)
     {
        FILL(0xff)
+       PROVIDE(__start_data_RAM3 = .) ;
        *(.ramfunc.$RAM3)
        *(.ramfunc.$RamLoc128)
     	*(.data.$RAM3*)
     	*(.data.$RamLoc128*)
        . = ALIGN(4) ;
+       PROVIDE(__end_data_RAM3 = .) ;
     } > RamLoc128 AT>RamAHB16
     
     /* DATA section for RamLoc72 */
     .data_RAM4 : ALIGN(4)
     {
        FILL(0xff)
+       PROVIDE(__start_data_RAM4 = .) ;
        *(.ramfunc.$RAM4)
        *(.ramfunc.$RamLoc72)
     	*(.data.$RAM4*)
     	*(.data.$RamLoc72*)
        . = ALIGN(4) ;
+       PROVIDE(__end_data_RAM4 = .) ;
     } > RamLoc72 AT>RamAHB16
     
     /* DATA section for RamAHB_ETB16 */
     .data_RAM5 : ALIGN(4)
     {
        FILL(0xff)
+       PROVIDE(__start_data_RAM5 = .) ;
        *(.ramfunc.$RAM5)
        *(.ramfunc.$RamAHB_ETB16)
     	*(.data.$RAM5*)
     	*(.data.$RamAHB_ETB16*)
        . = ALIGN(4) ;
+       PROVIDE(__end_data_RAM5 = .) ;
     } > RamAHB_ETB16 AT>RamAHB16
     
     /* MAIN DATA SECTION */
@@ -160,30 +168,38 @@ SECTIONS
     /* BSS section for RamAHB32 */
     .bss_RAM2 : ALIGN(4)
     {
+       PROVIDE(__start_bss_RAM2 = .) ;
     	*(.bss.$RAM2*)
     	*(.bss.$RamAHB32*)
        . = ALIGN(4) ;
+       PROVIDE(__end_bss_RAM2 = .) ;
     } > RamAHB32
     /* BSS section for RamLoc128 */
     .bss_RAM3 : ALIGN(4)
     {
+       PROVIDE(__start_bss_RAM3 = .) ;
     	*(.bss.$RAM3*)
     	*(.bss.$RamLoc128*)
        . = ALIGN(4) ;
+       PROVIDE(__end_bss_RAM3 = .) ;
     } > RamLoc128
     /* BSS section for RamLoc72 */
     .bss_RAM4 : ALIGN(4)
     {
+       PROVIDE(__start_bss_RAM4 = .) ;
     	*(.bss.$RAM4*)
     	*(.bss.$RamLoc72*)
        . = ALIGN(4) ;
+       PROVIDE(__end_bss_RAM4 = .) ;
     } > RamLoc72
     /* BSS section for RamAHB_ETB16 */
     .bss_RAM5 : ALIGN(4)
     {
+       PROVIDE(__start_bss_RAM5 = .) ;
     	*(.bss.$RAM5*)
     	*(.bss.$RamAHB_ETB16*)
        . = ALIGN(4) ;
+       PROVIDE(__end_bss_RAM5 = .) ;
     } > RamAHB_ETB16
 
     /* MAIN BSS SECTION */
@@ -235,6 +251,6 @@ SECTIONS
         _end_noinit = .;
     } > RamAHB16
     
-    PROVIDE(_pvHeapStart = .);
-    PROVIDE(_vStackTop = __top_RamAHB16 - 0);
+    PROVIDE(_pvHeapStart = DEFINED(__user_heap_base) ? __user_heap_base : .);
+    PROVIDE(_vStackTop = DEFINED(__user_stack_top) ? __user_stack_top : __top_RamAHB16 - 0);
 }
