@@ -13,7 +13,7 @@
 // end license header
 //
 
-#include "LPC43xx.h"
+#include "lpc43xx.h"
 #include "platform_config.h"
 
 #include "lpc43xx_scu.h"

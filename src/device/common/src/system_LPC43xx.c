@@ -38,7 +38,7 @@
 * use without further testing or modification.
 **********************************************************************/
 
-#include "LPC43xx.h"
+#include "lpc43xx.h"
 #include "lpc43xx_cgu.h"
 
 

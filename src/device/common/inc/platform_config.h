@@ -186,7 +186,7 @@
 /* assign the roles for the devices */
 #if (DEVICE==LPC43xx)
 
-#include "LPC43xx.h"
+#include "lpc43xx.h"
 
 #define MASTER_CPU CORE_M4
 #define SLAVE_CPU CORE_M0
