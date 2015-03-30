@@ -34,7 +34,7 @@
  *          V1.20 Changed string descriptor handling
  *          V1.00 Initial Version
  *----------------------------------------------------------------------------*/
-#include "lpc43xx.H"
+#include "lpc43xx.h"
 #include "lpc_types.h"
 
 #include "usb.h"

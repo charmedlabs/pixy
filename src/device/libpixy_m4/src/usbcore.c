@@ -36,7 +36,7 @@
  *                Reworked Endpoint0
  *          V1.00 Initial Version
  *----------------------------------------------------------------------------*/
-#include "lpc43xx.H"
+#include "lpc43xx.h"
 #include "lpc_types.h"
 
 #include "usb.h"
