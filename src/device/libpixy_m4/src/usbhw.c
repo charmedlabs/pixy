@@ -44,7 +44,7 @@
 * this code.
 **********************************************************************/
 #include <string.h>
-#include "lpc43xx.H"                        /* lpc43xx definitions */
+#include "lpc43xx.h"                        /* lpc43xx definitions */
 #include "lpc_types.h"
 #include "usb.h"
 #include "usbhw.h"
