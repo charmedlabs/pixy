@@ -80,7 +80,8 @@ HEADERS  += mainwindow.h \
     debug.h \
     blobs2.h
 
-INCLUDEPATH += ../../common/inc
+#little hack: qqueue.h is available in the qt framework too -> add include path before all other include paths
+QMAKE_CXXFLAGS += -I../../common/inc
 
 QMAKE_CXXFLAGS_DEBUG += -O0
 QMAKE_CXXFLAGS += -Wno-unused-parameter
