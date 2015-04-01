@@ -315,6 +315,7 @@ void ButtonMachine::wait(uint32_t us)
 
 void ButtonMachine::reset()
 {
+	m_index = 0;
 	m_ledPipe = false;
 	led_set(0);
 	m_goto = 0;

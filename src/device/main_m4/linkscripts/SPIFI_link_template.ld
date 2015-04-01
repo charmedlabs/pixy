@@ -31,8 +31,9 @@ SECTIONS
     .text : ALIGN(4)
     {
         FILL(0xff)
-        __vectors_start__ = ABSOLUTE(.) ;
+         __rom_vectors_start__ = ABSOLUTE(.) ;
         KEEP(*(.isr_vector))
+         __rom_vectors_end__ = ABSOLUTE(.) ;
         
         /* Global Section Table */
         . = ALIGN(4) ;
@@ -58,6 +59,9 @@ SECTIONS
         LONG(LOADADDR(.text_ram));
         LONG(    ADDR(.text_ram)) ;
         LONG(  SIZEOF(.text_ram));
+        LONG(__rom_vectors_start__);
+        LONG(    ADDR(.text_ram)) ;
+        LONG(__rom_vectors_end__ - __rom_vectors_start__) ;		        
 /* END RUN_FROM_RAM */
 
         __data_section_table_end = .;
@@ -90,7 +94,9 @@ SECTIONS
     .text_ram : ALIGN(4)
 /* END RUN_FROM_RAM */     
     {
-         *(.text*)
+         __vectors_start__ = ABSOLUTE(.) ;
+    	. += __rom_vectors_end__ - __rom_vectors_start__;
+        *(.text*)
         *(.rodata .rodata.* .constdata .constdata.*)
         . = ALIGN(4);
         

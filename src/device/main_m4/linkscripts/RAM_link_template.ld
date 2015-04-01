@@ -264,4 +264,5 @@ SECTIONS
     
 PROVIDE(_pvHeapStart = ADDR(.data_RAM2));
 PROVIDE(_vStackTop = __top_RamAHB32);
+PROVIDE(_pvHeapLimit = _vStackTop - 0x600);   /* stack is 0x600 bytes or 1.5k  */
 }

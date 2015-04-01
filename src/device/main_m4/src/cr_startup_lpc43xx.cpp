@@ -39,6 +39,7 @@
 //
 //*****************************************************************************
 extern "C" {
+	extern unsigned int *__vectors_start__;
     extern void __libc_init_array(void);
 }
 #endif
@@ -415,9 +416,9 @@ void ResetISR(void) {
     // as there is no guarantee that the project has been configured
     // to use CMSIS.
     unsigned int * pSCB_VTOR = (unsigned int *) 0xE000ED08;
-    if ((unsigned int *) g_pfnVectors != (unsigned int *) 0x00000000) {
+    if ((unsigned int *) __vectors_start__ != (unsigned int *) 0x00000000) {
         // CMSIS : SCB->VTOR = <address of vector table>
-        *pSCB_VTOR = (unsigned int) g_pfnVectors;
+        *pSCB_VTOR = (unsigned int) &__vectors_start__;
     }
 #endif
 
