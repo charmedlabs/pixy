@@ -36,7 +36,7 @@ public:
 private:
     uint16_t m_width;
     uint16_t m_height;
-    uint32_t m_data[321][201]; // TODO not enough memory for 321x201 integral image; will need to resize
+    uint32_t m_data[201][321]; // TODO not enough memory for 321x201 integral image; will need to resize
 };
 
 

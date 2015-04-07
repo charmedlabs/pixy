@@ -26,19 +26,25 @@ IntegralImage::IntegralImage(const QImage &image) :
     // TODO resize
 
     // initialize to n+1xm+1 array of 32-bit ints
-    for (unsigned int row = 1; row < image.height(); ++row)
+    for (unsigned int row = 0; row < m_height; ++row)
     {
-        for (unsigned int col = 1; col < image.width(); ++col)
+        for (unsigned int col = 0; col < m_width; ++col)
         {
+            if (row == 0 || col == 0)
+            {
+                m_data[row][col] = 0;
+            }
+            else
+            {
             // get grayscale value of input image pixel
-            uint8_t intensity = qGray(image.pixel(col, row)); // qGray(x,y)
+            uint32_t intensity = qGray(image.pixel(col-1, row-1)); // qGray(x,y)
 
             // compute integral value for output pixel
             uint32_t rowSum = m_data[row-1][col];
             uint32_t colSum = m_data[row][col-1];
             uint32_t diagSum = m_data[row-1][col-1];
             m_data[row][col] = intensity + rowSum + colSum - diagSum;
-
+            }
         }
     }
 }
