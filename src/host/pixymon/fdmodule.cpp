@@ -7,7 +7,7 @@
 // declare module
 MON_MODULE(FdModule);
 
-FdModule::FdModule(Interpreter *interpreter) : MonModule(interpreter), m_cascade("lbpcascade_frontalface.xml")
+FdModule::FdModule(Interpreter *interpreter) : MonModule(interpreter), m_cascade("../pixymon/lbpcascade_frontalface.xml")
 {
     QStringList scriptlet;
 
