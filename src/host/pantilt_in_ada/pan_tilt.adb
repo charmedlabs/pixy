@@ -12,10 +12,8 @@
 --  PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION,
 --  ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 --
-
--- Pixy Tracking Demo - Ada Version --
-
-
+--  Pixy Tracking Demo - Ada Version --
+--
 --  To Build:
 --
 --  gnatmake pan_tilt.adb -aO/usr/local/lib -aO/usr/lib/gcc/x86_64-linux-gnu/4.8/ -aO/usr/lib/x86_64-linux-gnu/ -largs -lpthread -lpixyusb -lboost_system -lboost_chrono -lboost_thread -lstdc++ -lusb-1.0
@@ -58,13 +56,13 @@ function Pan_Tilt return int is
   Result           : int;
   Frame_Index      : integer;
 
-  procedure initialize_gimbals is
+  procedure Initialize_Gimbals is
   begin
     Azimuth.Position              := Pixy_RCS_Center;
     Azimuth.Previous_Error_Valid  := false;
     Altitude.Position             := Pixy_RCS_Center;
     Altitude.Previous_Error_Valid := false;
-  end initialize_gimbals;
+  end Initialize_Gimbals;
 
   procedure Update_Azimuth is
     P_Gain      : integer renames Azimuth_Proportional_Gain;
@@ -118,7 +116,7 @@ begin
 
   put_line("+ Pixy Tracking Demo Started +");
 
-  initialize_gimbals;
+  Initialize_Gimbals;
 
   Pixy_Init_Status := Pixy.Init;
   Frame_Index      := 0;
