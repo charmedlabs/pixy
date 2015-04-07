@@ -1,5 +1,6 @@
 #include <QPainter>
 #include <vector>
+#include <QTime>
 #include "fdmodule.h"
 #include "interpreter.h"
 #include "renderer.h"
@@ -54,12 +55,14 @@ void FdModule::paramChange()
 
 void FdModule::renderEX01(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame)
 {
+    QTime time;
     QPainter p;
     QImage img(width, height, QImage::Format_ARGB32);
     img.fill(0x00000000);
     // Run face detection
+    time.start();
     std::vector<detectionLocation> faces = m_cascade.detectMultiScale(*m_renderer->backgroundImage(), m_scaleFactor, m_stepSize);
-
+    qDebug("fd time: %d", time.elapsed());
     // Draw detected faces
     p.begin(&img);
     for (std::vector<detectionLocation>::const_iterator detectionLoc = faces.begin(); detectionLoc != faces.end(); ++detectionLoc)
