@@ -1,0 +1,33 @@
+--
+--  Copyright (c) 2015, John Leimon <jleimon@gmail.com>
+--
+--  Permission to use, copy, modify, and/or distribute this software for any
+--  purpose with or without fee is hereby granted, provided that the above copyright
+--  notice and this permission notice appear in all copies.
+--
+--  THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD
+--  TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN
+--  NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR
+--  CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
+--  PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION,
+--  ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+--
+
+project pan_tilt is
+
+  for Languages use ("Ada");
+  for Source_Dirs use (".", "./specs");
+  for Exec_Dir use ".";
+  for Main use ("pan_tilt.adb");
+
+  package Compiler is
+    for Default_Switches ("Ada") use ("-gnat05");
+  end Compiler;
+
+  package Linker is
+    for Default_Switches ("Ada") use ("-lpixyusb");
+  end Linker;
+
+end pan_tilt;
+
+
