@@ -58,7 +58,7 @@ void FdModule::renderEX01(uint8_t renderFlags, uint16_t width, uint16_t height, 
     QImage img(width, height, QImage::Format_ARGB32);
     img.fill(0x00000000);
     // Run face detection
-    std::vector<detectionLocation> faces = m_cascade.detectMultiScale(*m_renderer->backgroundImage(), m_stepSize, m_scaleFactor);
+    std::vector<detectionLocation> faces = m_cascade.detectMultiScale(*m_renderer->backgroundImage(), m_scaleFactor, m_stepSize);
 
     // Draw detected faces
     p.begin(&img);
