@@ -427,7 +427,7 @@ BlobA *Blobs::getMaxBlob(uint16_t signature, uint16_t *numBlobs)
     int i;
 	uint16_t blobs;
     uint32_t area, maxArea;
-    BlobA *blob;
+    BlobA *blob, *maxBlob;
 	BlobB *ccBlob;
 
 	if (m_mutex)
@@ -468,20 +468,16 @@ BlobA *Blobs::getMaxBlob(uint16_t signature, uint16_t *numBlobs)
 	// look for a specific signature
     else
     {
-		bool flag;
 		// regular signature
 		if (signature<=CL_NUM_SIGNATURES)
 		{
-        	for (i=0, blobs=0, flag=true; i<m_numBlobs; i++)
+        	for (i=0, blobs=0, maxBlob=NULL; i<m_numBlobs; i++)
         	{
             	blob = (BlobA *)m_blobs + i;
            		if (blob->m_model==signature)
 				{
-					if (flag)
-					{
-                		m_maxBlob = blob;
-						flag = false;
-					}
+					if (!maxBlob)
+                		maxBlob = blob;
 	 				blobs++;  // count
 				}
         	}
@@ -489,23 +485,20 @@ BlobA *Blobs::getMaxBlob(uint16_t signature, uint16_t *numBlobs)
 		// color code 
 		else
 		{
-        	for (i=0, blobs=0, flag=true; i<m_numCCBlobs; i++)
+        	for (i=0, blobs=0, maxBlob=NULL; i<m_numCCBlobs; i++)
 			{
             	ccBlob = (BlobB *)m_ccBlobs + i;
            		if (ccBlob->m_model==signature)
 				{
-					if (flag)
-					{
-                		m_maxBlob = (BlobA *)ccBlob;
-						flag = false;
-					}
+					if (!maxBlob)
+                		maxBlob = (BlobA *)ccBlob;
 	 				blobs++;  // count
 				}
 			}
         }
 		if (numBlobs)
 			*numBlobs = blobs;
-		return m_maxBlob;
+		return maxBlob;
     }
 
     return NULL; // no blobs...

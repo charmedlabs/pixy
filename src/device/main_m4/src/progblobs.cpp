@@ -77,12 +77,12 @@ uint16_t lego_getData(uint8_t *buf, uint32_t buflen)
 #endif
 	if (c>=0x51 && c<=0x57)
 	{
-#if 1
-		buf[0] = 0;
-		buf[1] = 1;
-		buf[2] = 2;
-		buf[3] = 3;
-		buf[4] = 4;
+#if 0
+		buf[0] = 1;
+		buf[1] = 2;
+		buf[2] = 3;
+		buf[3] = 4;
+		buf[4] = 5;
 #else
 		BlobA *max;
 		max = g_blobs->getMaxBlob(c-0x50, &numBlobs);
@@ -112,6 +112,14 @@ uint16_t lego_getData(uint8_t *buf, uint32_t buflen)
 		BlobB *max;
 		if (serial->receive((uint8_t *)&d, 2)<2)
 			return 0;
+#if 0
+		buf[0] = 1;
+		buf[1] = 2;
+		buf[2] = 3;
+		buf[3] = 4;
+		buf[4] = 5;
+		buf[5] = 6;
+#else
 		max = (BlobB *)g_blobs->getMaxBlob(d, &numBlobs);
 		if (max==0)
 			memset(buf, 0, 6);
@@ -133,20 +141,33 @@ uint16_t lego_getData(uint8_t *buf, uint32_t buflen)
 			temp = ((int32_t)max->m_angle*91)>>7;
 			buf[5] = temp;
 		}
+#endif
 		return 6;
 	}
 	else  
 	{
-		BlobA *max;
-		max = g_blobs->getMaxBlob();
-		if (max==0 || max==(BlobA *)-1)
-			buf[0] = 0;
-		else
+#if 0
+		static uint8_t c = 0;
+
+		buf[0] = c++;
+#else
+		if (c==0x42)
 		{
-			width = max->m_right - max->m_left;
-			temp = ((max->m_left + width/2)*819)>>10;
-			buf[0] = temp;
+			BlobA *max;
+			max = g_blobs->getMaxBlob();
+			if (max==0 || max==(BlobA *)-1)
+				buf[0] = 0;
+			else
+			{
+				width = max->m_right - max->m_left;
+				temp = ((max->m_left + width/2)*819)>>10;
+				buf[0] = temp;
+			}
 		}
+		else
+			buf[0] = 1;	 // need to return nonzero value for other inquiries or LEGO brick will think we're an analog sensor
+
+#endif
 		return 1;
 	}
 }
