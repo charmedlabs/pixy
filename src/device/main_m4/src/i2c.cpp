@@ -77,7 +77,7 @@ void I2c::slaveHandler()
 	case I2C_I2STAT_S_TX_SLAR_ACK:
 	// Data has been transmitted, ACK has been received 
 	case I2C_I2STAT_S_TX_DAT_ACK:
-		if (m_pad0) // m_pad0 is there so we make sure to send 0's in pairs so we don't get out of byte-sync
+		if (m_pad0 && m_16bit) // m_pad0 is there so we make sure to send 0's in pairs so we don't get out of byte-sync
 		{
 			m_i2c->DAT = 0;
 			m_pad0 = false;
@@ -95,6 +95,11 @@ void I2c::slaveHandler()
 
 	case I2C_I2STAT_S_TX_LAST_DAT_ACK:
 	case I2C_I2STAT_S_TX_DAT_NACK:
+		if (m_clearOnEnd)
+		{
+			m_tq.clear();
+			m_rq.clear();
+		}
 		m_i2c->CONSET = I2C_I2CONSET_AA;
 		m_i2c->CONCLR = I2C_I2CONCLR_SIC;
 		break;
@@ -171,6 +176,9 @@ void I2c::startSlave()
 I2c::I2c(LPC_I2Cn_Type *i2c, uint8_t addr, SerialCallback callback) : m_rq(I2C_RECEIVE_BUF_SIZE), m_tq(I2C_TRANSMIT_BUF_SIZE, callback)
 {
 	m_i2c = i2c;
+
+	m_16bit = false;
+	m_clearOnEnd = true;;
 	 
 	I2C_Init(m_i2c, 100000);
    	setSlaveAddr(addr);

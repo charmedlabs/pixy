@@ -24,9 +24,17 @@
 static uint8_t g_interface = 0;
 static Iserial *g_serial = 0;
 
+#define LEGO
+uint16_t lego_getData(uint8_t *buf, uint32_t buflen);
+
+
 uint32_t callback(uint8_t *data, uint32_t len)
 {
+#ifdef LEGO
+	return lego_getData(data, len);
+#else
 	return g_blobs->getBlock(data, len);
+#endif
 }
 
 

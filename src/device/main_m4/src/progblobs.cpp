@@ -13,6 +13,7 @@
 // end license header
 //
 
+#include <string.h>
 #include "progblobs.h"
 #include "pixy_init.h"
 #include "camera.h"
@@ -21,6 +22,8 @@
 #include "serial.h"
 #include "rcservo.h"
 #include "exec.h"
+
+#define LEGO
 
 bool g_ledSet = false;
 static uint8_t g_state=0;
@@ -33,6 +36,136 @@ Program g_progBlobs =
 	blobsLoop
 };
 
+#ifdef LEGO
+void lego_handleRecv();
+uint8_t g_legoRequest;
+
+uint16_t lego_getData(uint8_t *buf, uint32_t buflen)
+{
+	uint8_t c;
+	uint16_t d;
+	uint16_t numBlobs;
+	uint32_t temp, width, height;
+	Iserial *serial = ser_getSerial();
+
+	if (serial->receive(&c, 1)==0)
+		return 0;
+
+#if 0
+	if (c==0x00)
+	{
+		char *str = "V0.1      ";
+		strcpy((char *)buf, str);
+		return 8;
+		//return strlen((char *)str);
+	}
+	if (c==0x08)
+	{
+		char *str = "Pixy      ";
+		strcpy((char *)buf, str);
+		return 8;
+		//return strlen((char *)str);
+	}
+	else if (c==0x10)
+	{
+		char *str = "Vision    ";
+		strcpy((char *)buf, str);
+		return 8;
+		//return strlen((char *)str);
+	}
+	else 
+#endif
+	if (c>=0x51 && c<=0x57)
+	{
+#if 1
+		buf[0] = 0;
+		buf[1] = 1;
+		buf[2] = 2;
+		buf[3] = 3;
+		buf[4] = 4;
+#else
+		BlobA *max;
+		max = g_blobs->getMaxBlob(c-0x50, &numBlobs);
+		if (max==0)
+			memset(buf, 0, 5);
+		else if (max==(BlobA *)-1)
+			memset(buf, -1, 5);
+		else
+		{
+			width = max->m_right - max->m_left;
+			height = max->m_bottom - max->m_top;
+			buf[0] = numBlobs;
+			temp = ((max->m_left + width/2)*819)>>10;
+			buf[1] = temp;
+			temp = ((max->m_top + height/2)*819)>>10;
+			buf[2] = temp;
+			temp = (width*819)>>10;
+			buf[3] = temp;
+			temp = (height*819)>>10;
+			buf[4] = temp;
+		}
+#endif
+		return 5;
+	}
+	else if (c==0x58)
+	{
+		BlobB *max;
+		if (serial->receive((uint8_t *)&d, 2)<2)
+			return 0;
+		max = (BlobB *)g_blobs->getMaxBlob(d, &numBlobs);
+		if (max==0)
+			memset(buf, 0, 6);
+		else if (max==(BlobB *)-1)
+			memset(buf, -1, 6);
+		else
+		{
+			width = max->m_right - max->m_left;
+			height = max->m_bottom - max->m_top;
+			buf[0] = numBlobs;
+			temp = ((max->m_left + width/2)*819)>>10;
+			buf[1] = temp;
+			temp = ((max->m_top + height/2)*819)>>10;
+			buf[2] = temp;
+			temp = (width*819)>>10;
+			buf[3] = temp;
+			temp = (height*819)>>10;
+			buf[4] = temp;
+			temp = ((int32_t)max->m_angle*91)>>7;
+			buf[5] = temp;
+		}
+		return 6;
+	}
+	else  
+	{
+		BlobA *max;
+		max = g_blobs->getMaxBlob();
+		if (max==0 || max==(BlobA *)-1)
+			buf[0] = 0;
+		else
+		{
+			width = max->m_right - max->m_left;
+			temp = ((max->m_left + width/2)*819)>>10;
+			buf[0] = temp;
+		}
+		return 1;
+	}
+}
+
+void lego_handleRecv()
+{
+	return;
+	uint8_t a;
+	Iserial *serial = ser_getSerial();
+
+	while(serial->receive(&a, 1))
+	{
+		cprintf("%x\n", a);
+		g_legoRequest = a;
+	}
+	return;
+}
+
+#endif
 
 
 int blobsSetup()
@@ -148,7 +281,11 @@ int blobsLoop()
 		return 0;
 	}
 	// handle received data immediately
+#ifdef LEGO
+	lego_handleRecv();
+#else
 	handleRecv();
+#endif
 
 	// send blobs
 	g_blobs->getBlobs(&blobs, &numBlobs, &ccBlobs, &numCCBlobs);
@@ -162,7 +299,11 @@ int blobsLoop()
 	
 	// deal with any latent received data until the next frame comes in
 	while(!g_qqueue->queued())
+#ifdef LEGO
+		lego_handleRecv();
+#else
 		handleRecv();
+#endif
 
 #endif
 #if 0

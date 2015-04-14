@@ -28,10 +28,7 @@ public:
 	{
 		m_size = size;
 		m_buf = new BufType[m_size];
-		m_read = 0;
-		m_write = 0;
-		m_produced = 0;
-		m_consumed = 0;
+		clear();
 	}
 
    	~ReceiveQ()
@@ -76,6 +73,14 @@ public:
 		return 1;
 	}
 
+	void clear()
+	{
+		m_read = 0;
+		m_write = 0;
+		m_produced = 0;
+		m_consumed = 0;
+	}
+
 	uint32_t m_size;
 	BufType *m_buf;
 	uint32_t m_read;
@@ -93,9 +98,8 @@ public:
 	{
 		m_size = size;
 		m_buf = new BufType[m_size];
-		m_read = 0;
-		m_len = 0;
 		m_callback = callback;
+		clear();
 	}
 
    	~TransmitQ()
@@ -116,6 +120,12 @@ public:
 		m_len--;
 
 		return 1;
+	}
+
+	void clear()
+	{
+		m_read = 0;
+		m_len = 0;
 	}
 
 	uint32_t m_size;

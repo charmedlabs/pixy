@@ -422,15 +422,22 @@ uint16_t Blobs::getBlock(uint8_t *buf, uint32_t buflen)
 }
 
 
-BlobA *Blobs::getMaxBlob(uint16_t signature)
+BlobA *Blobs::getMaxBlob(uint16_t signature, uint16_t *numBlobs)
 {
-    int i, j;
+    int i;
+	uint16_t blobs;
     uint32_t area, maxArea;
     BlobA *blob;
 	BlobB *ccBlob;
 
+	if (m_mutex)
+		return (BlobA *)-1;	 // busy!
+
     if (signature==0) // 0 means return the biggest regardless of signature number
     {
+		if (numBlobs)
+			*numBlobs = 1; // not really used in this mode, so return 1
+
         // if we've already found it, return it
         if (m_maxBlob)
             return m_maxBlob;
@@ -458,13 +465,47 @@ BlobA *Blobs::getMaxBlob(uint16_t signature)
         }
 		return m_maxBlob;
     }
+	// look for a specific signature
     else
     {
-        for (i=0, j=0; i<m_numBlobs; i++, j+=5)
-        {
-            if (m_blobs[j+0]==signature)
-                return (BlobA *)(m_blobs+j);
+		bool flag;
+		// regular signature
+		if (signature<=CL_NUM_SIGNATURES)
+		{
+        	for (i=0, blobs=0, flag=true; i<m_numBlobs; i++)
+        	{
+            	blob = (BlobA *)m_blobs + i;
+           		if (blob->m_model==signature)
+				{
+					if (flag)
+					{
+                		m_maxBlob = blob;
+						flag = false;
+					}
+	 				blobs++;  // count
+				}
+        	}
+		}
+		// color code 
+		else
+		{
+        	for (i=0, blobs=0, flag=true; i<m_numCCBlobs; i++)
+			{
+            	ccBlob = (BlobB *)m_ccBlobs + i;
+           		if (ccBlob->m_model==signature)
+				{
+					if (flag)
+					{
+                		m_maxBlob = (BlobA *)ccBlob;
+						flag = false;
+					}
+	 				blobs++;  // count
+				}
+			}
         }
+		if (numBlobs)
+			*numBlobs = blobs;
+		return m_maxBlob;
     }
 
     return NULL; // no blobs...
