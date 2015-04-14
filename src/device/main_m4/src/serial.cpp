@@ -52,6 +52,7 @@ int ser_init()
 
 void ser_loadParams()
 {
+#ifndef LEGO
 	prm_add("Data out port", 0, 
 		"@c Interface Selects the port that's used to output data, 0=Arduino ICSP SPI, 1=SPI with SS, 2=I2C, 3=UART, 4=analog/digital x, 5=analog/digital y (default 0)", UINT8(0), END);
 	prm_add("I2C address", PRM_FLAG_HEX_FORMAT, 
@@ -70,6 +71,10 @@ void ser_loadParams()
 
 	prm_get("UART baudrate", &baudrate, END);
 	g_uart0->setBaudrate(baudrate);
+#else
+	ser_setInterface(SER_INTERFACE_I2C);
+ 	g_i2c0->setSlaveAddr(0x01);
+#endif
 }
 
 int ser_setInterface(uint8_t interface)

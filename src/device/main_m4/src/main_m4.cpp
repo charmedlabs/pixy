@@ -31,6 +31,8 @@
 #include "param.h"
 #include "serial.h"
 
+#include <new>
+
 // M0 code 
 #ifdef KEIL
 const // so m0 program goes into RO memory
@@ -50,26 +52,56 @@ void __default_signal_handler(int signal, int type)
 	sprintf(message, "received signal: %d %d\n", signal, type);
 	showError(signal, 0xff0000, message);
 }
+		    
+#if 0
+unsigned __check_heap_overflow (void * new_end_of_heap)
+{
+
+	if ((uint32_t)new_end_of_heap >= 0x20008000-0x600)
+		return 1; // Heap has overflowed
+	return 0; // Heap still OK
 }
+#endif
+}
+
 
 int main(void)
 {
 	uint16_t major, minor, build;
 	int i, res, count;
 
-	// main init of hardware plus a version-dependent number for the parameters that will
-	// force a format of parameter between version numbers.  
-#ifdef KEIL
+	#ifdef KEIL
  	pixyInit(SRAM3_LOC, &LR0[0], sizeof(LR0));
 #else
 	pixyInit();
 #endif
+#if 0
+	i = 0;
+	char *foo;
+	while(1)
+	{
+		foo = new (std::nothrow) char[128];
+		if (foo==NULL)
+		{
+			_DBG("full\n");
+			break;
+		}
+		else
+		{
+			_DBH32((int)foo); _DBG(" "); _DBH32(i); _DBG("\n");
+		}
+		i++;
+	}
+	while(1);
+#endif
+	// main init of hardware plus a version-dependent number for the parameters that will
+	// force a format of parameter between version numbers.  
 
 	cc_init(g_chirpUsb);
 	ser_init();
 	exec_init(g_chirpUsb);
 
-#if 1
+#if 0
     exec_addProg(&g_progBlobs);
     ptLoadParams();
     exec_addProg(&g_progPt);
@@ -78,12 +110,10 @@ int main(void)
     cam_setMode(CAM_MODE1);
     while(1)
     	periodic();
-#else
-    exec_loop();
 #endif
 #endif
 
-#if 0
+#if 1
 	// load programs
 	exec_addProg(&g_progBlobs);
 	ptLoadParams();
