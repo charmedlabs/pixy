@@ -36,6 +36,6 @@
 /src/device/libpixy_m4/src/system_LPC43xx.c
 /src/device/main_m0/Release/cr_startup_lpc43xx-m0app.asm
 /src/device/main_m0/Release/main_m0.asm
-/src/device/main_m4/SPIFI/pixy_firmware.hex b/src/device/main_m4/SPIFI/pixy_firmware.hex
+/src/device/main_m4/SPIFI/pixy_firmware.hex
 *.pro.user
 *~
