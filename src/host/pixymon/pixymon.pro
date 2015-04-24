@@ -27,7 +27,9 @@ SOURCES += main.cpp\
     ../../common/src/blob.cpp \
     ../../common/src/blobs.cpp \
     ../../common/src/qqueue.cpp \
-    ../../common/src/calc.cpp \
+	../../common/src/calc.cpp \
+	../../common/src/robo.cpp \
+	robomodule.cpp \
     configdialog.cpp \
     aboutdialog.cpp \
     parameters.cpp \
@@ -44,7 +46,7 @@ SOURCES += main.cpp\
 HEADERS  += mainwindow.h \
     videowidget.h \
     usblink.h \
-    console.h \
+	console.h \
     interpreter.h \
     renderer.h \
     chirpmon.h \
@@ -65,6 +67,8 @@ HEADERS  += mainwindow.h \
     ../../common/inc/link.h \
     ../../common/inc/calc.h \
     ../../common/inc/simplevector.h \
+	../../common/inc/robo.h \
+	robomodule.h \
     pixymon.h \
     configdialog.h \
     sleeper.h \
@@ -121,6 +125,8 @@ unix:!macx {
 
 RESOURCES += \
     resources.qrc
+
+QMAKE_CXXFLAGS += -std=c++11
 
 
 

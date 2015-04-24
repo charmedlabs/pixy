@@ -46,6 +46,7 @@ CccModule::~CccModule()
 
 bool CccModule::render(uint32_t fourcc, const void *args[])
 {
+	return false; //temporarily disabled
     if (fourcc==FOURCC('C','M','V','2'))
     {
         renderCMV2(*(uint8_t *)args[0], *(uint16_t *)args[1], *(uint16_t *)args[2], *(uint32_t *)args[3], (uint8_t *)args[4]);
