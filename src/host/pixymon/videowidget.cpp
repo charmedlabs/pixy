@@ -25,7 +25,7 @@
 //#include "interpreter.h"
 #include "renderer.h"
 
-VideoWidget::VideoWidget(MainWindow *main) : QWidget((QWidget *)main)
+VideoWidget::VideoWidget(QWidget *main) : QWidget(main)
 {
     qRegisterMetaType<VideoWidget::InputMode>("VideoWidget::InputMode");
 
@@ -243,7 +243,7 @@ void VideoWidget::mouseReleaseEvent(QMouseEvent *event)
 void VideoWidget::resizeEvent(QResizeEvent *event)
 {
     m_selection = false;
-    QWidget::resizeEvent(event);
+	QWidget::resizeEvent(event);
 }
 
 void VideoWidget::acceptInput(VideoWidget::InputMode mode)

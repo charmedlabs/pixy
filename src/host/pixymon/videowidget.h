@@ -29,7 +29,7 @@ class VideoWidget : public QWidget
     Q_OBJECT
 
 public:
-    VideoWidget(MainWindow *main);
+	VideoWidget(QWidget *main);
     ~VideoWidget();
 
     void handleImage(void **args);
@@ -49,8 +49,7 @@ protected:
     virtual void mouseMoveEvent(QMouseEvent *event);
     virtual void mousePressEvent(QMouseEvent *event);
     virtual void mouseReleaseEvent(QMouseEvent *event);
-    virtual void resizeEvent(QResizeEvent *event);
-
+	virtual void resizeEvent(QResizeEvent *event);
 
 signals:
     void selection(int x0, int y0, int width, int height);
@@ -62,23 +61,23 @@ public slots:
 private slots:
 
 private:
-    MainWindow *m_main;
+	QWidget *m_main;
 
     std::vector<QImage> m_images;
     std::vector<QImage> m_renderedImages;
 
-    int m_width;
-    int m_height;
-    int m_xOffset;
-    int m_yOffset;
-    int m_x0;
-    int m_y0;
-    int m_sbWidth;
-    int m_sbHeight;
-    float m_scale;
-    bool m_drag;
+	int m_width = 0;
+	int m_height = 0;
+	int m_xOffset = 0;
+	int m_yOffset = 0;
+	int m_x0 = 0;
+	int m_y0 = 0;
+	int m_sbWidth = 0;
+	int m_sbHeight = 0;
+	float m_scale = 1;
+	bool m_drag = false;
     InputMode m_inputMode;
-    bool m_selection;
+	bool m_selection = false;
 };
 
 

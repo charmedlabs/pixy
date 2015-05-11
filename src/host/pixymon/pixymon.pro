@@ -41,7 +41,8 @@ SOURCES += main.cpp\
     monparameterdb.cpp \
     cccmodule.cpp \
     debug.cpp \
-    blobs2.cpp
+    blobs2.cpp \
+    DebugTestDialog.cpp
 
 HEADERS  += mainwindow.h \
     videowidget.h \
@@ -82,7 +83,8 @@ HEADERS  += mainwindow.h \
     monparameterdb.h \
     cccmodule.h \
     debug.h \
-    blobs2.h
+    blobs2.h \
+    DebugTestDialog.h
 
 #little hack: qqueue.h is available in the qt framework too -> add include path before all other include paths
 QMAKE_CXXFLAGS += -I../../common/inc
@@ -91,7 +93,8 @@ QMAKE_CXXFLAGS_DEBUG += -O0
 QMAKE_CXXFLAGS += -Wno-unused-parameter
 FORMS    += mainwindow.ui \
     configdialog.ui \
-    about.ui
+    about.ui \
+    DebugTestDialog.ui
 
 # LIBS += ./libusb-1.0.dll.a
 

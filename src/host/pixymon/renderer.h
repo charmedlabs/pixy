@@ -73,7 +73,7 @@ public:
 
 		p.end();
 
-		emit image(img.scaled( m_video->activeWidth(), m_video->activeHeight()), renderFlags);
+		emit image(img.scaled( m_video->width(), m_video->height(), Qt::KeepAspectRatio), renderFlags);
 	}
 
     void renderBlobsB(bool blend, QImage *image, float scale, BlobB *blobs, uint32_t numBlobs);

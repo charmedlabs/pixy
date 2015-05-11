@@ -29,8 +29,7 @@ Interpreter *MonModuleUtil::m_interpreter = NULL;
 
 MonModule::MonModule(Interpreter *interpreter)
 {
-    m_interpreter = interpreter;
-    m_renderer = m_interpreter->m_renderer;
+	m_interpreter = interpreter;
     MonModuleUtil::m_interpreter = interpreter;
 
 }

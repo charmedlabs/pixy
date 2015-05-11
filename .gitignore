@@ -39,3 +39,5 @@
 /src/device/main_m4/SPIFI/pixy_firmware.hex
 *.pro.user
 *~
+/src/device/libpixy_m4/src/robo.cpp
+/src/host/build-pixymon-Desktop-Debug/*
