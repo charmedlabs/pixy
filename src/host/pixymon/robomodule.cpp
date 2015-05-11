@@ -520,6 +520,295 @@ public:
 		});
 	}
 
+	void detect(RoboParameters params, std::function<Renderer*()> makeRenderer)
+	{
+		convertToGrayscale();
+		gaussianFilter();
+		sobelFilterDlDy();
+		RawFrame<bool> binaryImage(raw().getWidth(), raw().getHeight());
+
+		std::vector<uint32_t> allPlatePixels(raw().getWidth());
+
+		auto renderBinary = [&](RawFrame<bool>& binaryImage)
+		{
+			if (makeRenderer)
+			{
+				renderDirect(makeRenderer(), RENDER_FLAG_BLEND | RENDER_FLAG_FLUSH, [&](QPainter* p)
+				{
+					binaryImage.forEach([&](uint16_t x, uint16_t y)
+					{
+						auto state = binaryImage.px(x, y);
+						auto color = state ? 0xff : 0x00;
+						p->setPen(QPen(QColor(color, color, color, 0xff)));
+						p->drawPoint(x, y);
+						if (allPlatePixels[x] >= 20 && allPlatePixels[x] == (raw().getHeight() - y))
+						{
+							p->setPen(QPen(QColor(0xff, 0x00, 0x00, 0xff)));
+							p->drawPoint(x, y);
+						}
+					});
+				});
+			}
+		};
+
+		if (makeRenderer)
+		{
+			renderDirect(makeRenderer(), RENDER_FLAG_BLEND | RENDER_FLAG_FLUSH, [&](QPainter* p)
+			{
+				convertToNormalizedGreyValues(edgeFiltered, [&](uint16_t x, uint16_t y, uint8_t val)
+				{
+					p->setPen(QPen(QColor(val, val, val, 0xff)));
+					p->drawPoint(x, y);
+				});
+			});
+		}
+
+		gaussianFilterOnEdges();
+
+		edgeFiltered.applyFilter(binaryImage, [&](uint16_t x, uint16_t y)
+		{
+			auto value = edgeFiltered.px(x, y);
+			return value < -params.limit;
+			return value > params.limit || value < -params.limit;
+		});
+
+		if (makeRenderer && false)
+		{
+			renderDirect(makeRenderer(), RENDER_FLAG_BLEND | RENDER_FLAG_FLUSH, [&](QPainter* p)
+			{
+				convertToNormalizedGreyValues(edgeFiltered, [&](uint16_t x, uint16_t y, uint8_t val)
+				{
+					p->setPen(QPen(QColor(val, val, val, 0xff)));
+					p->drawPoint(x, y);
+				});
+			});
+		}
+
+
+		std::vector<uint32_t> unfilteredAllPlatePixels(raw().getWidth());
+		auto topBottomBorder = 10;
+		for (auto x = topBottomBorder + 1; x < raw().getWidth() - topBottomBorder; ++x)
+		{
+			auto platePixels = 10;
+			for (auto y = platePixels; y < binaryImage.getHeight(); ++y)
+			{
+				if (!binaryImage.px(x, binaryImage.getHeight() - y))
+				{
+					platePixels += 1;
+				}
+				else
+				{
+					break;
+				}
+			}
+
+			unfilteredAllPlatePixels[x] = (platePixels < (binaryImage.getHeight()-topBottomBorder) && platePixels >= topBottomBorder) ? platePixels : 0;
+		}
+
+		std::vector<uint32_t> partialFilteredAllPlatePixels(raw().getWidth());
+		constexpr auto averagingFrame = 20;
+		constexpr auto averagingLimit = 5;
+		for (auto x = 0; x < raw().getWidth(); ++x)
+		{
+			int32_t left = x - averagingFrame;
+			int32_t right = x + averagingFrame;
+			left = std::max(0, left);
+			right = std::min<int32_t>(binaryImage.getWidth(), right);
+
+			auto sum = 0;
+			auto cnt = 0;
+			for (auto x = left; x < right; ++x)
+			{
+				if (unfilteredAllPlatePixels[x] != 0)
+				{
+					sum += unfilteredAllPlatePixels[x];
+					cnt += 1;
+				}
+			}
+			auto avg = sum / (cnt==0?1:cnt);
+
+			partialFilteredAllPlatePixels[x] = (std::abs(unfilteredAllPlatePixels[x] - avg) <= averagingLimit) ? unfilteredAllPlatePixels[x] : 0;
+		}
+
+		if (partialFilteredAllPlatePixels[0] == 0)
+			partialFilteredAllPlatePixels[0] = 1;
+
+		for (auto x = 0; x < raw().getWidth(); ++x)
+		{
+			if (partialFilteredAllPlatePixels[x] == 0)
+			{
+				uint16_t x2 = 0;
+				for (auto tmp = x; tmp < raw().getWidth(); ++tmp)
+				{
+					if (partialFilteredAllPlatePixels[tmp] != 0)
+					{
+						x2 = tmp;
+						break;
+					}
+				}
+				if (x2 == 0)
+				{
+					allPlatePixels[x] = partialFilteredAllPlatePixels[x];
+					continue;
+				}
+
+				int32_t from = partialFilteredAllPlatePixels[x - 1];
+				int32_t to = partialFilteredAllPlatePixels[x2];
+				double m = double(to-from)/double(x2-x);
+
+				auto startX = x - 1;
+				for (; x < x2; ++x)
+				{
+					allPlatePixels[x] = (x - startX)*m + from;
+				}
+			}
+			else
+			{
+				allPlatePixels[x] = partialFilteredAllPlatePixels[x];
+			}
+		}
+
+
+
+		renderBinary(binaryImage);
+		laplaceFilter();
+		if (makeRenderer && false)
+		{
+			renderDirect(makeRenderer(), RENDER_FLAG_BLEND | RENDER_FLAG_FLUSH, [&](QPainter* p)
+			{
+				convertToNormalizedGreyValues(edgeFiltered, [&](uint16_t x, uint16_t y, uint8_t val)
+				{
+					p->setPen(QPen(QColor(val, val, val, 0xff)));
+					p->drawPoint(x, y);
+				});
+			});
+		}
+		gaussianFilterOnEdges();
+		if (makeRenderer && false)
+		{
+			renderDirect(makeRenderer(), RENDER_FLAG_BLEND | RENDER_FLAG_FLUSH, [&](QPainter* p)
+			{
+				convertToNormalizedGreyValues(edgeFiltered, [&](uint16_t x, uint16_t y, uint8_t val)
+				{
+					p->setPen(QPen(QColor(val, val, val, 0xff)));
+					p->drawPoint(x, y);
+				});
+			});
+		}
+
+		sobelFilterDlDx();
+		if (makeRenderer && false)
+		{
+			renderDirect(makeRenderer(), RENDER_FLAG_BLEND | RENDER_FLAG_FLUSH, [&](QPainter* p)
+			{
+				convertToNormalizedGreyValues(edgeFiltered, [&](uint16_t x, uint16_t y, uint8_t val)
+				{
+					p->setPen(QPen(QColor(val, val, val, 0xff)));
+					p->drawPoint(x, y);
+				});
+			});
+		}
+
+		RawFrame<bool> binaryImage2(raw().getWidth(), raw().getHeight());
+		edgeFiltered.applyFilter(binaryImage2, [&](uint16_t x, uint16_t y)
+		{
+			auto value = edgeFiltered.px(x, y);
+			//return value < -params.xLimit;
+			return value > params.xLimit || value < -params.xLimit;
+		});
+		renderBinary(binaryImage2);
+
+		RawFrame<bool> binaryImage3(raw().getWidth(), raw().getHeight());
+		binaryImage3.applyFilter(binaryImage3, [&](uint16_t x, uint16_t y)
+		{
+			bool isUnderBorder = (allPlatePixels[x] >= 5) && ((allPlatePixels[x] - topBottomBorder) > (raw().getHeight() - y));
+			if (isUnderBorder)
+			{
+				return binaryImage2.px(x, y);
+			}
+			else
+			{
+				return false;
+			}
+		});
+		renderBinary(binaryImage3);
+
+
+		std::vector<uint32_t> roboPixels(raw().getWidth());
+		binaryImage3.forEach([&](uint16_t x, uint16_t y)
+		{
+//			int32_t left = x - averagingFrame;
+//			int32_t right = x + averagingFrame;
+//			left = std::max(0, left);
+//			right = std::min<int32_t>(binaryImage.getWidth(), right);
+
+//			auto sum = 0;
+//			auto cnt = 0;
+//			for (auto x = left; x < right; ++x)
+//			{
+//				if (allPlatePixels[x] != 0)
+//				{
+//					sum += allPlatePixels[x];
+//					cnt += 1;
+//				}
+//			}
+//			auto avg = sum / (cnt==0?1:cnt);
+
+			if (binaryImage3.px(x, y))
+			{
+				roboPixels[x] += 1;
+			}
+		});
+
+		if (makeRenderer)
+		{
+			renderDirect(makeRenderer(), RENDER_FLAG_BLEND | RENDER_FLAG_FLUSH, [&](QPainter* p)
+			{
+				binaryImage3.forEach([&](uint16_t x, uint16_t y)
+				{
+					p->setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
+					p->drawPoint(x, y);
+					if (roboPixels[x] > (raw().getHeight() - y))
+					{
+						p->setPen(QPen(QColor(0xff, 0x00, 0x00, 0xff)));
+						p->drawPoint(x, y);
+					}
+				});
+			});
+		}
+
+
+		auto column = 0;
+		uint32_t lastSum = 0;
+		constexpr auto findMargin = 2;
+		for (auto x = findMargin; x < raw().getWidth() - findMargin; ++x)
+		{
+			auto sum = std::accumulate(roboPixels.begin() + x - findMargin, roboPixels.begin() + x + findMargin, 0);
+			if (sum > lastSum)
+			{
+				column = x;
+				lastSum = sum;
+			}
+		}
+
+		if (makeRenderer)
+		{
+			renderDirect(makeRenderer(), RENDER_FLAG_BLEND | RENDER_FLAG_FLUSH, [&](QPainter* p)
+			{
+				raw().forEach([&](uint16_t x, uint16_t y)
+				{
+					p->setPen(QPen(QColor(r(x, y), g(x, y), b(x, y), 0xff)));
+					p->drawPoint(x, y);
+					if (x > column - 5 && x < column + 5)
+					{
+						p->setPen(QPen(QColor(0xff, 0x00, 0x00, 0xff)));
+						p->drawPoint(x, y);
+					}
+				});
+			});
+		}
+	}
+
 public:
 	RawFrame<int32_t> edgeFiltered;
 
@@ -654,223 +943,7 @@ void RoboModule::debugRender(std::function<Renderer*()> makeRenderer, Renderer* 
 	}
 	else if (type == Type::ShowNew)
 	{
-		frameAccess.render(pRenderer, true);
-
-		frameAccess.convertToGrayscale();
-		frameAccess.gaussianFilter();
-		frameAccess.sobelFilterDlDy();
-		RawFrame<bool> binaryImage(frameAccess.raw().getWidth(), frameAccess.raw().getHeight());
-
-
-		std::vector<uint32_t> allPlatePixels(frameAccess.raw().getWidth());
-
-		auto renderBinary = [&](RawFrame<bool>& binaryImage)
-		{
-			if (makeRenderer)
-			{
-				frameAccess.renderDirect(makeRenderer(), RENDER_FLAG_BLEND | RENDER_FLAG_FLUSH, [&](QPainter* p)
-				{
-					binaryImage.forEach([&](uint16_t x, uint16_t y)
-					{
-						auto state = binaryImage.px(x, y);
-						auto color = state ? 0xff : 0x00;
-						p->setPen(QPen(QColor(color, color, color, 0xff)));
-						p->drawPoint(x, y);
-						if (allPlatePixels[x] >= 20 && allPlatePixels[x] == (frameAccess.raw().getHeight() - y))
-						{
-							p->setPen(QPen(QColor(0xff, 0x00, 0x00, 0xff)));
-							p->drawPoint(x, y);
-						}
-					});
-				});
-			}
-		};
-
-		if (makeRenderer)
-		{
-			frameAccess.renderDirect(makeRenderer(), RENDER_FLAG_BLEND | RENDER_FLAG_FLUSH, [&](QPainter* p)
-			{
-				frameAccess.convertToNormalizedGreyValues(frameAccess.edgeFiltered, [&](uint16_t x, uint16_t y, uint8_t val)
-				{
-					p->setPen(QPen(QColor(val, val, val, 0xff)));
-					p->drawPoint(x, y);
-				});
-			});
-		}
-
-		frameAccess.gaussianFilterOnEdges();
-
-		frameAccess.edgeFiltered.applyFilter(binaryImage, [&](uint16_t x, uint16_t y)
-		{
-			auto value = frameAccess.edgeFiltered.px(x, y);
-			return value < -params.limit;
-			return value > params.limit || value < -params.limit;
-		});
-
-		if (makeRenderer && false)
-		{
-			frameAccess.renderDirect(makeRenderer(), RENDER_FLAG_BLEND | RENDER_FLAG_FLUSH, [&](QPainter* p)
-			{
-				frameAccess.convertToNormalizedGreyValues(frameAccess.edgeFiltered, [&](uint16_t x, uint16_t y, uint8_t val)
-				{
-					p->setPen(QPen(QColor(val, val, val, 0xff)));
-					p->drawPoint(x, y);
-				});
-			});
-		}
-
-
-		std::vector<uint32_t> unfilteredAllPlatePixels(frameAccess.raw().getWidth());
-		auto topBottomBorder = 10;
-		for (auto x = topBottomBorder + 1; x < frameAccess.raw().getWidth() - topBottomBorder; ++x)
-		{
-			auto platePixels = 10;
-			for (auto y = platePixels; y < binaryImage.getHeight(); ++y)
-			{
-				if (!binaryImage.px(x, binaryImage.getHeight() - y))
-				{
-					platePixels += 1;
-				}
-				else
-				{
-					break;
-				}
-			}
-
-			unfilteredAllPlatePixels[x] = (platePixels < (binaryImage.getHeight()-topBottomBorder) && platePixels >= topBottomBorder) ? platePixels : 0;
-		}
-
-		constexpr auto averagingFrame = 20;
-		constexpr auto averagingLimit = 20;
-		for (auto x = 0; x < frameAccess.raw().getWidth(); ++x)
-		{
-			int32_t left = x - averagingFrame;
-			int32_t right = x + averagingFrame;
-			left = std::min(0, left);
-			right = std::max(uint16_t{0}, frameAccess.raw().getWidth());
-
-			auto sum = std::accumulate(unfilteredAllPlatePixels.begin() + left, unfilteredAllPlatePixels.begin() + right, 0);
-			auto avg = sum / (right - left);
-
-			allPlatePixels[x] = (std::abs(unfilteredAllPlatePixels[x] - avg) < averagingLimit) ? unfilteredAllPlatePixels[x] : 0;
-		}
-
-		renderBinary(binaryImage);
-		frameAccess.laplaceFilter();
-		if (makeRenderer && false)
-		{
-			frameAccess.renderDirect(makeRenderer(), RENDER_FLAG_BLEND | RENDER_FLAG_FLUSH, [&](QPainter* p)
-			{
-				frameAccess.convertToNormalizedGreyValues(frameAccess.edgeFiltered, [&](uint16_t x, uint16_t y, uint8_t val)
-				{
-					p->setPen(QPen(QColor(val, val, val, 0xff)));
-					p->drawPoint(x, y);
-				});
-			});
-		}
-		frameAccess.gaussianFilterOnEdges();
-		if (makeRenderer && false)
-		{
-			frameAccess.renderDirect(makeRenderer(), RENDER_FLAG_BLEND | RENDER_FLAG_FLUSH, [&](QPainter* p)
-			{
-				frameAccess.convertToNormalizedGreyValues(frameAccess.edgeFiltered, [&](uint16_t x, uint16_t y, uint8_t val)
-				{
-					p->setPen(QPen(QColor(val, val, val, 0xff)));
-					p->drawPoint(x, y);
-				});
-			});
-		}
-
-		frameAccess.sobelFilterDlDx();
-		if (makeRenderer && false)
-		{
-			frameAccess.renderDirect(makeRenderer(), RENDER_FLAG_BLEND | RENDER_FLAG_FLUSH, [&](QPainter* p)
-			{
-				frameAccess.convertToNormalizedGreyValues(frameAccess.edgeFiltered, [&](uint16_t x, uint16_t y, uint8_t val)
-				{
-					p->setPen(QPen(QColor(val, val, val, 0xff)));
-					p->drawPoint(x, y);
-				});
-			});
-		}
-
-		RawFrame<bool> binaryImage2(frameAccess.raw().getWidth(), frameAccess.raw().getHeight());
-		frameAccess.edgeFiltered.applyFilter(binaryImage2, [&](uint16_t x, uint16_t y)
-		{
-			auto value = frameAccess.edgeFiltered.px(x, y);
-			//return value < -params.xLimit;
-			return value > params.xLimit || value < -params.xLimit;
-		});
-		renderBinary(binaryImage2);
-
-		RawFrame<bool> binaryImage3(frameAccess.raw().getWidth(), frameAccess.raw().getHeight());
-		binaryImage3.applyFilter(binaryImage3, [&](uint16_t x, uint16_t y)
-		{
-			bool isUnderBorder = (allPlatePixels[x] >= 20) && ((allPlatePixels[x] - topBottomBorder) > (frameAccess.raw().getHeight() - y));
-			if (isUnderBorder)
-			{
-				return binaryImage2.px(x, y);
-			}
-			else
-			{
-				return false;
-			}
-		});
-		renderBinary(binaryImage3);
-
-
-		std::vector<uint32_t> roboPixels(frameAccess.raw().getWidth());
-		binaryImage3.forEach([&](uint16_t x, uint16_t y)
-		{
-			if (binaryImage3.px(x, y))
-			{
-				roboPixels[x] += 1;
-			}
-		});
-
-		if (makeRenderer)
-		{
-			frameAccess.renderDirect(makeRenderer(), RENDER_FLAG_BLEND | RENDER_FLAG_FLUSH, [&](QPainter* p)
-			{
-				binaryImage3.forEach([&](uint16_t x, uint16_t y)
-				{
-					p->setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
-					p->drawPoint(x, y);
-					if (roboPixels[x] > (frameAccess.raw().getHeight() - y))
-					{
-						p->setPen(QPen(QColor(0xff, 0x00, 0x00, 0xff)));
-						p->drawPoint(x, y);
-					}
-				});
-			});
-		}
-
-		auto column = 0;
-		auto maxElement = *std::max_element(roboPixels.begin(), roboPixels.end());
-		for (auto x = 0; x < roboPixels.size(); ++x)
-		{
-			if (roboPixels[x] == maxElement)
-			{
-				column = x;
-			}
-		}
-
-		if (makeRenderer)
-		{
-			frameAccess.renderDirect(makeRenderer(), RENDER_FLAG_BLEND | RENDER_FLAG_FLUSH, [&](QPainter* p)
-			{
-				frameAccess.raw().forEach([&](uint16_t x, uint16_t y)
-				{
-					p->setPen(QPen(QColor(frameAccess.r(x, y), frameAccess.g(x, y), frameAccess.b(x, y), 0xff)));
-					p->drawPoint(x, y);
-					if (x > column - 5 && x < column + 5)
-					{
-						p->setPen(QPen(QColor(0xff, 0x00, 0x00, 0xff)));
-						p->drawPoint(x, y);
-					}
-				});
-			});
-		}
+		frameAccess.detect(params, makeRenderer);
 	}
 }
 
