@@ -55,7 +55,6 @@ protected:
     QVariant pixymonParameter(const QString &id);
 
     Interpreter *m_interpreter;
-    Renderer *m_renderer;
 };
 
 

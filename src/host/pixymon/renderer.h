@@ -16,10 +16,12 @@
 #ifndef RENDERER_H
 #define RENDERER_H
 
+#include <QPainter>
 #include <QObject>
 #include <QImage>
 #include "pixytypes.h"
 #include "monmodule.h"
+#include "videowidget.h"
 //#include "processblobs.h"
 
 #include <simplevector.h>
@@ -54,6 +56,25 @@ public:
     int renderCCB2(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t numBlobs, uint16_t *blobs, uint32_t numCCBlobs, uint16_t *ccBlobs);
     int renderBLT1(uint8_t renderFlags, uint16_t width, uint16_t height,
                    uint16_t blockWidth, uint16_t blockHeight, uint32_t numPoints, uint16_t *points);
+
+	template <typename Fn>
+	void renderDirect(uint8_t renderFlags, uint16_t width, uint16_t height, Fn fn)
+	{
+		QPainter p;
+		QImage img(width, height, QImage::Format_ARGB32);
+		if (renderFlags&RENDER_FLAG_BLEND) // if we're blending, we should be transparent
+			img.fill(0x00000000);
+		else
+			img.fill(0xff000000); // otherwise, we're just black
+
+		p.begin(&img);
+
+		fn(&p);
+
+		p.end();
+
+		emit image(img.scaled( m_video->width(), m_video->height(), Qt::KeepAspectRatio), renderFlags);
+	}
 
     void renderBlobsB(bool blend, QImage *image, float scale, BlobB *blobs, uint32_t numBlobs);
     void renderBlobsA(bool blend, QImage *image, float scale, BlobA *blobs, uint32_t numBlobs);

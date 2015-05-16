@@ -27,7 +27,9 @@ SOURCES += main.cpp\
     ../../common/src/blob.cpp \
     ../../common/src/blobs.cpp \
     ../../common/src/qqueue.cpp \
-    ../../common/src/calc.cpp \
+	../../common/src/calc.cpp \
+	../../common/src/robo.cpp \
+	robomodule.cpp \
     configdialog.cpp \
     aboutdialog.cpp \
     parameters.cpp \
@@ -39,12 +41,13 @@ SOURCES += main.cpp\
     monparameterdb.cpp \
     cccmodule.cpp \
     debug.cpp \
-    blobs2.cpp
+    blobs2.cpp \
+    DebugTestDialog.cpp
 
 HEADERS  += mainwindow.h \
     videowidget.h \
     usblink.h \
-    console.h \
+	console.h \
     interpreter.h \
     renderer.h \
     chirpmon.h \
@@ -65,6 +68,8 @@ HEADERS  += mainwindow.h \
     ../../common/inc/link.h \
     ../../common/inc/calc.h \
     ../../common/inc/simplevector.h \
+	../../common/inc/robo.h \
+	robomodule.h \
     pixymon.h \
     configdialog.h \
     sleeper.h \
@@ -78,15 +83,18 @@ HEADERS  += mainwindow.h \
     monparameterdb.h \
     cccmodule.h \
     debug.h \
-    blobs2.h
+    blobs2.h \
+    DebugTestDialog.h
 
-INCLUDEPATH += ../../common/inc
+#little hack: qqueue.h is available in the qt framework too -> add include path before all other include paths
+QMAKE_CXXFLAGS += -I../../common/inc
 
 QMAKE_CXXFLAGS_DEBUG += -O0
 QMAKE_CXXFLAGS += -Wno-unused-parameter
 FORMS    += mainwindow.ui \
     configdialog.ui \
-    about.ui
+    about.ui \
+    DebugTestDialog.ui
 
 # LIBS += ./libusb-1.0.dll.a
 
@@ -120,6 +128,8 @@ unix:!macx {
 
 RESOURCES += \
     resources.qrc
+
+QMAKE_CXXFLAGS += -std=c++11
 
 
 

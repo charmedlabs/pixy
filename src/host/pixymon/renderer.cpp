@@ -13,12 +13,10 @@
 // end license header
 //
 
-#include <QPainter>
 #include <QFont>
 #include "debug.h"
 #include <QFile>
 #include "renderer.h"
-#include "videowidget.h"
 #include "interpreter.h"
 #include "dataexport.h"
 #include "monmodule.h"
@@ -48,8 +46,11 @@ Renderer::Renderer(VideoWidget *video, Interpreter *interpreter) : MonModule(int
     m_highlightOverexp = false;
     m_paletteSet = false;
 
-    m_interpreter->m_pixymonParameters->addCheckbox("Highlight overexposure", false,
-        "Highlighting overexposure will overlay black pixels ontop of overexposed pixels in raw and cooked modes");
+	if (m_interpreter)
+	{
+		m_interpreter->m_pixymonParameters->addCheckbox("Highlight overexposure", false,
+			"Highlighting overexposure will overlay black pixels ontop of overexposed pixels in raw and cooked modes");
+	}
 
     connect(this, SIGNAL(image(QImage, uchar)), m_video, SLOT(handleImage(QImage, uchar))); // Qt::BlockingQueuedConnection);
 }
@@ -261,17 +262,17 @@ void Renderer::renderRects(const Points &points, uint32_t size)
 
     p.end();
 
-    emit image(img, RENDER_FLAG_BLEND | RENDER_FLAG_FLUSH);
+	emit image(img, RENDER_FLAG_BLEND | RENDER_FLAG_FLUSH);
 }
 
 void Renderer::renderRect(const RectA &rect)
 {
     QPainter p;
     float scale = (float)m_video->activeWidth()/m_background.width();
-    QImage img(m_video->activeWidth(), m_video->activeHeight(), QImage::Format_ARGB32);
-    img.fill(0x00000000);
+	QImage img(m_video->activeWidth(), m_video->activeHeight(), QImage::Format_ARGB32);
+	img.fill(0x00000000);
 
-    p.begin(&img);
+	p.begin(&img);
     p.setBrush(QBrush(QColor(0xff, 0xff, 0xff, 0x20)));
     p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
 
@@ -491,9 +492,9 @@ int Renderer::renderBLT1(uint8_t renderFlags, uint16_t width, uint16_t height,
     else
         img.fill(0xff000000); // otherwise, we're just black
 
-    p.begin(&img);
-    p.setBrush(QBrush(QColor(0xff, 0xff, 0xff, 0x20)));
-    p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
+	p.begin(&img);
+	p.setBrush(QBrush(QColor(0xff, 0xff, 0xff, 0x20)));
+	p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
 
     for (i=0; i<numPoints; i+=2)
         p.drawRect(points[i]*scale, points[i+1]*scale, blockWidth*scale, blockHeight*scale);
@@ -502,9 +503,8 @@ int Renderer::renderBLT1(uint8_t renderFlags, uint16_t width, uint16_t height,
 
     emit image(img, renderFlags);
 
-    return 0;
+	return 0;
 }
-
 
 
 

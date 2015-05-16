@@ -35,6 +35,7 @@
 #include "dataexport.h"
 #include "sleeper.h"
 #include "aboutdialog.h"
+#include "DebugTestDialog.h"
 
 #include "parameters.h"
 #include "paramfile.h"
@@ -95,7 +96,7 @@ MainWindow::MainWindow(int argc, char *argv[], QWidget *parent) :
     // start looking for devices
     m_connect = new ConnectEvent(this);
     if (m_connect->getConnected()==NONE)
-        m_console->error("No Pixy devices have been detected.\n");
+		m_console->error("No Pixy devices have been detected.\n");
 }
 
 MainWindow::~MainWindow()

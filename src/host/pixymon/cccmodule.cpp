@@ -46,6 +46,7 @@ CccModule::~CccModule()
 
 bool CccModule::render(uint32_t fourcc, const void *args[])
 {
+	return false; //temporarily disabled
     if (fourcc==FOURCC('C','M','V','2'))
     {
         renderCMV2(*(uint8_t *)args[0], *(uint16_t *)args[1], *(uint16_t *)args[2], *(uint32_t *)args[3], (uint8_t *)args[4]);
@@ -141,7 +142,7 @@ void CccModule::paramChange()
         m_blobs->m_clut.generateLUT();
         for (i=0; i<CL_NUM_SIGNATURES; i++)
             palette[i] = m_blobs->m_clut.m_signatures[i].m_rgb;
-        m_renderer->setPalette(palette);
+		m_interpreter->m_renderer->setPalette(palette);
     }
 
     uint16_t maxBlobs, maxBlobsPerSig;
@@ -256,16 +257,16 @@ int CccModule::renderCMV2(uint8_t renderFlags, uint16_t width, uint16_t height, 
 
     // render different layers...
     // starting with the background
-    m_renderer->renderBA81(RENDER_FLAG_BLEND, width, height, frameLen, frame);
+	m_interpreter->m_renderer->renderBA81(RENDER_FLAG_BLEND, width, height, frameLen, frame);
     // then based on the renderMode, render/blend the different layers in a stack
     if (m_renderMode==0)
-        m_renderer->renderCCB2(RENDER_FLAG_BLEND | renderFlags, width/2, height/2, numBlobs*sizeof(BlobA)/sizeof(uint16_t), (uint16_t *)blobs, numCCBlobs*sizeof(BlobB)/sizeof(uint16_t), (uint16_t *)ccBlobs);
+		m_interpreter->m_renderer->renderCCB2(RENDER_FLAG_BLEND | renderFlags, width/2, height/2, numBlobs*sizeof(BlobA)/sizeof(uint16_t), (uint16_t *)blobs, numCCBlobs*sizeof(BlobB)/sizeof(uint16_t), (uint16_t *)ccBlobs);
     else if (m_renderMode==1)
-        m_renderer->renderCCQ1(RENDER_FLAG_BLEND | renderFlags, width/2, height/2, numQvals, qVals);
+		m_interpreter->m_renderer->renderCCQ1(RENDER_FLAG_BLEND | renderFlags, width/2, height/2, numQvals, qVals);
     else if (m_renderMode==2)
     {
-        m_renderer->renderCCQ1(RENDER_FLAG_BLEND, width/2, height/2, numQvals, qVals);
-        m_renderer->renderCCB2(RENDER_FLAG_BLEND | renderFlags, width/2, height/2, numBlobs*sizeof(BlobA)/sizeof(uint16_t), (uint16_t *)blobs, numCCBlobs*sizeof(BlobB)/sizeof(uint16_t), (uint16_t *)ccBlobs);
+		m_interpreter->m_renderer->renderCCQ1(RENDER_FLAG_BLEND, width/2, height/2, numQvals, qVals);
+		m_interpreter->m_renderer->renderCCB2(RENDER_FLAG_BLEND | renderFlags, width/2, height/2, numBlobs*sizeof(BlobA)/sizeof(uint16_t), (uint16_t *)blobs, numCCBlobs*sizeof(BlobB)/sizeof(uint16_t), (uint16_t *)ccBlobs);
     }
     return 0;
 }
@@ -284,7 +285,7 @@ void CccModule::renderCCQ2(uint8_t renderFlags, uint16_t width, uint16_t height,
     }
     m_blobs->runlengthAnalysis();
     m_blobs->getRunlengths(&qVals, &numQvals);
-    m_renderer->renderCCQ1(renderFlags, width, height, numQvals, qVals);
+	m_interpreter->m_renderer->renderCCQ1(renderFlags, width, height, numQvals, qVals);
 }
 
 

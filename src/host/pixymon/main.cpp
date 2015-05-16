@@ -17,6 +17,7 @@
 #include <QStyleFactory>
 #include <QDebug>
 #include "mainwindow.h"
+#include "DebugTestDialog.h"
 
 int main(int argc, char *argv[])
 {
@@ -43,8 +44,12 @@ int main(int argc, char *argv[])
     a.setPalette(darkPalette);
 #endif
 
-    MainWindow w(argc, argv);
-    w.show();
+
+	DebugTestDialog* dialog = new DebugTestDialog();
+	dialog->show();
+
+//    MainWindow w(argc, argv);
+//    w.show();
 
     return a.exec();
 }
