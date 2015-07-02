@@ -35,6 +35,7 @@ public:
 	virtual int update();
 
 	int setSlaveAddr(uint8_t addr);
+	void setFlags(bool clearOnEnd, bool sixteenBit);
 	void slaveHandler();
 
 private:

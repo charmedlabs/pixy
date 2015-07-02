@@ -13,6 +13,7 @@
 // end license header
 //
 
+#include <string.h>
 #include "serial.h"
 #include "spi.h"
 #include "i2c.h"
@@ -21,20 +22,153 @@
 #include "conncomp.h"
 #include "param.h"
 
-static uint8_t g_interface = 0;
+uint8_t g_interface = 0;
 static Iserial *g_serial = 0;
 
-#define LEGO
-uint16_t lego_getData(uint8_t *buf, uint32_t buflen);
+uint16_t lego_getData(uint8_t *buf, uint32_t buflen)
+{
+	uint8_t c;
+	uint16_t d;
+	uint16_t numBlobs;
+	uint32_t temp, width, height;
+	Iserial *serial = ser_getSerial();
+
+	if (serial->receive(&c, 1)==0)
+		return 0;
+
+#if 1
+	if (c==0x00)
+	{
+		//printf("0\n");
+		char *str = "V0.1";
+		strcpy((char *)buf, str);
+		return 5;
+		//return strlen((char *)str);
+	}
+	if (c==0x08)
+	{
+		//printf("8\n");
+		char *str = "Pixy";
+		strcpy((char *)buf, str);
+		return 5;
+		//return strlen((char *)str);
+	}
+	else if (c==0x10)
+	{
+		//printf("10\n");
+		char *str = "Pixy";
+		strcpy((char *)buf, str);
+		return 5;
+		//return strlen((char *)str);
+	}
+	else 
+#endif
+	if (c>=0x51 && c<=0x57)
+	{
+#if 0
+		buf[0] = 1;
+		buf[1] = 2;
+		buf[2] = 3;
+		buf[3] = 4;
+		buf[4] = 5;
+#else
+		BlobA *max;
+		max = g_blobs->getMaxBlob(c-0x50, &numBlobs);
+		if (max==0)
+			memset(buf, 0, 5);
+		else if (max==(BlobA *)-1)
+			memset(buf, -1, 5);
+		else
+		{
+			width = max->m_right - max->m_left;
+			height = max->m_bottom - max->m_top;
+			buf[0] = numBlobs;
+			temp = ((max->m_left + width/2)*819)>>10;
+			buf[1] = temp;
+			temp = ((max->m_top + height/2)*819)>>10;
+			buf[2] = temp;
+			temp = (width*819)>>10;
+			buf[3] = temp;
+			temp = (height*819)>>10;
+			buf[4] = temp;
+		}
+#endif
+		return 5;
+	}
+	else if (c==0x58)
+	{
+		BlobB *max;
+		if (serial->receive((uint8_t *)&d, 2)<2)
+			return 0;
+#if 0
+		buf[0] = 1;
+		buf[1] = 2;
+		buf[2] = 3;
+		buf[3] = 4;
+		buf[4] = 5;
+		buf[5] = 6;
+#else
+		max = (BlobB *)g_blobs->getMaxBlob(d, &numBlobs);
+		if (max==0)
+			memset(buf, 0, 6);
+		else if (max==(BlobB *)-1)
+			memset(buf, -1, 6);
+		else
+		{
+			width = max->m_right - max->m_left;
+			height = max->m_bottom - max->m_top;
+			buf[0] = numBlobs;
+			temp = ((max->m_left + width/2)*819)>>10;
+			buf[1] = temp;
+			temp = ((max->m_top + height/2)*819)>>10;
+			buf[2] = temp;
+			temp = (width*819)>>10;
+			buf[3] = temp;
+			temp = (height*819)>>10;
+			buf[4] = temp;
+			temp = ((int32_t)max->m_angle*91)>>7;
+			buf[5] = temp;
+		}
+#endif
+		return 6;
+	}
+	else  
+	{
+#if 0
+		static uint8_t c = 0;
+
+		buf[0] = c++;
+#else
+		//printf("%x\n", c);														  
+
+		if (c==0x42)
+		{
+			BlobA *max;
+			max = g_blobs->getMaxBlob();
+			if (max==0 || max==(BlobA *)-1)
+				buf[0] = 0;
+			else
+			{
+				width = max->m_right - max->m_left;
+				temp = ((max->m_left + width/2)*819)>>10;
+				buf[0] = temp;
+			}
+		}
+		else
+			buf[0] = 1;	 // need to return nonzero value for other inquiries or LEGO brick will think we're an analog sensor
+
+#endif
+		return 1;
+	}
+}
 
 
 uint32_t callback(uint8_t *data, uint32_t len)
 {
-#ifdef LEGO
-	return lego_getData(data, len);
-#else
-	return g_blobs->getBlock(data, len);
-#endif
+	if (g_interface==SER_INTERFACE_LEGO)
+		return lego_getData(data, len);
+	else
+		return g_blobs->getBlock(data, len);
 }
 
 
@@ -63,17 +197,17 @@ void ser_loadParams()
 	uint8_t interface, addr;
 	uint32_t baudrate;
 
-	prm_get("Data out port", &interface, END);
-	ser_setInterface(interface);
-
 	prm_get("I2C address", &addr, END);
 	g_i2c0->setSlaveAddr(addr);
 
 	prm_get("UART baudrate", &baudrate, END);
 	g_uart0->setBaudrate(baudrate);
+
+	prm_get("Data out port", &interface, END);
+	ser_setInterface(interface);
+
 #else
-	ser_setInterface(SER_INTERFACE_I2C);
- 	g_i2c0->setSlaveAddr(0x01);
+	ser_setInterface(SER_INTERFACE_LEGO);
 #endif
 }
 
@@ -96,6 +230,7 @@ int ser_setInterface(uint8_t interface)
 
 	case SER_INTERFACE_I2C:     
 		g_serial = g_i2c0;
+		g_i2c0->setFlags(false, true);
 		break;
 
 	case SER_INTERFACE_UART:    
@@ -112,6 +247,12 @@ int ser_setInterface(uint8_t interface)
 		g_serial = g_ad;
 		break;		
 
+	case SER_INTERFACE_LEGO:
+		g_serial = g_i2c0;
+ 		g_i2c0->setSlaveAddr(0x01);
+		g_i2c0->setFlags(true, false);
+		break;
+		
 	default:
 	case SER_INTERFACE_ARDUINO_SPI:
 		g_serial = g_spi;

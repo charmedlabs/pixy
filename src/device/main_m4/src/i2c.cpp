@@ -177,8 +177,8 @@ I2c::I2c(LPC_I2Cn_Type *i2c, uint8_t addr, SerialCallback callback) : m_rq(I2C_R
 {
 	m_i2c = i2c;
 
-	m_16bit = false;
-	m_clearOnEnd = true;;
+	m_16bit = true;
+	m_clearOnEnd = false;
 	 
 	I2C_Init(m_i2c, 100000);
    	setSlaveAddr(addr);
@@ -195,6 +195,12 @@ int I2c::setSlaveAddr(uint8_t addr)
 	I2C_SetOwnSlaveAddr(m_i2c, &slaveAddr);
 
 	return 0;
+}
+
+void I2c::setFlags(bool clearOnEnd, bool sixteenBit)
+{
+	m_clearOnEnd = clearOnEnd;
+	m_16bit = sixteenBit;
 }
 
 void i2c_init(SerialCallback callback)

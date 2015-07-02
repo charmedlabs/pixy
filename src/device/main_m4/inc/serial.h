@@ -24,6 +24,7 @@
 #define SER_INTERFACE_UART            3
 #define SER_INTERFACE_ADX             4
 #define SER_INTERFACE_ADY             5 
+#define	SER_INTERFACE_LEGO            6
 
 
 int ser_init();
@@ -32,5 +33,9 @@ uint8_t ser_getInterface();
 Iserial *ser_getSerial();
 
 void ser_loadParams();
+
+extern uint8_t g_interface;
+
+#define LEGO
 
 #endif
