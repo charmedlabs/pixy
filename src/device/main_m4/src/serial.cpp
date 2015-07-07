@@ -213,7 +213,7 @@ void ser_loadParams()
 
 int ser_setInterface(uint8_t interface)
 {
-	if (interface>SER_INTERFACE_ADY)
+	if (interface>SER_INTERFACE_LEGO)
 		return -1;
 
 	if (g_serial!=NULL)

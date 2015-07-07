@@ -70,7 +70,7 @@ int main(void)
 	uint16_t major, minor, build;
 	int i, res, count;
 
-	#ifdef KEIL
+#ifdef KEIL
  	pixyInit(SRAM3_LOC, &LR0[0], sizeof(LR0));
 #else
 	pixyInit();
@@ -124,6 +124,7 @@ int main(void)
 #endif
 	exec_addProg(&g_progVideo, true);
 
+#if 0 
 	// this code formats if the version has changed
 	for (i=0, count=0; i<25; i++)
 	{
@@ -133,6 +134,7 @@ int main(void)
 	}
 	if (count==0)
 		prm_format();
+ #endif
 
    	// check version
 	prm_add("fwver", PRM_FLAG_INTERNAL, "", UINT16(FW_MAJOR_VER), UINT16(FW_MINOR_VER), UINT16(FW_BUILD_VER), END);
