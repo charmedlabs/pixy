@@ -30,7 +30,7 @@
 #define CL_DEFAULT_MINY                 0.1f
 #define CL_DEFAULT_SIG_RANGE			2.5f
 #define CL_MAX_DIST                     2000
-#define CL_DEFAULT_TOL                  0.9f
+#define CL_DEFAULT_TOL                  0.80f
 #define CL_DEFAULT_CCGAIN               1.5f
 #define CL_MODEL_TYPE_COLORCODE         1
 

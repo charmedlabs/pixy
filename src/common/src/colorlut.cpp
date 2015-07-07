@@ -171,12 +171,72 @@ ColorLUT::~ColorLUT()
 {
 }
 
+#if 0
+void ColorLUT::calcRatios(IterPixel *ip, ColorSignature *sig, float ratios[])
+{
+    bool ubounded, vbounded;
+    UVPixel uv;
+    uint32_t un=0, vn=0, n=0, counts[4];
+    longlong usum=0, vsum=0;
+    counts[0] = counts[1] = counts[2] = counts[3] = 0;
+
+    ip->reset();
+    while(ip->next(&uv))
+    {
+        ubounded = true;
+        vbounded = true;
+
+        if (uv.m_u>sig->m_uMin)
+            counts[0]++;
+		else
+            ubounded = false;
+
+        if (uv.m_u<sig->m_uMax)
+            counts[1]++;
+		else
+            ubounded = false;
+
+        if (uv.m_v>sig->m_vMin)
+            counts[2]++;
+		else
+            vbounded = false;
+
+        if (uv.m_v<sig->m_vMax)
+            counts[3]++;
+		else
+            vbounded = false;
+
+        // only use pixels that are within our test bounds to form the mean
+        if (ubounded)
+        {
+            usum += uv.m_u;
+			un++;
+		}
+		if (vbounded)
+		{
+            vsum += uv.m_v;
+            vn++;
+        }
+		n++;
+    }
+
+    // calc ratios
+    ratios[0] = (float)counts[0]/n;
+    ratios[1] = (float)counts[1]/n;
+    ratios[2] = (float)counts[2]/n;
+    ratios[3] = (float)counts[3]/n;
+   // calc mean (because it's cheap to do it here)
+    sig->m_uMean = usum/un;
+    sig->m_vMean = vsum/vn;
+ //	printf("%d %d %d %d %d %d %d %d %d\n", un, vn, n, sig->m_uMin, sig->m_uMax, sig->m_vMin, sig->m_vMax, sig->m_uMean, sig->m_vMean);
+}
+
+#else
 
 void ColorLUT::calcRatios(IterPixel *ip, ColorSignature *sig, float ratios[])
 {
     UVPixel uv;
     uint32_t n=0, counts[4];
-    longlong usum=0, vsum=0;
     counts[0] = counts[1] = counts[2] = counts[3] = 0;
 
     ip->reset();
@@ -194,8 +254,6 @@ void ColorLUT::calcRatios(IterPixel *ip, ColorSignature *sig, float ratios[])
         if (uv.m_v<sig->m_vMax)
             counts[3]++;
 
-        usum += uv.m_u;
-        vsum += uv.m_v;
         n++;
     }
 
@@ -205,10 +263,10 @@ void ColorLUT::calcRatios(IterPixel *ip, ColorSignature *sig, float ratios[])
     ratios[2] = (float)counts[2]/n;
     ratios[3] = (float)counts[3]/n;
     // calc mean (because it's cheap to do it here)
-    sig->m_uMean = usum/n;
-    sig->m_vMean = vsum/n;
+    sig->m_uMean = (sig->m_uMin + sig->m_uMax)/2;
+    sig->m_vMean = (sig->m_vMin + sig->m_vMax)/2;
 }
-
+#endif
 
 void ColorLUT::iterate(IterPixel *ip, ColorSignature *sig)
 {
