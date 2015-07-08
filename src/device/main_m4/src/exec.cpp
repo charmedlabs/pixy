@@ -426,7 +426,11 @@ void exec_loop()
 	bool prevConnected = false;
 	bool connected;
 
+#ifdef LEGO
+	exec_runprog(0);
+#else
 	exec_select();
+#endif
 
 	while(1)
 	{

@@ -69,6 +69,10 @@ int main(void)
 {
 	uint16_t major, minor, build;
 	int i, res, count;
+	volatile uint32_t d;
+
+	// insert a small delay so power supply can stabilize
+	for (d=0; d<2500000; d++);
 
 #ifdef KEIL
  	pixyInit(SRAM3_LOC, &LR0[0], sizeof(LR0));
@@ -124,7 +128,7 @@ int main(void)
 #endif
 	exec_addProg(&g_progVideo, true);
 
-#if 0 
+#if 1 
 	// this code formats if the version has changed
 	for (i=0, count=0; i<25; i++)
 	{
