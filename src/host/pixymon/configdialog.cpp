@@ -25,6 +25,7 @@
 #include <QAbstractButton>
 #include <QCheckBox>
 #include <QSlider>
+#include <QComboBox>
 #include <QFileDialog>
 #include <stdexcept>
 
@@ -167,6 +168,31 @@ int ConfigDialog::updateDB(ParameterDB *data)
                 parameter.setDirty(true);
             }
         }
+        else if (type&PT_RADIO_MASK)
+        {
+            QComboBox *sbox = (QComboBox *)parameter.property(PP_WIDGET2).toLongLong();
+
+            QVariant qval = sbox->currentData();
+
+            if (flags&PRM_FLAG_SIGNED)
+            {
+                int val = qval.toInt();
+                if (val!=parameter.valueInt())
+                {
+                    parameter.set(val);
+                    parameter.setDirty(true);
+                }
+            }
+            else
+            {
+                uint val = qval.toUInt();
+                if (val!=parameter.value().toUInt())
+                {
+                    parameter.set(val);
+                    parameter.setDirty(true);
+                }
+            }
+        }
         else // must be int type
         {
             if (flags&PRM_FLAG_CHECKBOX) // checkbox is a special case of int
@@ -242,7 +268,7 @@ void ConfigDialog::load()
 
 void ConfigDialog::render(ParameterDB *data, QTabWidget *tabs)
 {
-    int i;
+    int i, j;
     QWidget *tab;
     QGridLayout *layout;
     bool created;
@@ -263,6 +289,7 @@ void ConfigDialog::render(ParameterDB *data, QTabWidget *tabs)
         QPushButton *button = NULL;
         QCheckBox *cbox = NULL;
         QSlider *slider = NULL;
+        QComboBox *sbox = NULL;
         QLineEdit *line;
         QLabel *label;
 
@@ -339,6 +366,30 @@ void ConfigDialog::render(ParameterDB *data, QTabWidget *tabs)
                 else
                     line->setText(QString::number(parameter.value().toInt()));
             }
+            else if (type&PT_RADIO_MASK)
+            {
+                RadioValues &rvs = parameter.getRadioValues();
+                if (!created)
+                {
+                    sbox = new QComboBox();
+                    for (j=0; j<rvs.length(); j++)
+                        sbox->addItem(rvs[j].m_description, rvs[j].m_value);
+                    parameter.setProperty(PP_WIDGET2, (qlonglong)sbox);
+
+                }
+                else
+                    sbox = (QComboBox *)parameter.property(PP_WIDGET2).toLongLong();
+                // figure out which radio value
+                for (j=0; j<rvs.length(); j++)
+                {
+                    if (rvs[j].m_value==parameter.value())
+                        break;
+                }
+                if (j>=rvs.length())
+                    j = 0;
+                sbox->setCurrentIndex(j);
+
+            }
             else if (type==PT_STRING)
             {
                 if (!created)
@@ -393,6 +444,8 @@ void ConfigDialog::render(ParameterDB *data, QTabWidget *tabs)
                     layout->addWidget(line, i, 1);
                 if (button)
                     layout->addWidget(button, i, 2);
+                if (sbox)
+                    layout->addWidget(sbox, i, 1);
             }
         }
     }

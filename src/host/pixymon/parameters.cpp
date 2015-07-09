@@ -193,6 +193,11 @@ void Parameter::addRadioValue(const RadioValue &value)
     m_radioValues.push_back(value);
 }
 
+RadioValues &Parameter::getRadioValues()
+{
+    return m_radioValues;
+}
+
 void Parameter::onOff()
 {
     addRadioValue(RadioValue("Off", 0));

@@ -101,6 +101,7 @@ public:
     bool shadow();
 
     void addRadioValue(const RadioValue &value);
+    RadioValues &getRadioValues();
     void onOff();
     void trueFalse();
 
