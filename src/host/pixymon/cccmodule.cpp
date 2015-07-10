@@ -32,16 +32,11 @@ CccModule::CccModule(Interpreter *interpreter) : MonModule(interpreter)
     m_lut = new uint8_t[CL_LUT_SIZE];
     m_blobs = new Blobs(m_qq, m_lut);
 
-    m_interpreter->m_pixymonParameters->add("Cooked render mode", PT_INT8, 2,
-        "Cooked video rendering mode, 0=boxes only, 1=filtered pixels only, 2=boxes and filtered pixels");
-
-    Parameter tp("Test", PT_INT8, 0, "Test help");
-    tp.addRadioValue(RadioValue("description 0", 0));
-    tp.addRadioValue(RadioValue("description 1", 1));
-    tp.addRadioValue(RadioValue("description 2", 2));
-    tp.addRadioValue(RadioValue("description 3", 3));
-
-    m_interpreter->m_pixymonParameters->add(tp);
+    Parameter rm("Cooked render mode", PT_INT8, 2, "Cooked video rendering mode.");
+    rm.addRadioValue(RadioValue("Boxes only", 0));
+    rm.addRadioValue(RadioValue("Filtered Pixels", 1));
+    rm.addRadioValue(RadioValue("Boxes and filtered pixels", 2));
+    m_interpreter->m_pixymonParameters->add(rm);
 
     m_renderMode = pixymonParameter("Cooked render mode").toUInt();
 }
