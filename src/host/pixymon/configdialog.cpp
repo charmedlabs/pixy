@@ -372,9 +372,11 @@ void ConfigDialog::render(ParameterDB *data, QTabWidget *tabs)
                 if (!created)
                 {
                     sbox = new QComboBox();
+                    sbox->setProperty("Parameter", (qlonglong)&parameter);
                     for (j=0; j<rvs.length(); j++)
                         sbox->addItem(rvs[j].m_description, rvs[j].m_value);
                     parameter.setProperty(PP_WIDGET2, (qlonglong)sbox);
+                    connect(sbox, SIGNAL(currentIndexChanged(int)), this, SLOT(handleComboBox(int)));
 
                 }
                 else
@@ -548,6 +550,23 @@ void ConfigDialog::handleSlider(int position)
         parameter->set((int)value, true); // set as shadow
         line->setText(QString::number((int)value));
     }
+    parameter->setDirty(true);
+    m_interpreter->m_pixyParameters.mutex()->unlock();
+    m_interpreter->updateParam();
+}
+
+void ConfigDialog::handleComboBox(int index)
+{
+    QComboBox *sbox = (QComboBox *)sender();
+    Parameter *parameter = (Parameter *)sbox->property("Parameter").toLongLong();
+    RadioValues &rvs = parameter->getRadioValues();
+
+    // use pixyParameters mutex as mutex between configdialog and rest of pixymon
+    // namely worker thread in interpreter.  If we try to lock both mutexes
+    // (pixymonParameters and pixyParameters) we can get into a double mutex deadlock
+    // (as a rule, never lock more than 1 mutex at a time)
+    m_interpreter->m_pixyParameters.mutex()->lock();
+    parameter->set(rvs[index].m_value, true);
     parameter->setDirty(true);
     m_interpreter->m_pixyParameters.mutex()->unlock();
     m_interpreter->updateParam();
