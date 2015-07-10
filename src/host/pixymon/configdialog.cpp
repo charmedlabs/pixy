@@ -69,9 +69,9 @@ ConfigDialog::~ConfigDialog()
     // reset all PP_WIDGET properties because these are used to indicate whether we've created
     // the corresponding gui elements.
     for (i=0; i<monParameters.size(); i++)
-        monParameters[i].setProperty(PP_WIDGET, (qlonglong)0);
+        monParameters[i].setProperty(PP_WIDGET, qVariantFromValue((void *)0));
     for (i=0; i<pixyParameters.size(); i++)
-        pixyParameters[i].setProperty(PP_WIDGET, (qlonglong)0);
+        pixyParameters[i].setProperty(PP_WIDGET, qVariantFromValue((void *)0));
 }
 
 QWidget *ConfigDialog::findCategory(const QString &category, QTabWidget *tabs)
@@ -119,7 +119,7 @@ int ConfigDialog::updateDB(ParameterDB *data)
         if (flags&PRM_FLAG_INTERNAL) // don't render!
             continue;
 
-        QLineEdit *line = (QLineEdit *)parameter.property(PP_WIDGET).toLongLong();
+        QLineEdit *line = (QLineEdit *)parameter.property(PP_WIDGET).value<void *>();
 
         if (type==PT_FLT32)
         {
@@ -141,7 +141,7 @@ int ConfigDialog::updateDB(ParameterDB *data)
             {
                 float min = parameter.property(PP_MIN).toFloat();
                 float max = parameter.property(PP_MAX).toFloat();
-                QSlider *slider = (QSlider *)parameter.property(PP_WIDGET2).toLongLong();
+                QSlider *slider = (QSlider *)parameter.property(PP_WIDGET2).value<void *>();
                 float pos;
                 // value = min + pos/100(max-min)
                 //(value - min)100/(max-min) = pos
@@ -170,7 +170,7 @@ int ConfigDialog::updateDB(ParameterDB *data)
         }
         else if (parameter.radio())
         {
-            QComboBox *sbox = (QComboBox *)parameter.property(PP_WIDGET2).toLongLong();
+            QComboBox *sbox = (QComboBox *)parameter.property(PP_WIDGET2).value<void *>();
 
             QVariant qval = sbox->currentData();
 
@@ -247,7 +247,7 @@ int ConfigDialog::updateDB(ParameterDB *data)
                 {
                     float min = parameter.property(PP_MIN).toFloat();
                     float max = parameter.property(PP_MAX).toFloat();
-                    QSlider *slider = (QSlider *)parameter.property(PP_WIDGET2).toLongLong();
+                    QSlider *slider = (QSlider *)parameter.property(PP_WIDGET2).value<void *>();
                     float pos;
                     // value = min + pos/100(max-min)
                     //(value - min)100/(max-min) = pos
@@ -279,7 +279,7 @@ void ConfigDialog::render(ParameterDB *data, QTabWidget *tabs)
     for (i=0; i<parameters.size(); i++)
     {
         Parameter &parameter = parameters[i];
-        created = parameter.property(PP_WIDGET).toLongLong()!=0;
+        created = parameter.property(PP_WIDGET).value<void *>()!=0;
         uint flags = parameter.property(PP_FLAGS).toInt();
 
         if (flags&PRM_FLAG_INTERNAL) // don't render!
@@ -302,10 +302,10 @@ void ConfigDialog::render(ParameterDB *data, QTabWidget *tabs)
             line->setMinimumWidth(50);
             line->setMaximumWidth(75);
             line->setToolTip(parameter.help());
-            parameter.setProperty(PP_WIDGET, (qlonglong)line);
+            parameter.setProperty(PP_WIDGET,  qVariantFromValue((void *)line));
         }
         else
-            line = (QLineEdit *)parameter.property(PP_WIDGET).toLongLong();
+            line = (QLineEdit *)parameter.property(PP_WIDGET).value<void *>();
 
         if (type!=PT_INTS8) // make sure it's a scalar type
         {
@@ -314,7 +314,7 @@ void ConfigDialog::render(ParameterDB *data, QTabWidget *tabs)
                 if (!created)
                 {
                     button = new QPushButton("Change...");
-                    button->setProperty("Parameter", (qlonglong)&parameter);
+                    button->setProperty("Parameter",  qVariantFromValue((void *)&parameter));
                     connect(button, SIGNAL(clicked()), this, SLOT(handleChangeClicked()));
                     button->setToolTip("Select a new path");
                     line->setMinimumWidth(200);
@@ -327,10 +327,10 @@ void ConfigDialog::render(ParameterDB *data, QTabWidget *tabs)
                 if (!created)
                 {
                     cbox = new QCheckBox();
-                    cbox->setProperty("Parameter", (qlonglong)&parameter);
+                    cbox->setProperty("Parameter",  qVariantFromValue((void *)&parameter));
                     cbox->setToolTip(parameter.help());
                     connect(cbox, SIGNAL(clicked()), this, SLOT(handleCheckBox()));
-                    parameter.setProperty(PP_WIDGET, (qlonglong)cbox);
+                    parameter.setProperty(PP_WIDGET,  qVariantFromValue((void *)cbox));
                     delete line;
                     line = NULL;
                 }
@@ -343,17 +343,17 @@ void ConfigDialog::render(ParameterDB *data, QTabWidget *tabs)
                 if (!created)
                 {
                     slider = new QSlider(Qt::Horizontal);
-                    slider->setProperty("Parameter", (qlonglong)&parameter);
+                    slider->setProperty("Parameter",  qVariantFromValue((void *)&parameter));
                     slider->setMinimumWidth(SLIDER_SIZE);
                     slider->setMaximumWidth(SLIDER_SIZE);
                     slider->setRange(0, SLIDER_SIZE);
                     slider->setSingleStep(1);
                     slider->setToolTip(parameter.help());
-                    parameter.setProperty(PP_WIDGET2, (qlonglong)slider);
+                    parameter.setProperty(PP_WIDGET2,  qVariantFromValue((void *)slider));
                     connect(slider, SIGNAL(sliderMoved(int)), this, SLOT(handleSlider(int)));
                 }
                 else
-                    slider = (QSlider *)parameter.property(PP_WIDGET2).toLongLong();
+                    slider = (QSlider *)parameter.property(PP_WIDGET2).value<void *>();
                 float pos;
                 float min = parameter.property(PP_MIN).toFloat();
                 float max = parameter.property(PP_MAX).toFloat();
@@ -372,15 +372,15 @@ void ConfigDialog::render(ParameterDB *data, QTabWidget *tabs)
                 if (!created)
                 {
                     sbox = new QComboBox();
-                    sbox->setProperty("Parameter", (qlonglong)&parameter);
+                    sbox->setProperty("Parameter",  qVariantFromValue((void *)&parameter));
                     for (j=0; j<rvs.length(); j++)
                         sbox->addItem(rvs[j].m_description, rvs[j].m_value);
-                    parameter.setProperty(PP_WIDGET2, (qlonglong)sbox);
+                    parameter.setProperty(PP_WIDGET2,  qVariantFromValue((void *)sbox));
                     connect(sbox, SIGNAL(currentIndexChanged(int)), this, SLOT(handleComboBox(int)));
 
                 }
                 else
-                    sbox = (QComboBox *)parameter.property(PP_WIDGET2).toLongLong();
+                    sbox = (QComboBox *)parameter.property(PP_WIDGET2).value<void *>();
                 // figure out which radio value
                 for (j=0; j<rvs.length(); j++)
                 {
@@ -494,7 +494,7 @@ void ConfigDialog::handleChangeClicked()
     // get button that was clicked
     QPushButton *button = (QPushButton *)sender();
     // then grab parameter associated with the button
-    Parameter *parameter = (Parameter *)button->property("Parameter").toLongLong();
+    Parameter *parameter = (Parameter *)button->property("Parameter").value<void *>();
 
     // bring up file dialog
     QFileDialog fd(this);
@@ -507,7 +507,7 @@ void ConfigDialog::handleChangeClicked()
     {
         QStringList dir = fd.selectedFiles();
         // update text box
-        QLineEdit *line = (QLineEdit *)parameter->property(PP_WIDGET).toLongLong();
+        QLineEdit *line = (QLineEdit *)parameter->property(PP_WIDGET).value<void *>();
         line->setText(dir[0]);
     }
 }
@@ -516,7 +516,7 @@ void ConfigDialog::handleChangeClicked()
 void ConfigDialog::handleCheckBox()
 {
     QCheckBox *cbox = (QCheckBox *)sender();
-    Parameter *parameter = (Parameter *)cbox->property("Parameter").toLongLong();
+    Parameter *parameter = (Parameter *)cbox->property("Parameter").value<void *>();
 
     m_interpreter->m_pixyParameters.mutex()->lock();
     parameter->set(cbox->isChecked(), true);
@@ -528,8 +528,8 @@ void ConfigDialog::handleCheckBox()
 void ConfigDialog::handleSlider(int position)
 {
     QSlider *slider = (QSlider *)sender();
-    Parameter *parameter = (Parameter *)slider->property("Parameter").toLongLong();
-    QLineEdit *line = (QLineEdit *)parameter->property(PP_WIDGET).toLongLong();
+    Parameter *parameter = (Parameter *)slider->property("Parameter").value<void *>();
+    QLineEdit *line = (QLineEdit *)parameter->property(PP_WIDGET).value<void *>();
     float value;
     float min = parameter->property(PP_MIN).toFloat();
     float max = parameter->property(PP_MAX).toFloat();
@@ -558,7 +558,7 @@ void ConfigDialog::handleSlider(int position)
 void ConfigDialog::handleComboBox(int index)
 {
     QComboBox *sbox = (QComboBox *)sender();
-    Parameter *parameter = (Parameter *)sbox->property("Parameter").toLongLong();
+    Parameter *parameter = (Parameter *)sbox->property("Parameter").value<void *>();
     RadioValues &rvs = parameter->getRadioValues();
 
     // use pixyParameters mutex as mutex between configdialog and rest of pixymon
