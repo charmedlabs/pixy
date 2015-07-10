@@ -49,7 +49,6 @@ struct RadioValue
     QVariant m_value;
 };
 
-#define  PT_RADIO_MASK     0x8000
 #define  PT_DATATYPE_MASK  0xff
 
 enum PType
@@ -63,15 +62,6 @@ enum PType
     PT_FLT32 = 0x14,
     PT_INTS8 = 0x81,
     PT_STRING = 0xa1,
-
-    // radio types
-    PT_INT8_RADIO = PT_INT8 | PT_RADIO_MASK,
-    PT_INT16_RADIO = PT_INT16 | PT_RADIO_MASK,
-    PT_INT32_RADIO = PT_INT32 | PT_RADIO_MASK,
-    PT_FLT32_RADIO = PT_FLT32 | PT_RADIO_MASK,
-    PT_INTS8_RADIO = PT_INTS8 | PT_RADIO_MASK,
-    PT_STRING_RADIO = PT_STRING | PT_RADIO_MASK,
-
 };
 
 typedef QList<RadioValue> RadioValues;
@@ -96,6 +86,7 @@ public:
     int setRadio(const QString &description);
     void setDirty(bool dirty);
     void setHelp(const QString &help);
+    bool radio();
     bool dirty();
     void clearShadow();
     bool shadow();

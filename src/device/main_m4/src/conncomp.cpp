@@ -198,7 +198,7 @@ void cc_loadParams(void)
 	prm_add("Color code multiplier", 0, 
 		"@c Expert Sets the color multiplier to be multiplied to each signature range. (default 1.8)", FLT32(1.8f), END);
 	prm_add("Color code mode", 0,
-		"@c Expert Sets the color code mode, 0=disabled, 1=enabled, 2=color codes only, 3=mixed (default 1)", INT8(1), END);
+		"Sets the color code mode (default enabled) @c Expert @s 0=Disabled @s 1=Enabled @s 2=Color_codes_only @s 3=Mixed", INT8(1), END);
 	prm_add("Signature teach threshold", PRM_FLAG_SLIDER, 
 		"@c Expert @m 0 @M 10000 Determines how inclusive the growing algorithm is when teaching signatures with button-push method (default 2000)", INT32(2000), END);
 	prm_setShadowCallback("Signature teach threshold", (ShadowCallback)cc_teachThreshCallback);

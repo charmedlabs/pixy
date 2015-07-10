@@ -46,19 +46,7 @@ const QString &Parameter::id()
 
 QString Parameter::typeName()
 {
-    if (m_type==PT_INT8_RADIO)
-        return "INT8_RADIO";
-    else if (m_type==PT_INT16_RADIO)
-        return "INT16_RADIO";
-    else if (m_type==PT_INT32_RADIO)
-        return "INT32_RADIO";
-    else if (m_type==PT_FLT32_RADIO)
-        return "FLOAT32_RADIO";
-    else if (m_type==PT_INTS8_RADIO)
-        return "INT8_ARRAY_RADIO";
-    else if (m_type==PT_STRING_RADIO)
-        return "STRING_RADIO";
-    else if ((m_type&PT_DATATYPE_MASK)==PT_INT8)
+    if ((m_type&PT_DATATYPE_MASK)==PT_INT8)
         return "INT8";
     else if ((m_type&PT_DATATYPE_MASK)==PT_INT16)
         return "INT16";
@@ -88,18 +76,6 @@ PType Parameter::typeLookup(const QString &name)
         return PT_INTS8;
     else if (name=="STRING")
         return PT_STRING;
-    else if (name=="INT8_RADIO")
-        return PT_INT8_RADIO;
-    else if (name=="INT16_RADIO")
-        return PT_INT16_RADIO;
-    else if (name=="INT32_RADIO")
-        return PT_INT32_RADIO;
-    else if (name=="FLOAT32_RADIO")
-        return PT_FLT32_RADIO;
-    else if (name=="INT8_ARRAY_RADIO")
-        return PT_INTS8_RADIO;
-    else if (name=="STRING_RADIO")
-        return PT_STRING_RADIO;
     else
         return PT_UNKNOWN;
 }
@@ -111,7 +87,7 @@ PType Parameter::type()
 
 const QVariant &Parameter::value()
 {
-    if (m_type&PT_RADIO_MASK)
+    if (radio())
         return m_radioValues[m_value.toInt()].m_value;
     else
         return m_value;
@@ -138,7 +114,7 @@ int Parameter::valueInt()
 
 const QString *Parameter::description()
 {
-    if (m_type&PT_RADIO_MASK)
+    if (radio())
         return &m_radioValues[m_value.toInt()].m_description;
     return NULL;
 }
@@ -148,7 +124,7 @@ int Parameter::set(const QVariant &value, bool shadow)
     if (shadow && m_saved.isNull())
         m_saved = m_value;
 
-    if (m_type&PT_RADIO_MASK)
+    if (radio())
     {
         for (int i=0; i<m_radioValues.size(); i++)
         {
@@ -168,7 +144,7 @@ int Parameter::set(const QVariant &value, bool shadow)
 
 int Parameter::setRadio(const QString &description)
 {
-    if (m_type&PT_RADIO_MASK)
+    if (radio())
     {
         for (int i=0; i<m_radioValues.size(); i++)
         {
@@ -218,6 +194,11 @@ void Parameter::setDirty(bool dirty)
 bool Parameter::dirty()
 {
     return m_dirty;
+}
+
+bool Parameter::radio()
+{
+    return m_radioValues.length()>1;
 }
 
 void Parameter::clearShadow()

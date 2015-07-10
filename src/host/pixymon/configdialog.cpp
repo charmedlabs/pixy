@@ -168,7 +168,7 @@ int ConfigDialog::updateDB(ParameterDB *data)
                 parameter.setDirty(true);
             }
         }
-        else if (type&PT_RADIO_MASK)
+        else if (parameter.radio())
         {
             QComboBox *sbox = (QComboBox *)parameter.property(PP_WIDGET2).toLongLong();
 
@@ -366,7 +366,7 @@ void ConfigDialog::render(ParameterDB *data, QTabWidget *tabs)
                 else
                     line->setText(QString::number(parameter.value().toInt()));
             }
-            else if (type&PT_RADIO_MASK)
+            else if (parameter.radio())
             {
                 RadioValues &rvs = parameter.getRadioValues();
                 if (!created)

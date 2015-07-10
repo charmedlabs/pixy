@@ -188,7 +188,7 @@ void ser_loadParams()
 {
 #ifndef LEGO
 	prm_add("Data out port", 0, 
-		"@c Interface Selects the port that's used to output data, 0=Arduino ICSP SPI, 1=SPI with SS, 2=I2C, 3=UART, 4=analog/digital x, 5=analog/digital y (default 0)", UINT8(0), END);
+		"Selects the port that's used to output data (default Arduino ICSP SPI) @c Interface @s 0=Arduino_ICSP_SPI @s 1=SPI_with_SS @s 2=I2C @s 3=UART @s 4=analog/digital_x @s 5=analog/digital_y @s 6=LEGO_I2C", UINT8(0), END);
 	prm_add("I2C address", PRM_FLAG_HEX_FORMAT, 
 		"@c Interface Sets the I2C address if you are using I2C data out port. (default 0x54)", UINT8(I2C_DEFAULT_SLAVE_ADDR), END);
 	prm_add("UART baudrate", 0, 

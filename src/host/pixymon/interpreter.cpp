@@ -1132,14 +1132,17 @@ void Interpreter::augmentProcInfo(ProcInfo *info)
     }
 }
 
-QString Interpreter::extractProperty(const QString &tag, QStringList *words, QString *desc)
+QString Interpreter::extractProperty(const QString &tag, QString *desc)
 {
     QString property;
-    int i = words->indexOf(tag);
-    if (i>=0 && words->size()>i+1)
+    QStringList words = desc->split(QRegExp("\\s+"));
+
+    int i = words.indexOf(tag);
+    if (i>=0 && words.size()>i+1)
     {
-        property = (*words)[i+1];
-        *desc = desc->remove(tag + " " + property + " "); // remove form description
+        property = words[i+1];
+        *desc = desc->remove(QRegExp(tag + "\\s+" + property + "\\s*")); // remove from description
+
         return property;
     }
     return "";
@@ -1148,15 +1151,17 @@ QString Interpreter::extractProperty(const QString &tag, QStringList *words, QSt
 void Interpreter::handleProperties(const uint8_t *argList, Parameter *parameter, QString *desc)
 {
     QString property;
-    QStringList words = QString(*desc).split(QRegExp("\\s+"));
+    QStringList halves;
+    int val;
+    bool ok;
 
-    if ((property=extractProperty("@c", &words, desc))!="")
+    if ((property=extractProperty("@c", desc))!="")
     {
         property = property.replace('_', ' '); // make it look prettier
         parameter->setProperty(PP_CATEGORY, property);
     }
 
-    if ((property=extractProperty("@m", &words, desc))!="")
+    if ((property=extractProperty("@m", desc))!="")
     {
         if (argList[0]==CRP_FLT32)
             parameter->setProperty(PP_MIN, property.toFloat());
@@ -1164,12 +1169,26 @@ void Interpreter::handleProperties(const uint8_t *argList, Parameter *parameter,
             parameter->setProperty(PP_MIN, property.toInt());
     }
 
-    if ((property=extractProperty("@M", &words, desc))!="")
+    if ((property=extractProperty("@M", desc))!="")
     {
         if (argList[0]==CRP_FLT32)
             parameter->setProperty(PP_MAX, property.toFloat());
         else
             parameter->setProperty(PP_MAX, property.toInt());
+    }
+
+    while(1)
+    {
+        if ((property=extractProperty("@s", desc))=="")
+            break;
+        halves = property.split('=', QString::SkipEmptyParts);
+        if (halves.length()<2)
+            continue;  // bogus!
+        val = halves[0].toInt(&ok);
+        if (!ok)
+            continue; // bogus also!
+        halves[1] = halves[1].replace('_', ' '); // make it look prettier
+        parameter->addRadioValue(RadioValue(halves[1], val));
     }
 }
 
@@ -1306,13 +1325,15 @@ void Interpreter::handlePixySaveParams(bool shadow)
                 continue; // don't know what to do!
 
             if (shadow)
+                // note, this might fail if a parameter isn't designated a shadow parameter in the firmware
+                // but that's ok... not all parameters are shadow-able
                 res = m_chirp->callSync(m_set_shadow_param, STRING(id), UINTS8(len, buf), END_OUT_ARGS, &response, END_IN_ARGS);
             else
             {
                 res = m_chirp->callSync(m_set_param, STRING(id), UINTS8(len, buf), END_OUT_ARGS, &response, END_IN_ARGS);
                 reload = true;
             }
-            if (res<0 || response<0)
+            if (res<0)
             {
                 emit error("There was a problem setting a parameter.\n");
                 break;

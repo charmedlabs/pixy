@@ -35,7 +35,7 @@ CccModule::CccModule(Interpreter *interpreter) : MonModule(interpreter)
     m_interpreter->m_pixymonParameters->add("Cooked render mode", PT_INT8, 2,
         "Cooked video rendering mode, 0=boxes only, 1=filtered pixels only, 2=boxes and filtered pixels");
 
-    Parameter tp("Test", PT_INT8_RADIO, 0, "Test help");
+    Parameter tp("Test", PT_INT8, 0, "Test help");
     tp.addRadioValue(RadioValue("description 0", 0));
     tp.addRadioValue(RadioValue("description 1", 1));
     tp.addRadioValue(RadioValue("description 2", 2));
