@@ -282,7 +282,7 @@ void Renderer::renderRect(const RectA &rect)
     emit image(img, RENDER_FLAG_BLEND | RENDER_FLAG_FLUSH);
 }
 
-void Renderer::renderBlobsB(bool blend, QImage *image, float scale, BlobB *blobs, uint32_t numBlobs)
+void Renderer::renderBlobsB(bool blend, QImage *image, float scale, BlobB *blobs, uint32_t numBlobs, const QList<QPair<uint16_t, QString> > *labels)
 {
     QPainter p;
     QString str, modelStr;
@@ -310,14 +310,13 @@ void Renderer::renderBlobsB(bool blend, QImage *image, float scale, BlobB *blobs
         p.drawRect(left, top, right-left, bottom-top);
         if (blobs[i].m_model)
         {
-#if 0
-            label = m_blobs.getLabel(model);
-            if (label)
-                str = *label;
-            else
-#endif
+            if ((str=lookup(blobs[i].m_model, labels))=="")
+            {
                 modelStr = QString::number(blobs[i].m_model, 8);
-            str = "s=" + modelStr + ", " + QChar(0xa6, 0x03) + "=" + QString::number(blobs[i].m_angle);
+                str = "s=" + modelStr + ", " + QChar(0xa6, 0x03) + "=" + QString::number(blobs[i].m_angle);
+            }
+            else
+                str += QString(", ") + QChar(0xa6, 0x03) + "=" + QString::number(blobs[i].m_angle);
             p.setPen(QPen(QColor(0, 0, 0, 0xff)));
             p.drawText(left+1, top+1, str);
             p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
@@ -327,7 +326,7 @@ void Renderer::renderBlobsB(bool blend, QImage *image, float scale, BlobB *blobs
     p.end();
 }
 
-void Renderer::renderBlobsA(bool blend, QImage *image, float scale, BlobA *blobs, uint32_t numBlobs)
+void Renderer::renderBlobsA(bool blend, QImage *image, float scale, BlobA *blobs, uint32_t numBlobs, const QList<QPair<uint16_t, QString> > *labels)
 {
     QPainter p;
     QString str;
@@ -358,12 +357,7 @@ void Renderer::renderBlobsA(bool blend, QImage *image, float scale, BlobA *blobs
         p.drawRect(left, top, right-left, bottom-top);
         if (blobs[i].m_model)
         {
-#if 0
-            label = m_blobs.getLabel(model);
-            if (label)
-                str = *label;
-            else
-#endif
+            if ((str=lookup(blobs[i].m_model, labels))=="")
                 str = str.sprintf("s=%d", blobs[i].m_model);
             p.setPen(QPen(QColor(0, 0, 0, 0xff)));
             p.drawText(left+1, top+1, str);
@@ -374,7 +368,7 @@ void Renderer::renderBlobsA(bool blend, QImage *image, float scale, BlobA *blobs
     p.end();
 }
 
-int Renderer::renderCCB2(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t numBlobs, uint16_t *blobs, uint32_t numCCBlobs, uint16_t *ccBlobs)
+int Renderer::renderCCB2(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t numBlobs, uint16_t *blobs, uint32_t numCCBlobs, uint16_t *ccBlobs,  const QList<QPair<uint16_t, QString> > *labels)
 {    
     float scale = (float)m_video->activeWidth()/width;
     QImage img(width*scale, height*scale, QImage::Format_ARGB32);
@@ -386,8 +380,8 @@ int Renderer::renderCCB2(uint8_t renderFlags, uint16_t width, uint16_t height, u
 
     numBlobs /= sizeof(BlobA)/sizeof(uint16_t);
     numCCBlobs /= sizeof(BlobB)/sizeof(uint16_t);
-    renderBlobsA(renderFlags&RENDER_FLAG_BLEND, &img, scale, (BlobA *)blobs, numBlobs);
-    renderBlobsB(renderFlags&RENDER_FLAG_BLEND, &img, scale, (BlobB *)ccBlobs, numCCBlobs);
+    renderBlobsA(renderFlags&RENDER_FLAG_BLEND, &img, scale, (BlobA *)blobs, numBlobs, labels);
+    renderBlobsB(renderFlags&RENDER_FLAG_BLEND, &img, scale, (BlobB *)ccBlobs, numCCBlobs, labels);
 
     emit image(img, renderFlags);
 
@@ -620,6 +614,21 @@ uint32_t *Renderer::getPalette()
         return m_palette;
     else
         return NULL;
+}
+
+QString Renderer::lookup(uint16_t signum, const QList<QPair<uint16_t, QString> > *labels)
+{
+    int i;
+
+    if (labels)
+    {
+        for (i=0; i<labels->length(); i++)
+        {
+            if ((*labels)[i].first==signum)
+                return (*labels)[i].second;
+        }
+    }
+    return "";
 }
 
 

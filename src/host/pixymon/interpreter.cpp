@@ -1251,6 +1251,11 @@ void Interpreter::handleLoadParams()
                 Chirp::deserialize(data, len, &val, END);
                 parameter.set(val);
             }
+            else if (argList[0]==CRP_STRING)
+            {
+                QString string((char *)data+1); // skip first byte (type)
+                parameter.set(string);
+            }
             else // not sure what to do with it, so we'll save it as binary
             {
                 QByteArray a((char *)data, len);
@@ -1313,6 +1318,12 @@ void Interpreter::handlePixySaveParams(bool shadow)
             else if (type==PT_FLT32)
             {
                 float val = var.toFloat();
+                len = Chirp::serialize(NULL, buf, 0x100, type, val, END);
+            }
+            else if (type==PT_STRING)
+            {
+                QByteArray baVal = pixyParameters[i].value().toString().toUtf8();
+                const char *val = baVal.constData();
                 len = Chirp::serialize(NULL, buf, 0x100, type, val, END);
             }
             else if (type==PT_INTS8)

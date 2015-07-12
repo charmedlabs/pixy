@@ -43,6 +43,7 @@ private:
     Qqueue *m_qq;
     Blobs *m_blobs;
     uint8_t m_renderMode;
+    QList<QPair<uint16_t, QString> > m_labels;
 };
 
 #endif // CCCMODULE_H

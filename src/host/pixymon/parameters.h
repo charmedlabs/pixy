@@ -37,6 +37,8 @@
 #define PP_MIN          "min"
 #define PP_MAX          "max"
 
+#define PRM_FLAG_PATH                0x00000400
+
 struct RadioValue
 {
     RadioValue(const QString &description,  const QVariant &value)

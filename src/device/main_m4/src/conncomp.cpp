@@ -187,6 +187,10 @@ void cc_loadParams(void)
 		prm_get(id, &range, END);
 		g_blobs->m_clut.setSigRange(i, range);
 		prm_setShadowCallback(id, (ShadowCallback)cc_shadowCallback);
+
+		sprintf(id, "Signature label %d", i);
+		sprintf(desc, "@c Signature_Labels Sets the label for objects that match signature %d.", i);
+		prm_add(id, 0, desc, STRING("test"), END);
 	}
 
 	// others -----

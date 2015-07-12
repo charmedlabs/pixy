@@ -160,6 +160,24 @@ void CccModule::paramChange()
 
     if (pixymonParameterChanged("Cooked render mode", &val))
         m_renderMode = val.toUInt();
+
+    // create label dictionary
+    Parameters &params = m_interpreter->m_pixyParameters.parameters();
+    QStringList words;
+    uint16_t signum;
+    m_labels.clear();
+    // go through all parameters and find labels
+    for (i=0; i<params.length(); i++)
+    {
+        if (params[i].id().startsWith("Signature label"))
+        {
+            words = params[i].id().split(QRegExp("\\s+"));
+            if (words.length()<3) // bogus!
+                continue;
+            signum = words[2].toUInt();
+            m_labels.push_back(QPair<uint16_t, QString>(signum, params[i].value().toString()));
+        }
+    }
 }
 
 void CccModule::handleLine(uint8_t *line, uint16_t width)
@@ -263,13 +281,13 @@ int CccModule::renderCMV2(uint8_t renderFlags, uint16_t width, uint16_t height, 
     m_renderer->renderBA81(RENDER_FLAG_BLEND, width, height, frameLen, frame);
     // then based on the renderMode, render/blend the different layers in a stack
     if (m_renderMode==0)
-        m_renderer->renderCCB2(RENDER_FLAG_BLEND | renderFlags, width/2, height/2, numBlobs*sizeof(BlobA)/sizeof(uint16_t), (uint16_t *)blobs, numCCBlobs*sizeof(BlobB)/sizeof(uint16_t), (uint16_t *)ccBlobs);
+        m_renderer->renderCCB2(RENDER_FLAG_BLEND | renderFlags, width/2, height/2, numBlobs*sizeof(BlobA)/sizeof(uint16_t), (uint16_t *)blobs, numCCBlobs*sizeof(BlobB)/sizeof(uint16_t), (uint16_t *)ccBlobs, &m_labels);
     else if (m_renderMode==1)
         m_renderer->renderCCQ1(RENDER_FLAG_BLEND | renderFlags, width/2, height/2, numQvals, qVals);
     else if (m_renderMode==2)
     {
         m_renderer->renderCCQ1(RENDER_FLAG_BLEND, width/2, height/2, numQvals, qVals);
-        m_renderer->renderCCB2(RENDER_FLAG_BLEND | renderFlags, width/2, height/2, numBlobs*sizeof(BlobA)/sizeof(uint16_t), (uint16_t *)blobs, numCCBlobs*sizeof(BlobB)/sizeof(uint16_t), (uint16_t *)ccBlobs);
+        m_renderer->renderCCB2(RENDER_FLAG_BLEND | renderFlags, width/2, height/2, numBlobs*sizeof(BlobA)/sizeof(uint16_t), (uint16_t *)blobs, numCCBlobs*sizeof(BlobB)/sizeof(uint16_t), (uint16_t *)ccBlobs, &m_labels);
     }
     return 0;
 }
