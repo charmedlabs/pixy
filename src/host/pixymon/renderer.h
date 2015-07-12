@@ -50,13 +50,8 @@ public:
 
     int renderCCQ1(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t numVals, uint32_t *qVals);
     int renderBA81(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame);
-    int renderCCB1(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t numBlobs, uint16_t *blobs);
-    int renderCCB2(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t numBlobs, uint16_t *blobs, uint32_t numCCBlobs, uint16_t *ccBlobs, const QList<QPair<uint16_t, QString> > *labels=NULL);
     int renderBLT1(uint8_t renderFlags, uint16_t width, uint16_t height,
                    uint16_t blockWidth, uint16_t blockHeight, uint32_t numPoints, uint16_t *points);
-
-    void renderBlobsB(bool blend, QImage *image, float scale, BlobB *blobs, uint32_t numBlobs, const QList<QPair<uint16_t, QString> > *labels=NULL);
-    void renderBlobsA(bool blend, QImage *image, float scale, BlobA *blobs, uint32_t numBlobs, const QList<QPair<uint16_t, QString> > *labels=NULL);
 
     void renderRects(const Points &points, uint32_t size);
     void renderRect(const RectA &rect);
@@ -69,6 +64,7 @@ public:
     QString lookup(uint16_t signum, const QList<QPair<uint16_t, QString> > *labels);
 
     Frame8 m_rawFrame;
+    VideoWidget *m_video;
 
 signals:
     void image(QImage image, uchar renderFlags);
@@ -76,7 +72,6 @@ signals:
 private:
     inline void interpolateBayer(unsigned int width, unsigned int x, unsigned int y, unsigned char *pixel, unsigned int &r, unsigned int &g, unsigned int &b);
 
-    VideoWidget *m_video;
     Interpreter *m_interpreter;
     QImage m_background;
     bool m_paletteSet;

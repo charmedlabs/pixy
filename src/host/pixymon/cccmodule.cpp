@@ -13,6 +13,7 @@
 // end license header
 //
 
+#include <QPainter>
 #include <stdio.h>
 #include "cccmodule.h"
 #include "interpreter.h"
@@ -27,6 +28,8 @@ MON_MODULE(CccModule);
 
 CccModule::CccModule(Interpreter *interpreter) : MonModule(interpreter)
 {
+    int i;
+
     m_crc = 0;
     m_qq = new Qqueue();
     m_lut = new uint8_t[CL_LUT_SIZE];
@@ -39,6 +42,9 @@ CccModule::CccModule(Interpreter *interpreter) : MonModule(interpreter)
     m_interpreter->m_pixymonParameters->add(rm);
 
     m_renderMode = pixymonParameter("Cooked render mode").toUInt();
+
+    for (i=0; i<CL_NUM_SIGNATURES; i++)
+        m_palette[i] = Qt::black;
 }
 
 CccModule::~CccModule()
@@ -50,7 +56,17 @@ CccModule::~CccModule()
 
 bool CccModule::render(uint32_t fourcc, const void *args[])
 {
-    if (fourcc==FOURCC('C','M','V','2'))
+    if (fourcc==FOURCC('C', 'C', 'B', '1'))
+    {
+        renderCCB1(*(uint8_t *)args[0], *(uint16_t *)args[1], *(uint32_t *)args[2], *(uint32_t *)args[3], (uint16_t *)args[4]);
+        return true;
+    }
+    else if (fourcc==FOURCC('C', 'C', 'B', '2'))
+    {
+        renderCCB2(*(uint8_t *)args[0], *(uint16_t *)args[1], *(uint32_t *)args[2], *(uint32_t *)args[3], (uint16_t *)args[4], *(uint32_t *)args[5], (uint16_t *)args[6]);
+        return true;
+    }
+    else if (fourcc==FOURCC('C','M','V','2'))
     {
         renderCMV2(*(uint8_t *)args[0], *(uint16_t *)args[1], *(uint16_t *)args[2], *(uint32_t *)args[3], (uint8_t *)args[4]);
         return true;
@@ -73,7 +89,6 @@ void CccModule::paramChange()
     int i;
     QVariant val;
     bool relut = false;
-    uint32_t palette[CL_NUM_SIGNATURES];
     char id[128];
     uint32_t sigLen;
     uint8_t *sigData;
@@ -144,8 +159,8 @@ void CccModule::paramChange()
     {
         m_blobs->m_clut.generateLUT();
         for (i=0; i<CL_NUM_SIGNATURES; i++)
-            palette[i] = m_blobs->m_clut.m_signatures[i].m_rgb;
-        m_renderer->setPalette(palette);
+            m_palette[i] = m_blobs->m_clut.m_signatures[i].m_rgb;
+        m_renderer->setPalette(m_palette);
     }
 
     uint16_t maxBlobs, maxBlobsPerSig;
@@ -263,6 +278,18 @@ void CccModule::rls(const Frame8 *frame)
     m_qq->enqueue(&eof);
 }
 
+QString CccModule::lookup(uint16_t signum)
+{
+    int i;
+
+    for (i=0; i<m_labels.length(); i++)
+    {
+        if (m_labels[i].first==signum)
+            return m_labels[i].second;
+    }
+    return "";
+}
+
 int CccModule::renderCMV2(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame)
 {
     uint32_t numBlobs, numCCBlobs;
@@ -281,13 +308,13 @@ int CccModule::renderCMV2(uint8_t renderFlags, uint16_t width, uint16_t height, 
     m_renderer->renderBA81(RENDER_FLAG_BLEND, width, height, frameLen, frame);
     // then based on the renderMode, render/blend the different layers in a stack
     if (m_renderMode==0)
-        m_renderer->renderCCB2(RENDER_FLAG_BLEND | renderFlags, width/2, height/2, numBlobs*sizeof(BlobA)/sizeof(uint16_t), (uint16_t *)blobs, numCCBlobs*sizeof(BlobB)/sizeof(uint16_t), (uint16_t *)ccBlobs, &m_labels);
+        renderCCB2(RENDER_FLAG_BLEND | renderFlags, width/2, height/2, numBlobs*sizeof(BlobA)/sizeof(uint16_t), (uint16_t *)blobs, numCCBlobs*sizeof(BlobB)/sizeof(uint16_t), (uint16_t *)ccBlobs);
     else if (m_renderMode==1)
         m_renderer->renderCCQ1(RENDER_FLAG_BLEND | renderFlags, width/2, height/2, numQvals, qVals);
     else if (m_renderMode==2)
     {
         m_renderer->renderCCQ1(RENDER_FLAG_BLEND, width/2, height/2, numQvals, qVals);
-        m_renderer->renderCCB2(RENDER_FLAG_BLEND | renderFlags, width/2, height/2, numBlobs*sizeof(BlobA)/sizeof(uint16_t), (uint16_t *)blobs, numCCBlobs*sizeof(BlobB)/sizeof(uint16_t), (uint16_t *)ccBlobs, &m_labels);
+        renderCCB2(RENDER_FLAG_BLEND | renderFlags, width/2, height/2, numBlobs*sizeof(BlobA)/sizeof(uint16_t), (uint16_t *)blobs, numCCBlobs*sizeof(BlobB)/sizeof(uint16_t), (uint16_t *)ccBlobs);
     }
     return 0;
 }
@@ -309,4 +336,128 @@ void CccModule::renderCCQ2(uint8_t renderFlags, uint16_t width, uint16_t height,
     m_renderer->renderCCQ1(renderFlags, width, height, numQvals, qVals);
 }
 
+int CccModule::renderCCB1(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t numBlobs, uint16_t *blobs)
+{
+    float scale = (float)m_renderer->m_video->activeWidth()/width;
+    QImage img(width*scale, height*scale, QImage::Format_ARGB32);
+
+    if (renderFlags&RENDER_FLAG_BLEND) // if we're blending, we should be transparent
+        img.fill(0x00000000);
+    else
+        img.fill(0xff000000); // otherwise, we're just black
+
+    numBlobs /= sizeof(BlobA)/sizeof(uint16_t);
+    renderBlobsA(renderFlags&RENDER_FLAG_BLEND, &img, scale, (BlobA *)blobs, numBlobs);
+
+    emit m_renderer->image(img, renderFlags);
+
+    return 0;
+}
+
+int CccModule::renderCCB2(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t numBlobs, uint16_t *blobs, uint32_t numCCBlobs, uint16_t *ccBlobs)
+{
+    float scale = (float)m_renderer->m_video->activeWidth()/width;
+    QImage img(width*scale, height*scale, QImage::Format_ARGB32);
+
+    if (renderFlags&RENDER_FLAG_BLEND) // if we're blending, we should be transparent
+        img.fill(0x00000000);
+    else
+        img.fill(0xff000000); // otherwise, we're just black
+
+    numBlobs /= sizeof(BlobA)/sizeof(uint16_t);
+    numCCBlobs /= sizeof(BlobB)/sizeof(uint16_t);
+    renderBlobsA(renderFlags&RENDER_FLAG_BLEND, &img, scale, (BlobA *)blobs, numBlobs);
+    renderBlobsB(renderFlags&RENDER_FLAG_BLEND, &img, scale, (BlobB *)ccBlobs, numCCBlobs);
+
+    emit m_renderer->image(img, renderFlags);
+
+    return 0;
+}
+
+void CccModule::renderBlobsA(bool blend, QImage *image, float scale, BlobA *blobs, uint32_t numBlobs)
+{
+    QPainter p;
+    QString str;
+    uint16_t left, right, top, bottom;
+    uint i;
+
+    p.begin(image);
+    if (blend)
+        p.setBrush(QBrush(QColor(0xff, 0xff, 0xff, 0x20)));
+    p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
+
+#ifdef __MACOS__
+    QFont font("verdana", 18);
+#else
+    QFont font("verdana", 12);
+#endif
+    p.setFont(font);
+    for (i=0; i<numBlobs; i++)
+    {
+        left = scale*blobs[i].m_left;
+        right = scale*blobs[i].m_right;
+        top = scale*blobs[i].m_top;
+        bottom = scale*blobs[i].m_bottom;
+
+        //DBG("%d %d %d %d", left, right, top, bottom);
+        if (!blend)
+            p.setBrush(QBrush(QRgb(m_palette[blobs[i].m_model-1])));
+        p.drawRect(left, top, right-left, bottom-top);
+        if (blobs[i].m_model)
+        {
+            if ((str=lookup(blobs[i].m_model))=="")
+                str = str.sprintf("s=%d", blobs[i].m_model);
+            p.setPen(QPen(QColor(0, 0, 0, 0xff)));
+            p.drawText(left+1, top+1, str);
+            p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
+            p.drawText(left, top, str);
+        }
+    }
+    p.end();
+}
+
+
+void CccModule::renderBlobsB(bool blend, QImage *image, float scale, BlobB *blobs, uint32_t numBlobs)
+{
+    QPainter p;
+    QString str, modelStr;
+    uint16_t left, right, top, bottom;
+    uint i;
+
+    p.begin(image);
+    p.setBrush(QBrush(QColor(0xff, 0xff, 0xff, 0x40)));
+    p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
+
+#ifdef __MACOS__
+    QFont font("verdana", 18);
+#else
+    QFont font("verdana", 12);
+#endif
+    p.setFont(font);
+    for (i=0; i<numBlobs; i++)
+    {
+        left = scale*blobs[i].m_left;
+        right = scale*blobs[i].m_right;
+        top = scale*blobs[i].m_top;
+        bottom = scale*blobs[i].m_bottom;
+
+        //DBG("%d %d %d %d", left, right, top, bottom);
+        p.drawRect(left, top, right-left, bottom-top);
+        if (blobs[i].m_model)
+        {
+            if ((str=lookup(blobs[i].m_model))=="")
+            {
+                modelStr = QString::number(blobs[i].m_model, 8);
+                str = "s=" + modelStr + ", " + QChar(0xa6, 0x03) + "=" + QString::number(blobs[i].m_angle);
+            }
+            else
+                str += QString(", ") + QChar(0xa6, 0x03) + "=" + QString::number(blobs[i].m_angle);
+            p.setPen(QPen(QColor(0, 0, 0, 0xff)));
+            p.drawText(left+1, top+1, str);
+            p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
+            p.drawText(left, top, str);
+        }
+    }
+    p.end();
+}
 

@@ -282,129 +282,6 @@ void Renderer::renderRect(const RectA &rect)
     emit image(img, RENDER_FLAG_BLEND | RENDER_FLAG_FLUSH);
 }
 
-void Renderer::renderBlobsB(bool blend, QImage *image, float scale, BlobB *blobs, uint32_t numBlobs, const QList<QPair<uint16_t, QString> > *labels)
-{
-    QPainter p;
-    QString str, modelStr;
-    uint16_t left, right, top, bottom;
-    uint i;
-
-    p.begin(image);
-    p.setBrush(QBrush(QColor(0xff, 0xff, 0xff, 0x40)));
-    p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
-
-#ifdef __MACOS__
-    QFont font("verdana", 18);
-#else
-    QFont font("verdana", 12);
-#endif
-    p.setFont(font);
-    for (i=0; i<numBlobs; i++)
-    {
-        left = scale*blobs[i].m_left;
-        right = scale*blobs[i].m_right;
-        top = scale*blobs[i].m_top;
-        bottom = scale*blobs[i].m_bottom;
-
-        //DBG("%d %d %d %d", left, right, top, bottom);
-        p.drawRect(left, top, right-left, bottom-top);
-        if (blobs[i].m_model)
-        {
-            if ((str=lookup(blobs[i].m_model, labels))=="")
-            {
-                modelStr = QString::number(blobs[i].m_model, 8);
-                str = "s=" + modelStr + ", " + QChar(0xa6, 0x03) + "=" + QString::number(blobs[i].m_angle);
-            }
-            else
-                str += QString(", ") + QChar(0xa6, 0x03) + "=" + QString::number(blobs[i].m_angle);
-            p.setPen(QPen(QColor(0, 0, 0, 0xff)));
-            p.drawText(left+1, top+1, str);
-            p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
-            p.drawText(left, top, str);
-        }
-    }
-    p.end();
-}
-
-void Renderer::renderBlobsA(bool blend, QImage *image, float scale, BlobA *blobs, uint32_t numBlobs, const QList<QPair<uint16_t, QString> > *labels)
-{
-    QPainter p;
-    QString str;
-    uint16_t left, right, top, bottom;
-    uint i;
-
-    p.begin(image);
-    if (blend)
-        p.setBrush(QBrush(QColor(0xff, 0xff, 0xff, 0x20)));
-    p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
-
-#ifdef __MACOS__
-    QFont font("verdana", 18);
-#else
-    QFont font("verdana", 12);
-#endif
-    p.setFont(font);
-    for (i=0; i<numBlobs; i++)
-    {
-        left = scale*blobs[i].m_left;
-        right = scale*blobs[i].m_right;
-        top = scale*blobs[i].m_top;
-        bottom = scale*blobs[i].m_bottom;
-
-        //DBG("%d %d %d %d", left, right, top, bottom);
-        if (!blend && m_paletteSet)
-            p.setBrush(QBrush(QRgb(m_palette[blobs[i].m_model-1])));
-        p.drawRect(left, top, right-left, bottom-top);
-        if (blobs[i].m_model)
-        {
-            if ((str=lookup(blobs[i].m_model, labels))=="")
-                str = str.sprintf("s=%d", blobs[i].m_model);
-            p.setPen(QPen(QColor(0, 0, 0, 0xff)));
-            p.drawText(left+1, top+1, str);
-            p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));
-            p.drawText(left, top, str);
-        }
-    }
-    p.end();
-}
-
-int Renderer::renderCCB2(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t numBlobs, uint16_t *blobs, uint32_t numCCBlobs, uint16_t *ccBlobs,  const QList<QPair<uint16_t, QString> > *labels)
-{    
-    float scale = (float)m_video->activeWidth()/width;
-    QImage img(width*scale, height*scale, QImage::Format_ARGB32);
-
-    if (renderFlags&RENDER_FLAG_BLEND) // if we're blending, we should be transparent
-        img.fill(0x00000000);
-    else
-        img.fill(0xff000000); // otherwise, we're just black
-
-    numBlobs /= sizeof(BlobA)/sizeof(uint16_t);
-    numCCBlobs /= sizeof(BlobB)/sizeof(uint16_t);
-    renderBlobsA(renderFlags&RENDER_FLAG_BLEND, &img, scale, (BlobA *)blobs, numBlobs, labels);
-    renderBlobsB(renderFlags&RENDER_FLAG_BLEND, &img, scale, (BlobB *)ccBlobs, numCCBlobs, labels);
-
-    emit image(img, renderFlags);
-
-    return 0;
-}
-
-int Renderer::renderCCB1(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t numBlobs, uint16_t *blobs)
-{
-    float scale = (float)m_video->activeWidth()/width;
-    QImage img(width*scale, height*scale, QImage::Format_ARGB32);
-
-    if (renderFlags&RENDER_FLAG_BLEND) // if we're blending, we should be transparent
-        img.fill(0x00000000);
-    else
-        img.fill(0xff000000); // otherwise, we're just black
-
-    numBlobs /= sizeof(BlobA)/sizeof(uint16_t);
-    renderBlobsA(renderFlags&RENDER_FLAG_BLEND, &img, scale, (BlobA *)blobs, numBlobs);
-
-    emit image(img, renderFlags);
-
-    return 0;
-}
 
 void Renderer::renderRL(QImage *image, uint color, uint row, uint startCol, uint len)
 {
@@ -523,16 +400,6 @@ bool Renderer::render(uint32_t fourcc, const void *args[])
         renderCCQ1(*(uint8_t *)args[0], *(uint16_t *)args[1], *(uint16_t *)args[2], *(uint32_t *)args[3], (uint32_t *)args[4]);
         return true;
     }
-    else if (fourcc==FOURCC('C', 'C', 'B', '1'))
-    {
-        renderCCB1(*(uint8_t *)args[0], *(uint16_t *)args[1], *(uint32_t *)args[2], *(uint32_t *)args[3], (uint16_t *)args[4]);
-        return true;
-    }
-    else if (fourcc==FOURCC('C', 'C', 'B', '2'))
-    {
-        renderCCB2(*(uint8_t *)args[0], *(uint16_t *)args[1], *(uint32_t *)args[2], *(uint32_t *)args[3], (uint16_t *)args[4], *(uint32_t *)args[5], (uint16_t *)args[6]);
-        return true;
-    }
     else if (fourcc==FOURCC('B','L','T','1'))
     {
         renderBLT1(*(uint8_t *)args[0], *(uint16_t *)args[1], *(uint16_t *)args[2],
@@ -616,19 +483,5 @@ uint32_t *Renderer::getPalette()
         return NULL;
 }
 
-QString Renderer::lookup(uint16_t signum, const QList<QPair<uint16_t, QString> > *labels)
-{
-    int i;
-
-    if (labels)
-    {
-        for (i=0; i<labels->length(); i++)
-        {
-            if ((*labels)[i].first==signum)
-                return (*labels)[i].second;
-        }
-    }
-    return "";
-}
 
 
