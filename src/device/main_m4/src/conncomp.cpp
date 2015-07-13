@@ -87,6 +87,15 @@ static const ProcModule g_module[] =
 	"@r 0 if success, negative if error"
 	},
 	{
+	"cc_setLabel",
+	(ProcPtr)cc_setLabel, 
+	{CRP_UINT32, CRP_STRING, END}, 
+	"Set label for signature or color code"
+	"@p signum signature number including color-coded numbers"
+	"@p label string label"
+	"@r 0 if success, negative if error"
+	},
+	{
 	"cc_setMemory",
 	(ProcPtr)cc_setMemory,
 	{CRP_UINT32, CRP_UINTS8, END},
@@ -190,7 +199,7 @@ void cc_loadParams(void)
 
 		sprintf(id, "Signature label %d", i);
 		sprintf(desc, "@c Signature_Labels Sets the label for objects that match signature %d.", i);
-		prm_add(id, 0, desc, STRING("test"), END);
+		prm_add(id, 0, desc, STRING(""), END);
 	}
 
 	// others -----
@@ -377,6 +386,25 @@ int32_t cc_clearAllSig(Chirp *chirp)
 	return 0;
 }
 
+
+int32_t cc_setLabel(const uint32_t &signum, const char *label, Chirp *chirp)
+{
+	char id[32], desc[100], label2[32];
+
+	if (signum>76767) // can't get any greater than 76767
+		return -1;
+
+	sprintf(id, "Signature label %d", signum);
+	sprintf(desc, "@c Signature_Labels Sets the label for objects that match signature %d.", signum);
+	strcpy(label2, label); // copy into new memory since chirp uses same memory for receiving and sending messages
+	if (prm_add(id, 0, desc, STRING(label2), END)<0) // create if it doesn't exist
+		prm_set(id, STRING(label2), END); // if it's already there, set it...
+
+    exec_sendEvent(chirp, EVT_PARAM_CHANGE);
+
+	
+	return 0;
+}
 
 int32_t cc_getRLSFrameChirp(Chirp *chirp)
 {

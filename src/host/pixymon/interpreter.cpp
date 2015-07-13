@@ -118,6 +118,8 @@ QString Interpreter::printArgType(uint8_t type, uint32_t flags)
         return flags&PRM_FLAG_SIGNED ? "INT32" : "UINT32";
     case CRP_FLT32:
         return "FLOAT32";
+    case CRP_STRING:
+        return "CSTRING";
     default:
         return "?";
     }
@@ -937,22 +939,28 @@ int Interpreter::call(const QStringList &argv, bool interactive)
 {
     ChirpProc proc;
     ProcInfo info;
-    int args[20];
-    int i, j, k, n, base, res;
+    void *args[10];
+    int i, j, k, n, base, res=-1;
     bool ok;
     uint type;
     ArgList list;
+    const char *cstrings[11];
+
+    memset(cstrings, 0, sizeof(cstrings));
 
     // not allowed
     if (argv.size()<1)
-        return -1;
+        goto end;
 
     // check modules to see if they handle this command, if so, skip to end
     emit enableConsole(false);
     for (i=0; i<m_modules.size(); i++)
     {
         if (m_modules[i]->command(argv))
-            return 0;
+        {
+            res = 0;
+            goto end;
+        }
     }
 
     // a procedure needs extension info (arg info, etc) in order for us to call...
@@ -1005,16 +1013,17 @@ int Interpreter::call(const QStringList &argv, bool interactive)
                     emit enableConsole(false);
 
                     if (m_key==Qt::Key_Escape)
-                        return -1;
+                        goto end;
                     cargv << m_command.split(QRegExp("\\s+"));
                 }
                 // call ourselves again, now that we have all the args
-                return call(cargv, true);
+                res = call(cargv, true);
+                goto end;
             }
             else
             {
                 emit error("too few arguments.\n");
-                return -1;
+                goto end;
             }
         }
 
@@ -1027,29 +1036,31 @@ int Interpreter::call(const QStringList &argv, bool interactive)
             {
                 if (m_argTypes[i]==CRP_INT8 || m_argTypes[i]==CRP_INT16 || m_argTypes[i]==CRP_INT32)
                 {
-                    args[j++] = m_argTypes[i];
                     if (argv[i+1].left(2)=="0x")
                         base = 16;
                     else
                         base = 10;
-                    args[j++] = argv[i+1].toInt(&ok, base);
+                    args[i] = (void *)argv[i+1].toInt(&ok, base);
                     if (!ok)
                     {
                         emit error("argument didn't parse.\n");
-                        return -1;
+                        goto end;
                     }
                 }
-#if 0
                 else if (m_argTypes[i]==CRP_STRING)
                 {
-                    args[j++] = m_argTypes[i];
-                    // string goes where?  can't cast pointer to int...
+                    char *cstr = new char[128];
+                    QByteArray ba = argv[i+1].toUtf8();
+                    const char *csstr = ba.constData();
+                    strcpy(cstr, csstr);
+                    cstrings[j] = cstr;
+                    args[i] = (void *)cstrings[j];
+                    j++;
                 }
-#endif
                 else
                 {
                     // deal with non-integer types
-                    return -1;
+                    goto end;
                 }
             }
         }
@@ -1071,16 +1082,16 @@ int Interpreter::call(const QStringList &argv, bool interactive)
 #endif
 
         // make chirp call
-        res = m_chirp->callAsync(proc, args[0], args[1], args[2], args[3], args[4], args[5], args[6],
-                           args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15],
-                           args[16], args[17], args[18], args[19], END_OUT_ARGS);
+        res = m_chirp->callAsync(proc, m_argTypes[0], args[0], m_argTypes[1], args[1], m_argTypes[2], args[2],
+                m_argTypes[3], args[3], m_argTypes[4], args[4], m_argTypes[5], args[5], m_argTypes[6], args[6],
+                m_argTypes[7], args[7], m_argTypes[8], args[8], m_argTypes[9], args[9], END_OUT_ARGS);
 
         // check for cable disconnect
         if (res<0 && !m_notified) //res==LIBUSB_ERROR_PIPE)
         {
             m_notified = true;
             emit connected(PIXY, false);
-            return res;
+            goto end;
         }
         // get response if we're not programming, save text if we are
         if (m_programming)
@@ -1091,10 +1102,15 @@ int Interpreter::call(const QStringList &argv, bool interactive)
     else
     {
         emit error("procedure unsupported.\n");
-        return -1;
+        goto end;
     }
 
-    return 0;
+    res = 0;
+
+    end:
+    for (i=0; cstrings[i]; i++)
+        delete [] cstrings[i];
+    return res;
 }
 
 void Interpreter::augmentProcInfo(ProcInfo *info)

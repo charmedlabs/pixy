@@ -84,6 +84,41 @@ bool CccModule::command(const QStringList &argv)
     return false;
 }
 
+uint16_t convert10to8(uint32_t signum)
+{
+    uint16_t res=0;
+    uint32_t q;
+
+    q = signum/10000;
+    if (q)
+    {
+        res += q*8*8*8*8;
+        signum -= q*10000;
+    }
+    q = signum/1000;
+    if (q)
+    {
+        res += q*8*8*8;
+        signum -= q*1000;
+    }
+    q = signum/100;
+    if (q)
+    {
+        res += q*8*8;
+        signum -= q*100;
+    }
+    q = signum/10;
+    if (q)
+    {
+        res += q*8;
+        signum -= q*10;
+    }
+    if (signum)
+        res += signum;
+
+    return res;
+}
+
 void CccModule::paramChange()
 {
     int i;
@@ -179,7 +214,7 @@ void CccModule::paramChange()
     // create label dictionary
     Parameters &params = m_interpreter->m_pixyParameters.parameters();
     QStringList words;
-    uint16_t signum;
+    uint32_t signum;
     m_labels.clear();
     // go through all parameters and find labels
     for (i=0; i<params.length(); i++)
@@ -190,7 +225,7 @@ void CccModule::paramChange()
             if (words.length()<3) // bogus!
                 continue;
             signum = words[2].toUInt();
-            m_labels.push_back(QPair<uint16_t, QString>(signum, params[i].value().toString()));
+            m_labels.push_back(QPair<uint16_t, QString>(convert10to8(signum), params[i].value().toString()));
         }
     }
 }

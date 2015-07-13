@@ -15,6 +15,7 @@
 
 #include <inttypes.h>
 #include <string.h>
+#include <stdio.h>
 #include "param.h"
 #include "pixytypes.h"
 #include "flash.h"
@@ -355,18 +356,27 @@ int32_t prm_setChirp(const char *id, const uint32_t &valLen, const uint8_t *val)
 	void *sector;
 	int32_t res = 0;
 
-	buf = (uint8_t *)malloc(FLASH_SECTOR_SIZE);
-   	
-	if (buf==NULL)
-		return -2;
-
 	rec = prm_find(id);
 
 	if (rec==NULL)
 	{
-		res = -1;
-		goto end;
+		// Good god this is an ugly hack.  But, creating parameters should only be handled from within the firmware, so that the correct
+		// description can be inserted.  There may be other parameters like this, such that when these parameters are lost, we want to resave,
+		// in which case, we should formalize this hack somehow.
+		if (strncmp(id, "Signature label", 15)==0)
+		{
+			char desc[100];
+			sprintf(desc, "@c Signature_Labels Sets the label for objects that match signature%s.", id+15);
+			prm_add(id, 0, desc, val[0], val+1, END);
+			return 0;
+		}
+		return -1;
 	}
+
+	buf = (uint8_t *)malloc(FLASH_SECTOR_SIZE);
+   	
+	if (buf==NULL)
+		return -2;
 
 	sector = (void *)FLASH_SECTOR_MASK((uint32_t)rec);
 	memcpy(buf, sector, FLASH_SECTOR_SIZE);

@@ -27,11 +27,11 @@ int32_t cc_setSigRegion(const uint32_t &type, const uint8_t &signum, const uint1
 int32_t cc_setSigPoint(const uint32_t &type, const uint8_t &signum, const uint16_t &x, const uint16_t &y, Chirp *chirp=NULL);
 int32_t cc_clearSig(const uint8_t &signum, Chirp *chirp=NULL);
 int32_t cc_clearAllSig(Chirp *chirp=NULL);
+int32_t cc_setLabel(const uint32_t &signum, const char *label, Chirp *chirp=NULL);
 int32_t cc_setMemory(const uint32_t &location, const uint32_t &len, const uint8_t *data);
 int32_t cc_getRLSFrameChirp(Chirp *chirp);
 int32_t cc_getRLSFrameChirpFlags(Chirp *chirp, uint8_t renderFlags=RENDER_FLAG_FLUSH);
 int32_t cc_getRLSFrame(uint8_t *memory, uint8_t *lut, bool sync=true);
-
 int cc_sendBlobs(Chirp *chirp, const BlobA *blobs, uint32_t len, uint8_t renderFlags=RENDER_FLAG_FLUSH);
 int cc_sendBlobs(Chirp *chirp, const BlobA *blobs, uint32_t len, const BlobB *ccBlobs, uint32_t ccLen, uint8_t renderFlags=RENDER_FLAG_FLUSH);
 int cc_loadLut(void);
