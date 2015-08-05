@@ -21,7 +21,8 @@
 #include "frame_m0.h"
 #include "rls_m0.h"
 
-//int g_foo = 0;
+//int g_foo3 = 0x12345678;
+//int *g_foo4 = (int *)0xdeadbeef;
 
 int main(void)
 {
@@ -59,7 +60,10 @@ int main(void)
 #endif
 #if 1
 	_DBG("M0 start\n");
-
+#if 0
+	_DBH32((int)g_foo3); _DBG("\n");
+	_DBH32((int)g_foo4); _DBG("\n");
+#endif
 	chirpOpen();
 	exec_init();
 	frame_init();

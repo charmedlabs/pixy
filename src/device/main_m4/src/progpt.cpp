@@ -29,7 +29,7 @@ extern Blobs *g_blobs;
 
 Program g_progPt =
 {
-	"pantilt",
+	"Pan/tilt_demo",
 	"perform pan/tilt tracking",
 	ptSetup, 
 	ptLoop

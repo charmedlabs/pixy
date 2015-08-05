@@ -21,10 +21,10 @@
 
 #define FW_MAJOR_VER		2
 #define FW_MINOR_VER		0
-#define FW_BUILD_VER		10
+#define FW_BUILD_VER		12
 
-#define EXEC_MAX_PROGS   8
-#define EXEC_VIDEO_PROG  EXEC_MAX_PROGS
+#define EXEC_MAX_PROGS   9
+#define EXEC_VIDEO_PROG  EXEC_MAX_PROGS-1
 
 typedef int (*ProgFunc)();
 
@@ -54,8 +54,8 @@ void exec_periodic();
 uint32_t exec_running();
 int32_t exec_stop();
 int32_t exec_run();
-int32_t exec_runprog(const uint8_t &progNum);
-int32_t exec_runprogArg(const uint8_t &progNum, const int32_t &arg);
+int32_t exec_runprog(const uint8_t &progNum, Chirp *chirp=NULL);
+int32_t exec_runprogArg(const uint8_t &progNum, const int32_t &arg, Chirp *chirp=NULL);
 int32_t exec_list();
 int32_t exec_version(Chirp *chirp=NULL);
 int32_t exec_getAction(const uint16_t &index, Chirp *chirp=NULL);

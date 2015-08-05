@@ -28,8 +28,8 @@ static uint8_t g_state=0;
 
 Program g_progBlobs =
 {
-	"blobs",
-	"perform color blob analysis",
+	"Color_connected_components",
+	"perform color connected components",
 	blobsSetup, 
 	blobsLoop
 };

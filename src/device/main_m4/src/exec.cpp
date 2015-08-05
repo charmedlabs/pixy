@@ -14,12 +14,12 @@
 //
 
 #include <stdio.h>
+#include <string.h>
 #include "pixy_init.h"
 #include "misc.h"
 #include "exec.h"
 #include "button.h"
 #include "camera.h"
-#include "led.h"
 #include "conncomp.h"
 #include "serial.h"
 #include "rcservo.h"
@@ -97,7 +97,7 @@ static const ActionScriptlet actions[]=
 {
 	{
 	"Run pan/tilt demo", 
-	"runprog 2\n"
+	"runprog 1\n"
 	}, 
 	{
 	"Set signature 1...", 
@@ -205,6 +205,11 @@ static const ActionScriptlet actions[]=
 uint8_t g_running = false;
 uint8_t g_run = false;
 uint8_t g_program = 0;
+uint8_t g_startupProgram = 0;
+// this variable prevents a race condition between the program selection upon power up and any
+// program selection by PixyMon when it connects
+int8_t g_programChirp = -1;	 
+int32_t g_execArgChirp = 0;
 uint8_t g_override = 0;
 int32_t g_execArg = 0;  // this arg mechanism is lame... should introduce an argv type mechanism 
 uint8_t g_debug = 0;
@@ -240,7 +245,7 @@ int exec_addProg(Program *prog, bool video)
 	int i;
 
 	if (video)
-		g_progTable[EXEC_VIDEO_PROG-1] = prog;
+		g_progTable[EXEC_VIDEO_PROG] = prog;
 	else
 	{
 		for (i=0; g_progTable[i]; i++)
@@ -276,35 +281,43 @@ int32_t exec_run()
 	return 0;
 }
 
+int32_t exec_runprog(const uint8_t &progNum, Chirp *chirp)
+{	
+	uint8_t progNum2 = progNum;
+			   
+	if (chirp)
+	{
+		g_programChirp = progNum2;
+		g_execArgChirp = 0;
+	}
+	if (g_programChirp>=0) // if PixyMon is setting program, it overrides
+		progNum2 = g_programChirp;
 
-int32_t exec_runprog(const uint8_t &progNum)
-{			   
-	if (progNum!=0 && (progNum>EXEC_MAX_PROGS || g_progTable[progNum-1]==NULL))
+	g_program = 0;
+	if (progNum2>=EXEC_MAX_PROGS || g_progTable[progNum2]==NULL)
 		return -1;
 
-	g_execArg = 0;
+	if (g_programChirp>=0) // if PixyMon is setting program, save arg too
+		g_execArg = g_execArgChirp;
+	else
+		g_execArg = 0;
 
-	if (progNum==0) // default program!
-	{
-		uint8_t program;
-		prm_get("Default program", &program, END);
-		if (program==0 || program>EXEC_MAX_PROGS)
-			g_program = 0;
-		if (program>0 && g_progTable[program-1]!=NULL)
-			g_program = program-1;
-	}
-  	else
-		g_program = progNum-1;
+	g_program = progNum2;
 	return exec_run();
 }
 
-int32_t exec_runprogArg(const uint8_t &progNum, const int32_t &arg)
+int32_t exec_runprogArg(const uint8_t &progNum, const int32_t &arg, Chirp *chirp)
 {
-	int32_t res = exec_runprog(progNum);
+	int32_t res = exec_runprog(progNum, chirp);
 	if (res<0)
 		return res;
 
-	g_execArg = arg;
+	if (chirp)
+		g_execArgChirp = arg;
+	if (g_programChirp>=0) // if PixyMon is setting program, it overrides
+		g_execArg = g_execArgChirp;
+	else
+		g_execArg = arg;
 	return 0;
 }
 
@@ -312,7 +325,7 @@ int32_t exec_list()
 {
 	int i;
 	for (i=0; g_progTable[i]; i++)
-		cprintf("%d: %s, %s\n", i+1, g_progTable[i]->progName, g_progTable[i]->desc);
+		cprintf("%d: %s, %s\n", i, g_progTable[i]->progName, g_progTable[i]->desc);
 
  	return 0;
 }
@@ -383,23 +396,36 @@ void exec_periodic()
 
 void exec_select()
 {
-	uint8_t prog, progs;
+	uint8_t progs;
+
+
+	prm_get("Startup program", &g_startupProgram, END);
+	g_program = g_startupProgram;
 
 	// count number of progs
 	for (progs=0; g_progTable[progs]; progs++);
 
 	// select using button state machine
-	prog = g_bMachine->selectProgram(progs);
+	g_bMachine->selectProgram(progs, &g_program);
 
-	// set it up to run
-	exec_runprog(prog);
+	exec_runprog(g_program);
 }
 
 static void loadParams()
 {
+	int i;
+	char buf[256], buf2[64];
+
+	// create program menu
+	strcpy(buf, "Selects the program number that's run upon power-up. @c Expert");
+	for (i=0; g_progTable[i]; i++)
+	{
+		sprintf(buf2, " @s %d=%s", i, g_progTable[i]->progName);
+		strcat(buf, buf2);
+	} 
+
 	// exec's params added here
-	prm_add("Default program", 0, 
-		"@c Expert Selects the program number that's run by default upon power-up. (default 0)", UINT8(0), END);
+	prm_add("Startup program", 0, buf, UINT8(0), END);
 	prm_add("Debug", 0, 
 		"@c Expert Sets the debug level for the firmware. (default 0)", UINT8(0), END);
 	
@@ -434,9 +460,6 @@ void exec_loop()
 
 	while(1)
 	{
-#if 0 //ndef KEIL
-		g_program = EXEC_VIDEO_PROG-1;
-#endif
 		connected = g_chirpUsb->connected();
 
 		exec_periodic();
@@ -444,8 +467,6 @@ void exec_loop()
 		switch (state)
 		{
 		case 0:	// setup state
-			if (!g_ledSet)
-				led_set(0);  // turn off any stray led (but only if we set it, not if someone else has)
 			if ((*g_progTable[g_program]->setup)()<0)
 				state = 3; // stop state
 			else 
@@ -466,7 +487,8 @@ void exec_loop()
 			else if (prevConnected && !connected) // if we disconnect from pixymon, revert back to default program
 			{
 				prm_resetShadows(); // shadows are no longer valid now that the host is disconnected.
-				exec_runprog(0); // run default program
+				g_programChirp = -1; // reset this value to "unset"
+				exec_runprog(g_startupProgram); // run default program
 				state = 0; // setup state
 			}
 			break;
@@ -493,7 +515,8 @@ void exec_loop()
 			}
 			else if (!connected || !USB_Configuration) // if we disconnect from pixy or unplug cable, revert back to default program
 			{
-				exec_runprog(0); // run default program
+				g_programChirp = -1; // reset this value to "unset"
+				exec_runprog(g_startupProgram); // run default program
 				state = 0;	// back to setup state
 			}
 			break;

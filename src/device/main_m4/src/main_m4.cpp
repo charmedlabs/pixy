@@ -120,7 +120,10 @@ int main(void)
 #if 1
 	// load programs
 	exec_addProg(&g_progBlobs);
-	ptLoadParams();
+	// need to call this to get the pan/tilt parameters to display.  
+	// We can make some properties modal, meaning they are only diaplayed when the program is running.
+	// We might want to do this here, but this is good for now.  
+	ptLoadParams();	 
 	exec_addProg(&g_progPt);
 #if 0
 	chaseLoadParams();
@@ -138,7 +141,7 @@ int main(void)
 	}
 	if (count==0)
 		prm_format();
- #endif
+#endif
 
    	// check version
 	prm_add("fwver", PRM_FLAG_INTERNAL, "", UINT16(FW_MAJOR_VER), UINT16(FW_MINOR_VER), UINT16(FW_BUILD_VER), END);

@@ -31,7 +31,7 @@ public:
 	~ButtonMachine();
 
 	bool handleSignature();
-	int selectProgram(int progs);
+	bool selectProgram(uint8_t progs, uint8_t *selectedProg);
 
 private:
 	void reset();

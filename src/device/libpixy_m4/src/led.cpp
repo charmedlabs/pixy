@@ -144,17 +144,18 @@ void led_set(uint8_t led, uint8_t val, bool override)
 	if (!override && g_ledVal[led]==val)
 		return;
 				
-	brightness = val/255.0*g_ledMaxBrightness;
-
 	// invert brightness to get current
 	if (val==0)
-		current = 0;
+		pwm = 0;
 	else
+	{
+		brightness = val/255.0*g_ledMaxBrightness;
 		current = exp(brightness)/g_ledScale;
+		pwm = current/g_ledMaxCurrent*g_ledMaxPWM[led];
+	}
 
 	// convert current into pwm
-	pwm = current/g_ledMaxCurrent*g_ledMaxPWM[led];
- 
+
 	if ((uint32_t)pwm>LED_MAX_PWM)
 		led_setPWM(led, LED_MAX_PWM);  // this shouldn't really happen, but might because of rounding
 	else

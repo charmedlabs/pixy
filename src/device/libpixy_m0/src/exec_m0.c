@@ -13,10 +13,12 @@
 // end license header
 //
 
+#include "debug.h"
 #include <pixyvals.h>
 #include "chirp.h"
 #include "exec_m0.h"
 #include "rls_m0.h"
+#include "qqueue.h"
 
 uint8_t g_running = 0;
 uint8_t g_run = 0;
@@ -61,12 +63,35 @@ uint32_t g_lut = SRAM1_LOC + SRAM1_SIZE - LUT_MEMORY_SIZE;
 
 void loop0()
 {
+//	g_qqueue->produced = g_qqueue->consumed = g_qqueue->writeIndex = 0;
 	getRLSFrame(&g_m0mem, &g_lut);	
 }
 
 
 void exec_loop(void)
 {
+#if 0
+	uint16_t i = 0;
+	while(1)
+	{
+		while(!g_run)
+			chirpService();
+
+		setup0();
+		while(g_run)
+		{
+			loop0();
+			i++;
+			if (i%50==0)
+			{
+				_DBD16(i); _DBG("\n");
+			}
+		}
+		// set variable to indicate we've stopped
+		g_running = 0;
+	}
+#endif
+#if 1
 	while(1)
 	{
 		while(!g_run)
@@ -81,4 +106,5 @@ void exec_loop(void)
 		// set variable to indicate we've stopped
 		g_running = 0;
 	}
+#endif
 }

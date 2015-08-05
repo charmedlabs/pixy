@@ -26,7 +26,7 @@
 ;   <o> Stack Size (in Bytes) <0x0-0xFFFFFFFF:8>
 ; </h>
 
-Stack_Size      EQU     0x00000600
+Stack_Size      EQU     0x0000800
 
                 AREA    STACK, NOINIT, READWRITE, ALIGN=3
 

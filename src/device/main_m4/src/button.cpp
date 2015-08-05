@@ -238,10 +238,8 @@ bool ButtonMachine::handleSignature()
 	return m_goto!=0;
 }
 
-int ButtonMachine::selectProgram(int progs)
+bool ButtonMachine::selectProgram(uint8_t progs, uint8_t *selectedProg)
 {
-	int result;
-
 	uint32_t bt; 
 
 	if (progs<=1)
@@ -264,32 +262,33 @@ int ButtonMachine::selectProgram(int progs)
 			if (bt)
 			{
 				setTimer(&m_timer);
-				m_index=1;
+				m_index=0;
 				setLED();
 				m_goto = 2;
 			}
 			else if (getTimer(m_timer)>BT_PROG_TIMEOUT)
 			{
+				m_index = *selectedProg;
 				flashLED(4); 
 				reset();
-				return 0;
+				return false;
 			}
 			break;
 
 		case 2: // cycle through choices, wait for button up
 			if (!bt)
 			{
-				result = m_index; // save m_index
+				*selectedProg = m_index; // save m_index
 				flashLED(4); 
 				reset(); // resets m_index
-				return result;
+				return true;
 			}
 			else if (getTimer(m_timer)>BT_INDEX_CYCLE_TIMEOUT)
 			{
 				setTimer(&m_timer);
 				m_index++;
-				if (m_index==progs+1)
-					m_index = 1;
+				if (m_index==progs)
+					m_index = 0;
 
 				setLED();
 			}							   
