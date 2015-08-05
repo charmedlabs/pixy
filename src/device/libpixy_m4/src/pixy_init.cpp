@@ -140,7 +140,7 @@ void commonInit(void)
 	lpc_printf("M4 start\n");
 }
 
-#define AWB_TIMEOUT   3000*1000  // 3 seconds
+#define AWB_TIMEOUT   6000*1000  // 6 seconds
 
 void handleAWB()
 {
@@ -230,7 +230,9 @@ void pixyInit(void)
 	prm_init(g_chirpUsb);
 	pwr_init();
 	cam_init();
+#ifndef LEGO
 	rcs_init();
+#endif
 	//cc_init();
 }
 

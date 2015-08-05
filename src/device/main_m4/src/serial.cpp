@@ -21,6 +21,7 @@
 #include "analogdig.h"
 #include "conncomp.h"
 #include "param.h"
+#include "pixy_init.h"
 
 uint8_t g_interface = 0;
 static Iserial *g_serial = 0;

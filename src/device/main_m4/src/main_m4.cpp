@@ -120,11 +120,13 @@ int main(void)
 #if 1
 	// load programs
 	exec_addProg(&g_progBlobs);
+#ifndef LEGO
 	// need to call this to get the pan/tilt parameters to display.  
 	// We can make some properties modal, meaning they are only diaplayed when the program is running.
 	// We might want to do this here, but this is good for now.  
 	ptLoadParams();	 
 	exec_addProg(&g_progPt);
+#endif
 #if 0
 	chaseLoadParams();
 	exec_addProg(&g_progChase);

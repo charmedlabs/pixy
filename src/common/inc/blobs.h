@@ -23,10 +23,10 @@
 
 #define MAX_BLOBS             100
 #define MAX_BLOBS_PER_MODEL   20
-#define MAX_MERGE_DIST        5
+#define MAX_MERGE_DIST        7
 #define MIN_AREA              20
 #define MIN_COLOR_CODE_AREA   10
-#define MAX_CODED_DIST        6
+#define MAX_CODED_DIST        8
 #define MAX_COLOR_CODE_MODELS 5
 
 #define BL_BEGIN_MARKER	      0xaa55

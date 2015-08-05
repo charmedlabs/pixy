@@ -413,6 +413,7 @@ void exec_select()
 
 static void loadParams()
 {
+#ifndef LEGO
 	int i;
 	char buf[256], buf2[64];
 
@@ -426,6 +427,7 @@ static void loadParams()
 
 	// exec's params added here
 	prm_add("Startup program", 0, buf, UINT8(0), END);
+#endif
 	prm_add("Debug", 0, 
 		"@c Expert Sets the debug level for the firmware. (default 0)", UINT8(0), END);
 	
@@ -437,11 +439,12 @@ void exec_loadParams()
  	cc_loadParams();
 	ser_loadParams();
 	cam_loadParams();
+#ifndef LEGO
 	rcs_loadParams();
 
 	ptLoadParams();
 	//chaseLoadParams();
-
+#endif
 	loadParams(); // local
 }
 
