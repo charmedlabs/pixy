@@ -118,6 +118,8 @@ QString Interpreter::printArgType(uint8_t type, uint32_t flags)
         return flags&PRM_FLAG_SIGNED ? "INT32" : "UINT32";
     case CRP_FLT32:
         return "FLOAT32";
+    case CRP_STRING:
+        return "CSTRING";
     default:
         return "?";
     }
@@ -937,22 +939,28 @@ int Interpreter::call(const QStringList &argv, bool interactive)
 {
     ChirpProc proc;
     ProcInfo info;
-    int args[20];
-    int i, j, k, n, base, res;
+    void *args[10];
+    int i, j, k, n, base, res=-1;
     bool ok;
     uint type;
     ArgList list;
+    const char *cstrings[11];
+
+    memset(cstrings, 0, sizeof(cstrings));
 
     // not allowed
     if (argv.size()<1)
-        return -1;
+        goto end;
 
     // check modules to see if they handle this command, if so, skip to end
     emit enableConsole(false);
     for (i=0; i<m_modules.size(); i++)
     {
         if (m_modules[i]->command(argv))
-            return 0;
+        {
+            res = 0;
+            goto end;
+        }
     }
 
     // a procedure needs extension info (arg info, etc) in order for us to call...
@@ -1005,16 +1013,17 @@ int Interpreter::call(const QStringList &argv, bool interactive)
                     emit enableConsole(false);
 
                     if (m_key==Qt::Key_Escape)
-                        return -1;
+                        goto end;
                     cargv << m_command.split(QRegExp("\\s+"));
                 }
                 // call ourselves again, now that we have all the args
-                return call(cargv, true);
+                res = call(cargv, true);
+                goto end;
             }
             else
             {
                 emit error("too few arguments.\n");
-                return -1;
+                goto end;
             }
         }
 
@@ -1027,29 +1036,31 @@ int Interpreter::call(const QStringList &argv, bool interactive)
             {
                 if (m_argTypes[i]==CRP_INT8 || m_argTypes[i]==CRP_INT16 || m_argTypes[i]==CRP_INT32)
                 {
-                    args[j++] = m_argTypes[i];
                     if (argv[i+1].left(2)=="0x")
                         base = 16;
                     else
                         base = 10;
-                    args[j++] = argv[i+1].toInt(&ok, base);
+                    args[i] = (void *)argv[i+1].toInt(&ok, base);
                     if (!ok)
                     {
                         emit error("argument didn't parse.\n");
-                        return -1;
+                        goto end;
                     }
                 }
-#if 0
                 else if (m_argTypes[i]==CRP_STRING)
                 {
-                    args[j++] = m_argTypes[i];
-                    // string goes where?  can't cast pointer to int...
+                    char *cstr = new char[128];
+                    QByteArray ba = argv[i+1].toUtf8();
+                    const char *csstr = ba.constData();
+                    strcpy(cstr, csstr);
+                    cstrings[j] = cstr;
+                    args[i] = (void *)cstrings[j];
+                    j++;
                 }
-#endif
                 else
                 {
                     // deal with non-integer types
-                    return -1;
+                    goto end;
                 }
             }
         }
@@ -1071,16 +1082,16 @@ int Interpreter::call(const QStringList &argv, bool interactive)
 #endif
 
         // make chirp call
-        res = m_chirp->callAsync(proc, args[0], args[1], args[2], args[3], args[4], args[5], args[6],
-                           args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15],
-                           args[16], args[17], args[18], args[19], END_OUT_ARGS);
+        res = m_chirp->callAsync(proc, m_argTypes[0], args[0], m_argTypes[1], args[1], m_argTypes[2], args[2],
+                m_argTypes[3], args[3], m_argTypes[4], args[4], m_argTypes[5], args[5], m_argTypes[6], args[6],
+                m_argTypes[7], args[7], m_argTypes[8], args[8], m_argTypes[9], args[9], END_OUT_ARGS);
 
         // check for cable disconnect
         if (res<0 && !m_notified) //res==LIBUSB_ERROR_PIPE)
         {
             m_notified = true;
             emit connected(PIXY, false);
-            return res;
+            goto end;
         }
         // get response if we're not programming, save text if we are
         if (m_programming)
@@ -1091,10 +1102,15 @@ int Interpreter::call(const QStringList &argv, bool interactive)
     else
     {
         emit error("procedure unsupported.\n");
-        return -1;
+        goto end;
     }
 
-    return 0;
+    res = 0;
+
+    end:
+    for (i=0; cstrings[i]; i++)
+        delete [] cstrings[i];
+    return res;
 }
 
 void Interpreter::augmentProcInfo(ProcInfo *info)
@@ -1132,14 +1148,17 @@ void Interpreter::augmentProcInfo(ProcInfo *info)
     }
 }
 
-QString Interpreter::extractProperty(const QString &tag, QStringList *words, QString *desc)
+QString Interpreter::extractProperty(const QString &tag, QString *desc)
 {
     QString property;
-    int i = words->indexOf(tag);
-    if (i>=0 && words->size()>i+1)
+    QStringList words = desc->split(QRegExp("\\s+"));
+
+    int i = words.indexOf(tag);
+    if (i>=0 && words.size()>i+1)
     {
-        property = (*words)[i+1];
-        *desc = desc->remove(tag + " " + property + " "); // remove form description
+        property = words[i+1];
+        *desc = desc->remove(QRegExp(tag + "\\s+" + property + "\\s*")); // remove from description
+
         return property;
     }
     return "";
@@ -1148,15 +1167,17 @@ QString Interpreter::extractProperty(const QString &tag, QStringList *words, QSt
 void Interpreter::handleProperties(const uint8_t *argList, Parameter *parameter, QString *desc)
 {
     QString property;
-    QStringList words = QString(*desc).split(QRegExp("\\s+"));
+    QStringList halves;
+    int val;
+    bool ok;
 
-    if ((property=extractProperty("@c", &words, desc))!="")
+    if ((property=extractProperty("@c", desc))!="")
     {
         property = property.replace('_', ' '); // make it look prettier
         parameter->setProperty(PP_CATEGORY, property);
     }
 
-    if ((property=extractProperty("@m", &words, desc))!="")
+    if ((property=extractProperty("@m", desc))!="")
     {
         if (argList[0]==CRP_FLT32)
             parameter->setProperty(PP_MIN, property.toFloat());
@@ -1164,12 +1185,26 @@ void Interpreter::handleProperties(const uint8_t *argList, Parameter *parameter,
             parameter->setProperty(PP_MIN, property.toInt());
     }
 
-    if ((property=extractProperty("@M", &words, desc))!="")
+    if ((property=extractProperty("@M", desc))!="")
     {
         if (argList[0]==CRP_FLT32)
             parameter->setProperty(PP_MAX, property.toFloat());
         else
             parameter->setProperty(PP_MAX, property.toInt());
+    }
+
+    while(1)
+    {
+        if ((property=extractProperty("@s", desc))=="")
+            break;
+        halves = property.split('=', QString::SkipEmptyParts);
+        if (halves.length()<2)
+            continue;  // bogus!
+        val = halves[0].toInt(&ok);
+        if (!ok)
+            continue; // bogus also!
+        halves[1] = halves[1].replace('_', ' '); // make it look prettier
+        parameter->addRadioValue(RadioValue(halves[1], val));
     }
 }
 
@@ -1231,6 +1266,11 @@ void Interpreter::handleLoadParams()
                 float val;
                 Chirp::deserialize(data, len, &val, END);
                 parameter.set(val);
+            }
+            else if (argList[0]==CRP_STRING)
+            {
+                QString string((char *)data+1); // skip first byte (type)
+                parameter.set(string);
             }
             else // not sure what to do with it, so we'll save it as binary
             {
@@ -1296,6 +1336,12 @@ void Interpreter::handlePixySaveParams(bool shadow)
                 float val = var.toFloat();
                 len = Chirp::serialize(NULL, buf, 0x100, type, val, END);
             }
+            else if (type==PT_STRING)
+            {
+                QByteArray baVal = pixyParameters[i].value().toString().toUtf8();
+                const char *val = baVal.constData();
+                len = Chirp::serialize(NULL, buf, 0x100, type, val, END);
+            }
             else if (type==PT_INTS8)
             {
                 QByteArray a = var.toByteArray();
@@ -1306,13 +1352,15 @@ void Interpreter::handlePixySaveParams(bool shadow)
                 continue; // don't know what to do!
 
             if (shadow)
+                // note, this might fail if a parameter isn't designated a shadow parameter in the firmware
+                // but that's ok... not all parameters are shadow-able
                 res = m_chirp->callSync(m_set_shadow_param, STRING(id), UINTS8(len, buf), END_OUT_ARGS, &response, END_IN_ARGS);
             else
             {
                 res = m_chirp->callSync(m_set_param, STRING(id), UINTS8(len, buf), END_OUT_ARGS, &response, END_IN_ARGS);
                 reload = true;
             }
-            if (res<0 || response<0)
+            if (res<0)
             {
                 emit error("There was a problem setting a parameter.\n");
                 break;

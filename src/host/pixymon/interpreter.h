@@ -159,7 +159,7 @@ private:
 
     void prompt();
 
-    QString extractProperty(const QString &tag, QStringList *words, QString *desc);
+    QString extractProperty(const QString &tag, QString *desc);
     void handleProperties(const uint8_t *argList, Parameter *parameter, QString *desc);
     void handleSaveParams(bool reject);
     void handlePixySaveParams(bool shadow);

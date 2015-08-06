@@ -85,32 +85,28 @@ int ParamFile::write(const QString &tag, ParameterDB *data)
 
             item.setAttribute("key", parameters[i].id());
             item.setAttribute("type", parameters[i].typeName());
-            if (type&PT_RADIO_MASK)
-                item.setAttribute("value", *parameters[i].description());
-            else
+            if ((type&PT_DATATYPE_MASK)==PT_INTS8)
             {
-                if ((type&PT_DATATYPE_MASK)==PT_INTS8)
-                {
-                    QByteArray a = parameters[i].value().toByteArray();
-                    a = a.toBase64();
-                    item.setAttribute("value", QString(a));
-                }
-                else if ((type&PT_DATATYPE_MASK)==PT_INT32 || (type&PT_DATATYPE_MASK)==PT_INT16 || (type&PT_DATATYPE_MASK)==PT_INT8)
-                {
-                    if (flags&PRM_FLAG_SIGNED)
-                    {
-                        int val = parameters[i].valueInt();
-                        item.setAttribute("value", QString::number(val));
-                    }
-                    else
-                    {
-                        uint val = parameters[i].value().toUInt();
-                        item.setAttribute("value", QString::number(val));
-                    }
-                }
-                else // handle string and float
-                    item.setAttribute("value", parameters[i].value().toString());
+                QByteArray a = parameters[i].value().toByteArray();
+                a = a.toBase64();
+                item.setAttribute("value", QString(a));
             }
+            else if ((type&PT_DATATYPE_MASK)==PT_INT32 || (type&PT_DATATYPE_MASK)==PT_INT16 || (type&PT_DATATYPE_MASK)==PT_INT8)
+            {
+                if (flags&PRM_FLAG_SIGNED)
+                {
+                    int val = parameters[i].valueInt();
+                    item.setAttribute("value", QString::number(val));
+                }
+                else
+                {
+                    uint val = parameters[i].value().toUInt();
+                    item.setAttribute("value", QString::number(val));
+                }
+            }
+            else // handle string and float
+                item.setAttribute("value", parameters[i].value().toString());
+
             element.appendChild(item);
         }
     }
@@ -152,43 +148,35 @@ int ParamFile::read(const QString &tag, ParameterDB *data, bool create)
 
             PType ptype = Parameter::typeLookup(type);
 
-            if (ptype&PT_RADIO_MASK)
+            if ((ptype&PT_DATATYPE_MASK)==PT_FLT32)
             {
-                if (*parameter.description()==value)
+                float val = value.toFloat();
+                if (parameter.value().toFloat()==val)
                     parameter.setDirty(false);
-                parameter.setRadio(value);
+                parameter.set(val);
             }
-            else
+            else if ((ptype&PT_DATATYPE_MASK)==PT_INTS8)
             {
-                if ((ptype&PT_DATATYPE_MASK)==PT_FLT32)
-                {
-                    float val = value.toFloat();
-                    if (parameter.value().toFloat()==val)
-                        parameter.setDirty(false);
-                    parameter.set(val);
-                }
-                else if ((ptype&PT_DATATYPE_MASK)==PT_INTS8)
-                {
-                    QByteArray a = value.toUtf8();
-                    if (parameter.value().toByteArray().toBase64()==value)
-                        parameter.setDirty(false);
-                    a = QByteArray::fromBase64(a);
-                    parameter.set(QVariant(a));
-                }
-                else if ((ptype&PT_DATATYPE_MASK)==PT_INT8 || (ptype&PT_DATATYPE_MASK)==PT_INT16 || (ptype&PT_DATATYPE_MASK)==PT_INT32)
-                {
-                    int val = value.toInt();
-                    if (parameter.valueInt()==val)
-                        parameter.setDirty(false);
-                    parameter.set(val);
-                }
-                else // all other cases (STRING)
-                {
-                    if (parameter.value().toString()==value)
-                        parameter.setDirty(false);
-                    parameter.set(value);
-                }
+                QByteArray a = value.toUtf8();
+                if (parameter.value().toByteArray().toBase64()==value)
+                    parameter.setDirty(false);
+                a = QByteArray::fromBase64(a);
+                parameter.set(QVariant(a));
             }
+            else if ((ptype&PT_DATATYPE_MASK)==PT_INT8 || (ptype&PT_DATATYPE_MASK)==PT_INT16 || (ptype&PT_DATATYPE_MASK)==PT_INT32)
+            {
+                int val = value.toInt();
+                if (parameter.valueInt()==val)
+                    parameter.setDirty(false);
+                parameter.set(val);
+            }
+            else // all other cases (STRING)
+            {
+                if (parameter.value().toString()==value)
+                    parameter.setDirty(false);
+                parameter.set(value);
+            }
+
             data->add(parameter);
         }
 

@@ -1,0 +1,6 @@
+10 b% = peek32 this 0x10000000
+20 a% = peek32 this 0x10000004
+30 print "PC = "; ~a%
+40 print "SP = "; ~b%
+50 print "XPSR = 0";
+60 end 

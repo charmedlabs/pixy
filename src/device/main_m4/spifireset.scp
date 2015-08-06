@@ -1,0 +1,18 @@
+10 REM LPC18 LPC43 external flash reset script
+20 REM Connect script is passed PC/SP from the vector table in the FLASH image from the debugger
+30 REM For the simple use case we pass them back to the debugger as the where we want to reset from.
+40 REM
+50 REM Syntax here is that '~' commands a hex output, all integer variables are a% to z%
+60 REM For ResetScripts:
+70 REM  - The debugger passes PC/SP read from the downloaded FLASH image in a%/b%
+80 REM  - The debugger also passes the current XPSR value and the contents of the VTOR
+90 REM  - The script then passes a%/b%/c% back to the debugger to set the execution reset point for debug
+100 REM
+110 print "Boot from FLASH image pc/sp reset script"
+120 print "PC = "; ~a%
+130 print "SP = "; ~b%
+140 print "XPSR = "; ~c%
+150 print "VTOR = "; ~d%
+160 cmresetvectorcatchset this
+170 cmvectresetreq this
+180 end

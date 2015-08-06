@@ -393,7 +393,7 @@ void CBlobModule::renderEX00(uint8_t renderFlags, uint16_t width, uint16_t heigh
     processBlobs(blobs, &numBlobs);
     m_interpreter->m_renderer->renderBA81(RENDER_FLAG_BLEND, width, height, frameLen, frame);
     m_interpreter->m_renderer->renderCCQ1(RENDER_FLAG_BLEND, width/2, height/2, m_numQvals, m_qvals);
-    m_interpreter->m_renderer->renderCCB2(RENDER_FLAG_BLEND | RENDER_FLAG_FLUSH, width/2, height/2, numBlobs*sizeof(BlobA)/sizeof(uint16_t), (uint16_t *)blobs, numCCBlobs*sizeof(BlobB)/sizeof(uint16_t), (uint16_t *)ccBlobs);
+    //m_interpreter->m_renderer->renderCCB2(RENDER_FLAG_BLEND | RENDER_FLAG_FLUSH, width/2, height/2, numBlobs*sizeof(BlobA)/sizeof(uint16_t), (uint16_t *)blobs, numCCBlobs*sizeof(BlobB)/sizeof(uint16_t), (uint16_t *)ccBlobs);
 }
 
 void CBlobModule::renderCCQ2(uint8_t renderFlags, uint16_t width, uint16_t height, uint32_t frameLen, uint8_t *frame)

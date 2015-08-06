@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<ProjectWorkspace xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="project_mpw.xsd">
+
+  <SchemaVersion>1.0</SchemaVersion>
+
+  <Header>### uVision Project, (C) Keil Software</Header>
+
+  <WorkspaceName>WorkSpace</WorkspaceName>
+
+  <project>
+    <PathAndName>.\main_m4.uvproj</PathAndName>
+    <NodeIsActive>1</NodeIsActive>
+    <NodeIsExpanded>1</NodeIsExpanded>
+  </project>
+
+  <project>
+    <PathAndName>..\main_m0\main_m0.uvproj</PathAndName>
+  </project>
+
+  <project>
+    <PathAndName>..\libpixy_m0\libpixy_m0.uvproj</PathAndName>
+  </project>
+
+  <project>
+    <PathAndName>..\libpixy_m4\libpixy_m4.uvproj</PathAndName>
+  </project>
+
+</ProjectWorkspace>
