@@ -225,7 +225,7 @@ void CccModule::paramChange()
             if (words.length()<3) // bogus!
                 continue;
             signum = words[2].toUInt();
-            m_labels.push_back(QPair<uint16_t, QString>(convert10to8(signum), params[i].value().toString()));
+            m_labels.push_back(QPair<uint16_t, QString>(convert10to8(signum), params[i].value().toString().remove(QRegExp("^\\s+")))); // remove leading whitespace
         }
     }
 }
