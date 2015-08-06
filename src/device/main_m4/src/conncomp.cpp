@@ -391,7 +391,7 @@ int32_t cc_setLabel(const uint32_t &signum, const char *label, Chirp *chirp)
 {
 	char id[32], desc[100], label2[32];
 
-	if (signum>76767) // can't get any greater than 76767
+	if (signum<1 || signum>76767) // can't get any greater than 76767
 		return -1;
 
 	sprintf(id, "Signature label %d", signum);
