@@ -375,6 +375,7 @@ void ConfigDialog::render(ParameterDB *data, QTabWidget *tabs)
                     sbox->setProperty("Parameter",  qVariantFromValue((void *)&parameter));
                     for (j=0; j<rvs.length(); j++)
                         sbox->addItem(rvs[j].m_description, rvs[j].m_value);
+                    sbox->setToolTip(parameter.help());
                     parameter.setProperty(PP_WIDGET2,  qVariantFromValue((void *)sbox));
                     connect(sbox, SIGNAL(currentIndexChanged(int)), this, SLOT(handleComboBox(int)));
 
