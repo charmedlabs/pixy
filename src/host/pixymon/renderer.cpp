@@ -484,4 +484,8 @@ uint32_t *Renderer::getPalette()
 }
 
 
+void Renderer::emitImage(QImage img, uchar renderFlags)
+{
+     emit image(img, renderFlags);
+}
 

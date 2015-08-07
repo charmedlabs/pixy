@@ -384,7 +384,7 @@ int CccModule::renderCCB1(uint8_t renderFlags, uint16_t width, uint16_t height, 
     numBlobs /= sizeof(BlobA)/sizeof(uint16_t);
     renderBlobsA(renderFlags&RENDER_FLAG_BLEND, &img, scale, (BlobA *)blobs, numBlobs);
 
-    emit m_renderer->image(img, renderFlags);
+    m_renderer->emitImage(img, renderFlags);
 
     return 0;
 }
@@ -404,7 +404,7 @@ int CccModule::renderCCB2(uint8_t renderFlags, uint16_t width, uint16_t height, 
     renderBlobsA(renderFlags&RENDER_FLAG_BLEND, &img, scale, (BlobA *)blobs, numBlobs);
     renderBlobsB(renderFlags&RENDER_FLAG_BLEND, &img, scale, (BlobB *)ccBlobs, numCCBlobs);
 
-    emit m_renderer->image(img, renderFlags);
+    m_renderer->emitImage(img, renderFlags);
 
     return 0;
 }

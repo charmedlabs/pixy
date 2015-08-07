@@ -14,7 +14,7 @@
 //
 
 #include <string.h>
-#include "qqueue.h"
+#include "../inc/qqueue.h" // need the relative path because Qt has the same file!
 #ifdef PIXY
 #include <pixyvals.h>
 #endif

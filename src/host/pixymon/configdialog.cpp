@@ -49,7 +49,7 @@ ConfigDialog::ConfigDialog(QWidget *parent, Interpreter *interpreter) : QDialog(
     render(m_interpreter->m_pixymonParameters, m_pixymonTabs);
 
 #ifdef __MACOS__
-    setMinimumWidth(650);
+    setMinimumWidth(900);
 #endif
 #ifdef __LINUX__
     setMinimumWidth(600);
@@ -172,7 +172,7 @@ int ConfigDialog::updateDB(ParameterDB *data)
         {
             QComboBox *sbox = (QComboBox *)parameter.property(PP_WIDGET2).value<void *>();
 
-            QVariant qval = sbox->currentData();
+            QVariant qval = sbox->itemData(sbox->currentIndex());
 
             if (flags&PRM_FLAG_SIGNED)
             {
@@ -378,7 +378,8 @@ void ConfigDialog::render(ParameterDB *data, QTabWidget *tabs)
                     sbox->setToolTip(parameter.help());
                     parameter.setProperty(PP_WIDGET2,  qVariantFromValue((void *)sbox));
                     connect(sbox, SIGNAL(currentIndexChanged(int)), this, SLOT(handleComboBox(int)));
-
+                    delete line;
+                    line = NULL;
                 }
                 else
                     sbox = (QComboBox *)parameter.property(PP_WIDGET2).value<void *>();
