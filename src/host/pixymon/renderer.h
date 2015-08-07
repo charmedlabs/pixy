@@ -61,8 +61,7 @@ public:
     void setPalette(const uint32_t palette[]);
     uint32_t *getPalette();
 
-    QString lookup(uint16_t signum, const QList<QPair<uint16_t, QString> > *labels);
-
+    void emitImage(QImage img, uchar renderFlags);
     Frame8 m_rawFrame;
     VideoWidget *m_video;
 
