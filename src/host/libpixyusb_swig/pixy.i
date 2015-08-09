@@ -1,14 +1,17 @@
 %module pixy
 
 %include "stdint.i"
+%include "carrays.i"
 
 %{
 #define SWIG_FILE_WITH_INIT
 #include "pixy.h"
 %}
 
+%array_class(struct Block, BlockArray);
+
 int pixy_init();
-int pixy_get_blocks(uint16_t max_blocks, struct Block *blocks);
+int pixy_get_blocks(uint16_t max_blocks, BlockArray *blocks);
 void pixy_close();
 
 struct Block

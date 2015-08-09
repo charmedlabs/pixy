@@ -17,13 +17,17 @@ class Blocks (Structure):
                ("height", c_uint),
                ("angle", c_uint) ]
 
-blocks = Block()
+blocks = BlockArray(100)
+frame  = 0
 
 # Wait for blocks #
 while 1:
 
-  count = pixy_get_blocks(1, blocks)
+  count = pixy_get_blocks(100, blocks)
 
   if count > 0:
     # Blocks found #
-    print '[BLOCK_TYPE=%d SIG=%d X=%3d Y=%3d WIDTH=%3d HEIGHT=%3d]' % (blocks.type, blocks.signature, blocks.x, blocks.y, blocks.width, blocks.height)
+    print 'frame %3d:' % (frame)
+    frame = frame + 1
+    for index in range (0, count):
+      print '[BLOCK_TYPE=%d SIG=%d X=%3d Y=%3d WIDTH=%3d HEIGHT=%3d]' % (blocks[index].type, blocks[index].signature, blocks[index].x, blocks[index].y, blocks[index].width, blocks[index].height)
