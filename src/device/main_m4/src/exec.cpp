@@ -90,6 +90,13 @@ static const ProcModule g_module[] =
 	"@p action index"
 	"@r returns 0 if successful, -1 otherwise, or if index is out of range"
 	},
+	{
+	"getUID",
+	(ProcPtr)exec_getUID, 
+	{END}, 
+	"Get the unique ID of this Pixy"
+	"@r returns 32-bit unique ID"
+	},
 	END
 };
 
@@ -352,6 +359,17 @@ int32_t exec_getAction(const uint16_t &index, Chirp *chirp)
 		CRP_RETURN(chirp, STRING(actions[index].action), STRING(actions[index].scriptlet), END);
 
 	return 0;		
+}
+
+uint32_t exec_getUID()
+{
+	uint32_t val;
+	volatile uint32_t *mem;
+
+	for (val=0, mem=(volatile uint32_t *)0x40045000; mem<(volatile uint32_t *)0x40045010; mem++)
+		val += *mem;
+
+	return val;
 }
 
 int exec_runM0(uint8_t prog)

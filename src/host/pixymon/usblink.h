@@ -24,15 +24,17 @@ class USBLink : public Link
 {
 public:
     USBLink();
-    ~USBLink();
+    virtual ~USBLink();
 
     int open();
+    void close();
     virtual int send(const uint8_t *data, uint32_t len, uint16_t timeoutMs);
     virtual int receive(uint8_t *data, uint32_t len, uint16_t timeoutMs);
     virtual void setTimer();
     virtual uint32_t getTimer();
 
 private:
+    int openDevice();
     libusb_context *m_context;
     libusb_device_handle *m_handle;
     QTime m_time;

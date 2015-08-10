@@ -19,9 +19,9 @@
 #include "libusb.h"
 
 #define PIXY_VID       0xB1AC
-#define PIXY_DID       0xF000
+#define PIXY_PID       0xF000
 #define PIXY_DFU_VID   0x1FC9
-#define PIXY_DFU_DID   0x000C
+#define PIXY_DFU_PID   0x000C
 
 #define PIXY_ERROR_USB_IO                    LIBUSB_ERROR_IO
 #define PIXY_ERROR_USB_NOT_FOUND             LIBUSB_ERROR_NOT_FOUND

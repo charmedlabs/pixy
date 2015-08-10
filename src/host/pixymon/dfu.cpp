@@ -290,7 +290,7 @@ Dfu::Dfu()
     if (ret || !m_dif.dev_handle)
         throw std::runtime_error("Cannot open Pixy DFU device.");
 #else
-    m_dif.dev_handle = libusb_open_device_with_vid_pid(m_context, PIXY_DFU_VID, PIXY_DFU_DID);
+    m_dif.dev_handle = libusb_open_device_with_vid_pid(m_context, PIXY_DFU_VID, PIXY_DFU_PID);
     if (m_dif.dev_handle==NULL)
         throw std::runtime_error("Cannot open Pixy DFU device.");
     m_dif.dev = libusb_get_device(m_dif.dev_handle);
