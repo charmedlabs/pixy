@@ -59,9 +59,13 @@ int USBLink::open()
         m_handle = 0;
         return -1;
     }
+<<<<<<< HEAD:host/pixymon/usblink.cpp
+    libusb_reset_device(m_handle);
+=======
 #ifdef __LINUX__
     libusb_reset_device(m_handle);
 #endif
+>>>>>>> upstream/master:src/host/pixymon/usblink.cpp
     return 0;
 }
 
