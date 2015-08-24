@@ -766,15 +766,14 @@ void MainWindow::on_actionLoad_Pixy_parameters_triggered()
             {
                 ParamFile pf;
                 pf.open(flist[0], true);
-                res = pf.read(PIXY_PARAMFILE_TAG, &m_interpreter->m_pixyParameters);
+                res = pf.read(PIXY_PARAMFILE_TAG, &m_interpreter->m_pixyParameters, true);
                 pf.close();
 
                 if (res>=0)
                 {
                     m_interpreter->saveParams(); // save parapeters back to pixy
-                    // reload config dialog if it's up
-                    if (m_configDialog)
-                        m_configDialog->load();
+                    m_interpreter->execute("close");
+                    m_console->print("Parameters have been successfully loaded!  Resetting...\n");
                 }
             }
         }

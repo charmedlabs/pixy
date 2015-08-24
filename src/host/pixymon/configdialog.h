@@ -46,6 +46,7 @@ protected slots:
     void handleChangeClicked();
     void handleCheckBox();
     void handleSlider(int position);
+    void handleComboBox(int index);
     virtual void accept();
     virtual void reject();
 

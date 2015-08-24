@@ -1,0 +1,55 @@
+RM := rm -rf
+MAKE := make -f makefile_alt
+
+SRC_C := $(wildcard ../src/*.c)
+SRC_CPP :=  $(wildcard ../src/*.cpp)
+C_DEPS := $(subst ..,.,$(SRC_C:.c=.d)) $(subst ..,.,$(SRC_CPP:.cpp=.d))
+OBJS := $(subst ..,.,$(SRC_C:.c=.o)) $(subst ..,.,$(SRC_CPP:.cpp=.o))
+USER_OBJS :=
+LIBS :=
+ARCHIVES :=
+
+# All Target
+all: prebuild liblibpixy_m4.a
+
+.PHONY: prebuild
+prebuild:
+	-mkdir src
+	
+# Tool invocations
+liblibpixy_m4.a: $(OBJS) $(USER_OBJS)
+	@echo 'Building target: $@'
+	@echo 'Invoking: MCU Archiver'
+	arm-none-eabi-ar -r  "liblibpixy_m4.a" $(OBJS) $(USER_OBJS) $(LIBS)
+	@echo 'Finished building target: $@'
+	@echo ' '
+	$(MAKE) --no-print-directory post-build
+
+# Other Targets
+clean:
+	-$(RM) $(OBJS) $(C++_DEPS) $(C_DEPS) $(ARCHIVES) liblibpixy_m4.a
+	-@echo ' '
+
+src/%.o: ../src/%.cpp
+	@echo 'Building file: $<'
+	@echo 'Invoking: MCU C++ Compiler'
+	arm-none-eabi-c++ -D__MULTICORE_NONE -DIPC_MASTER -DPIXY -D__NEWLIB__ -DNDEBUG -D__CODE_RED -DCORE_M4 -D__LPC43XX__ -I../inc -I../../common/inc -I../../../common/inc -Os -Os -g -Wall -c -fmessage-length=0 -fno-builtin -ffunction-sections -fdata-sections -fno-rtti -fno-exceptions -fsingle-precision-constant -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=softfp -mthumb -D__NEWLIB__ -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)" -MT"$(@:%.o=%.d)" -o "$@" "$<"
+	@echo 'Finished building: $<'
+	@echo ' '
+
+src/%.o: ../src/%.c
+	@echo 'Building file: $<'
+	@echo 'Invoking: MCU C Compiler'
+	arm-none-eabi-gcc -D__NEWLIB__ -DIPC_MASTER -DPIXY -D__MULTICORE_NONE -DNDEBUG -D__CODE_RED -DCORE_M4 -D__LPC43XX__ -I../inc -I../../common/inc -I../../../common/inc -Os -g -Wall -c -fmessage-length=0 -fno-builtin -ffunction-sections -fdata-sections -fsingle-precision-constant -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=softfp -mthumb -D__NEWLIB__ -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)" -MT"$(@:%.o=%.d)" -o "$@" "$<"
+	@echo 'Finished building: $<'
+	@echo ' '
+	
+post-build:
+	-@echo 'Performing post-build steps'
+	-arm-none-eabi-size "liblibpixy_m4.a" ; # arm-none-eabi-objdump -h -S "liblibpixy_m4.a" >"liblibpixy_m4.lss"
+	-@echo ' '
+
+.PHONY: all clean dependents
+.SECONDARY: post-build
+
+-include ../makefile.targets

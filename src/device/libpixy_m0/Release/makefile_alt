@@ -1,0 +1,47 @@
+RM := rm -rf
+MAKE := make -f makefile_alt
+
+SRC_C := $(wildcard ../src/*.c)
+SRC_CPP :=  $(wildcard ../src/*.cpp)
+C_DEPS := $(subst ..,.,$(SRC_C:.c=.d)) $(subst ..,.,$(SRC_CPP:.cpp=.d))
+OBJS := $(subst ..,.,$(SRC_C:.c=.o)) $(subst ..,.,$(SRC_CPP:.cpp=.o))
+USER_OBJS :=
+LIBS :=
+ARCHIVES :=
+
+# All Target
+all: prebuild liblibpixy_m0.a
+
+.PHONY: prebuild
+prebuild:
+	-mkdir src
+
+# Tool invocations
+liblibpixy_m0.a: $(OBJS) $(USER_OBJS)
+	@echo 'Building target: $@'
+	@echo 'Invoking: MCU Archiver'
+	arm-none-eabi-ar -r  "liblibpixy_m0.a" $(OBJS) $(USER_OBJS) $(LIBS)
+	@echo 'Finished building target: $@'
+	@echo ' '
+	$(MAKE) --no-print-directory post-build
+
+src/%.o: ../src/%.c
+	@echo 'Building file: $<'
+	@echo 'Invoking: MCU C Compiler'
+	arm-none-eabi-gcc -DIPC_SLAVE -DPIXY -D__REDLIB__ -D__MULTICORE_NONE -DNDEBUG -D__CODE_RED -DCORE_M0 -DCR_PRINTF_CHAR -D__LPC43XX__ -I../inc -I../../common/inc -I../../../common/inc -O0 -g -Wall -c -fmessage-length=0 -fno-builtin -ffunction-sections -fdata-sections -mcpu=cortex-m0 -mthumb -D__REDLIB__ -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)" -MT"$(@:%.o=%.d)" -o "$@" "$<"
+	@echo 'Finished building: $<'
+	@echo ' '
+
+# Other Targets
+clean:
+	-$(RM) $(OBJS) $(C_DEPS) $(ARCHIVES) liblibpixy_m0.a
+	-@echo ' '
+
+post-build:
+	-@echo 'Performing post-build steps'
+	-arm-none-eabi-size "liblibpixy_m0.a" ; # arm-none-eabi-objdump -h -S "liblibpixy_m0.a" >"liblibpixy_m0.lss"
+	-@echo ' '
+
+.PHONY: all clean dependents
+.SECONDARY: post-build
+

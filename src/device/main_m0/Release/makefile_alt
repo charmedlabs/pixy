@@ -1,0 +1,48 @@
+RM := rm -rf
+MAKE := make -f makefile_alt
+
+SRC_C := $(wildcard ../src/*.c)
+SRC_CPP :=  $(wildcard ../src/*.cpp)
+C_DEPS := $(subst ..,.,$(SRC_C:.c=.d)) $(subst ..,.,$(SRC_CPP:.cpp=.d))
+OBJS := $(subst ..,.,$(SRC_C:.c=.o)) $(subst ..,.,$(SRC_CPP:.cpp=.o))
+USER_OBJS :=
+LIBS := -llibpixy_m0
+EXECUTABLES :=
+
+# All Target
+all: prebuild main_m0.axf
+
+.PHONY: prebuild
+prebuild:
+	-mkdir src
+
+# Tool invocations
+main_m0.axf: $(OBJS) $(USER_OBJS)
+	@echo 'Building target: $@'
+	@echo 'Invoking: MCU Linker'
+	arm-none-eabi-gcc -nostdlib -L../../libpixy_m0/Release -Xlinker -Map="main_m0.map" -Xlinker --gc-sections -mcpu=cortex-m0 -mthumb -T "main_m0_Release.ld" -o "main_m0.axf" $(OBJS) $(USER_OBJS) $(LIBS) && arm-none-eabi-objcopy --target elf32-littlearm --verbose --strip-all --redefine-sym __vectors_start__=__vectors_start___core_m0app --keep-symbol __vectors_start___core_m0app --rename-section .text=".core_m0app" --rename-section .data=".core_m0app.data" --rename-section .data_RAM2=".core_m0app.data_RAM2" --rename-section .data_RAM3=".core_m0app.data_RAM3" --rename-section .data_RAM4=".core_m0app.data_RAM4" --rename-section .data_RAM5=".core_m0app.data_RAM5" "main_m0.axf" "main_m0.axf.o"
+	@echo 'Finished building target: $@'
+	@echo ' '
+	$(MAKE) --no-print-directory post-build
+
+# Other Targets
+clean:
+	-$(RM) $(OBJS) $(C_DEPS) $(EXECUTABLES) main_m0.axf
+	-@echo ' '
+
+src/%.o: ../src/%.c
+	@echo 'Building file: $<'
+	@echo 'Invoking: MCU C Compiler'
+	arm-none-eabi-gcc -DIPC_SLAVE -DPIXY -D__REDLIB__ -D__MULTICORE_M0APP -DNDEBUG -D__CODE_RED -DCORE_M0 -D__LPC43XX__ -DCORE_M0APP -I../../libpixy_m0/inc -I../../common/inc -I../../../common/inc -O0 -g -Wall -Wa,-ahlnds=$(basename $(notdir $@)).asm -c -fmessage-length=0 -fno-builtin -ffunction-sections -fdata-sections -mcpu=cortex-m0 -mthumb -D__REDLIB__ -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)" -MT"$(@:%.o=%.d)" -o "$@" "$<"
+	@echo 'Finished building: $<'
+	@echo ' '
+
+post-build:
+	-@echo 'Performing post-build steps'
+	-arm-none-eabi-size "main_m0.axf"; # arm-none-eabi-objcopy -v -O binary "main_m0.axf" "main_m0.bin" ; # checksum -p LPC4330_M0 -d "main_m0.bin";
+	-@echo ' '
+
+.PHONY: all clean dependents
+.SECONDARY: post-build
+
+-include ../makefile.targets
