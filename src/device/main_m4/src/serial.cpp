@@ -86,12 +86,10 @@ uint16_t lego_getData(uint8_t *buf, uint32_t buflen)
 			buf[0] = numBlobs;
 			temp = ((max->m_left + width/2)*819)>>10;
 			buf[1] = temp;
-			temp = ((max->m_top + height/2)*819)>>10;
-			buf[2] = temp;
+			buf[2] = max->m_top + height/2;
 			temp = (width*819)>>10;
 			buf[3] = temp;
-			temp = (height*819)>>10;
-			buf[4] = temp;
+			buf[4] = height;
 		}
 #endif
 		return 5;
@@ -121,12 +119,10 @@ uint16_t lego_getData(uint8_t *buf, uint32_t buflen)
 			buf[0] = numBlobs;
 			temp = ((max->m_left + width/2)*819)>>10;
 			buf[1] = temp;
-			temp = ((max->m_top + height/2)*819)>>10;
-			buf[2] = temp;
+			buf[2] = max->m_top + height/2;
 			temp = (width*819)>>10;
 			buf[3] = temp;
-			temp = (height*819)>>10;
-			buf[4] = temp;
+			buf[4] = height;
 			temp = ((int32_t)max->m_angle*91)>>7;
 			buf[5] = temp;
 		}
