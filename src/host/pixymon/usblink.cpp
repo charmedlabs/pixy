@@ -18,8 +18,6 @@
 #include "sleeper.h"
 #include "pixydefs.h"
 
-
-
 USBLink::USBLink()
 {
     m_handle = 0;
@@ -30,38 +28,76 @@ USBLink::USBLink()
 
 USBLink::~USBLink()
 {
-    if (m_handle)
-        libusb_close(m_handle);
-    if (m_context)
-        libusb_exit(m_context);
+    close();
 }
 
 int USBLink::open()
 {
+    close();
+
     libusb_init(&m_context);
 
-    m_handle = libusb_open_device_with_vid_pid(m_context, PIXY_VID, PIXY_DID);
-    if (m_handle==NULL)
-        return -1;
-#ifdef __MACOS__
-    libusb_reset_device(m_handle);
-    Sleeper::msleep(100);
-#endif
-    if (libusb_set_configuration(m_handle, 1)<0)
+    return openDevice();
+}
+
+void USBLink::close()
+{
+    if (m_handle)
     {
         libusb_close(m_handle);
         m_handle = 0;
-        return -1;
     }
-    if (libusb_claim_interface(m_handle, 1)<0)
+    if (m_context)
     {
-        libusb_close(m_handle);
-        m_handle = 0;
-        return -1;
+        libusb_exit(m_context);
+        m_context = 0;
     }
+}
+
+int USBLink::openDevice()
+{
+    libusb_device **list = NULL;
+    int i, count = 0;
+    libusb_device *device;
+    libusb_device_descriptor desc;
+
+    count = libusb_get_device_list(m_context, &list);
+
+    for (i=0; i<count; i++)
+    {
+        device = list[i];
+        libusb_get_device_descriptor(device, &desc);
+
+        if (desc.idVendor==PIXY_VID && desc.idProduct==PIXY_PID)
+        {
+            if (libusb_open(device, &m_handle)==0)
+            {
+            #ifdef __MACOS__
+                libusb_reset_device(m_handle);
+                Sleeper::msleep(100);
+            #endif
+                if (libusb_set_configuration(m_handle, 1)<0)
+                {
+                    libusb_close(m_handle);
+                    m_handle = 0;
+                    continue;
+                }
+                if (libusb_claim_interface(m_handle, 1)<0)
+                {
+                    libusb_close(m_handle);
+                    m_handle = 0;
+                    continue;
+                }
 #ifdef __LINUX__
-    libusb_reset_device(m_handle);
+                libusb_reset_device(m_handle);
 #endif
+                break;
+            }
+        }
+    }
+    libusb_free_device_list(list, 1);
+    if (i==count) // no devices found
+        return -1;
     return 0;
 }
 
@@ -90,7 +126,7 @@ int USBLink::receive(uint8_t *data, uint32_t len, uint16_t timeoutMs)
     int res, transferred;
 
     if (timeoutMs==0) // 0 equals infinity
-        timeoutMs = 50;
+        timeoutMs = 100;
 
     // Note: if this call is taking more time than than expected, check to see if we're connected as USB 2.0.  Bad USB cables can
     // cause us to revert to a 1.0 connection.

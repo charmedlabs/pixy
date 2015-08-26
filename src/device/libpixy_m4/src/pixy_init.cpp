@@ -222,6 +222,7 @@ void pixyInit(void)
 	USBLink *usbLink = new USBLink;
 	g_chirpUsb = new Chirp(false, false, usbLink);
 	g_chirpUsb->setSendTimeout(3000); // set a high timeout because the host can sometimes go AWOL for a second or two....
+	g_chirpUsb->setRecvTimeout(3000); // set a high timeout because the host can sometimes go AWOL for a second or two....
 
   	g_chirpM0 = new Chirp(false, true, smLink);
 

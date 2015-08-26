@@ -16,6 +16,7 @@
 #include "connectevent.h"
 #include "libusb.h"
 #include "pixydefs.h"
+#include "usblink.h"
 #include "mainwindow.h"
 
 ConnectEvent::ConnectEvent(MainWindow *main, unsigned int sleep)
@@ -41,17 +42,19 @@ Device ConnectEvent::getConnected()
 {
     Device res = NONE;
     libusb_device_handle *handle = 0;
+    USBLink *plink;
 
     m_mutex.lock();
-    handle = libusb_open_device_with_vid_pid(m_context, PIXY_VID, PIXY_DID);
-    if (handle)
+    plink = new USBLink();
+    if (plink->open()==0)
         res = PIXY;
     else
     {
-        handle = libusb_open_device_with_vid_pid(m_context, PIXY_DFU_VID, PIXY_DFU_DID);
+        handle = libusb_open_device_with_vid_pid(m_context, PIXY_DFU_VID, PIXY_DFU_PID);
         if (handle)
             res = PIXY_DFU;
     }
+    delete plink;
     if (handle)
         libusb_close(handle);
     m_mutex.unlock();

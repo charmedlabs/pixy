@@ -59,6 +59,8 @@ int32_t exec_runprogArg(const uint8_t &progNum, const int32_t &arg, Chirp *chirp
 int32_t exec_list();
 int32_t exec_version(Chirp *chirp=NULL);
 int32_t exec_getAction(const uint16_t &index, Chirp *chirp=NULL);
+uint32_t exec_getUID();
+
 void exec_loadParams();
 void exec_sendEvent(Chirp *chirp, uint32_t event);
 
