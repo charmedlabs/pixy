@@ -52,7 +52,7 @@ int USBLink::open()
     goto usblink_open__exit;
   }
 
-  m_handle = libusb_open_device_with_vid_pid(m_context, PIXY_VID, PIXY_DID);
+  m_handle = libusb_open_device_with_vid_pid(m_context, PIXY_VID, PIXY_PID);
   log("pixydebug:  libusb_open_device_with_vid_pid() = %d\n", m_handle);
 
   if (m_handle == NULL) {
