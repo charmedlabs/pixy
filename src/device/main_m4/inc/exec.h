@@ -21,7 +21,7 @@
 
 #define FW_MAJOR_VER		2
 #define FW_MINOR_VER		0
-#define FW_BUILD_VER		13
+#define FW_BUILD_VER		14
 
 #define EXEC_MAX_PROGS   9
 #define EXEC_VIDEO_PROG  EXEC_MAX_PROGS-1

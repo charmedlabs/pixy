@@ -19,6 +19,7 @@
 
   <project>
     <PathAndName>..\libpixy_m0\libpixy_m0.uvproj</PathAndName>
+    <NodeIsExpanded>1</NodeIsExpanded>
   </project>
 
   <project>

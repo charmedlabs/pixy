@@ -64,7 +64,46 @@ uint16_t lego_getData(uint8_t *buf, uint32_t buflen)
 	}
 	else 
 #endif
-	if (c>=0x51 && c<=0x57)
+	if (c==0x50)
+	{
+		BlobB *max;
+#if 0
+		buf[0] = 1;
+		buf[1] = 2;
+		buf[2] = 3;
+		buf[3] = 4;
+		buf[4] = 5;
+		buf[5] = 6;
+		buf[6] = 7;
+#else
+		max = (BlobB *)g_blobs->getMaxBlob();
+		if (max==0)
+			memset(buf, 0, 7);
+		else if (max==(BlobB *)-1)
+			memset(buf, -1, 7);
+		else
+		{
+			width = max->m_right - max->m_left;
+			height = max->m_bottom - max->m_top;
+			*(uint16_t *)buf = max->m_model; // signature
+			temp = ((max->m_left + width/2)*819)>>10;
+			buf[2] = temp; // x
+			buf[3] = max->m_top + height/2; // y
+			temp = (width*819)>>10;
+			buf[4] = temp; // width
+			buf[5] = height; // height
+			if (max->m_model>CL_NUM_SIGNATURES)
+			{
+				temp = ((int32_t)max->m_angle*91)>>7;
+				buf[6] = temp; // angle (cc signature)
+			}
+			else
+				buf[6] = 0; // angle (regular signature)
+		}
+#endif		
+		return 7;
+	}
+	else if (c>=0x51 && c<=0x57)
 	{
 #if 0
 		buf[0] = 1;
@@ -83,13 +122,13 @@ uint16_t lego_getData(uint8_t *buf, uint32_t buflen)
 		{
 			width = max->m_right - max->m_left;
 			height = max->m_bottom - max->m_top;
-			buf[0] = numBlobs;
+			buf[0] = numBlobs; // number of blocks that match signature
 			temp = ((max->m_left + width/2)*819)>>10;
-			buf[1] = temp;
-			buf[2] = max->m_top + height/2;
+			buf[1] = temp; // x
+			buf[2] = max->m_top + height/2;	// y
 			temp = (width*819)>>10;
-			buf[3] = temp;
-			buf[4] = height;
+			buf[3] = temp; // width
+			buf[4] = height; // height
 		}
 #endif
 		return 5;
@@ -97,7 +136,7 @@ uint16_t lego_getData(uint8_t *buf, uint32_t buflen)
 	else if (c==0x58)
 	{
 		BlobB *max;
-		if (serial->receive((uint8_t *)&d, 2)<2)
+		if (serial->receive((uint8_t *)&d, 2)<2) // receive cc signature to look for
 			return 0;
 #if 0
 		buf[0] = 1;
@@ -107,7 +146,7 @@ uint16_t lego_getData(uint8_t *buf, uint32_t buflen)
 		buf[4] = 5;
 		buf[5] = 6;
 #else
-		max = (BlobB *)g_blobs->getMaxBlob(d, &numBlobs);
+		max = (BlobB *)g_blobs->getMaxBlob(d, &numBlobs); 
 		if (max==0)
 			memset(buf, 0, 6);
 		else if (max==(BlobB *)-1)
@@ -116,15 +155,15 @@ uint16_t lego_getData(uint8_t *buf, uint32_t buflen)
 		{
 			width = max->m_right - max->m_left;
 			height = max->m_bottom - max->m_top;
-			buf[0] = numBlobs;
+			buf[0] = numBlobs; // number of cc blocks that match 
 			temp = ((max->m_left + width/2)*819)>>10;
-			buf[1] = temp;
-			buf[2] = max->m_top + height/2;
+			buf[1] = temp; // x
+			buf[2] = max->m_top + height/2; // y
 			temp = (width*819)>>10;
-			buf[3] = temp;
-			buf[4] = height;
+			buf[3] = temp; // width
+			buf[4] = height; // height
 			temp = ((int32_t)max->m_angle*91)>>7;
-			buf[5] = temp;
+			buf[5] = temp; // angle
 		}
 #endif
 		return 6;
@@ -138,7 +177,7 @@ uint16_t lego_getData(uint8_t *buf, uint32_t buflen)
 #else
 		//printf("%x\n", c);														  
 
-		if (c==0x42)
+		if (c==0x42) // this works in port view mode on the ev3's LCD
 		{
 			BlobA *max;
 			max = g_blobs->getMaxBlob();
