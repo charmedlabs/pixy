@@ -28,8 +28,6 @@
 #include "chirp.hpp"
 #include "pixyvals.h"
 
-//#define LEGO
-
 #ifdef KEIL
 extern uint8_t *__Vectors;
 #define STACK_GUARD           *(uint16_t *)(__Vectors - 0x600)

@@ -22,6 +22,7 @@
 #include "conncomp.h"
 #include "param.h"
 #include "pixy_init.h"
+#include "exec.h"
 
 uint8_t g_interface = 0;
 int8_t g_angle = 0;

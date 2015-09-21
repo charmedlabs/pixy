@@ -231,10 +231,6 @@ void pixyInit(void)
 	prm_init(g_chirpUsb);
 	pwr_init();
 	cam_init();
-#ifndef LEGO
-	rcs_init();
-#endif
-	//cc_init();
 }
 
 void pixySimpleInit(void)

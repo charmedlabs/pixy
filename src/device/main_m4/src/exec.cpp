@@ -80,7 +80,14 @@ static const ProcModule g_module[] =
 	(ProcPtr)exec_version, 
 	{END}, 
 	"Get firmware version"
-	"@r always returns 0 and an array of 3 uint16 values: major, minor, and build versions."
+	"@r always returns 0 and an array of 3 uint16 values: major, minor, and build versions"
+	},
+	{
+	"versionType",
+	(ProcPtr)exec_versionType, 
+	{END}, 
+	"Get firmware type"
+	"@r always returns 0 and a null-terminated string that describes the type of firmware"
 	},
 	{
 	"getAction",
@@ -347,6 +354,15 @@ int32_t exec_version(Chirp *chirp)
 
 	return 0;
 }
+
+int32_t exec_versionType(Chirp *chirp)
+{
+	if (chirp)
+		CRP_RETURN(chirp, STRING(FW_TYPE), END);
+
+	return 0;
+}
+
 
 int32_t exec_getAction(const uint16_t &index, Chirp *chirp)
 {

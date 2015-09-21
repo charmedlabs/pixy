@@ -36,6 +36,4 @@ void ser_loadParams();
 
 extern uint8_t g_interface;
 
-//#define LEGO
-
 #endif
