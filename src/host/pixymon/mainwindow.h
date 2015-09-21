@@ -57,7 +57,7 @@ private slots:
     void handleLoadParams();
     void handleConfigDialogFinished();
     void interpreterFinished();
-    void handleVersion(ushort major, ushort minor, ushort build);
+    void handleVersion(ushort major, ushort minor, ushort build, QString type);
     void on_actionAbout_triggered();
     void on_actionPlay_Pause_triggered();
     void on_actionDefault_program_triggered();
@@ -83,7 +83,7 @@ private:
     void close();
     void parseCommandline(int argc, char *argv[]);
     void program(const QString &file);
-    void handleFirmware(ushort major, ushort minor, ushort build);
+    void handleFirmware(ushort major, ushort minor, ushort build, const QString &type);
 
     bool m_pixyConnected;
     bool m_pixyDFUConnected;

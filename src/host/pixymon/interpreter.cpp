@@ -572,7 +572,6 @@ void Interpreter::run()
         if (res<0)
             throw std::runtime_error("Can't get firmware version.");
         memcpy(m_version, ver, 3*sizeof(uint16_t));
-        emit version(m_version[0], m_version[1], m_version[2]);
         if (m_version[0]!=VER_MAJOR || m_version[1]>VER_MINOR)
         {
             char buf[0x100];
@@ -589,6 +588,7 @@ void Interpreter::run()
         }
         else
             m_versionType = "";
+        emit version(m_version[0], m_version[1], m_version[2], m_versionType);
 
         m_exec_run = m_chirp->getProc("run");
         m_exec_running = m_chirp->getProc("running");

@@ -336,7 +336,7 @@ void MainWindow::connectPixy(bool state)
                 connect(m_interpreter, SIGNAL(connected(Device,bool)), this, SLOT(handleConnected(Device,bool)));
                 connect(m_interpreter, SIGNAL(actionScriptlet(QString,QStringList)), this, SLOT(handleActionScriptlet(QString,QStringList)));
                 connect(m_interpreter, SIGNAL(paramLoaded()), this, SLOT(handleLoadParams()));
-                connect(m_interpreter, SIGNAL(version(ushort,ushort,ushort)), this, SLOT(handleVersion(ushort,ushort,ushort)));
+                connect(m_interpreter, SIGNAL(version(ushort,ushort,ushort,QString)), this, SLOT(handleVersion(ushort,ushort,ushort,QString)));
                 m_interpreter->start();
             }
             m_pixyConnected = true;
@@ -566,7 +566,7 @@ void MainWindow::interpreterFinished()
     updateButtons();
 }
 
-void MainWindow::handleFirmware(ushort major, ushort minor, ushort build)
+void MainWindow::handleFirmware(ushort major, ushort minor, ushort build, const QString &type)
 {
     // check executable directory for firmware
     int i;
@@ -576,34 +576,41 @@ void MainWindow::handleFirmware(ushort major, ushort minor, ushort build)
     QString path = QFileInfo(QCoreApplication::applicationFilePath()).absolutePath();
     QDir dir(path);
     QStringList files = dir.entryList(filters);
-    QStringList parts;
+    QStringList parts, dparts;
     QString fwFilename;
     QString maxVerStr;
+    QString ftype;
     ushort fmajor, fminor, fbuild;
     qlonglong ver, currVer, maxVer;
 
     // find the maximum version in the executable directory
-    currVer = ((qlonglong)major<<32) | (minor<<16) | build;
+    currVer = ((qlonglong)major<<32) | ((qlonglong)minor<<16) | build;
     for (i=0, maxVer=0; i<files.size(); i++)
     {
-        parts = files[i].split('-');
-        if (parts.size()>1)
+        dparts = files[i].split('-');
+        if (dparts.size()>1)
         {
-            parts = parts[1].split('.');
-            if (parts.size()>1)
+            parts = dparts[1].split('.');
+            if (parts.size()>=3)
             {
                 fmajor = parts[0].toInt();
                 fminor = parts[1].toInt();
                 fbuild = parts[2].toInt();
-
-                ver = ((qlonglong)fmajor<<32) | (fminor<<16) | fbuild;
-                if (ver>currVer)
+                if (dparts.size()>=3)
+                {
+                    parts = dparts[2].split('.');
+                    ftype = parts[0];
+                }
+                else
+                    ftype = "general";
+                ver = ((qlonglong)fmajor<<32) | ((qlonglong)fminor<<16) | fbuild;
+                if (ver>currVer && ftype.compare(type, Qt::CaseInsensitive)==0)
                 {
                     if (ver>maxVer)
                     {
                         maxVer = ver;
                         fwFilename = files[i];
-                        maxVerStr = QString::number(fmajor) + "." + QString::number(minor) + "." + QString::number(fbuild);
+                        maxVerStr = QString::number(fmajor) + "." + QString::number(minor) + "." + QString::number(fbuild) + "-" + ftype;
                     }
                 }
             }
@@ -625,7 +632,7 @@ void MainWindow::handleFirmware(ushort major, ushort minor, ushort build)
         {
             QString str =
                     "There is a more recent firmware version (" + maxVerStr + ") available.<br>"
-                    "Your Pixy is running firmware version " + QString::number(major) + "." + QString::number(minor) + "." + QString::number(build) + ".<br><br>"
+                    "Your Pixy is running firmware version " + QString::number(major) + "." + QString::number(minor) + "." + QString::number(build) + "-" + type + ".<br><br>"
                     "Would you like to upload this firmware into your Pixy? <i>Psst, click yes!</i>";
             m_fwMessage = new QMessageBox(QMessageBox::Question, "New firmware available!", str, QMessageBox::Yes|QMessageBox::No);
             m_fwMessage->setDefaultButton(QMessageBox::Yes);
@@ -661,7 +668,7 @@ void MainWindow::handleFirmware(ushort major, ushort minor, ushort build)
     }
 }
 
-void MainWindow::handleVersion(ushort major, ushort minor, ushort build)
+void MainWindow::handleVersion(ushort major, ushort minor, ushort build, QString type)
 {
     QString str;
 
@@ -670,7 +677,7 @@ void MainWindow::handleVersion(ushort major, ushort minor, ushort build)
         // Interpreter will automatically exit if there's a version incompatibility, so no need to close interpreter
         m_versionIncompatibility = true;
     }
-    handleFirmware(major, minor, build);
+    handleFirmware(major, minor, build, type);
     //str = str.sprintf("Pixy firmware version %d.%d.%d.\n", major, minor, build);
     //m_console->print(str);
 }

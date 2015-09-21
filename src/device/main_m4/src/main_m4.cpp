@@ -13,6 +13,7 @@
 // end license header
 //
 
+#include <string.h>
 #include <stdio.h>
 #include <debug.h>
 #include <pixy_init.h>
@@ -69,7 +70,8 @@ unsigned __check_heap_overflow (void * new_end_of_heap)
 int main(void)
 {
 	uint16_t major, minor, build;
-	int i, res, count;
+	char *type;
+	int i, res, count, count2;
 	volatile uint32_t d;
 
 	// insert a small delay so power supply can stabilize
@@ -140,18 +142,22 @@ int main(void)
 
 #if 1 
 	// this code formats if the version has changed
-	for (i=0, count=0; i<25; i++)
+	for (i=0, count=0, count2=0; i<25; i++)
 	{
 		res = prm_get("fwver", &major, &minor, &build, END);
 		if (res>=0 && major==FW_MAJOR_VER && minor==FW_MINOR_VER && build==FW_BUILD_VER)
 			count++;
+		res = prm_get("fwtype", &type, END);
+		if (res>=0 && strcmp(type, FW_TYPE)==0)
+			count2++;
 	}
-	if (count==0)
+	if (count==0 || count2==0)
 		prm_format();
 #endif
 
    	// check version
 	prm_add("fwver", PRM_FLAG_INTERNAL, "", UINT16(FW_MAJOR_VER), UINT16(FW_MINOR_VER), UINT16(FW_BUILD_VER), END);
+	prm_add("fwtype", PRM_FLAG_INTERNAL, "", STRING(FW_TYPE), END);
 
 	exec_loop();
 #endif
