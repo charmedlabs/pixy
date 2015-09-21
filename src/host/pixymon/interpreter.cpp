@@ -555,8 +555,9 @@ void Interpreter::run()
     try
     {
         int i;
-        ChirpProc versionProc;
+        ChirpProc versionProc, versionType;
         uint16_t *ver;
+        char *type;
         uint32_t verLen, responseInt;
 
         if (m_link.open()<0)
@@ -579,6 +580,15 @@ void Interpreter::run()
                     m_version[0], m_version[1], m_version[2], VER_MAJOR, VER_MINOR, VER_BUILD);
             throw std::runtime_error(buf);
         }
+        versionType = m_chirp->getProc("versionType");
+        if (versionType>=0)
+        {
+            res = m_chirp->callSync(versionType, END_OUT_ARGS, &responseInt, &type, END_IN_ARGS);
+            if (res==0 && responseInt==0)
+                m_versionType = type;
+        }
+        else
+            m_versionType = "";
 
         m_exec_run = m_chirp->getProc("run");
         m_exec_running = m_chirp->getProc("running");
@@ -933,6 +943,11 @@ void Interpreter::unwait()
 uint16_t *Interpreter::getVersion()
 {
     return m_version;
+}
+
+QString Interpreter::getVersionType()
+{
+    return m_versionType;
 }
 
 int Interpreter::call(const QStringList &argv, bool interactive)

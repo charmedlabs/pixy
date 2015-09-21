@@ -455,11 +455,12 @@ void MainWindow::on_actionAbout_triggered()
 
     if (m_interpreter)
     {
-        QString fwver;
+        QString fwver, fwtype;
         uint16_t *version;
         version = m_interpreter->getVersion();
-        contents += fwver.sprintf("<b>Pixy firmware version %d.%d.%d</b> (queried)<br>", version[0], version[1], version[2]);
-    }
+        fwtype = m_interpreter->getVersionType();
+        contents += fwver.sprintf("<b>Pixy firmware version %d.%d.%d ", version[0], version[1], version[2]) + fwtype + " build</b> (queried)<br>";
+      }
 
     contents +=
             "<br>The latest version of PixyMon and Pixy firmware can be downloaded "
@@ -694,7 +695,14 @@ void MainWindow::on_actionExit_triggered()
 
 void MainWindow::on_actionHelp_triggered()
 {
-    QDesktopServices::openUrl(QUrl("http://charmedlabs.com/pixymonhelp"));
+    QString fwtype;
+    if (m_interpreter)
+        fwtype = m_interpreter->getVersionType();
+
+    if (fwtype.contains("LEGO", Qt::CaseInsensitive))
+        QDesktopServices::openUrl(QUrl("http://charmedlabs.com/pixymonhelp_lego"));
+    else
+        QDesktopServices::openUrl(QUrl("http://charmedlabs.com/pixymonhelp"));
 }
 
 void MainWindow::handleLoadParams()

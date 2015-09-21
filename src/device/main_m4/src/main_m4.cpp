@@ -30,6 +30,7 @@
 #include "progchase.h"
 #include "param.h"
 #include "serial.h"
+#include "rcservo.h"
 
 #include <new>
 
@@ -79,6 +80,7 @@ int main(void)
 #else
 	pixyInit();
 #endif
+
 #if 0
 	i = 0;
 	char *foo;
@@ -101,6 +103,9 @@ int main(void)
 	// main init of hardware plus a version-dependent number for the parameters that will
 	// force a format of parameter between version numbers.  
 
+#ifndef LEGO
+	rcs_init();
+#endif
 	cc_init(g_chirpUsb);
 	ser_init();
 	exec_init(g_chirpUsb);

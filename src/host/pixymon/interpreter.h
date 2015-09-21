@@ -98,6 +98,7 @@ public:
     void unwait();
 
     uint16_t *getVersion();
+    QString getVersionType();
 
     void getSelection(RectA *region);
     void getSelection(Point16 *point);
@@ -224,6 +225,7 @@ private:
 
     uint8_t m_argTypes[0x100];
     uint16_t m_version[3];
+    QString m_versionType;
     QString m_initScript;
 };
 
