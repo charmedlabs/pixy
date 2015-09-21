@@ -587,7 +587,7 @@ void Interpreter::run()
                 m_versionType = type;
         }
         else
-            m_versionType = "";
+            m_versionType = "general";
         emit version(m_version[0], m_version[1], m_version[2], m_versionType);
 
         m_exec_run = m_chirp->getProc("run");
