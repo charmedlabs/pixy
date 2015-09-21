@@ -24,6 +24,7 @@
 #include "pixy_init.h"
 
 uint8_t g_interface = 0;
+int8_t g_angle = 0;
 static Iserial *g_serial = 0;
 
 uint16_t lego_getData(uint8_t *buf, uint32_t buflen)
@@ -95,13 +96,16 @@ uint16_t lego_getData(uint8_t *buf, uint32_t buflen)
 			if (max->m_model>CL_NUM_SIGNATURES)
 			{
 				temp = ((int32_t)max->m_angle*91)>>7;
-				buf[6] = temp; // angle (cc signature)
+				g_angle = temp;
 			}
-			else
-				buf[6] = 0; // angle (regular signature)
 		}
 #endif		
-		return 7;
+		return 6;
+	}
+	else if (c==0x60)
+	{
+		buf[0] = g_angle;
+		return 1;
 	}
 	else if (c>=0x51 && c<=0x57)
 	{
