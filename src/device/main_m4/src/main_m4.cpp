@@ -67,7 +67,7 @@ unsigned __check_heap_overflow (void * new_end_of_heap)
 }
 
 
-int main(void)
+int main(void)	 
 {
 	uint16_t major, minor, build;
 	char *type;

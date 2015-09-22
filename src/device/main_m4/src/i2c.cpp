@@ -18,6 +18,7 @@
 #include "i2c.h"
 
 I2c *g_i2c0;
+static uint8_t g_toCount = 0;
 
 extern "C" void I2C0_IRQHandler(void);
 
@@ -29,6 +30,8 @@ void I2C0_IRQHandler(void)
 void I2c::slaveHandler()
 {
 	uint8_t stat, c;
+
+	g_toCount = 0; // activity, reset timeout
 
 	stat = m_i2c->STAT&I2C_STAT_CODE_BITMASK;
 	switch (stat)
@@ -162,6 +165,17 @@ int I2c::update()
 	// happens when cable is unplugged/plugged
 	if ((m_i2c->CONSET&I2C_I2CONSET_AA)==0)
 		startSlave();
+	// some events (or lack of events) can cause bus lockup -- this timeout mechanism resets if we haven't received activity 
+	else if (m_i2c->STAT==I2C_I2STAT_NO_INF) // no activity
+	{
+		if (g_toCount>50)
+		{
+	    	m_i2c->CONCLR = (I2C_I2CONCLR_AAC |I2C_I2CONCLR_SIC | I2C_I2CONCLR_STAC | I2C_I2CONCLR_I2ENC);
+			g_toCount = 0;
+		}
+		else
+			g_toCount++;
+	}
 
 	return 0;
 }
