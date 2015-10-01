@@ -1,0 +1,102 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<EditorStrings>
+  <PolyGroups ModuleName="Pixy">
+	<PolyGroup Name="Pixy" DisplayName="Pixy Camera" DisplayNamePrefix="Pixy">
+      <Parameter Name="Port" DisplayName="Port" Link="page.html?Path=editor%2FPortSelector.html#Port">
+        <Description><![CDATA[Many programming blocks require that you select the ports on the EV3 Brick (A, B, C, D, 1, 2, 3, and 4) that these blocks will use. The Port Selectors are in the top right-hand corner of these blocks.]]></Description>
+      </Parameter>
+      <Parameter Name="Comparison" DisplayName="Compare Type">
+        <Description><![CDATA[<p><b>Type:</b> Numeric<br/><b>Allowed Values:</b> 0 - 5<br/><b>Notes:</b> 0:  = (Equal to)<br/>1:  ≠ (Not Equal to)<br/>2:  &gt; (Greater than)<br/>3:  ≥ (Greater than or Equal to)<br/>4:  &lt; (Less than)<br/>5:  ≤ (Less than or Equal to)</p>]]></Description>
+      </Parameter>
+      <Parameter Name="Threshold" DisplayName="Threshold Value">
+        <Description><![CDATA[<p><b>Type:</b> Numeric<br/><b>Allowed Values:</b> Any number<br/><b>Notes:</b> Value to compare sensor data to</p>]]></Description>
+      </Parameter>
+      <Parameter Name="Amount" DisplayName="Amount" Link="page.html?Path=blocks%2FLEGO%2FWait.html#Amount">
+        <Description><![CDATA[<p><b>Type:</b> Numeric<br/><b>Notes:</b> Amount for sensor value to change in a Sensor Change Mode</p>]]></Description>
+      </Parameter>
+      <Parameter Name="signatureIn" DisplayName="Signature">
+        <Description><![CDATA[<p>Selects the signature or color code you'd like Pixy to search for.</p>]]></Description>
+      </Parameter>
+      <Parameter Name="colorCodeIn" DisplayName="Signature">
+        <Description><![CDATA[<p>Selects the signature or color code you'd like Pixy to search for.</p>]]></Description>
+      </Parameter>
+      <Parameter Name="xOut" DisplayName="X Centroid">
+        <Description><![CDATA[<p>Outputs the X location of the center of the largest object that Pixy has found. The number returned ranges from 0 to 255, with 0 being the rightmost pixel if facing the camera lens.</p>]]></Description>
+      </Parameter>
+      <Parameter Name="yOut" DisplayName="Y Centroid">
+        <Description><![CDATA[<p>Outputs the Y location of the center of the largest object that Pixy found. The number returned is from 0 to 159, with 0 being the topmost pixel.</p>]]></Description>
+      </Parameter>
+      <Parameter Name="widthOut" DisplayName="Width">
+        <Description><![CDATA[<p>Outputs the width of the largest block that Pixy has found. The number returned is from 1 to 256.</p>]]></Description>
+      </Parameter>
+      <Parameter Name="heightOut" DisplayName="Height">
+        <Description><![CDATA[<p>Outputs the height of the largest block that Pixy has found. The number returned is from 1 to 256.</p>]]></Description>
+      </Parameter>
+      <Parameter Name="nMatches" DisplayName="Number of Blocks">
+        <Description><![CDATA[<p>The number of blocks found by Pixy matching Signature or Color Code.</p>]]></Description>
+      </Parameter>
+      <Parameter Name="signatureOut" DisplayName="Signature Output">
+        <Description><![CDATA[<p>Outputs the number of blocks that match the signature or color code you specified in the Signature input.  Or it outputs the signature number of the detected object if in General Mode (see the description of modes below).</p>]]></Description>
+      </Parameter>
+      <Parameter Name="angleOut" DisplayName="Angle">
+        <Description><![CDATA[<p>Is the angle (in degrees) of the largest object that Pixy has found.  Angle information is only available for color codes, otherwise the value is 0.</p>]]></Description>
+      </Parameter>
+      <Parameter Name="Result" DisplayName="Compare Result">
+        <Description><![CDATA[<p><b>Type:</b> Logic<br/><b>Notes:</b> True/False result of a Compare mode.</p>]]></Description>
+      </Parameter>
+      <Block Mode="PixySignature" DisplayName="Read Signature">
+        <Description><![CDATA[<p>Requests that Pixy search for the signature requested in Signature input. Returns information about the largest block matching the signature found by Pixy.</p>]]></Description>
+      </Block>
+      <Block Mode="PixyTag" DisplayName="Read Color Code">
+        <Description><![CDATA[<p>Requests that Pixy search for the color code requested in Color Code input. Returns information about the largest block matching the color code found by Pixy.</p>]]></Description>
+      </Block>
+      <Block Mode="PixyCompareSignature" DisplayName="Signature">
+        <Description><![CDATA[<p>Compares the number of signatures found by Pixy matching the Signature input.</p>]]></Description>
+      </Block>
+      <Block Mode="PixyChangeSignature" DisplayName="Signature" >
+        <Description><![CDATA[<p>Waits for the number of signatures found by Pixy to change by Amount.</p>]]></Description>
+      </Block>
+    <Block Mode="WaitPixyCompareSignature" DisplayName="" >
+        <Description><![CDATA[<p>Waits for the number of signatures found by Pixy to change by Amount.</p>]]></Description>
+      </Block>
+    <Block Mode="WaitPixyChangeSignature" DisplayName="" >
+        <Description><![CDATA[<p>Waits for the number of signatures found by Pixy to change by Amount.</p>]]></Description>
+      </Block>
+    <Block Mode="LoopPixyCompareSignature" DisplayName="" >
+        <Description><![CDATA[<p>Loops until the number of signatures found by Pixy to changes by Amount.</p>]]></Description>
+      </Block>
+    <Block Mode="SwitchPixyCompareSignature" DisplayName="" >
+       <Description><![CDATA[<p>Selects between the number of signatures found by Pixy.</p>]]></Description>
+      </Block>
+    </PolyGroup>
+    <PolyGroup Name="PixyPID" DisplayName="Simple PID Control" DisplayNamePrefix="PixyPID">
+      <Parameter Name="valueIn" DisplayName="Value In" >
+        <Description><![CDATA[<p>The input for the measured value. For Pixy, you would typically input the X or Y outputs, but really any measured value can go here, even from sensors other than Pixy, like the IR proximity sensor.</p>]]></Description>
+      </Parameter>
+      <Parameter Name="Instance" DisplayName="Instance">
+        <Description><![CDATA[<p>The instance of the PID block. Up to 8 instances of the PID block can be used independently in the same program. If you need more than one PID block, be sure to give them different instances.</p>]]></Description>
+      </Parameter>
+      <Parameter Name="controlOut" DisplayName="Control Output">
+        <Description><![CDATA[<p>The output of the controller.  This is typically connected to your “action”, which is almost always one or more motors (for LEGO Mindstorms).  You could (in theory) connect this to your furnace if you wanted to build a home thermostat, and you had a temperature sensor connected to Value In, but that’s a project for another day!</p>]]></Description>
+      </Parameter>
+      <Parameter Name="setPoint" DisplayName="Set Point">
+        <Description><![CDATA[<p>The “desired value”.  In other words you want to “drive” the sensor value (Value In) to this value.</p>]]></Description>
+      </Parameter>
+      <Parameter Name="pidP" DisplayName="Proportional">
+        <Description><![CDATA[<p>The proportional gain input.</p>]]></Description>
+      </Parameter>
+      <Parameter Name="pidI" DisplayName="Integral">
+        <Description><![CDATA[<p>The integral gain input.</p>]]></Description>
+      </Parameter>
+      <Parameter Name="pidD" DisplayName="Derivative">
+        <Description><![CDATA[<p>The derivative gain input.</p>]]></Description>
+      </Parameter>
+      <Parameter Name="iMultiplier" DisplayName="PID Multiplier">
+        <Description><![CDATA[<p>A multiplier for the final output.  It is especially useful if you need to invert the output (you do so by setting to -1).  This value is 1 by default.</p>]]></Description>
+      </Parameter>
+      <Block Mode="PixyPIDSimple" DisplayName="Pixy PID">
+        <Description><![CDATA[<p>A simple PID controller. Assumes a constant loop rate and uses a summation to represent the integral. Uses local memory for each instance of the PID controller.</p>]]></Description>
+      </Block>
+    </PolyGroup>
+  </PolyGroups>
+</EditorStrings>
