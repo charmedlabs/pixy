@@ -24,6 +24,7 @@
 
   <project>
     <PathAndName>..\libpixy_m4\libpixy_m4.uvproj</PathAndName>
+    <NodeIsExpanded>1</NodeIsExpanded>
   </project>
 
 </ProjectWorkspace>

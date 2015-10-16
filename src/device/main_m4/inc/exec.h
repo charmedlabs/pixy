@@ -19,7 +19,7 @@
 #include "chirp.hpp"
 #include "debug_frmwrk.h"
 
-#define LEGO
+//#define LEGO
 
 #define FW_MAJOR_VER		2
 #define FW_MINOR_VER		0
