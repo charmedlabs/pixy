@@ -1,0 +1,128 @@
+<html>
+<head>
+<title>Pixy Sensor Block</title>
+</head>
+<body BGCOLOR="FFFFFF">
+<p>Pixy is a small, fast, easy-to-use, low-cost vision system that now works with LEGO EV3 and NXT.  Pixy uses a color-based filtering algorithm to detect objects in the environment.  Pixy remembers up to 7 different “color signatures”, which means that if you have 7 different objects with unique colors, Pixy’s color filtering algorithm will have no problem identifying them and distinguishing between them. If you need more than seven, you can use color codes. </p>
+<h1>Pixy Block</h1>
+<p></p>
+<a name="Mode_PixySignature"></a>
+<p>The Pixy block appears below with labels showing the different inputs and outputs.</p><br>
+<img src="image10.png" width="310" height="193" />
+<a name="Parameters"></a>
+<h3>Parameters</h3>
+<ol>
+<li><b>Port Selector</b>:  use this to select the sensor port 1 through 4 that Pixy is plugged into on your controller brick.</li>
+<li><b>Mode Selector</b>:  selects between measure and compare modes.</li>
+<li><b>Signature</b>: selects the signature or <a href="http://www.cmucam.org/projects/cmucam5/wiki/Using_Color_Codes">color code</a> you'd like Pixy to search for.</li>
+<li><b>Signature Output</b>: outputs the number of blocks that match the signature or <a href="http://www.cmucam.org/projects/cmucam5/wiki/Using_Color_Codes">color code</a> you specified in the Signature input.  Or it outputs the signature number of the detected object if in General Mode (see the description of modes below).</li>
+<li><b>X centroid</b>: outputs the X location of the center of the largest object that Pixy has found. The number returned ranges from 0 to 255, with 0 being the rightmost pixel if facing the camera lens.</li>
+<li><b>Y centroid</b>: outputs the Y location of the center of the largest object that Pixy found. The number returned is from 0 to 199, with 0 being the topmost pixel.</li>
+<li><b>Width</b>: outputs the width of the largest block that Pixy has found. The number returned is from 1 to 256.</li>
+<li><b>Height</b>: outputs the height of the largest block that Pixy has found. The number returned is from 1 to 256.</li>
+<li><b>Angle</b>: is the angle (in degrees) of the largest object that Pixy has found.  Angle information is only available for <a href="http://www.cmucam.org/projects/cmucam5/wiki/Using_Color_Codes">color codes</a>, otherwise the value is 0.</li>
+</ol>
+<h3>Operational Modes</h3>
+<p>Pixy has two main modes of operation: <b>General Mode</b> and <b>Signature Mode</b>.  General mode is the default and most common mode.  It is selected by setting a 0 for the Signature input.  The Signature input is indicated by the number 3 in the block picture above.</p>
+<h4>General Mode</h4>
+<p>In General Mode, Pixy will report the largest object that it has detected, regardless of which signature or <a href="http://www.cmucam.org/projects/cmucam5/wiki/Using_Color_Codes">color code</a> describes the object.  And the Signature Output tells you the signature or the <a href="http://www.cmucam.org/projects/cmucam5/wiki/Using_Color_Codes">color code</a> number of the object.
+<br><br>
+As a simple (somewhat contrived!) example, if you wanted to detect both green and purple dinosaurs, you could <a href="http://cmucam.org/projects/cmucam5/wiki/Teach_Pixy_an_Object_2">train</a> signature 1 on the purple dinosaur and signature 2 on the green dinosaur.  General Mode will then tell you if either types of dinosaurs are present.  The Signature Output will be 1 if a purple dinosaur is present and is larger in the image than other green dinosaurs in the image.  The Signature Output will be 2 if the if a green dinosaur is present and is larger in the image than other purple dinosaurs in the image.  In either case, the X, Y, Width and Height outputs will report the location and size of the largest detected dinosaur.  Note, that the dinosaurs may be the same physical size, but because one dinosaur is closer to the camera, it will appear larger in the image, and it will be the object that is reported. </p>
+<h4>Signature Mode</h4>
+<p>In Signature Mode, Pixy will report the largest object that matches the signature number or <a href="http://www.cmucam.org/projects/cmucam5/wiki/Using_Color_Codes">color code</a> set in the Signature input (3 in the block diagram above).  And the Signature Output tells you how many objects Pixy has detected that match the specified signature or <a href="http://www.cmucam.org/projects/cmucam5/wiki/Using_Color_Codes">color code</a>.   
+<br><br>
+Similar to the example above, if you had two types of dinosaurs, purple and green, and you <a href="http://cmucam.org/projects/cmucam5/wiki/Teach_Pixy_an_Object_2">trained</a> signature 1 on the purple dinosaur and signature 2 on the green dinosaur, you could restrict detection to only purple dinosaurs by setting the Signature input to 1.  And similarly, you could restrict detection to only green dinosaurs by setting the Signature input to 2.   
+<br><br>
+Note that the Signature input can be connected to another output within your program, so you can change the detected signature or <a href="http://www.cmucam.org/projects/cmucam5/wiki/Using_Color_Codes">color code</a> number during runtime, and Pixy will change what it reports accordingly. 
+</p>
+<h2>Conditional Blocks</h2>
+<p>There are several ways to use conditions based on what Pixy detects in your program.  Below we describe the different blocks that use “Pixy conditionals”.</p>
+<a name="Mode_PixyCompareSignature"></a>
+<a name="Mode_WaitPixyCompareSignature"></a>
+<h3>Compare Signature</h3>
+<p>This block available by selecting Compare in the Mode Selector as shown below:
+</p>
+<img src="image04.png" width="289" height="183" />
+<p>Here is what the Compare Signature block looks like:
+</p>
+<img src="image00.png" width="248" height="151" />
+<h3>Parameters</h3>
+<ol>
+<li><b>Signature</b>: selects the signature or <a href="http://www.cmucam.org/projects/cmucam5/wiki/Using_Color_Codes">color code</a> you'd like Pixy to search for.</li>
+<li><b>Compare Type</b>: selects the comare operation you would like to use.</li>
+<li><b>Threshold Value</b>:  the value you wish to compare against the number of detected objects that match the specified signature.</li>
+<li><b>Compare Result</b>: outputs the result of the compare operation.</li>
+<li><b>Number of Blocks</b>: outputs the number of detected objects that match the specified signature.</li>
+</ol>
+<p>
+Compare Signature mode compares the number of detected objects to the <a href="http://localhost:58401/localizedMapping_B90BDB05-F70E-4B0B-8CEA-031DCF197215/en-US/editor/page.html?Path=blocks%2FLEGO%2FUltrasonicSensor.html#Threshold">Threshold Value</a> (3) using the selected <a href="http://localhost:58401/localizedMapping_B90BDB05-F70E-4B0B-8CEA-031DCF197215/en-US/editor/page.html?Path=blocks%2FLEGO%2FUltrasonicSensor.html#Comparison">Compare Type</a> (2). The True/False result is output in <a href="http://localhost:58401/localizedMapping_B90BDB05-F70E-4B0B-8CEA-031DCF197215/en-US/editor/page.html?Path=blocks%2FLEGO%2FUltrasonicSensor.html#Result">Compare Result</a> (4), and the number of signatures is output in Number of Blocks (5) output.
+</p>
+<h2>Wait Blocks</h2>
+<p>These blocks is available through the Wait block, which is one of the Flow Control blocks.  There are two options available: Wait Signature Compare and Wait Signature Change. </p>
+<a name="Mode_PixyChangeSignature"></a>
+<a name="Mode_WaitPixyChangeSignature"></a>
+<h3>Wait Signature Compare</h3>
+<p>This block is available by selecting Compare then Signature as shown below:</p>
+<img src="image06.png" width="422" height="350" />
+<p>Here is what the Wait Signature Compare block looks like:</p>
+<img src="image07.png" width="219" height="155" />
+<h4>Parameters</h4>
+<ol>
+<li><b>Signature</b>: selects the signature or <a href="http://www.cmucam.org/projects/cmucam5/wiki/Using_Color_Codes">color code</a> you'd like Pixy to search for.</li>
+<li><b>Compare Type</b>: selects the compare operation you would like to use.</li>
+<li><b>Threshold Value</b>:  the value you wish to compare against the number of detected objects that match the specified signature. </li>
+<li><b>Number of Blocks</b>: outputs the number of detected objects that match the specified signature.</li>
+</ol>
+<p>
+The Wait Signature Compare block compares the number of detected objects to the <a href="http://localhost:58401/localizedMapping_B90BDB05-F70E-4B0B-8CEA-031DCF197215/en-US/editor/page.html?Path=blocks%2FLEGO%2FUltrasonicSensor.html#Threshold">Threshold Value</a> (3) using the selected <a href="http://localhost:58401/localizedMapping_B90BDB05-F70E-4B0B-8CEA-031DCF197215/en-US/editor/page.html?Path=blocks%2FLEGO%2FUltrasonicSensor.html#Comparison">Compare Type</a> (2). If the result is false, the program will be paused.  If the result is true, the program will resume execution, and the number of detected objects is output in Number of Blocks (4).
+</p>
+<h3>Wait Signature Change</h3>
+<p>This block is available by selecting Change then Signature as shown below:</p>
+<img src="image05.png" width="420" height="363" />
+<p>Here is what the Wait Signature Change block looks like:</p>
+<img src="image01.png" width="184" height="151" />
+<h4>Parameters</h4>
+<ol>
+<li><b>Signature</b>: selects the signature or <a href="http://www.cmucam.org/projects/cmucam5/wiki/Using_Color_Codes">color code</a> you'd like Pixy to search for.</li>
+<li><b>Amount</b>: selects the amount of change in the number of objects detected.</li>
+<li><b>Number of Blocks</b>: outputs the number of detected objects that match the specified signature.</li>
+</ol>
+<p>
+The Wait Change Signature block waits for a change in the number of specified objects detected by Pixy. If the number of objects that match the signature specified in the Signature input (1) changes by the number indicated in the Amount (2) input, the block returns, and the number of detected objects is output in Number of Blocks (3).
+</p>
+<a name="Mode_LoopPixyCompareSignature"></a>
+<h3>Loop Pixy Compare</h3>
+<p>
+This block is available through the Loop block, which is one of the Flow Control blocks.  Bring it up by selecting Pixy Camera then Signature in the Loop block Mode Selection.
+</p>
+<img src="image09.png" width="296" height="437" />
+<p>Here is what the Loop Pixy Compare block looks like:</p>
+<img src="image02.png" width="332" height="217" />
+<h4>Parameters</h4>
+<ol>
+<li><b>Signature</b>: selects the signature or <a href="http://www.cmucam.org/projects/cmucam5/wiki/Using_Color_Codes">color code</a> you'd like Pixy to search for.</li>
+<li><b>Compare Type</b>: selects the compare operation you would like to use.</li>
+<li><b>Threshold Value</b>:  the value you wish to compare against the number of detected objects that match the specified signature. </li>
+</ol>
+<p>
+The Loop Pixy Compare block compares the number of detected objects to the <a href="http://localhost:58401/localizedMapping_B90BDB05-F70E-4B0B-8CEA-031DCF197215/en-US/editor/page.html?Path=blocks%2FLEGO%2FUltrasonicSensor.html#Threshold">Threshold Value</a> (3) using the selected <a href="http://localhost:58401/localizedMapping_B90BDB05-F70E-4B0B-8CEA-031DCF197215/en-US/editor/page.html?Path=blocks%2FLEGO%2FUltrasonicSensor.html#Comparison">Compare Type</a> (2). If the result is false, the loop will be continue looping.  If the result is true, the loop will exit.
+</p>
+<a name="Mode_SwitchPixyCompareSignature"></a>
+<h3>Switch Pixy Compare</h3>
+<p>
+This block is available by selecting the Switch block which is one of the Flow Control blocks.  Bring it up by selecting Pixy Camera, the Compare then Signature in the Switch block Mode Selection.	
+</p>
+<img src="image08.png" width="420" height="409" />
+<p>Here is what the Switch Pixy Compare block looks like:</p>
+<img src="image03.png" width="301" height="224" />
+<h4>Parameters</h4>
+<ol>
+<li><b>Signature</b>: selects the signature or <a href="http://www.cmucam.org/projects/cmucam5/wiki/Using_Color_Codes">color code</a> you'd like Pixy to search for.</li>
+<li><b>Compare Type</b>: selects the compare operation you would like to use.</li>
+<li><b>Threshold Value</b>:  the value you wish to compare against the number of detected objects that match the specified signature.</li>
+</ol>
+<p>
+The Switch Pixy Compare block compares the number of detected objects to the <a href="http://localhost:58401/localizedMapping_B90BDB05-F70E-4B0B-8CEA-031DCF197215/en-US/editor/page.html?Path=blocks%2FLEGO%2FUltrasonicSensor.html#Threshold">Threshold Value</a> (3) using the selected <a href="http://localhost:58401/localizedMapping_B90BDB05-F70E-4B0B-8CEA-031DCF197215/en-US/editor/page.html?Path=blocks%2FLEGO%2FUltrasonicSensor.html#Comparison">Compare Type</a> (2). If the result is false, the false case is executed. If the result is true, the true case is executed.
+</p>
+</body>
+</html>

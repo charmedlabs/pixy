@@ -1,0 +1,469 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<SourceFile Version="1.0.2.10" xmlns="http://www.ni.com/SourceModel.xsd">
+    <Namespace Name="Project">
+        <VirtualInstrument IsTopLevel="false" IsReentrant="false" Version="1.0.2.0" xmlns="http://www.ni.com/VirtualInstrument.xsd">
+            <DataItem Name="Port" DataType="Single" DefaultTerminalDirection="Output" CallUsage="None" CallDirection="Input" CallIndex="0" DefaultValue="0" />
+            <DataItem Name="I2Cwrite" DataType="Byte[]" DefaultTerminalDirection="Output" CallUsage="None" CallDirection="Input" CallIndex="1" DefaultValue="Byte[]" />
+            <DataItem Name="nSignatures" DataType="Int32" DefaultTerminalDirection="Input" CallUsage="None" CallDirection="Output" CallIndex="0" DefaultValue="0" />
+            <DataItem Name="x" DataType="Int32" DefaultTerminalDirection="Input" CallUsage="None" CallDirection="Output" CallIndex="1" DefaultValue="0" />
+            <DataItem Name="y" DataType="Int32" DefaultTerminalDirection="Input" CallUsage="None" CallDirection="Output" CallIndex="2" DefaultValue="0" />
+            <DataItem Name="width" DataType="Int32" DefaultTerminalDirection="Input" CallUsage="None" CallDirection="Output" CallIndex="3" DefaultValue="0" />
+            <DataItem Name="height" DataType="Int32" DefaultTerminalDirection="Input" CallUsage="None" CallDirection="Output" CallIndex="4" DefaultValue="0" />
+            <DataItem Name="angle" DataType="Single" DefaultTerminalDirection="Input" CallUsage="None" CallDirection="Output" CallIndex="5" DefaultValue="0" />
+            <FrontPanel>
+                <fpruntime:FrontPanelCanvas xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:fpruntime="clr-namespace:NationalInstruments.LabVIEW.FrontPanelRuntime;assembly=NationalInstruments.LabVIEW.FrontPanelRuntime" xmlns:Model0="clr-namespace:NationalInstruments.SourceModel.Designer;assembly=NationalInstruments.SourceModel" xmlns:erics="clr-namespace:NationalInstruments.Controls;assembly=NationalInstruments.Controls.Numerics" xmlns:orlib="clr-namespace:System;assembly=mscorlib" xmlns:ation="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:Model1="clr-namespace:NationalInstruments.SourceModel.Modeling.Proxy;assembly=NationalInstruments.SourceModel" x:Name="FrontPanel" Model0:DesignerSurfaceProperties.CanSnapToObjects="True" Model0:DesignerSurfaceProperties.SnapToObjects="True" Model0:DesignerSurfaceProperties.ShowSnaplines="True" Model0:DesignerSurfaceProperties.ShowControlAdorners="True" Width="640" Height="480">
+                    <erics:ArrayViewer x:Name="I2Cwrite" VisibleRows="1" VisibleColumns="1" Value="{Binding Path=I2Cwrite, Mode=TwoWay}" TabIndex="4" ElementType="{x:Type orlib:Byte}" ArrayRank="1" Width="NaN" Height="NaN" Margin="0" ation:Canvas.Left="65.5" ation:Canvas.Top="216">
+                        <fpruntime:AnimationProperties.Animations>
+                            <fpruntime:AnimationsContainer />
+                        </fpruntime:AnimationProperties.Animations>
+                        <fpruntime:EventProperties.Events>
+                            <fpruntime:EventContainer />
+                        </fpruntime:EventProperties.Events>
+                        <fpruntime:BuddyReferenceProperties.BuddyProperties>
+                            <fpruntime:BuddyProperties BuddyReferences="Label,Label4" />
+                        </fpruntime:BuddyReferenceProperties.BuddyProperties>
+                        <erics:ArrayViewer.ElementTemplate>
+                            <ation:DataTemplate>
+                                <erics:UInt8NumericTextBox x:Name="Numeric2" Width="54" Height="22" InteractionMode="ArrowKeys, ScrollWheel, ButtonClicks, TextInput" Model0:DesignerNodeProperties.ParameterDirection="input" ation:Grid.Row="0" TabIndex="3" Model1:DataTemplateProxy.ContextID="30ec9758-a917-4d2b-a3b9-6409849583ab" Value="{Binding Path=Value}">
+                                    <fpruntime:AnimationProperties.Animations>
+                                        <fpruntime:AnimationsContainer />
+                                    </fpruntime:AnimationProperties.Animations>
+                                    <fpruntime:EventProperties.Events>
+                                        <fpruntime:EventContainer />
+                                    </fpruntime:EventProperties.Events>
+                                    <fpruntime:BuddyReferenceProperties.BuddyProperties>
+                                        <fpruntime:BuddyProperties BuddyReferences="Label,Label3" />
+                                    </fpruntime:BuddyReferenceProperties.BuddyProperties>
+                                </erics:UInt8NumericTextBox>
+                            </ation:DataTemplate>
+                        </erics:ArrayViewer.ElementTemplate>
+                    </erics:ArrayViewer>
+                    <ation:TextBlock x:Name="Label4" Text="I2Cwrite" Model0:DesignerNodeProperties.SnapTo="False" Visibility="Visible" ation:Canvas.Left="65.5" ation:Canvas.Top="196" Margin="0">
+                        <fpruntime:AnimationProperties.Animations>
+                            <fpruntime:AnimationsContainer />
+                        </fpruntime:AnimationProperties.Animations>
+                        <fpruntime:EventProperties.Events>
+                            <fpruntime:EventContainer />
+                        </fpruntime:EventProperties.Events>
+                        <fpruntime:BuddyReferenceProperties.BuddyProperties>
+                            <fpruntime:BuddyProperties BuddyReferences="" BuddyOwner="I2Cwrite" BuddyOffset="0, -20" BuddyVisible="True" BuddyLocked="False" />
+                        </fpruntime:BuddyReferenceProperties.BuddyProperties>
+                    </ation:TextBlock>
+                    <erics:Int32NumericTextBox x:Name="nSignatures" Width="54" Height="22" InteractionMode="ReadOnly" Model0:DesignerNodeProperties.ParameterDirection="input" Value="{Binding Path=nSignatures, Mode=TwoWay}" TabIndex="5" Margin="0" ation:Canvas.Left="470.5" ation:Canvas.Top="68">
+                        <fpruntime:AnimationProperties.Animations>
+                            <fpruntime:AnimationsContainer />
+                        </fpruntime:AnimationProperties.Animations>
+                        <fpruntime:EventProperties.Events>
+                            <fpruntime:EventContainer />
+                        </fpruntime:EventProperties.Events>
+                        <fpruntime:BuddyReferenceProperties.BuddyProperties>
+                            <fpruntime:BuddyProperties BuddyReferences="Label,Label2" />
+                        </fpruntime:BuddyReferenceProperties.BuddyProperties>
+                    </erics:Int32NumericTextBox>
+                    <ation:TextBlock x:Name="Label2" Text="nSignatures" Model0:DesignerNodeProperties.SnapTo="False" Visibility="Visible" ation:Canvas.Left="470.5" ation:Canvas.Top="48">
+                        <fpruntime:AnimationProperties.Animations>
+                            <fpruntime:AnimationsContainer />
+                        </fpruntime:AnimationProperties.Animations>
+                        <fpruntime:EventProperties.Events>
+                            <fpruntime:EventContainer />
+                        </fpruntime:EventProperties.Events>
+                        <fpruntime:BuddyReferenceProperties.BuddyProperties>
+                            <fpruntime:BuddyProperties BuddyReferences="" BuddyOwner="nSignatures" BuddyOffset="0, -20" BuddyVisible="True" BuddyLocked="False" />
+                        </fpruntime:BuddyReferenceProperties.BuddyProperties>
+                    </ation:TextBlock>
+                    <erics:Int32NumericTextBox x:Name="x" Width="54" Height="22" InteractionMode="ReadOnly" Model0:DesignerNodeProperties.ParameterDirection="input" Value="{Binding Path=x, Mode=TwoWay}" TabIndex="6" Margin="0" ation:Canvas.Left="470.5" ation:Canvas.Top="119">
+                        <fpruntime:AnimationProperties.Animations>
+                            <fpruntime:AnimationsContainer />
+                        </fpruntime:AnimationProperties.Animations>
+                        <fpruntime:EventProperties.Events>
+                            <fpruntime:EventContainer />
+                        </fpruntime:EventProperties.Events>
+                        <fpruntime:BuddyReferenceProperties.BuddyProperties>
+                            <fpruntime:BuddyProperties BuddyReferences="Label,Label5" />
+                        </fpruntime:BuddyReferenceProperties.BuddyProperties>
+                    </erics:Int32NumericTextBox>
+                    <ation:TextBlock x:Name="Label5" Text="x" Model0:DesignerNodeProperties.SnapTo="False" Visibility="Visible" ation:Canvas.Left="470.5" ation:Canvas.Top="99" Margin="0">
+                        <fpruntime:AnimationProperties.Animations>
+                            <fpruntime:AnimationsContainer />
+                        </fpruntime:AnimationProperties.Animations>
+                        <fpruntime:EventProperties.Events>
+                            <fpruntime:EventContainer />
+                        </fpruntime:EventProperties.Events>
+                        <fpruntime:BuddyReferenceProperties.BuddyProperties>
+                            <fpruntime:BuddyProperties BuddyReferences="" BuddyOwner="x" BuddyOffset="0, -20" BuddyVisible="True" BuddyLocked="False" />
+                        </fpruntime:BuddyReferenceProperties.BuddyProperties>
+                    </ation:TextBlock>
+                    <erics:Int32NumericTextBox x:Name="y" Width="54" Height="22" InteractionMode="ReadOnly" Model0:DesignerNodeProperties.ParameterDirection="input" Value="{Binding Path=y, Mode=TwoWay}" TabIndex="7" Margin="0" ation:Canvas.Left="470.5" ation:Canvas.Top="177">
+                        <fpruntime:AnimationProperties.Animations>
+                            <fpruntime:AnimationsContainer />
+                        </fpruntime:AnimationProperties.Animations>
+                        <fpruntime:EventProperties.Events>
+                            <fpruntime:EventContainer />
+                        </fpruntime:EventProperties.Events>
+                        <fpruntime:BuddyReferenceProperties.BuddyProperties>
+                            <fpruntime:BuddyProperties BuddyReferences="Label,Label6" />
+                        </fpruntime:BuddyReferenceProperties.BuddyProperties>
+                    </erics:Int32NumericTextBox>
+                    <ation:TextBlock x:Name="Label6" Text="y" Model0:DesignerNodeProperties.SnapTo="False" Visibility="Visible" ation:Canvas.Left="470.5" ation:Canvas.Top="157" Margin="0">
+                        <fpruntime:AnimationProperties.Animations>
+                            <fpruntime:AnimationsContainer />
+                        </fpruntime:AnimationProperties.Animations>
+                        <fpruntime:EventProperties.Events>
+                            <fpruntime:EventContainer />
+                        </fpruntime:EventProperties.Events>
+                        <fpruntime:BuddyReferenceProperties.BuddyProperties>
+                            <fpruntime:BuddyProperties BuddyReferences="" BuddyOwner="y" BuddyOffset="0, -20" BuddyVisible="True" BuddyLocked="False" />
+                        </fpruntime:BuddyReferenceProperties.BuddyProperties>
+                    </ation:TextBlock>
+                    <erics:Int32NumericTextBox x:Name="width" Width="54" Height="22" InteractionMode="ReadOnly" Model0:DesignerNodeProperties.ParameterDirection="input" Value="{Binding Path=width, Mode=TwoWay}" TabIndex="8" Margin="0" ation:Canvas.Left="470.5" ation:Canvas.Top="235">
+                        <fpruntime:AnimationProperties.Animations>
+                            <fpruntime:AnimationsContainer />
+                        </fpruntime:AnimationProperties.Animations>
+                        <fpruntime:EventProperties.Events>
+                            <fpruntime:EventContainer />
+                        </fpruntime:EventProperties.Events>
+                        <fpruntime:BuddyReferenceProperties.BuddyProperties>
+                            <fpruntime:BuddyProperties BuddyReferences="Label,Label7" />
+                        </fpruntime:BuddyReferenceProperties.BuddyProperties>
+                    </erics:Int32NumericTextBox>
+                    <ation:TextBlock x:Name="Label7" Text="width" Model0:DesignerNodeProperties.SnapTo="False" Visibility="Visible" ation:Canvas.Left="470.5" ation:Canvas.Top="215" Margin="0">
+                        <fpruntime:AnimationProperties.Animations>
+                            <fpruntime:AnimationsContainer />
+                        </fpruntime:AnimationProperties.Animations>
+                        <fpruntime:EventProperties.Events>
+                            <fpruntime:EventContainer />
+                        </fpruntime:EventProperties.Events>
+                        <fpruntime:BuddyReferenceProperties.BuddyProperties>
+                            <fpruntime:BuddyProperties BuddyReferences="" BuddyOwner="width" BuddyOffset="0, -20" BuddyVisible="True" BuddyLocked="False" />
+                        </fpruntime:BuddyReferenceProperties.BuddyProperties>
+                    </ation:TextBlock>
+                    <erics:Int32NumericTextBox x:Name="height" Width="54" Height="22" InteractionMode="ReadOnly" Model0:DesignerNodeProperties.ParameterDirection="input" Value="{Binding Path=height, Mode=TwoWay}" TabIndex="9" Margin="0" ation:Canvas.Left="470.5" ation:Canvas.Top="304">
+                        <fpruntime:AnimationProperties.Animations>
+                            <fpruntime:AnimationsContainer />
+                        </fpruntime:AnimationProperties.Animations>
+                        <fpruntime:EventProperties.Events>
+                            <fpruntime:EventContainer />
+                        </fpruntime:EventProperties.Events>
+                        <fpruntime:BuddyReferenceProperties.BuddyProperties>
+                            <fpruntime:BuddyProperties BuddyReferences="Label,Label8" />
+                        </fpruntime:BuddyReferenceProperties.BuddyProperties>
+                    </erics:Int32NumericTextBox>
+                    <ation:TextBlock x:Name="Label8" Text="height" Model0:DesignerNodeProperties.SnapTo="False" Visibility="Visible" ation:Canvas.Left="470.5" ation:Canvas.Top="284" Margin="0">
+                        <fpruntime:AnimationProperties.Animations>
+                            <fpruntime:AnimationsContainer />
+                        </fpruntime:AnimationProperties.Animations>
+                        <fpruntime:EventProperties.Events>
+                            <fpruntime:EventContainer />
+                        </fpruntime:EventProperties.Events>
+                        <fpruntime:BuddyReferenceProperties.BuddyProperties>
+                            <fpruntime:BuddyProperties BuddyReferences="" BuddyOwner="height" BuddyOffset="0, -20" BuddyVisible="True" BuddyLocked="False" />
+                        </fpruntime:BuddyReferenceProperties.BuddyProperties>
+                    </ation:TextBlock>
+                    <erics:SingleNumericTextBox x:Name="angle" Width="54" Height="22" InteractionMode="ReadOnly" Model0:DesignerNodeProperties.ParameterDirection="input" Value="{Binding Path=angle, Mode=TwoWay}" TabIndex="10" Margin="0" ation:Canvas.Left="375.5" ation:Canvas.Top="304">
+                        <fpruntime:AnimationProperties.Animations>
+                            <fpruntime:AnimationsContainer />
+                        </fpruntime:AnimationProperties.Animations>
+                        <fpruntime:EventProperties.Events>
+                            <fpruntime:EventContainer />
+                        </fpruntime:EventProperties.Events>
+                        <fpruntime:BuddyReferenceProperties.BuddyProperties>
+                            <fpruntime:BuddyProperties BuddyReferences="Label,Label9" />
+                        </fpruntime:BuddyReferenceProperties.BuddyProperties>
+                    </erics:SingleNumericTextBox>
+                    <ation:TextBlock x:Name="Label9" Text="angle" Model0:DesignerNodeProperties.SnapTo="False" Visibility="Visible" ation:Canvas.Left="375.5" ation:Canvas.Top="284" Margin="0">
+                        <fpruntime:AnimationProperties.Animations>
+                            <fpruntime:AnimationsContainer />
+                        </fpruntime:AnimationProperties.Animations>
+                        <fpruntime:EventProperties.Events>
+                            <fpruntime:EventContainer />
+                        </fpruntime:EventProperties.Events>
+                        <fpruntime:BuddyReferenceProperties.BuddyProperties>
+                            <fpruntime:BuddyProperties BuddyReferences="" BuddyOwner="angle" BuddyOffset="0, -20" BuddyVisible="True" BuddyLocked="False" />
+                        </fpruntime:BuddyReferenceProperties.BuddyProperties>
+                    </ation:TextBlock>
+                </fpruntime:FrontPanelCanvas>
+            </FrontPanel>
+            <BlockDiagram Name="__RootDiagram__">
+                <DataAccessor DataItem="Port" Id="n19" Bounds="210 98 70 14">
+                    <Terminal Id="Value" Direction="Output" Wire="w13" Hotspot="1 0.5" Bounds="0 0 70 14" />
+                </DataAccessor>
+                <Wire Id="w11" Joints="N(n6:valid\?) N(b7:n0)" />
+                <Wire Id="w12" Joints="N(n6:NXTPort) N(b12:n0)" />
+                <MethodCall Id="n6" Bounds="301 98 56 56" Target="ConvertEV3SensorPortNumberToNXTPort\.vix">
+                    <Terminal Id="LayeredSinglePortNumber" Direction="Input" Wire="w13" DataType="Double" Hotspot="0 0.5" Bounds="0 0 14 14" />
+                    <Terminal Id="NXTPort" Direction="Output" Wire="w12" DataType="Byte" Hotspot="1 0.5" Bounds="42 0 14 14" />
+                    <Terminal Id="valid\?" Direction="Output" Wire="w11" DataType="Boolean" Hotspot="1 0.5" Bounds="42 14 14 14" />
+                </MethodCall>
+                <MethodCall Id="n48" Bounds="917 49 56 56" Target="PixyI8toI32\.vix">
+                    <Terminal Id="I8" Direction="Input" Wire="w35" DataType="SByte" Hotspot="0 0.5" Bounds="0 0 14 14" />
+                    <Terminal Id="I32" Direction="Output" Wire="w42" DataType="Int32" Hotspot="1 0.5" Bounds="42 0 14 14" />
+                </MethodCall>
+                <CaseStructure Id="n0" Bounds="371 -35 525 392" DataType="Boolean" UserSelectorBounds="217.498 0 90.003 14" Selected="d1" Default="d0">
+                    <CaseStructure.Case Id="d0" Bounds="7 7 511 378" Pattern="False">
+                        <Literal Id="n5" Terminals="Out=w6" Bounds="434 42 28 14" Interpretation="Exact" DataType="Byte">0</Literal>
+                        <Wire Id="w6" Joints="N(n5:Out) h(14) N(b29:d0) B(1) v(35) v(35) v(35) N(b36:d0) B(5) v(35) N(b39:d0) B(7) v(35) N(b43:d0) B(4) N(b33:d0) B(3) N(b30:d0)" />
+                    </CaseStructure.Case>
+                    <CaseStructure.Case Id="d1" Bounds="7 7 511 378" Pattern="True">
+                        <MethodCall Id="n17" Bounds="49 126 56 56" Target="SetTypeAndMode\.vix">
+                            <Terminal Id="Port" Direction="Input" Wire="w4" DataType="Byte" Hotspot="0 0.5" Bounds="0 0 14 14" />
+                            <Terminal Id="SensorType" Direction="Input" Wire="w6" DataType="Byte" Hotspot="0 0.5" Bounds="0 14 14 14" />
+                            <Terminal Id="SensorMode" Direction="Input" Wire="w8" DataType="Byte" Hotspot="0 0.5" Bounds="0 28 14 14" />
+                            <Terminal Id="Port\ Out" Direction="Output" Wire="w5" DataType="Byte" Hotspot="1 0.5" Bounds="42 0 14 14" />
+                            <Terminal Id="Changed\?" Direction="Output" DataType="Boolean" Hotspot="1 0.5" Bounds="42 14 14 14" />
+                        </MethodCall>
+                        <Wire Id="w4" Joints="N(b12:d1) N(n17:Port)" />
+                        <Literal Id="n5" Terminals="Out=w6" Bounds="14 140 28 14" Interpretation="Exact" DataType="Byte">10</Literal>
+                        <Wire Id="w6" Joints="N(n5:Out) N(n17:SensorType)" />
+                        <Literal Id="n15" Terminals="Out=w8" Bounds="14 154 28 14" Interpretation="Exact" DataType="Byte">0</Literal>
+                        <Wire Id="w8" Joints="N(n15:Out) N(n17:SensorMode)" />
+                        <Wire Id="w5" Joints="N(n17:Port\ Out) N(b18:n20)" />
+                        <Wire Id="w16" Joints="N(b16:d1) N(b19:n20)" />
+                        <WhileLoop Id="n20" Bounds="196 14 294 350" DiagramId="D21">
+                            <WhileLoop.Iteration Id="n1" TopLeft="7 315" />
+                            <WhileLoop.Condition Id="n2" Terminals="Input=w30" TopLeft="252 231" />
+                            <MethodCall Id="n10" Bounds="35 105 56 56" Target="I2C_core\.vix">
+                                <Terminal Id="Port" Direction="Input" Wire="w6" DataType="Byte" Hotspot="0 0.5" Bounds="0 0 14 14" />
+                                <Terminal Id="bytes\ to\ write" Direction="Input" Wire="w8" DataType="Byte[]" Hotspot="0 0.5" Bounds="0 14 14 14" />
+                                <Terminal Id="return\ length" Direction="Input" Wire="w10" DataType="Byte" Hotspot="0 0.5" Bounds="0 28 14 14" />
+                                <Terminal Id="wait\ \(ms\)" Direction="Input" Wire="w11" DataType="Int32" Hotspot="0 0.5" Bounds="0 42 14 14" />
+                                <Terminal Id="Port\ out" Direction="Output" DataType="Byte" Hotspot="1 0.5" Bounds="42 0 14 14" />
+                                <Terminal Id="bytes\ read" Direction="Output" Wire="w50" DataType="Byte[]" Hotspot="1 0.5" Bounds="42 14 14 14" />
+                                <Terminal Id="success\?" Direction="Output" DataType="Boolean" Hotspot="1 0.5" Bounds="42 28 14 14" />
+                            </MethodCall>
+                            <Wire Id="w6" Joints="N(b18:D21) N(n10:Port)" />
+                            <Wire Id="w8" Joints="N(b19:D21) h(7) v(-56) N(n10:bytes\ to\ write)" />
+                            <Wire Id="w10" Joints="N(b20:D21) h(14) v(-77) N(n10:return\ length)" />
+                            <Wire Id="w11" Joints="N(b22:D21) N(n10:wait\ \(ms\))" />
+                            <ArrayIndex Rank="1" VerticalChunkCount="1" Id="n20" Terminals="array=w50, c0t0v=w16, c0t1v=w45" Bounds="140 7 28 28" />
+                            <Literal Id="n15" Terminals="Out=w16" Bounds="105 21 28 14" Interpretation="Exact" DataType="Int32">0</Literal>
+                            <Wire Id="w16" Joints="N(n15:Out) N(n20:c0t0v)" />
+                            <Literal Id="n26" Terminals="Out=w20" Bounds="140 231 35 14" Interpretation="Exact" DataType="Byte">255</Literal>
+                            <Wire Id="w20" Joints="N(n26:Out) N(n25:y)" />
+                            <Decrement Id="n24" Terminals="x\-1=w26, x=w25" TopLeft="126 273" />
+                            <Wire Id="w25" Joints="N(b28:i0) h(112) v(-21) N(n30:x) B(1) N(n24:x)" />
+                            <Wire Id="w26" Joints="N(n24:x\-1) N(b27:D21)" />
+                            <Wire Id="w28" Joints="N(n30:x\ \&lt;\=\ 0\?) h(56) v(-14) N(n23:y)" />
+                            <Wire Id="w29" Joints="N(n25:x\ \!\=\ y\?) N(n23:x)" />
+                            <Wire Id="w30" Joints="N(n23:x\ \.or\.\ y\?) N(n2:Input)" />
+                            <Comment Bounds="154 301 110 31" SizeMode="User" AttachStyle="Free">
+                                <Content>255? pixy is busy</Content>
+                            </Comment>
+                            <IsNotEqual Id="n25" Terminals="x\ \!\=\ y\?=w29, y=w20, x=w55" TopLeft="182 217" />
+                            <Or Id="n23" Terminals="x\ \.or\.\ y\?=w30, y=w28, x=w29" TopLeft="217 224" />
+                            <IsLessOrEqualTo0 Id="n30" Terminals="x\ \&lt;\=\ 0\?=w28, x=w25" TopLeft="126 252" />
+                            <ArrayIndex Rank="1" VerticalChunkCount="1" Id="n31" Terminals="array=w50, c0t0v=w32, c0t1v=w47" Bounds="140 42 28 28" />
+                            <Wire Id="w32" Joints="N(n32:Out) v(-1) N(n31:c0t0v)" />
+                            <Literal Id="n32" Terminals="Out=w32" Bounds="105 57 28 14" Interpretation="Exact" DataType="Int32">1</Literal>
+                            <ArrayIndex Rank="1" VerticalChunkCount="1" Id="n33" Terminals="array=w50, c0t0v=w34, c0t1v=w49" Bounds="140 77 28 28" />
+                            <Wire Id="w34" Joints="N(n35:Out) N(n33:c0t0v)" />
+                            <Literal Id="n35" Terminals="Out=w34" Bounds="105 91 28 14" Interpretation="Exact" DataType="Int32">2</Literal>
+                            <ArrayIndex Rank="1" VerticalChunkCount="1" Id="n36" Terminals="array=w50, c0t0v=w37, c0t1v=w51" Bounds="140 112 28 28" />
+                            <Wire Id="w37" Joints="N(n38:Out) N(n36:c0t0v)" />
+                            <Literal Id="n38" Terminals="Out=w37" Bounds="105 126 28 14" Interpretation="Exact" DataType="Int32">3</Literal>
+                            <ArrayIndex Rank="1" VerticalChunkCount="1" Id="n39" Terminals="array=w50, c0t0v=w40, c0t1v=w54" Bounds="140 147 28 28" />
+                            <Wire Id="w40" Joints="N(n41:Out) N(n39:c0t0v)" />
+                            <Literal Id="n41" Terminals="Out=w40" Bounds="105 161 28 14" Interpretation="Exact" DataType="Int32">4</Literal>
+                            <Wire Id="w45" Joints="N(n20:c0t1v) N(b45:D21)" />
+                            <Wire Id="w47" Joints="N(n31:c0t1v) N(b47:D21)" />
+                            <Wire Id="w49" Joints="N(n33:c0t1v) N(b49:D21)" />
+                            <Wire Id="w50" Joints="N(n10:bytes\ read) h(7) v(-7) N(n36:array) B(2) v(-35) N(n33:array) B(4) v(-35) N(n31:array) B(6) v(-35) N(n20:array) B(1) v(28) N(n39:array) B(10) v(35) N(n51:array)" />
+                            <Wire Id="w51" Joints="N(n36:c0t1v) N(b50:D21)" />
+                            <ArrayIndex Rank="1" VerticalChunkCount="1" Id="n51" Terminals="array=w50, c0t0v=w52, c0t1v=w55" Bounds="140 182 28 28" />
+                            <Wire Id="w52" Joints="N(n53:Out) N(n51:c0t0v)" />
+                            <Literal Id="n53" Terminals="Out=w52" Bounds="105 196 28 14" Interpretation="Exact" DataType="Int32">5</Literal>
+                            <Wire Id="w54" Joints="N(n39:c0t1v) N(b51:D21)" />
+                            <Wire Id="w55" Joints="N(n51:c0t1v) h(7) v(21) N(n25:x) B(1) N(b54:D21)" />
+                            <WhileLoop.Tunnel AutoIndex="False" Id="b18" Terminals="n20=w5, D21=w6" TopLeft="0 112" />
+                            <WhileLoop.Tunnel AutoIndex="False" Id="b19" Terminals="n20=w16, D21=w8" TopLeft="0 182" />
+                            <WhileLoop.Tunnel AutoIndex="False" Id="b20" Terminals="n20=w27, D21=w10" TopLeft="0 217" />
+                            <WhileLoop.Tunnel AutoIndex="False" Id="b22" Terminals="n20=w24, D21=w11" TopLeft="0 154" />
+                            <WhileLoop.RightShiftRegister Id="b27" Terminals="n20, D21=w26" TopLeft="280 280" />
+                            <WhileLoop.LeftShiftRegister RightRegister="b27" Id="b28" Terminals="o0=w26, i0=w25" TopLeft="0 280" />
+                            <WhileLoop.Tunnel AutoIndex="False" Id="b45" Terminals="n20=w28, D21=w45" TopLeft="280 28" />
+                            <WhileLoop.Tunnel AutoIndex="False" Id="b47" Terminals="n20=w30, D21=w47" TopLeft="280 63" />
+                            <WhileLoop.Tunnel AutoIndex="False" Id="b49" Terminals="n20=w33, D21=w49" TopLeft="280 98" />
+                            <WhileLoop.Tunnel AutoIndex="False" Id="b50" Terminals="n20=w36, D21=w51" TopLeft="280 133" />
+                            <WhileLoop.Tunnel AutoIndex="False" Id="b51" Terminals="n20=w39, D21=w54" TopLeft="280 168" />
+                            <WhileLoop.Tunnel AutoIndex="False" Id="b54" Terminals="n20=w42, D21=w55" TopLeft="280 203" />
+                        </WhileLoop>
+                        <Literal Id="n11" Terminals="Out=w24" Bounds="154 168 28 14" Interpretation="Exact" DataType="Int32">0</Literal>
+                        <Wire Id="w24" Joints="N(n11:Out) N(b22:n20)" />
+                        <Literal Id="n26" Terminals="Out=w26" Bounds="154 294 28 14" Interpretation="Exact" DataType="Byte">1</Literal>
+                        <Wire Id="w26" Joints="N(n26:Out) N(b28:o0)" />
+                        <Comment Bounds="7 91 175 31" SizeMode="User" AttachStyle="Free">
+                            <Content>low speed sensor, raw mode</Content>
+                        </Comment>
+                        <Comment Bounds="70 287 77 31" SizeMode="User" AttachStyle="Free">
+                            <Content>num retries</Content>
+                        </Comment>
+                        <Literal Id="n25" Terminals="Out=w27" Bounds="154 231 28 14" Interpretation="Exact" DataType="Byte">6</Literal>
+                        <Wire Id="w27" Joints="N(n25:Out) N(b20:n20)" />
+                        <Comment Bounds="49 217 98 31" SizeMode="User" AttachStyle="Free">
+                            <Content>bytes to read</Content>
+                        </Comment>
+                        <Wire Id="w28" Joints="N(b45:n20) N(b29:d1)" />
+                        <Wire Id="w30" Joints="N(b47:n20) N(b30:d1)" />
+                        <Wire Id="w33" Joints="N(b49:n20) N(b33:d1)" />
+                        <Wire Id="w36" Joints="N(b50:n20) N(b36:d1)" />
+                        <Wire Id="w39" Joints="N(b51:n20) N(b39:d1)" />
+                        <Wire Id="w42" Joints="N(b54:n20) N(b43:d1)" />
+                    </CaseStructure.Case>
+                    <CaseStructure.Selector Id="b7" Terminals="n0=w11, d0, d1" TopLeft="0 147" />
+                    <CaseStructure.Tunnel Id="b12" Terminals="n0=w12, d0, d1=w4" TopLeft="0 133" />
+                    <CaseStructure.Tunnel Id="b16" Terminals="n0=w21, d0, d1=w16" TopLeft="0 203" />
+                    <CaseStructure.Tunnel Id="b29" Terminals="n0=w22, d0=w6, d1=w28" TopLeft="511 49" />
+                    <CaseStructure.Tunnel Id="b30" Terminals="n0=w35, d0=w6, d1=w30" TopLeft="511 84" />
+                    <CaseStructure.Tunnel Id="b33" Terminals="n0=w38, d0=w6, d1=w33" TopLeft="511 119" />
+                    <CaseStructure.Tunnel Id="b36" Terminals="n0=w37, d0=w6, d1=w36" TopLeft="511 154" />
+                    <CaseStructure.Tunnel Id="b39" Terminals="n0=w36, d0=w6, d1=w39" TopLeft="511 189" />
+                    <CaseStructure.Tunnel Id="b43" Terminals="n0=w50, d0=w6, d1=w42" TopLeft="511 224" />
+                </CaseStructure>
+                <Wire Id="w13" Joints="N(n19:Value) N(n6:LayeredSinglePortNumber)" />
+                <DataAccessor DataItem="I2Cwrite" Id="n15" Bounds="189 168 91 14">
+                    <Terminal Id="Value" Direction="Output" Wire="w20" Hotspot="1 0.5" Bounds="0 0 91 14" />
+                </DataAccessor>
+                <ReplaceArraySubset Rank="1" VerticalChunkCount="1" Id="n20" Terminals="inArray=w20, outArray=w21, c0t0v=w23, c0t1v=w25" Bounds="322 168 28 42" />
+                <Wire Id="w20" Joints="N(n15:Value) N(n20:inArray)" />
+                <Wire Id="w21" Joints="N(n20:outArray) N(b16:n0)" />
+                <Literal Id="n22" Terminals="Out=w23" Bounds="287 182 28 14" Interpretation="Exact" DataType="Int32">0</Literal>
+                <Wire Id="w23" Joints="N(n22:Out) N(n20:c0t0v)" />
+                <Literal Id="n24" Terminals="Out=w25" Bounds="287 196 28 14" Interpretation="Exact" DataType="Byte">2</Literal>
+                <Wire Id="w25" Joints="N(n24:Out) N(n20:c0t1v)" />
+                <Comment Bounds="196 245 164 31" SizeMode="Auto" AttachStyle="Free">
+                    <Content>NXT uses device address 2</Content>
+                </Comment>
+                <DataAccessor DataItem="nSignatures" Id="n21" Bounds="1015 14 105 14">
+                    <Terminal Id="Value" Direction="Input" Wire="w22" Hotspot="0 0.5" Bounds="0 0 105 14" />
+                </DataAccessor>
+                <Wire Id="w22" Joints="N(b29:n0) N(n21:Value)" />
+                <DataAccessor DataItem="x" Id="n29" Bounds="1015 49 77 14">
+                    <Terminal Id="Value" Direction="Input" Wire="w42" Hotspot="0 0.5" Bounds="0 0 77 14" />
+                </DataAccessor>
+                <DataAccessor DataItem="y" Id="n26" Bounds="1015 84 77 14">
+                    <Terminal Id="Value" Direction="Input" Wire="w39" Hotspot="0 0.5" Bounds="0 0 77 14" />
+                </DataAccessor>
+                <DataAccessor DataItem="width" Id="n30" Bounds="1015 119 77 14">
+                    <Terminal Id="Value" Direction="Input" Wire="w40" Hotspot="0 0.5" Bounds="0 0 77 14" />
+                </DataAccessor>
+                <DataAccessor DataItem="height" Id="n32" Bounds="1015 154 77 14">
+                    <Terminal Id="Value" Direction="Input" Wire="w41" Hotspot="0 0.5" Bounds="0 0 77 14" />
+                </DataAccessor>
+                <Wire Id="w35" Joints="N(b30:n0) N(n48:I8)" />
+                <MethodCall Id="n33" Bounds="917 84 56 56" Target="PixyI8toI32\.vix">
+                    <Terminal Id="I8" Direction="Input" Wire="w38" DataType="SByte" Hotspot="0 0.5" Bounds="0 0 14 14" />
+                    <Terminal Id="I32" Direction="Output" Wire="w39" DataType="Int32" Hotspot="1 0.5" Bounds="42 0 14 14" />
+                </MethodCall>
+                <MethodCall Id="n34" Bounds="917 119 56 56" Target="PixyI8toI32\.vix">
+                    <Terminal Id="I8" Direction="Input" Wire="w37" DataType="SByte" Hotspot="0 0.5" Bounds="0 0 14 14" />
+                    <Terminal Id="I32" Direction="Output" Wire="w40" DataType="Int32" Hotspot="1 0.5" Bounds="42 0 14 14" />
+                </MethodCall>
+                <MethodCall Id="n35" Bounds="917 154 56 56" Target="PixyI8toI32\.vix">
+                    <Terminal Id="I8" Direction="Input" Wire="w36" DataType="SByte" Hotspot="0 0.5" Bounds="0 0 14 14" />
+                    <Terminal Id="I32" Direction="Output" Wire="w41" DataType="Int32" Hotspot="1 0.5" Bounds="42 0 14 14" />
+                </MethodCall>
+                <Wire Id="w36" Joints="N(b39:n0) N(n35:I8)" />
+                <Wire Id="w37" Joints="N(b36:n0) N(n34:I8)" />
+                <Wire Id="w38" Joints="N(b33:n0) N(n33:I8)" />
+                <Wire Id="w39" Joints="N(n33:I32) N(n26:Value)" />
+                <Wire Id="w40" Joints="N(n34:I32) N(n30:Value)" />
+                <Wire Id="w41" Joints="N(n35:I32) N(n32:Value)" />
+                <Wire Id="w42" Joints="N(n48:I32) N(n29:Value)" />
+                <DataAccessor DataItem="angle" Id="n46" Bounds="1162 217 77 14">
+                    <Terminal Id="Value" Direction="Input" Wire="w59" Hotspot="0 0.5" Bounds="0 0 77 14" />
+                </DataAccessor>
+                <Wire Id="w50" Joints="N(b43:n0) h(7) v(56) N(n43:x)" />
+                <Wire Id="w48" Joints="N(n60:Out) N(n43:y)" />
+                <Wire Id="w52" Joints="N(n51:Out) N(n44:y)" />
+                <Wire Id="w57" Joints="N(n44:x\ \&gt;\ y\?) N(n56:s)" />
+                <Wire Id="w58" Joints="N(n54:x\-y) N(n56:t)" />
+                <Multiply Id="n43" Terminals="x\*y=w60, y=w48, x=w50" TopLeft="980 245" />
+                <Literal Id="n60" Terminals="Out=w48" Bounds="910 259 63 14" Interpretation="Exact" DataType="Single">1.40625</Literal>
+                <IsGreater Id="n44" Terminals="x\ \&gt;\ y\?=w57, y=w52, x=w60" TopLeft="1022 210" />
+                <Literal Id="n51" Terminals="Out=w52" Bounds="973 224 35 14" Interpretation="Exact" DataType="Single">180</Literal>
+                <Literal Id="n53" Terminals="Out=w61" Bounds="1029 196 35 14" Interpretation="Exact" DataType="Single">360</Literal>
+                <Subtract Id="n54" Terminals="x\-y=w58, y=w61, x=w60" TopLeft="1085 196" />
+                <Select Id="n56" Terminals="s\?\ t\:f=w59, f=w60, s=w57, t=w58" TopLeft="1120 203" />
+                <Wire Id="w59" Joints="N(n56:s\?\ t\:f) N(n46:Value)" />
+                <Wire Id="w60" Joints="N(n43:x\*y) h(7) h(63) v(-21) v(-35) N(n54:x) B(3) N(n56:f) B(1) v(-42) N(n44:x)" />
+                <Wire Id="w61" Joints="N(n53:Out) v(14) N(n54:y)" />
+            </BlockDiagram>
+            <Icon>
+                <Model:IconPanel xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:Model="clr-namespace:NationalInstruments.LabVIEW.VI.Design;assembly=NationalInstruments.LabVIEW.VI.SourceModel" xmlns:fpruntime="clr-namespace:NationalInstruments.LabVIEW.FrontPanelRuntime;assembly=NationalInstruments.LabVIEW.FrontPanelRuntime" xmlns:ation="http://schemas.microsoft.com/winfx/2006/xaml/presentation" Height="84" Width="56">
+                    <fpruntime:AnimationProperties.Animations>
+                        <fpruntime:AnimationsContainer />
+                    </fpruntime:AnimationProperties.Animations>
+                    <fpruntime:EventProperties.Events>
+                        <fpruntime:EventContainer />
+                    </fpruntime:EventProperties.Events>
+                    <Model:IconPanel.Background>
+                        <ation:LinearGradientBrush StartPoint="0.5, 0" EndPoint="0.5, 1">
+                            <ation:LinearGradientBrush.Transform>
+                                <ation:MatrixTransform />
+                            </ation:LinearGradientBrush.Transform>
+                            <ation:LinearGradientBrush.RelativeTransform>
+                                <ation:MatrixTransform />
+                            </ation:LinearGradientBrush.RelativeTransform>
+                            <ation:GradientStop Color="#FFF6F5C6" />
+                            <ation:GradientStop Color="#FFFFFFFE" Offset="0.25" />
+                            <ation:GradientStop Color="#FFF6F5C6" Offset="1" />
+                        </ation:LinearGradientBrush>
+                    </Model:IconPanel.Background>
+                    <ation:Rectangle x:Name="Template" Width="NaN" Height="NaN" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="0, 13, 0, 0" ation:Grid.Row="0" ation:Grid.Column="0" ation:Grid.RowSpan="1" ation:Grid.ColumnSpan="1" Fill="#00FFFFFF" Stroke="#FF000000" StrokeThickness="1" RadiusX="0" RadiusY="0">
+                        <fpruntime:AnimationProperties.Animations>
+                            <fpruntime:AnimationsContainer />
+                        </fpruntime:AnimationProperties.Animations>
+                        <fpruntime:EventProperties.Events>
+                            <fpruntime:EventContainer />
+                        </fpruntime:EventProperties.Events>
+                    </ation:Rectangle>
+                    <ation:Rectangle x:Name="Template2" Width="NaN" Height="14" HorizontalAlignment="Stretch" VerticalAlignment="Top" Margin="0" ation:Grid.Row="0" ation:Grid.Column="0" ation:Grid.RowSpan="1" ation:Grid.ColumnSpan="1" Stroke="#FF000000" StrokeThickness="1" RadiusX="0" RadiusY="0">
+                        <fpruntime:AnimationProperties.Animations>
+                            <fpruntime:AnimationsContainer />
+                        </fpruntime:AnimationProperties.Animations>
+                        <fpruntime:EventProperties.Events>
+                            <fpruntime:EventContainer />
+                        </fpruntime:EventProperties.Events>
+                        <ation:Rectangle.Fill>
+                            <ation:LinearGradientBrush StartPoint="0.5, 0" EndPoint="0.5, 1">
+                                <ation:LinearGradientBrush.Transform>
+                                    <ation:MatrixTransform />
+                                </ation:LinearGradientBrush.Transform>
+                                <ation:LinearGradientBrush.RelativeTransform>
+                                    <ation:MatrixTransform />
+                                </ation:LinearGradientBrush.RelativeTransform>
+                                <ation:GradientStop Color="#FFFFFFFF" />
+                                <ation:GradientStop Color="#FFD5EAEA" Offset="1" />
+                            </ation:LinearGradientBrush>
+                        </ation:Rectangle.Fill>
+                    </ation:Rectangle>
+                    <ation:TextBlock x:Name="Template3" Width="NaN" Height="NaN" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0, -0.100000001490116, 0, 0" ation:Grid.Row="0" ation:Grid.Column="0" ation:Grid.RowSpan="1" ation:Grid.ColumnSpan="1" Text="SubVI" FontFamily="Portable User Interface" FontSize="10" FontWeight="Normal" Foreground="#FF000000">
+                        <fpruntime:AnimationProperties.Animations>
+                            <fpruntime:AnimationsContainer />
+                        </fpruntime:AnimationProperties.Animations>
+                        <fpruntime:EventProperties.Events>
+                            <fpruntime:EventContainer />
+                        </fpruntime:EventProperties.Events>
+                        <fpruntime:BuddyReferenceProperties.BuddyProperties>
+                            <fpruntime:BuddyProperties />
+                        </fpruntime:BuddyReferenceProperties.BuddyProperties>
+                    </ation:TextBlock>
+                    <ation:TextBlock HorizontalAlignment="Left" VerticalAlignment="Top" Margin="16.4999980926514, 20.6150012016296, 0, 0">
+                        <fpruntime:AnimationProperties.Animations>
+                            <fpruntime:AnimationsContainer />
+                        </fpruntime:AnimationProperties.Animations>
+                        <fpruntime:EventProperties.Events>
+                            <fpruntime:EventContainer />
+                        </fpruntime:EventProperties.Events>
+                        <ation:TextBlock.Text>
+                            <String xml:space="preserve" xmlns="clr-namespace:System;assembly=mscorlib">NXT
+I2C</String>
+                        </ation:TextBlock.Text>
+                        <fpruntime:BuddyReferenceProperties.BuddyProperties>
+                            <fpruntime:BuddyProperties />
+                        </fpruntime:BuddyReferenceProperties.BuddyProperties>
+                    </ation:TextBlock>
+                </Model:IconPanel>
+            </Icon>
+        </VirtualInstrument>
+    </Namespace>
+</SourceFile>
