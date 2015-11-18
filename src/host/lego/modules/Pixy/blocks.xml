@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <EditorDefinitions>
-  <PolyGroups ModuleName="Pixy" ModuleVersion="1.12">
+  <PolyGroups ModuleName="Pixy" ModuleVersion="1.13">
 	  <PolyGroup Name="Pixy" BlockFamily="Sensor">
       <Parameter Name="Port" CompilerDirectives="OneInputPort" Direction="Input" DefaultValue="1.3" />
       <Parameter Name="Comparison" Direction="Input" Configuration="builtin://Identification_ComparisonType.xml" Identification="builtin://Identification_ComparisonType.xml" DataType="Int32" DefaultValue="4" />
