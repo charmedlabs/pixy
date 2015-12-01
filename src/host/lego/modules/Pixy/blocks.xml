@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <EditorDefinitions>
-  <PolyGroups ModuleName="Pixy" ModuleVersion="1.13">
+  <PolyGroups ModuleName="Pixy" ModuleVersion="1.14">
 	  <PolyGroup Name="Pixy" BlockFamily="Sensor">
       <Parameter Name="Port" CompilerDirectives="OneInputPort" Direction="Input" DefaultValue="1.3" />
       <Parameter Name="Comparison" Direction="Input" Configuration="builtin://Identification_ComparisonType.xml" Identification="builtin://Identification_ComparisonType.xml" DataType="Int32" DefaultValue="4" />
@@ -8,7 +8,7 @@
       <Parameter Name="Amount" Identification="builtin://Identification_Numeric.png" DataType="Single" Direction="Input" DefaultValue="10" />
       <Parameter Name="i" CompilerDirectives="WaitForIteration" DataType="Int32" Direction="Input" DefaultValue="0" />
       <Parameter Name="Result" CompilerDirectives="Result" Identification="builtin://Identification_CompareResult.png" DataType="Boolean" Direction="Output" />
-      <Parameter Name="signatureIn" Identification="builtin://Identification_Index.png" DataType="Int16" Direction="Input" DefaultValue="1" MinValue="0" MaxValue="7" />
+      <Parameter Name="signatureIn" Identification="builtin://Identification_Index.png" DataType="Int16" Direction="Input" DefaultValue="0" />
       <Parameter Name="colorCodeIn" Identification="builtin://Identification_Index.png" DataType="Int32" Direction="Input" DefaultValue="0" />
       <Parameter Name="xOut" CompilerDirectives="Result" Identification="builtin://identification_x.png" DataType="Int32" Direction="Output" />
       <Parameter Name="yOut" Identification="builtin://identification_y.png" DataType="Int32" Direction="Output" />
