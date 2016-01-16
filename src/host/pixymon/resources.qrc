@@ -7,5 +7,6 @@
         <file>icons/cooked.png</file>
         <file>icons/pixy.png</file>
         <file>icons/home.png</file>
+        <file>icons/sigedit.png</file>
     </qresource>
 </RCC>

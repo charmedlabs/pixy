@@ -32,6 +32,7 @@
 #include "flash.h"
 #include "ui_mainwindow.h"
 #include "configdialog.h"
+#include "sigeditdialog.h"
 #include "dataexport.h"
 #include "sleeper.h"
 #include "aboutdialog.h"
@@ -60,6 +61,7 @@ MainWindow::MainWindow(int argc, char *argv[], QWidget *parent) :
     m_pixyConnected = false;
     m_pixyDFUConnected = false;
     m_configDialog = NULL;
+    m_sigEditDialog = NULL;
     m_fwInstructions = NULL;
     m_fwMessage = NULL;
     m_versionIncompatibility = false;
@@ -86,6 +88,9 @@ MainWindow::MainWindow(int argc, char *argv[], QWidget *parent) :
 
     m_ui->actionConfigure->setIcon(QIcon(":/icons/icons/config.png"));
     m_ui->toolBar->addAction(m_ui->actionConfigure);
+
+    m_ui->actionEdit_Signatures->setIcon(QIcon(":/icons/icons/sigedit.png"));
+    m_ui->toolBar->addAction(m_ui->actionEdit_Signatures);
 
     updateButtons();
 
@@ -153,6 +158,7 @@ void MainWindow::updateButtons()
         m_ui->actionRaw_video->setEnabled(false);
         m_ui->actionCooked_video->setEnabled(false);
         m_ui->actionConfigure->setEnabled(false);
+        m_ui->actionEdit_Signatures->setEnabled(false);
         m_ui->actionLoad_Pixy_parameters->setEnabled(false);
         m_ui->actionSave_Pixy_parameters->setEnabled(false);
         m_ui->actionSave_Image->setEnabled(false);
@@ -165,6 +171,7 @@ void MainWindow::updateButtons()
         m_ui->actionRaw_video->setEnabled(false);
         m_ui->actionCooked_video->setEnabled(false);
         m_ui->actionConfigure->setEnabled(true);
+        m_ui->actionEdit_Signatures->setEnabled(true);
         m_ui->actionLoad_Pixy_parameters->setEnabled(true);
         m_ui->actionSave_Pixy_parameters->setEnabled(true);
         m_ui->actionSave_Image->setEnabled(true);
@@ -177,6 +184,7 @@ void MainWindow::updateButtons()
         m_ui->actionRaw_video->setEnabled(true);
         m_ui->actionCooked_video->setEnabled(true);
         m_ui->actionConfigure->setEnabled(true);
+        m_ui->actionEdit_Signatures->setEnabled(true);
         m_ui->actionLoad_Pixy_parameters->setEnabled(true);
         m_ui->actionSave_Pixy_parameters->setEnabled(true);
         m_ui->actionSave_Image->setEnabled(true);
@@ -189,6 +197,7 @@ void MainWindow::updateButtons()
         m_ui->actionRaw_video->setEnabled(true);
         m_ui->actionCooked_video->setEnabled(true);
         m_ui->actionConfigure->setEnabled(true);
+        m_ui->actionEdit_Signatures->setEnabled(true);
         m_ui->actionLoad_Pixy_parameters->setEnabled(true);
         m_ui->actionSave_Pixy_parameters->setEnabled(true);
         m_ui->actionSave_Image->setEnabled(true);
@@ -201,6 +210,7 @@ void MainWindow::updateButtons()
         m_ui->actionRaw_video->setEnabled(false);
         m_ui->actionCooked_video->setEnabled(false);
         m_ui->actionConfigure->setEnabled(false);
+        m_ui->actionEdit_Signatures->setEnabled(false);
         m_ui->actionLoad_Pixy_parameters->setEnabled(false);
         m_ui->actionSave_Pixy_parameters->setEnabled(false);
         m_ui->actionSave_Image->setEnabled(false);
@@ -209,6 +219,9 @@ void MainWindow::updateButtons()
 
     if (m_configDialog)
         m_ui->actionConfigure->setEnabled(false);
+
+    if (m_sigEditDialog)
+        m_ui->actionEdit_Signatures->setEnabled(false);
 }
 
 void MainWindow::close()
@@ -223,6 +236,11 @@ void MainWindow::closeEvent(QCloseEvent *event)
     {
         m_configDialog->close();
         m_configDialog = NULL;
+    }
+    if (m_sigEditDialog)
+    {
+        m_sigEditDialog->close();
+        m_sigEditDialog = NULL;
     }
     if (m_interpreter)
     {
@@ -242,6 +260,11 @@ void MainWindow::handleRunState(int state)
         {
             m_configDialog->close();
             m_configDialog = NULL;
+        }
+        if (m_sigEditDialog)
+        {
+            m_sigEditDialog->close();
+            m_sigEditDialog = NULL;
         }
         DBG("closing interpreter");
         m_interpreter->close();
@@ -415,6 +438,11 @@ void MainWindow::handleConnected(Device device, bool state)
         m_configDialog->close();
         m_configDialog = NULL;
     }
+    if (m_sigEditDialog)
+    {
+        m_sigEditDialog->close();
+        m_sigEditDialog = NULL;
+    }
 
     // reset versionIncompatibility because we've unplugged, so we'll try again
     if (device==NONE && !state && m_versionIncompatibility)
@@ -442,6 +470,15 @@ void MainWindow::handleConfigDialogFinished()
     if (m_configDialog)
     {
         m_configDialog = NULL;
+        updateButtons();
+    }
+}
+
+void MainWindow::handleSigEditDialogFinished()
+{
+    if (m_sigEditDialog)
+    {
+        m_sigEditDialog = NULL;
         updateButtons();
     }
 }
@@ -530,6 +567,17 @@ void MainWindow::on_actionConfigure_triggered()
         m_configDialog = new ConfigDialog(this, m_interpreter);
         connect(m_configDialog, SIGNAL(finished(int)), this, SLOT(handleConfigDialogFinished()));
         m_configDialog->setAttribute(Qt::WA_DeleteOnClose);
+        updateButtons();
+    }
+}
+
+void MainWindow::on_actionEdit_Signatures_triggered()
+{
+    if (m_interpreter)
+    {
+        m_sigEditDialog = new SigEditDialog(this, m_interpreter);
+        connect(m_sigEditDialog, SIGNAL(finished(int)), this, SLOT(handleSigEditDialogFinished()));
+        m_sigEditDialog->setAttribute(Qt::WA_DeleteOnClose);
         updateButtons();
     }
 }
@@ -689,6 +737,11 @@ void MainWindow::on_actionExit_triggered()
     {
         m_configDialog->close();
         m_configDialog = NULL;
+    }
+    if (m_sigEditDialog)
+    {
+        m_sigEditDialog->close();
+        m_sigEditDialog = NULL;
     }
     if (m_interpreter)
     {

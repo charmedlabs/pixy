@@ -26,7 +26,7 @@
      <x>0</x>
      <y>0</y>
      <width>677</width>
-     <height>21</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -34,6 +34,7 @@
      <string>File</string>
     </property>
     <addaction name="actionConfigure"/>
+    <addaction name="actionEdit_Signatures"/>
     <addaction name="actionSave_Pixy_parameters"/>
     <addaction name="actionLoad_Pixy_parameters"/>
     <addaction name="actionSave_Image"/>
@@ -147,6 +148,14 @@
   <action name="actionLoad_Pixy_parameters">
    <property name="text">
     <string>Load Pixy parameters...</string>
+   </property>
+  </action>
+  <action name="actionEdit_Signatures">
+   <property name="text">
+    <string>Edit Signatures...</string>
+   </property>
+   <property name="toolTip">
+    <string>Edit color signatures</string>
    </property>
   </action>
  </widget>
