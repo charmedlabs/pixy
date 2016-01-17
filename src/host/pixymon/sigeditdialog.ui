@@ -16,29 +16,17 @@
   <property name="sizeGripEnabled">
    <bool>true</bool>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout" stretch="1,0">
+  <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0">
    <item>
-    <widget class="QLabel" name="imageLabel">
+    <widget class="QFrame" name="mapFrame">
      <property name="minimumSize">
       <size>
        <width>256</width>
        <height>256</height>
       </size>
      </property>
-     <property name="baseSize">
-      <size>
-       <width>512</width>
-       <height>512</height>
-      </size>
-     </property>
-     <property name="text">
-      <string/>
-     </property>
-     <property name="scaledContents">
-      <bool>false</bool>
-     </property>
-     <property name="textInteractionFlags">
-      <set>Qt::NoTextInteraction</set>
+     <property name="frameShape">
+      <enum>QFrame::NoFrame</enum>
      </property>
     </widget>
    </item>
@@ -63,8 +51,8 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>316</x>
-     <y>260</y>
+     <x>295</x>
+     <y>439</y>
     </hint>
     <hint type="destinationlabel">
      <x>286</x>
@@ -79,8 +67,8 @@
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>248</x>
-     <y>254</y>
+     <x>227</x>
+     <y>433</y>
     </hint>
     <hint type="destinationlabel">
      <x>157</x>

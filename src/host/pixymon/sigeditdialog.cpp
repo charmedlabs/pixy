@@ -5,9 +5,11 @@
 #include <QPainter>
 #include <QImage>
 #include <QPaintEngine>
+#include <QMouseEvent>
 #include <QDebug>
 #include "renderer.h"
 #include "calc.h"
+#include "chirp.hpp"
 #include "string.h"
 
 // COLORSPACE UTILS ***********************************************************
@@ -36,22 +38,28 @@ SigEditDialog::SigEditDialog(QWidget *parent, Interpreter *interpreter) :
 {
     ui->setupUi(this);
 
-    m_framecount = 0;
-
+    // bind to the interpreter
     m_interpreter = interpreter;
     m_interpreter->unwait(); // unhang interpreter if it's waiting
 
+    // receive video frames from the renderer
+    m_framecount = 0;
     Renderer *renderer = m_interpreter->m_renderer;
-
     connect(renderer, SIGNAL(image(QImage, uchar)),
             this, SLOT(handleImage(QImage,uchar)));
+
+    // track hover events to change the cursor
+    setMouseTracking(true);
+    ui->mapFrame->setAttribute(Qt::WA_TransparentForMouseEvents);
+    m_dragging = false;
 
     show();
 }
 
 void SigEditDialog::handleImage(QImage image, uchar renderFlags)
 {
-    // simulate the image list in videowidget.cpp so we only get the background video
+    // simulate the image list in videowidget.cpp so we only get
+    //  the background video
     if (! (renderFlags & RENDER_FLAG_BLEND)) m_framecount = 0;
     m_framecount++;
     if (m_framecount == 1) {
@@ -66,9 +74,10 @@ void SigEditDialog::handleImage(QImage image, uchar renderFlags)
         // transfer the camera image onto the colorspace map
         int px, py;
         int32_t y, u, v;
+        int32_t yMin = SigModule::getYMin();
         uint *p;
         for (py = 0; py < image.height(); py++) {
-            p = (uint *)image.scanLine(py - 1);
+            p = (uint *)image.scanLine(py);
             for (px = 0; px < image.width(); px++) {
                 // project into the colorspace
                 rgb2yuv(*p, &y, &u, &v);
@@ -76,7 +85,7 @@ void SigEditDialog::handleImage(QImage image, uchar renderFlags)
                 u = ((u + UV_SCALE_MAX) * size) / (UV_SCALE_MAX * 2);
                 v = ((v + UV_SCALE_MAX) * size) / (UV_SCALE_MAX * 2);
                 // draw a spot on the map
-                if (y > SigModule::m_yMin) {
+                if (y >= yMin) {
                     spot = QRect(u - 2, v - 2, 4, 4);
                     painter.fillRect(spot, *p);
                 }
@@ -99,7 +108,7 @@ void SigEditDialog::paintEvent(QPaintEvent *event)
     int i, j, y, u, v;
     QPainter painter(this);
     QPixmap pixmap;
-    QRect xybounds = this->ui->imageLabel->geometry();
+    QRect xybounds = ui->mapFrame->geometry();
     // map coordinates into (u, v) space
     painter.translate(xybounds.center().x(), xybounds.center().y());
     qreal xscale = (qreal)xybounds.width() / (qreal)(2 * UV_SCALE_MAX);
@@ -120,12 +129,13 @@ void SigEditDialog::paintEvent(QPaintEvent *event)
     // draw the background
     painter.setBrush(QColor(0x80, 0x80, 0x80));
     painter.drawPolygon(corners, 6);
-    // draw the edge
+    // draw the edge of the colorspace to show the reference colors
     painter.setBrush(Qt::NoBrush);
     QPen edgePen;
     j = 5;
     for (i = 0; i < 6; i++) {
-        QLinearGradient grad = QLinearGradient(QPointF(corners[i]), QPointF(corners[j]));
+        QLinearGradient grad = QLinearGradient(
+            QPointF(corners[i]), QPointF(corners[j]));
         grad.setColorAt(0.0, refcolors[i]);
         grad.setColorAt(1.0, refcolors[j]);
         edgePen = QPen(QBrush(grad), 3);
@@ -141,22 +151,24 @@ void SigEditDialog::paintEvent(QPaintEvent *event)
         painter.drawPixmap(uvbounds, pixmap);
     }
     // draw signature boxes
-    ColorSignature *sig;
+    ColorSignature sig;
     QRect main;
     QRect scaled;
-    float range;
-    QPen sigPen = QPen(QColor("white"), 2);
+    QRect outer;
+    QColor sigColor = QColor(255, 255, 255);
+    QPen sigPen = QPen(sigColor, 2);
     sigPen.setCosmetic(true);
-    QBrush sigBrush = QBrush(QColor(255, 255, 255, 64));
+    sigColor.setAlphaF(0.25);
+    QBrush sigBrush = QBrush(sigColor);
     for (i = 0; i < CL_NUM_SIGNATURES; i++) {
-        sig = &(SigModule::m_signatures[i]);
-        main = QRect(QPoint(sig->m_uMin, sig->m_vMin),
-                     QPoint(sig->m_uMax, sig->m_vMax));
-        range = SigModule::m_ranges[i];
-        scaled.setLeft(sig->m_uMean + (sig->m_uMin - sig->m_uMean) * range);
-        scaled.setRight(sig->m_uMean + (sig->m_uMax - sig->m_uMean) * range);
-        scaled.setTop(sig->m_vMean + (sig->m_vMin - sig->m_vMean) * range);
-        scaled.setBottom(sig->m_vMean + (sig->m_vMax - sig->m_vMean) * range);
+        sig = SigModule::getSignature(i);
+        // skip empty ones
+        if ((sig.m_uMin == 0) && (sig.m_uMax == 0) &&
+            (sig.m_vMin == 0) && (sig.m_vMax == 0)) continue;
+        // convert to rectangles in uv space
+        main = sigRect(sig);
+        scaled = effectiveSigRect(sig, SigModule::getRange(i));
+        outer = scaled.united(main);
         // draw the area after applying the scale factor
         painter.setBrush(sigBrush);
         painter.setPen(Qt::NoPen);
@@ -165,6 +177,16 @@ void SigEditDialog::paintEvent(QPaintEvent *event)
         painter.setBrush(Qt::NoBrush);
         painter.setPen(sigPen);
         painter.drawRect(main);
+        // draw a label for the signature
+        painter.setPen(sigPen);
+        painter.setBrush(Qt::NoBrush);
+        QString label;
+        label.sprintf("%d", i + 1);
+        QFont font = painter.font();
+        font.setPixelSize(qMin((int)(14.0 / yscale), outer.height()));
+        font.setBold(true);
+        painter.setFont(font);
+        painter.drawText(outer, Qt::AlignHCenter | Qt::AlignVCenter, label);
     }
 }
 
@@ -173,13 +195,181 @@ SigEditDialog::~SigEditDialog()
     delete ui;
 }
 
-// MONMODULE IMPLEMENTATION ***************************************************
+// INTERACTION ****************************************************************
+
+// get the stored area of a signature, not including scale factor
+QRect SigEditDialog::sigRect(ColorSignature sig)
+{
+    return(QRect(QPoint(sig.m_uMin, sig.m_vMin),
+                 QPoint(sig.m_uMax, sig.m_vMax)));
+}
+
+// get the effective area of a signature, including scale factor
+QRect SigEditDialog::effectiveSigRect(ColorSignature sig, float range) {
+    return(QRect(QPoint(
+            sig.m_uMean + (sig.m_uMin - sig.m_uMean) * range,
+            sig.m_vMean + (sig.m_vMin - sig.m_vMean) * range
+        ), QPoint(
+            sig.m_uMean + (sig.m_uMax - sig.m_uMean) * range,
+            sig.m_vMean + (sig.m_vMax - sig.m_vMean) * range
+        )));
+}
+
+// get the outer area of a signature for dragging purposes
+QRect SigEditDialog::outerSigRect(ColorSignature sig, float range)
+{
+    QRect r = sigRect(sig);
+    return(r.united(effectiveSigRect(sig, range)));
+}
+
+// transfer properties from a rectangle onto a signature
+void SigEditDialog::rect2sig(QRect r, ColorSignature *sig)
+{
+    r = r.normalized();
+    sig->m_uMin = r.left();
+    sig->m_uMean = r.center().x();
+    sig->m_uMax = r.right();
+    sig->m_vMin = r.top();
+    sig->m_vMean = r.center().y();
+    sig->m_vMax = r.bottom();
+}
+
+// transform a point from widget coordinates to uv space
+void SigEditDialog::xy2uv(QPointF xy, int32_t *u, int32_t *v) {
+    QRect r = ui->mapFrame->geometry();
+    *u = ((xy.x() - r.center().x()) * (2 * UV_SCALE_MAX)) / r.width();
+    *v = ((xy.y() - r.center().y()) * (2 * UV_SCALE_MAX)) / r.height();
+}
+
+void SigEditDialog::mouseMoveEvent(QMouseEvent *event)
+{
+    // convert the mouse position into colorspace coordinates
+    int32_t u, v;
+    xy2uv(event->pos(), &u, &v);
+    // if we're dragging, move stuff
+    if (m_dragging) updateDrag(u, v);
+    else updateHover(u, v);
+}
+void SigEditDialog::mousePressEvent(QMouseEvent *event)
+{
+    if (event->button() == Qt::LeftButton) m_dragging = true;
+}
+void SigEditDialog::mouseReleaseEvent(QMouseEvent *event)
+{
+    m_dragging = false;
+    mouseMoveEvent(event);
+}
+
+void SigEditDialog::updateHover(int32_t u, int32_t v)
+{
+    int i;
+    QRect outer, r;
+    // get tolerances in pixels
+    QRect frame = ui->mapFrame->geometry();
+    int edgePixels = 4;
+    int uEdgeSize = (edgePixels * (2 * UV_SCALE_MAX)) / frame.width();
+    int vEdgeSize = (edgePixels * (2 * UV_SCALE_MAX)) / frame.width();
+    // see if the mouse is over any of the signatures
+    ColorSignature sig;
+    for (i = 0; i < CL_NUM_SIGNATURES; i++) {
+        sig = SigModule::getSignature(i);
+        r = outer = outerSigRect(sig, SigModule::getRange(i));
+        // expand the edge to make it easier to resize
+        r.adjust(- (uEdgeSize / 2), - (vEdgeSize / 2),
+                 uEdgeSize / 2, vEdgeSize / 2);
+        // determine the action we'd be taking if the mouse was pressed
+        m_moving = false;
+        m_uOffset = m_vOffset = 0;
+        if (r.contains(u, v, false)) {
+            if (u - r.left() <= uEdgeSize) m_uOffset = -1;
+            else if (r.right() - u <= uEdgeSize) m_uOffset = 1;
+            if (v - r.top() <= vEdgeSize) m_vOffset = -1;
+            else if (r.bottom() - v <= vEdgeSize) m_vOffset = 1;
+            // dragging the whole signature
+            if ((m_uOffset == 0) && (m_vOffset == 0)) {
+                m_moving = true;
+                m_uOffset = u - outer.left();
+                m_vOffset = v - outer.top();
+                setCursor(Qt::OpenHandCursor);
+            }
+            // dragging corners
+            else if (m_uOffset == m_vOffset) setCursor(Qt::SizeFDiagCursor);
+            else if (m_uOffset == - m_vOffset) setCursor(Qt::SizeBDiagCursor);
+            // dragging edges
+            else if (m_uOffset != 0) setCursor(Qt::SizeHorCursor);
+            else if (m_vOffset != 0) setCursor(Qt::SizeVerCursor);
+            m_dragIndex = i;
+            return;
+        }
+    }
+    // if the mouse is not over any signatures, clear the cursor
+    setCursor(Qt::ArrowCursor);
+}
+
+void SigEditDialog::updateDrag(int32_t u, int32_t v)
+{
+    QRect r;
+    int x, y, w, h;
+    // get the signature being dragged
+    int i = m_dragIndex;
+    float range = SigModule::getRange(i);
+    ColorSignature sig = SigModule::getSignature(i);
+    // normalize the range once the signature is under control of the editor
+    if (range != 1.0) {
+        r = outerSigRect(sig, range);
+        rect2sig(r, &sig);
+        range = 1.0;
+    }
+    // get the current position of the signature
+    r = sigRect(sig);
+    // handle moving the whole signature
+    if (m_moving) {
+        setCursor(Qt::ClosedHandCursor);
+        x = u - m_uOffset;
+        y = v - m_vOffset;
+        w = r.width();
+        h = r.height();
+        if (x < - UV_SCALE_MAX) x = - UV_SCALE_MAX;
+        if (y < - UV_SCALE_MAX) y = - UV_SCALE_MAX;
+        if (x + w > UV_SCALE_MAX) x = UV_SCALE_MAX - w;
+        if (y + h > UV_SCALE_MAX) y = UV_SCALE_MAX - h;
+        r = QRect(x, y, w, h);
+    }
+    // handle dragging edges and corners
+    else {
+        if (m_uOffset > 0) {
+            r.setRight(u);
+            if (r.right() < r.left()) r.setRight(r.left());
+            if (r.right() > UV_SCALE_MAX) r.setRight(UV_SCALE_MAX);
+        }
+        else if (m_uOffset < 0) {
+            r.setLeft(u);
+            if (r.left() > r.right()) r.setLeft(r.right());
+            if (r.left() < - UV_SCALE_MAX) r.setLeft(- UV_SCALE_MAX);
+        }
+        if (m_vOffset > 0) {
+            r.setBottom(v);
+            if (r.bottom() < r.top()) r.setBottom(r.top());
+            if (r.bottom() > UV_SCALE_MAX) r.setBottom(UV_SCALE_MAX);
+        }
+        else if (m_vOffset < 0) {
+            r.setTop(v);
+            if (r.top() > r.bottom()) r.setTop(r.bottom());
+            if (r.top() < - UV_SCALE_MAX) r.setTop(- UV_SCALE_MAX);
+        }
+    }
+    // update the signature and range
+    rect2sig(r, &sig);
+    SigModule::instance->updateSignature(i, sig, range);
+    // redraw to show the change
+    update();
+}
+
+// PIXY COMMUNICATION *********************************************************
 
 MON_MODULE(SigModule)
 
-ColorSignature SigModule::m_signatures[CL_NUM_SIGNATURES];
-float SigModule::m_ranges[CL_NUM_SIGNATURES];
-int32_t SigModule::m_yMin;
+SigModule *SigModule::instance;
 
 SigModule::SigModule(Interpreter *interpreter) : MonModule(interpreter)
 {
@@ -187,15 +377,13 @@ SigModule::SigModule(Interpreter *interpreter) : MonModule(interpreter)
     memset(m_signatures, 0, sizeof(m_signatures));
     memset(m_ranges, 0, sizeof(m_ranges));
     m_yMin = 0;
+    // store the singleton instance statically
+    instance = this;
 }
 
 SigModule::~SigModule() { }
 
-bool SigModule::render(uint32_t fourcc, const void *args[])
-{
-    return(false);
-}
-
+bool SigModule::render(uint32_t fourcc, const void *args[]) { return(false); }
 void SigModule::paramChange()
 {
     int i;
@@ -209,7 +397,8 @@ void SigModule::paramChange()
         id.sprintf("signature%d", i + 1);
         val = pixyParameter(id);
         ba = val.toByteArray();
-        Chirp::deserialize((uint8_t *)ba.data(), ba.size(), &sigLen, &sigData, END);
+        Chirp::deserialize((uint8_t *)ba.data(), ba.size(),
+                           &sigLen, &sigData, END);
         if (sigLen == sizeof(ColorSignature)) {
             memcpy(&(m_signatures[i]), sigData, sizeof(ColorSignature));
         }
@@ -224,4 +413,66 @@ void SigModule::paramChange()
     if (val.canConvert(QVariant::Double)) {
         m_yMin = val.toFloat() * (3 * 0xFF);
     }
+}
+
+ColorSignature SigModule::getSignature(int i)
+{
+    if (instance) return(instance->m_signatures[i]);
+    return(ColorSignature());
+}
+float SigModule::getRange(int i)
+{
+    if (instance) return(instance->m_ranges[i]);
+    return(1.0);
+}
+int32_t SigModule::getYMin()
+{
+    if (instance) return(instance->m_yMin);
+    return(0);
+}
+
+// return whether two signatures have equivalent core properties
+bool sigsEqual(ColorSignature s1, ColorSignature s2) {
+    return((s1.m_uMin == s2.m_uMin) &&
+           (s1.m_uMean == s2.m_uMean) &&
+           (s1.m_uMax == s2.m_uMax) &&
+           (s1.m_vMin == s2.m_vMin) &&
+           (s1.m_vMean == s2.m_vMean) &&
+           (s1.m_vMax == s2.m_vMax));
+}
+
+void SigModule::updateSignature(int i, ColorSignature sig, float range)
+{
+    QString id;
+    Parameter *parameter;
+    m_interpreter->m_pixyParameters.mutex()->lock();
+    if (! sigsEqual(m_signatures[i], sig)) {
+        m_signatures[i] = sig;
+        // serialize the signature
+        QByteArray ba;
+        int bufSize = sizeof(ColorSignature) + 8 + CRP_BUFPAD;
+        ba.fill(0, bufSize);
+        Chirp::serialize(NULL, (uint8_t *)ba.data(), bufSize, CRP_INTS8,
+                         sizeof(ColorSignature), (uint8_t *)&sig, END);
+        ba.chop(CRP_BUFPAD);
+        // update
+        id.sprintf("signature%d", i + 1);
+        parameter = m_interpreter->m_pixyParameters.parameter(id);
+        if (parameter) {
+            parameter->set(QVariant::fromValue(ba), false);
+            parameter->setDirty(true);
+        }
+    }
+    // update the range if it's changing
+    if (m_ranges[i] != range) {
+        m_ranges[i] = range;
+        id.sprintf("Signature %d range", i + 1);
+        parameter = m_interpreter->m_pixyParameters.parameter(id);
+        if (parameter) {
+            parameter->set(QVariant::fromValue(range), false);
+            parameter->setDirty(true);
+        }
+    }
+    m_interpreter->m_pixyParameters.mutex()->unlock();
+    m_interpreter->updateParam();
 }
