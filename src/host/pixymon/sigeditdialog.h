@@ -3,6 +3,7 @@
 
 #include <QDialog>
 #include <QPixmap>
+#include <QAbstractButton>
 #include "monmodule.h"
 #include "colorlut.h"
 
@@ -34,8 +35,9 @@ public:
     static ColorSignature getSignature(int i);
     static float getRange(int i);
     static int32_t getYMin();
-    // update a signature
+    // update signatures
     void updateSignature(int i, ColorSignature sig, float range);
+    void deleteSignature(int i);
 };
 
 class SigEditDialog : public QDialog
@@ -46,13 +48,19 @@ public:
     SigEditDialog(QWidget *parent, Interpreter *interpreter);
     ~SigEditDialog();
 
-public slots:
+protected slots:
     // receive frame images from the renderer
     void handleImage(QImage image, uchar renderFlags);
+    // save or discard edits
+    void apply(QAbstractButton *button);
+    virtual void accept();
+    virtual void reject();
 
 protected:
     // drawing
     virtual void paintEvent(QPaintEvent *event);
+    void paintBackground(QPainter &painter);
+    void paintSignature(QPainter &painter, int i);
     // mouse tracking
     QRect sigRect(ColorSignature sig);
     QRect effectiveSigRect(ColorSignature sig, float range);
@@ -64,16 +72,25 @@ protected:
     virtual void mouseReleaseEvent(QMouseEvent *event);
     void updateHover(int32_t u, int32_t v);
     void updateDrag(int32_t u, int32_t v);
+    virtual void keyPressEvent(QKeyEvent *event);
+    // drag and selectiong state
     bool m_dragging;
     int m_dragIndex;
     bool m_moving;
     int32_t m_uOffset, m_vOffset;
+    int m_selectIndex;
 
 private:
     Ui::SigEditDialog *ui;
 
     // the connection to pixy
     Interpreter *m_interpreter;
+
+    // signatures and ranges stored when the dialog loads
+    ColorSignature m_initSignatures[CL_NUM_SIGNATURES];
+    float m_initRanges[CL_NUM_SIGNATURES];
+    void storeSignatures();
+    void recallSignatures();
 
     // a list of video frames mapped into the uv colorspace
     QList<QImage> m_images;
