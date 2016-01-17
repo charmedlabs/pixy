@@ -31,6 +31,22 @@ inline void rgb2yuv(uint32_t rgb, int32_t *y, int32_t *u, int32_t *v) {
         *v = ((b - g) << CL_LUT_ENTRY_SCALE) / *y;
     }
 }
+inline int32_t uv2rgb(int32_t u, int32_t v) {
+    int32_t y;
+    int yu, yv, r, g, b;
+    for (y = (0xFF * 2); y >= 0; y--) {
+        yu = (u * y) >> CL_LUT_ENTRY_SCALE;
+        yv = (v * y) >> CL_LUT_ENTRY_SCALE;
+        g = (y - (yu + yv)) / 3;
+        r = yu + g;
+        b = yv + g;
+        if ((r >= 0x00) && (g >= 0x00) && (b >= 0x00) &&
+            (r <= 0xFF) && (g <= 0xFF) && (b <= 0xFF)) {
+            return((r << 16) | (g << 8) | b);
+        }
+    }
+    return(0);
+}
 
 // return whether two signatures have equivalent core properties
 inline bool sigsEqual(ColorSignature s1, ColorSignature s2) {
@@ -400,30 +416,26 @@ void SigEditDialog::updateHover(int32_t u, int32_t v)
 void SigEditDialog::updateDrag(int32_t u, int32_t v)
 {
     QRect r;
-    int i, x, y, w, h;
-    ColorSignature sig;
-    float range;
+    int x, y, w, h;
+    int i = m_dragIndex;
+    ColorSignature sig = SigModule::getSignature(i);
+    float range = SigModule::getRange(i);
     // if no signature is being dragged, try to create one
     if (! (m_dragIndex >= 0)) {
         for (i = 0; i < CL_NUM_SIGNATURES; i++) {
-            if (sigIsEmpty(SigModule::getSignature(i))) {
+            sig = SigModule::getSignature(i);
+            if (sigIsEmpty(sig)) {
+                range = 1.0;
                 sig.m_uMin = sig.m_uMean = sig.m_uMax = u;
                 sig.m_vMin = sig.m_vMean = sig.m_vMax = v;
                 m_dragIndex = m_selectIndex = i;
                 m_uOffset = m_vOffset = 1;
                 m_moving = false;
-                setCursor(Qt::SizeFDiagCursor);
                 break;
             }
         }
         // if we couldn't create a signature, bail out
         if (! (m_dragIndex >= 0)) return;
-    }
-    else {
-        // get the signature being dragged
-        i = m_dragIndex;
-        sig = SigModule::getSignature(i);
-        range = SigModule::getRange(i);
     }
     // normalize the range once the signature is under control of the editor
     if (range != 1.0) {
@@ -471,6 +483,10 @@ void SigEditDialog::updateDrag(int32_t u, int32_t v)
     }
     // update the signature and range
     rect2sig(r, &sig);
+    // update the mean and color marker
+    sig.m_uMean = (sig.m_uMin + sig.m_uMax) / 2;
+    sig.m_vMean = (sig.m_vMin + sig.m_vMax) / 2;
+    sig.m_rgb = uv2rgb(sig.m_uMean, sig.m_vMean);
     SigModule::instance->updateSignature(i, sig, range);
 }
 
@@ -546,6 +562,7 @@ void SigModule::updateSignature(int i, ColorSignature sig, float range)
     Parameter *parameter;
     m_interpreter->m_pixyParameters.mutex()->lock();
     if (! sigsEqual(m_signatures[i], sig)) {
+        m_signatures[i] = sig;
         // serialize the signature
         QByteArray ba;
         int bufSize = sizeof(ColorSignature) + 8 + CRP_BUFPAD;
@@ -563,6 +580,7 @@ void SigModule::updateSignature(int i, ColorSignature sig, float range)
     }
     // update the range if it's changing
     if (m_ranges[i] != range) {
+        m_ranges[i] = range;
         id.sprintf("Signature %d range", i + 1);
         parameter = m_interpreter->m_pixyParameters.parameter(id);
         if (parameter) {
