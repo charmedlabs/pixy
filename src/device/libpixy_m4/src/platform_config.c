@@ -18,6 +18,7 @@
 
 #include "lpc43xx_scu.h"
 #include "lpc43xx_cgu.h"
+#include "lpc43xx_timer.h"
 #include "lpc_types.h"
 #include "spifi_rom_api.h"
 
@@ -158,9 +159,32 @@ static void delayus(uint32_t us)
 		for (j=0; j<38; j++);
 }
 
+void ramp(int a, int b)
+{
+	int i;
+	for (i=a; i<=b; i++)
+	{
+		CGU_SetPLL1(i);
+
+		delayus(10000);
+	}
+}
+
+TIM_TIMERCFG_Type TIM_ConfigStruct;
+TIM_MATCHCFG_Type TIM_MatchConfigStruct;
+
+void TIMER1_IRQHandler(void)
+{
+	if (TIM_GetIntStatus(LPC_TIMER1, TIM_MR0_INT)== SET)
+	{
+	}
+	TIM_ClearIntPending(LPC_TIMER1, TIM_MR0_INT);
+}
+
 void clockInit(void)
 {
 	uint32_t EMCClk;
+	volatile uint32_t delay = 250;
 
 	__disable_irq();
  	/* Set the XTAL oscillator frequency to 12MHz*/
@@ -193,19 +217,46 @@ void clockInit(void)
 	LPC_CREG->CREG6 |= (1<<16);	// EMC divided by 2
     LPC_CCU1->CLK_M4_EMC_CFG |= (1<<0);		// Turn on clock
 
-	/* Set PL160M @ 12*9=108 MHz */
+	//ramp(2, 9);
 	CGU_SetPLL1(9);
-
 	/* Run base M3 clock from PL160M, no division */
 	CGU_EntityConnect(CGU_CLKSRC_PLL1, CGU_BASE_M3);
 
-	delayus(10000);
 
-	/* Change the clock to 204 MHz */
-	/* Set PL160M @ 12*15=180 MHz */
+	//__enable_irq();
+	TIM_ConfigStruct.PrescaleOption = TIM_PRESCALE_USVAL;
+	TIM_ConfigStruct.PrescaleValue	= 100;
+
+	// use channel 0, MR0
+	TIM_MatchConfigStruct.MatchChannel = 0;
+	// Enable interrupt when MR0 matches the value in TC register
+	TIM_MatchConfigStruct.IntOnMatch   = TRUE;
+	//Enable reset on MR0: TIMER will reset if MR0 matches it
+	TIM_MatchConfigStruct.ResetOnMatch = FALSE;
+	//Stop on MR0 if MR0 matches it
+	TIM_MatchConfigStruct.StopOnMatch  = FALSE;
+	//Toggle MR0.0 pin if MR0 matches it
+	TIM_MatchConfigStruct.ExtMatchOutputType =TIM_EXTMATCH_TOGGLE;
+	// Set Match value, count value of 10000 (10000 * 100uS = 1000000us = 1s --> 1 Hz)
+	TIM_MatchConfigStruct.MatchValue   = 10000;
+
+	// Set configuration for Tim_config and Tim_MatchConfig
+	TIM_Init(LPC_TIMER1, TIM_TIMER_MODE,&TIM_ConfigStruct);
+	TIM_ConfigMatch(LPC_TIMER1,&TIM_MatchConfigStruct);
+
+ 	TIM_ClearIntPending(LPC_TIMER1, TIM_MR0_INT);
+
+	/* preemption = 1, sub-priority = 1 */
+	NVIC_SetPriority(TIMER1_IRQn, ((0x01<<3)|0x01));
+	/* Enable interrupt for timer 0 */
+	NVIC_EnableIRQ(TIMER1_IRQn);
+	// To start timer 0
+	TIM_Cmd(LPC_TIMER1,ENABLE);
+	__enable_irq();
+
+ 	//ramp(10, 17);
 	CGU_SetPLL1(17);
-
-	delayus(10000);
+	__WFI();
 
 	CGU_UpdateClock();
 
@@ -217,8 +268,6 @@ void clockInit(void)
 	EMCClk = CGU_GetPCLKFrequency(CGU_PERIPHERAL_SPIFI)/1000000;
 	if (spifi_init(&g_spifi, EMCClk/5, S_RCVCLK | S_FULLCLK, EMCClk))
 		while(1);
-
-	__enable_irq();
 }
 
 

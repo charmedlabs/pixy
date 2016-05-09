@@ -346,7 +346,7 @@
               <MiscControls></MiscControls>
               <Define>CORE_M4 PIXY</Define>
               <Undefine></Undefine>
-              <IncludePath>., ..\libpixy, ..\..\common</IncludePath>
+              <IncludePath>., ..\libpixy_m4\inc, ..\common\inc, ..\..\common\inc</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -409,7 +409,7 @@
             <File>
               <FileName>libpixy_m4.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\libpixy\libpixy_m4.lib</FilePath>
+              <FilePath>C:\CharmedLabs\cmucam\git2\src\device\libpixy_m4\libpixy_m4.lib</FilePath>
             </File>
           </Files>
         </Group>

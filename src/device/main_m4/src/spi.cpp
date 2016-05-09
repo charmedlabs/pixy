@@ -126,16 +126,13 @@ void Spi::slaveHandler()
 		while(LPC_SSP1->SR&SSP_SR_TNF) 
 		{
 			if (m_tq.read(&d16)==0)
-				break;
+				d16 = 0; // stuff fifo with 0s
 			LPC_SSP1->DR = d16;
 		}
 	
 		// receive data
 		if ((d&SPI_SYNC_MASK)==SPI_SYNC_WORD_DATA)
-		{
 			m_rq.write(d);
-			m_sync = true;
-		}
 	}
 }
 

@@ -150,7 +150,7 @@ void VideoWidget::paintEvent(QPaintEvent *event)
 
 int VideoWidget::heightForWidth(int w) const
 {
-    return w/VW_ASPECT_RATIO;
+    return w/(m_pixmap->  VW_ASPECT_RATIO;
 }
 
 void VideoWidget::mouseMoveEvent(QMouseEvent *event)

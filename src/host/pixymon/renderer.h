@@ -25,7 +25,7 @@
 #include <simplevector.h>
 typedef SimpleVector<Point16> Points;
 
-#define RAWFRAME_SIZE    0x10000
+#define RAWFRAME_SIZE    0x12000
 #define PALETTE_SIZE     7
 
 class Interpreter;
