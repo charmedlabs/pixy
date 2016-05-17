@@ -79,6 +79,7 @@ private:
     bool m_drag;
     InputMode m_inputMode;
     bool m_selection;
+    float m_aspectRatio;
 };
 
 

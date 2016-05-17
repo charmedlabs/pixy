@@ -531,6 +531,11 @@
               <FileType>8</FileType>
               <FilePath>..\..\common\src\chirp.cpp</FilePath>
             </File>
+            <File>
+              <FileName>lpc43xx_timer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\lpc43xx_timer.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

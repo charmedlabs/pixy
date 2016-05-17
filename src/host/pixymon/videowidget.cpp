@@ -36,6 +36,7 @@ VideoWidget::VideoWidget(MainWindow *main) : QWidget((QWidget *)main)
     m_drag = false;
     m_inputMode = NONE;
     m_selection = false;
+    m_aspectRatio = VW_ASPECT_RATIO;
 
     // set size policy--- preferred aspect ratio
     QSizePolicy policy = sizePolicy();
@@ -110,6 +111,12 @@ void VideoWidget::paintEvent(QPaintEvent *event)
     war = (float)m_width/(float)m_height; // widget aspect ratio
     pmar = (float)bgPixmap.width()/(float)bgPixmap.height();
 
+    if (pmar!=m_aspectRatio)
+    {
+        m_aspectRatio = pmar;
+        updateGeometry();
+    }
+
     // set blending mode
     p.setCompositionMode(QPainter::CompositionMode_SourceOver);
 
@@ -150,7 +157,7 @@ void VideoWidget::paintEvent(QPaintEvent *event)
 
 int VideoWidget::heightForWidth(int w) const
 {
-    return w/(m_pixmap->  VW_ASPECT_RATIO;
+    return w/m_aspectRatio;
 }
 
 void VideoWidget::mouseMoveEvent(QMouseEvent *event)

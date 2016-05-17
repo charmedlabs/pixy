@@ -159,32 +159,16 @@ static void delayus(uint32_t us)
 		for (j=0; j<38; j++);
 }
 
-void ramp(int a, int b)
-{
-	int i;
-	for (i=a; i<=b; i++)
-	{
-		CGU_SetPLL1(i);
-
-		delayus(10000);
-	}
-}
-
-TIM_TIMERCFG_Type TIM_ConfigStruct;
-TIM_MATCHCFG_Type TIM_MatchConfigStruct;
-
 void TIMER1_IRQHandler(void)
 {
-	if (TIM_GetIntStatus(LPC_TIMER1, TIM_MR0_INT)== SET)
-	{
-	}
 	TIM_ClearIntPending(LPC_TIMER1, TIM_MR0_INT);
 }
 
 void clockInit(void)
 {
 	uint32_t EMCClk;
-	volatile uint32_t delay = 250;
+ 	TIM_TIMERCFG_Type TIM_ConfigStruct;
+	TIM_MATCHCFG_Type TIM_MatchConfigStruct;
 
 	__disable_irq();
  	/* Set the XTAL oscillator frequency to 12MHz*/
@@ -217,11 +201,11 @@ void clockInit(void)
 	LPC_CREG->CREG6 |= (1<<16);	// EMC divided by 2
     LPC_CCU1->CLK_M4_EMC_CFG |= (1<<0);		// Turn on clock
 
-	//ramp(2, 9);
 	CGU_SetPLL1(9);
 	/* Run base M3 clock from PL160M, no division */
 	CGU_EntityConnect(CGU_CLKSRC_PLL1, CGU_BASE_M3);
 
+	delayus(10000);
 
 	//__enable_irq();
 	TIM_ConfigStruct.PrescaleOption = TIM_PRESCALE_USVAL;
@@ -254,9 +238,12 @@ void clockInit(void)
 	TIM_Cmd(LPC_TIMER1,ENABLE);
 	__enable_irq();
 
- 	//ramp(10, 17);
 	CGU_SetPLL1(17);
 	__WFI();
+
+  	NVIC_DisableIRQ(TIMER1_IRQn);
+	TIM_Cmd(LPC_TIMER1, DISABLE);
+	LPC_TIMER1->MCR = 0;
 
 	CGU_UpdateClock();
 
