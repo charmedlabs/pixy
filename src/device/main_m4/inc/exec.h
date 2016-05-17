@@ -23,7 +23,7 @@
 
 #define FW_MAJOR_VER		2
 #define FW_MINOR_VER		0
-#define FW_BUILD_VER		18
+#define FW_BUILD_VER		19
 #ifdef LEGO
 #define FW_TYPE             "LEGO"
 #else
