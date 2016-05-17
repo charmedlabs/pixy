@@ -1,0 +1,601 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<SourceFile Version="1.0.2.10" xmlns="http://www.ni.com/SourceModel.xsd">
+    <Namespace Name="Project">
+        <VirtualInstrument IsTopLevel="false" IsReentrant="false" Version="1.0.2.0" xmlns="http://www.ni.com/VirtualInstrument.xsd">
+            <DataItem Name="SequenceIn" DataType="NationalInstruments:SourceModel:DataTypes:X3SequenceWireDataType" DefaultTerminalDirection="Output" CallUsage="None" CallDirection="Input" CallIndex="0" AdaptToDiagramType="true" />
+            <DataItem Name="SequenceOut" DataType="NationalInstruments:SourceModel:DataTypes:X3SequenceWireDataType" DefaultTerminalDirection="Input" CallUsage="None" CallDirection="Output" CallIndex="0" AdaptToDiagramType="true" />
+            <DataItem Name="valueIn" DataType="Single" DefaultTerminalDirection="Output" CallUsage="None" CallDirection="Input" CallIndex="2" DefaultValue="0" />
+            <DataItem Name="setPoint" DataType="Single" DefaultTerminalDirection="Output" CallUsage="None" CallDirection="Input" CallIndex="3" DefaultValue="0" />
+            <DataItem Name="pidP" DataType="Single" DefaultTerminalDirection="Output" CallUsage="None" CallDirection="Input" CallIndex="4" DefaultValue="0" />
+            <DataItem Name="pidI" DataType="Single" DefaultTerminalDirection="Output" CallUsage="None" CallDirection="Input" CallIndex="5" DefaultValue="0" />
+            <DataItem Name="pidD" DataType="Single" DefaultTerminalDirection="Output" CallUsage="None" CallDirection="Input" CallIndex="6" DefaultValue="0" />
+            <DataItem Name="controlOut" DataType="Single" DefaultTerminalDirection="Input" CallUsage="None" CallDirection="Output" CallIndex="1" DefaultValue="0" />
+            <DataItem Name="iMultiplier" DataType="Single" DefaultTerminalDirection="Output" CallUsage="None" CallDirection="Input" CallIndex="7" DefaultValue="0" />
+            <DataItem Name="Instance" DataType="Int16" DefaultTerminalDirection="Output" CallUsage="None" CallDirection="Input" CallIndex="1" DefaultValue="0" />
+            <FrontPanel>
+                <fpruntime:FrontPanelCanvas xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:fpruntime="clr-namespace:NationalInstruments.LabVIEW.FrontPanelRuntime;assembly=NationalInstruments.LabVIEW.FrontPanelRuntime" xmlns:Model="clr-namespace:NationalInstruments.SourceModel.Designer;assembly=NationalInstruments.SourceModel" xmlns:erics="clr-namespace:NationalInstruments.Controls;assembly=NationalInstruments.Controls.Numerics" xmlns:ation="http://schemas.microsoft.com/winfx/2006/xaml/presentation" x:Name="FrontPanel" Model:DesignerSurfaceProperties.CanSnapToObjects="True" Model:DesignerSurfaceProperties.SnapToObjects="True" Model:DesignerSurfaceProperties.ShowSnaplines="True" Model:DesignerSurfaceProperties.ShowControlAdorners="True" Width="640" Height="480">
+                    <erics:SingleNumericTextBox x:Name="valueIn" Width="69" Height="22" Value="{Binding Path=valueIn, Mode=TwoWay}" TabIndex="1" Margin="0" ation:Canvas.Left="23" ation:Canvas.Top="57">
+                        <fpruntime:AnimationProperties.Animations>
+                            <fpruntime:AnimationsContainer />
+                        </fpruntime:AnimationProperties.Animations>
+                        <fpruntime:EventProperties.Events>
+                            <fpruntime:EventContainer />
+                        </fpruntime:EventProperties.Events>
+                        <fpruntime:BuddyReferenceProperties.BuddyProperties>
+                            <fpruntime:BuddyProperties BuddyReferences="Label,Label" />
+                        </fpruntime:BuddyReferenceProperties.BuddyProperties>
+                    </erics:SingleNumericTextBox>
+                    <ation:TextBlock x:Name="Label" Text="valueIn" Model:DesignerNodeProperties.SnapTo="False" Visibility="Visible" ation:Canvas.Left="23" ation:Canvas.Top="37">
+                        <fpruntime:AnimationProperties.Animations>
+                            <fpruntime:AnimationsContainer />
+                        </fpruntime:AnimationProperties.Animations>
+                        <fpruntime:EventProperties.Events>
+                            <fpruntime:EventContainer />
+                        </fpruntime:EventProperties.Events>
+                        <fpruntime:BuddyReferenceProperties.BuddyProperties>
+                            <fpruntime:BuddyProperties BuddyReferences="" BuddyOwner="valueIn" BuddyOffset="0, -20" BuddyVisible="True" BuddyLocked="False" />
+                        </fpruntime:BuddyReferenceProperties.BuddyProperties>
+                    </ation:TextBlock>
+                    <erics:SingleNumericTextBox x:Name="setPoint" Width="69" Height="22" Value="{Binding Path=setPoint, Mode=TwoWay}" TabIndex="2" Margin="0" ation:Canvas.Left="23" ation:Canvas.Top="111">
+                        <fpruntime:AnimationProperties.Animations>
+                            <fpruntime:AnimationsContainer />
+                        </fpruntime:AnimationProperties.Animations>
+                        <fpruntime:EventProperties.Events>
+                            <fpruntime:EventContainer />
+                        </fpruntime:EventProperties.Events>
+                        <fpruntime:BuddyReferenceProperties.BuddyProperties>
+                            <fpruntime:BuddyProperties BuddyReferences="Label,Label2" />
+                        </fpruntime:BuddyReferenceProperties.BuddyProperties>
+                    </erics:SingleNumericTextBox>
+                    <ation:TextBlock x:Name="Label2" Text="setPoint" Model:DesignerNodeProperties.SnapTo="False" Visibility="Visible" ation:Canvas.Left="23" ation:Canvas.Top="91" Margin="0">
+                        <fpruntime:AnimationProperties.Animations>
+                            <fpruntime:AnimationsContainer />
+                        </fpruntime:AnimationProperties.Animations>
+                        <fpruntime:EventProperties.Events>
+                            <fpruntime:EventContainer />
+                        </fpruntime:EventProperties.Events>
+                        <fpruntime:BuddyReferenceProperties.BuddyProperties>
+                            <fpruntime:BuddyProperties BuddyReferences="" BuddyOwner="setPoint" BuddyOffset="0, -20" BuddyVisible="True" BuddyLocked="False" />
+                        </fpruntime:BuddyReferenceProperties.BuddyProperties>
+                    </ation:TextBlock>
+                    <erics:SingleNumericTextBox x:Name="pidP" Width="69" Height="22" Value="{Binding Path=pidP, Mode=TwoWay}" TabIndex="3" Margin="0" ation:Canvas.Left="23" ation:Canvas.Top="165">
+                        <fpruntime:AnimationProperties.Animations>
+                            <fpruntime:AnimationsContainer />
+                        </fpruntime:AnimationProperties.Animations>
+                        <fpruntime:EventProperties.Events>
+                            <fpruntime:EventContainer />
+                        </fpruntime:EventProperties.Events>
+                        <fpruntime:BuddyReferenceProperties.BuddyProperties>
+                            <fpruntime:BuddyProperties BuddyReferences="Label,Label3" />
+                        </fpruntime:BuddyReferenceProperties.BuddyProperties>
+                    </erics:SingleNumericTextBox>
+                    <ation:TextBlock x:Name="Label3" Text="pidP" Model:DesignerNodeProperties.SnapTo="False" Visibility="Visible" ation:Canvas.Left="23" ation:Canvas.Top="145" Margin="0">
+                        <fpruntime:AnimationProperties.Animations>
+                            <fpruntime:AnimationsContainer />
+                        </fpruntime:AnimationProperties.Animations>
+                        <fpruntime:EventProperties.Events>
+                            <fpruntime:EventContainer />
+                        </fpruntime:EventProperties.Events>
+                        <fpruntime:BuddyReferenceProperties.BuddyProperties>
+                            <fpruntime:BuddyProperties BuddyReferences="" BuddyOwner="pidP" BuddyOffset="0, -20" BuddyVisible="True" BuddyLocked="False" />
+                        </fpruntime:BuddyReferenceProperties.BuddyProperties>
+                    </ation:TextBlock>
+                    <erics:SingleNumericTextBox x:Name="pidI" Width="69" Height="22" Value="{Binding Path=pidI, Mode=TwoWay}" TabIndex="4" Margin="0" ation:Canvas.Left="23" ation:Canvas.Top="219">
+                        <fpruntime:AnimationProperties.Animations>
+                            <fpruntime:AnimationsContainer />
+                        </fpruntime:AnimationProperties.Animations>
+                        <fpruntime:EventProperties.Events>
+                            <fpruntime:EventContainer />
+                        </fpruntime:EventProperties.Events>
+                        <fpruntime:BuddyReferenceProperties.BuddyProperties>
+                            <fpruntime:BuddyProperties BuddyReferences="Label,Label4" />
+                        </fpruntime:BuddyReferenceProperties.BuddyProperties>
+                    </erics:SingleNumericTextBox>
+                    <ation:TextBlock x:Name="Label4" Text="pidI" Model:DesignerNodeProperties.SnapTo="False" Visibility="Visible" ation:Canvas.Left="23" ation:Canvas.Top="199" Margin="0">
+                        <fpruntime:AnimationProperties.Animations>
+                            <fpruntime:AnimationsContainer />
+                        </fpruntime:AnimationProperties.Animations>
+                        <fpruntime:EventProperties.Events>
+                            <fpruntime:EventContainer />
+                        </fpruntime:EventProperties.Events>
+                        <fpruntime:BuddyReferenceProperties.BuddyProperties>
+                            <fpruntime:BuddyProperties BuddyReferences="" BuddyOwner="pidI" BuddyOffset="0, -20" BuddyVisible="True" BuddyLocked="False" />
+                        </fpruntime:BuddyReferenceProperties.BuddyProperties>
+                    </ation:TextBlock>
+                    <erics:SingleNumericTextBox x:Name="pidD" Width="69" Height="22" Value="{Binding Path=pidD, Mode=TwoWay}" TabIndex="5" Margin="0" ation:Canvas.Left="23" ation:Canvas.Top="273">
+                        <fpruntime:AnimationProperties.Animations>
+                            <fpruntime:AnimationsContainer />
+                        </fpruntime:AnimationProperties.Animations>
+                        <fpruntime:EventProperties.Events>
+                            <fpruntime:EventContainer />
+                        </fpruntime:EventProperties.Events>
+                        <fpruntime:BuddyReferenceProperties.BuddyProperties>
+                            <fpruntime:BuddyProperties BuddyReferences="Label,Label5" />
+                        </fpruntime:BuddyReferenceProperties.BuddyProperties>
+                    </erics:SingleNumericTextBox>
+                    <ation:TextBlock x:Name="Label5" Text="pidD" Model:DesignerNodeProperties.SnapTo="False" Visibility="Visible" ation:Canvas.Left="23" ation:Canvas.Top="253" Margin="0">
+                        <fpruntime:AnimationProperties.Animations>
+                            <fpruntime:AnimationsContainer />
+                        </fpruntime:AnimationProperties.Animations>
+                        <fpruntime:EventProperties.Events>
+                            <fpruntime:EventContainer />
+                        </fpruntime:EventProperties.Events>
+                        <fpruntime:BuddyReferenceProperties.BuddyProperties>
+                            <fpruntime:BuddyProperties BuddyReferences="" BuddyOwner="pidD" BuddyOffset="0, -20" BuddyVisible="True" BuddyLocked="False" />
+                        </fpruntime:BuddyReferenceProperties.BuddyProperties>
+                    </ation:TextBlock>
+                    <erics:SingleNumericTextBox x:Name="controlOut" Width="54" Height="22" InteractionMode="ReadOnly" Model:DesignerNodeProperties.ParameterDirection="input" Value="{Binding Path=controlOut, Mode=TwoWay}" TabIndex="6" Margin="0" ation:Canvas.Left="499.5" ation:Canvas.Top="57">
+                        <fpruntime:AnimationProperties.Animations>
+                            <fpruntime:AnimationsContainer />
+                        </fpruntime:AnimationProperties.Animations>
+                        <fpruntime:EventProperties.Events>
+                            <fpruntime:EventContainer />
+                        </fpruntime:EventProperties.Events>
+                        <fpruntime:BuddyReferenceProperties.BuddyProperties>
+                            <fpruntime:BuddyProperties BuddyReferences="Label,Label6" />
+                        </fpruntime:BuddyReferenceProperties.BuddyProperties>
+                    </erics:SingleNumericTextBox>
+                    <ation:TextBlock x:Name="Label6" Text="controlOut" Model:DesignerNodeProperties.SnapTo="False" Visibility="Visible" ation:Canvas.Left="499.5" ation:Canvas.Top="37">
+                        <fpruntime:AnimationProperties.Animations>
+                            <fpruntime:AnimationsContainer />
+                        </fpruntime:AnimationProperties.Animations>
+                        <fpruntime:EventProperties.Events>
+                            <fpruntime:EventContainer />
+                        </fpruntime:EventProperties.Events>
+                        <fpruntime:BuddyReferenceProperties.BuddyProperties>
+                            <fpruntime:BuddyProperties BuddyReferences="" BuddyOwner="controlOut" BuddyOffset="0, -20" BuddyVisible="True" BuddyLocked="False" />
+                        </fpruntime:BuddyReferenceProperties.BuddyProperties>
+                    </ation:TextBlock>
+                    <erics:SingleNumericTextBox x:Name="iMultiplier" Width="69" Height="22" Value="{Binding Path=iMultiplier, Mode=TwoWay}" TabIndex="7" Margin="0" ation:Canvas.Left="116.5" ation:Canvas.Top="133">
+                        <fpruntime:AnimationProperties.Animations>
+                            <fpruntime:AnimationsContainer />
+                        </fpruntime:AnimationProperties.Animations>
+                        <fpruntime:EventProperties.Events>
+                            <fpruntime:EventContainer />
+                        </fpruntime:EventProperties.Events>
+                        <fpruntime:BuddyReferenceProperties.BuddyProperties>
+                            <fpruntime:BuddyProperties BuddyReferences="Label,Label7" />
+                        </fpruntime:BuddyReferenceProperties.BuddyProperties>
+                    </erics:SingleNumericTextBox>
+                    <ation:TextBlock x:Name="Label7" Text="iMultiplier" Model:DesignerNodeProperties.SnapTo="False" Visibility="Visible" ation:Canvas.Left="116.5" ation:Canvas.Top="113" Margin="0">
+                        <fpruntime:AnimationProperties.Animations>
+                            <fpruntime:AnimationsContainer />
+                        </fpruntime:AnimationProperties.Animations>
+                        <fpruntime:EventProperties.Events>
+                            <fpruntime:EventContainer />
+                        </fpruntime:EventProperties.Events>
+                        <fpruntime:BuddyReferenceProperties.BuddyProperties>
+                            <fpruntime:BuddyProperties BuddyReferences="" BuddyOwner="iMultiplier" BuddyOffset="0, -20" BuddyVisible="True" BuddyLocked="False" />
+                        </fpruntime:BuddyReferenceProperties.BuddyProperties>
+                    </ation:TextBlock>
+                    <erics:Int16NumericTextBox x:Name="Instance" Width="69" Height="22" Value="{Binding Path=Instance, Mode=TwoWay}" TabIndex="8" Margin="0" ation:Canvas.Left="159.5" ation:Canvas.Top="219">
+                        <fpruntime:AnimationProperties.Animations>
+                            <fpruntime:AnimationsContainer />
+                        </fpruntime:AnimationProperties.Animations>
+                        <fpruntime:EventProperties.Events>
+                            <fpruntime:EventContainer />
+                        </fpruntime:EventProperties.Events>
+                        <fpruntime:BuddyReferenceProperties.BuddyProperties>
+                            <fpruntime:BuddyProperties BuddyReferences="Label,Label8" />
+                        </fpruntime:BuddyReferenceProperties.BuddyProperties>
+                    </erics:Int16NumericTextBox>
+                    <ation:TextBlock x:Name="Label8" Text="Instance" Model:DesignerNodeProperties.SnapTo="False" Visibility="Visible" ation:Canvas.Left="159.5" ation:Canvas.Top="199" Margin="0">
+                        <fpruntime:AnimationProperties.Animations>
+                            <fpruntime:AnimationsContainer />
+                        </fpruntime:AnimationProperties.Animations>
+                        <fpruntime:EventProperties.Events>
+                            <fpruntime:EventContainer />
+                        </fpruntime:EventProperties.Events>
+                        <fpruntime:BuddyReferenceProperties.BuddyProperties>
+                            <fpruntime:BuddyProperties BuddyReferences="" BuddyOwner="Instance" BuddyOffset="0, -20" BuddyVisible="True" BuddyLocked="False" />
+                        </fpruntime:BuddyReferenceProperties.BuddyProperties>
+                    </ation:TextBlock>
+                </fpruntime:FrontPanelCanvas>
+            </FrontPanel>
+            <BlockDiagram Name="__RootDiagram__">
+                <DataAccessor DataItem="valueIn" Id="n1" Bounds="434 182 84 14">
+                    <Terminal Id="Value" Direction="Output" Wire="w34" Hotspot="1 0.5" Bounds="0 0 84 14" />
+                </DataAccessor>
+                <DataAccessor DataItem="setPoint" Id="n2" Bounds="434 168 84 14">
+                    <Terminal Id="Value" Direction="Output" Wire="w4" Hotspot="1 0.5" Bounds="0 0 84 14" />
+                </DataAccessor>
+                <Subtract Id="n3" Terminals="x\-y=w15, y=w34, x=w4" TopLeft="532 168" />
+                <Wire Id="w4" Joints="N(n2:Value) N(n3:x)" />
+                <DataAccessor DataItem="pidP" Id="n13" Bounds="441 154 77 14">
+                    <Terminal Id="Value" Direction="Output" Wire="w60" Hotspot="1 0.5" Bounds="0 0 77 14" />
+                </DataAccessor>
+                <Multiply Id="n14" Terminals="x\*y=w39, y=w15, x=w61" TopLeft="833 147" />
+                <Wire Id="w15" Joints="N(n3:x\-y) h(7) h(210) v(49) N(n17:x) B(1) v(-14) v(-98) N(b47:n0) B(5) N(n14:y) B(1) v(35) N(b46:n44)" />
+                <Subtract Id="n17" Terminals="x\-y=w21, y=w33, x=w15" TopLeft="791 224" />
+                <DataAccessor DataItem="pidD" Id="n19" Bounds="441 294 77 14">
+                    <Terminal Id="Value" Direction="Output" Wire="w64" Hotspot="1 0.5" Bounds="0 0 77 14" />
+                </DataAccessor>
+                <Multiply Id="n20" Terminals="x\*y=w38, y=w65, x=w21" TopLeft="833 231" />
+                <Wire Id="w21" Joints="N(n17:x\-y) N(n20:x)" />
+                <DataAccessor DataItem="pidI" Id="n28" Bounds="441 7 77 14">
+                    <Terminal Id="Value" Direction="Output" Wire="w57" Hotspot="1 0.5" Bounds="0 0 77 14" />
+                </DataAccessor>
+                <Multiply Id="n29" Terminals="x\*y=w40, y=w30, x=w58" TopLeft="833 63" />
+                <Wire Id="w30" Joints="N(b49:n0) N(n29:y)" />
+                <Add Id="n12" Terminals="x\+y=w42, y=w41, x=w40" TopLeft="924 70" />
+                <Add Id="n32" Terminals="x\+y=w41, y=w38, x=w39" TopLeft="882 154" />
+                <Wire Id="w34" Joints="N(n1:Value) N(n3:y)" />
+                <Wire Id="w33" Joints="N(b45:n44) N(n17:y)" />
+                <DataAccessor DataItem="iMultiplier" Id="n34" Bounds="420 -7 98 14">
+                    <Terminal Id="Value" Direction="Output" Wire="w56" Hotspot="1 0.5" Bounds="0 0 98 14" />
+                </DataAccessor>
+                <Wire Id="w38" Joints="N(n20:x\*y) h(7) v(-70) N(n32:y)" />
+                <Wire Id="w39" Joints="N(n14:x\*y) N(n32:x)" />
+                <Wire Id="w40" Joints="N(n29:x\*y) N(n12:x)" />
+                <Wire Id="w41" Joints="N(n32:x\+y) h(7) v(-77) N(n12:y)" />
+                <DataAccessor DataItem="controlOut" Id="n41" Bounds="966 77 98 14">
+                    <Terminal Id="Value" Direction="Input" Wire="w42" Hotspot="0 0.5" Bounds="0 0 98 14" />
+                </DataAccessor>
+                <Wire Id="w42" Joints="N(n12:x\+y) N(n41:Value)" />
+                <CaseStructure Id="n44" Bounds="595 189 105 105" DataType="Int16" UserSelectorBounds="0 0 105 14" Selected="D47" Default="D47">
+                    <CaseStructure.Case Id="D47" Bounds="7 7 91 91" Pattern="1, Default">
+                        <WhileLoop Id="n6" Bounds="0 0 91 91" DiagramId="d0">
+                            <WhileLoop.Iteration Id="n1" TopLeft="7 56" />
+                            <WhileLoop.Condition Id="n2" Terminals="Input=w6" TopLeft="56 56" />
+                            <Literal Facade="BooleanConstantFacade" Id="n5" Terminals="Out=w6" Bounds="28 56 14 14" Interpretation="Exact" DataType="Boolean">True</Literal>
+                            <Wire Id="w6" Joints="N(n5:Out) N(n2:Input)" />
+                            <Wire Id="w9" Joints="N(b15:d0) h(56) v(14) N(b11:d0)" />
+                            <Wire Id="w10" Joints="N(b14:i0) h(42) v(14) N(b16:d0)" />
+                            <WhileLoop.RightShiftRegister Id="b11" Terminals="n6, d0=w9" TopLeft="77 28" />
+                            <WhileLoop.LeftShiftRegister RightRegister="b11" Id="b14" Terminals="o0, i0=w10" TopLeft="0 28" />
+                            <WhileLoop.Tunnel AutoIndex="False" Id="b15" Terminals="n6=w12, d0=w9" TopLeft="0 14" />
+                            <WhileLoop.RightShiftRegister Id="b16" Terminals="n6=w10, d0=w10" TopLeft="77 42" />
+                            <WhileLoop.LeftShiftRegister RightRegister="b16" Id="b17" Terminals="o0, i0" TopLeft="0 42" />
+                        </WhileLoop>
+                        <Wire Id="w10" Joints="N(b16:n6) N(b45:D47)" />
+                        <Wire Id="w12" Joints="N(b46:D47) h(14) v(-14) h(-35) v(14) N(b15:n6)" />
+                    </CaseStructure.Case>
+                    <CaseStructure.Case Id="D52" Bounds="7 7 91 91" Pattern="2">
+                        <WhileLoop Id="n6" Bounds="0 0 91 91" DiagramId="d0">
+                            <WhileLoop.Iteration Id="n1" TopLeft="7 56" />
+                            <WhileLoop.Condition Id="n2" Terminals="Input=w6" TopLeft="56 56" />
+                            <Literal Facade="BooleanConstantFacade" Id="n5" Terminals="Out=w6" Bounds="28 56 14 14" Interpretation="Exact" DataType="Boolean">True</Literal>
+                            <Wire Id="w6" Joints="N(n5:Out) N(n2:Input)" />
+                            <Wire Id="w9" Joints="N(b15:d0) h(56) v(14) N(b11:d0)" />
+                            <Wire Id="w10" Joints="N(b14:i0) h(42) v(14) N(b16:d0)" />
+                            <WhileLoop.RightShiftRegister Id="b11" Terminals="n6, d0=w9" TopLeft="77 28" />
+                            <WhileLoop.LeftShiftRegister RightRegister="b11" Id="b14" Terminals="o0, i0=w10" TopLeft="0 28" />
+                            <WhileLoop.Tunnel AutoIndex="False" Id="b15" Terminals="n6=w12, d0=w9" TopLeft="0 14" />
+                            <WhileLoop.RightShiftRegister Id="b16" Terminals="n6=w10, d0=w10" TopLeft="77 42" />
+                            <WhileLoop.LeftShiftRegister RightRegister="b16" Id="b17" Terminals="o0, i0" TopLeft="0 42" />
+                        </WhileLoop>
+                        <Wire Id="w10" Joints="N(b16:n6) N(b45:D52)" />
+                        <Wire Id="w12" Joints="N(b46:D52) h(14) v(-14) h(-35) v(14) N(b15:n6)" />
+                    </CaseStructure.Case>
+                    <CaseStructure.Case Id="D53" Bounds="7 7 91 91" Pattern="3">
+                        <WhileLoop Id="n6" Bounds="0 0 91 91" DiagramId="d0">
+                            <WhileLoop.Iteration Id="n1" TopLeft="7 56" />
+                            <WhileLoop.Condition Id="n2" Terminals="Input=w6" TopLeft="56 56" />
+                            <Literal Facade="BooleanConstantFacade" Id="n5" Terminals="Out=w6" Bounds="28 56 14 14" Interpretation="Exact" DataType="Boolean">True</Literal>
+                            <Wire Id="w6" Joints="N(n5:Out) N(n2:Input)" />
+                            <Wire Id="w9" Joints="N(b15:d0) h(56) v(14) N(b11:d0)" />
+                            <Wire Id="w10" Joints="N(b14:i0) h(42) v(14) N(b16:d0)" />
+                            <WhileLoop.RightShiftRegister Id="b11" Terminals="n6, d0=w9" TopLeft="77 28" />
+                            <WhileLoop.LeftShiftRegister RightRegister="b11" Id="b14" Terminals="o0, i0=w10" TopLeft="0 28" />
+                            <WhileLoop.Tunnel AutoIndex="False" Id="b15" Terminals="n6=w12, d0=w9" TopLeft="0 14" />
+                            <WhileLoop.RightShiftRegister Id="b16" Terminals="n6=w10, d0=w10" TopLeft="77 42" />
+                            <WhileLoop.LeftShiftRegister RightRegister="b16" Id="b17" Terminals="o0, i0" TopLeft="0 42" />
+                        </WhileLoop>
+                        <Wire Id="w10" Joints="N(b16:n6) N(b45:D53)" />
+                        <Wire Id="w12" Joints="N(b46:D53) h(14) v(-14) h(-35) v(14) N(b15:n6)" />
+                    </CaseStructure.Case>
+                    <CaseStructure.Case Id="D54" Bounds="7 7 91 91" Pattern="4">
+                        <WhileLoop Id="n6" Bounds="0 0 91 91" DiagramId="d0">
+                            <WhileLoop.Iteration Id="n1" TopLeft="7 56" />
+                            <WhileLoop.Condition Id="n2" Terminals="Input=w6" TopLeft="56 56" />
+                            <Literal Facade="BooleanConstantFacade" Id="n5" Terminals="Out=w6" Bounds="28 56 14 14" Interpretation="Exact" DataType="Boolean">True</Literal>
+                            <Wire Id="w6" Joints="N(n5:Out) N(n2:Input)" />
+                            <Wire Id="w9" Joints="N(b15:d0) h(56) v(14) N(b11:d0)" />
+                            <Wire Id="w10" Joints="N(b14:i0) h(42) v(14) N(b16:d0)" />
+                            <WhileLoop.RightShiftRegister Id="b11" Terminals="n6, d0=w9" TopLeft="77 28" />
+                            <WhileLoop.LeftShiftRegister RightRegister="b11" Id="b14" Terminals="o0, i0=w10" TopLeft="0 28" />
+                            <WhileLoop.Tunnel AutoIndex="False" Id="b15" Terminals="n6=w12, d0=w9" TopLeft="0 14" />
+                            <WhileLoop.RightShiftRegister Id="b16" Terminals="n6=w10, d0=w10" TopLeft="77 42" />
+                            <WhileLoop.LeftShiftRegister RightRegister="b16" Id="b17" Terminals="o0, i0" TopLeft="0 42" />
+                        </WhileLoop>
+                        <Wire Id="w10" Joints="N(b16:n6) N(b45:D54)" />
+                        <Wire Id="w12" Joints="N(b46:D54) h(14) v(-14) h(-35) v(14) N(b15:n6)" />
+                    </CaseStructure.Case>
+                    <CaseStructure.Case Id="D55" Bounds="7 7 91 91" Pattern="5">
+                        <WhileLoop Id="n6" Bounds="0 0 91 91" DiagramId="d0">
+                            <WhileLoop.Iteration Id="n1" TopLeft="7 56" />
+                            <WhileLoop.Condition Id="n2" Terminals="Input=w6" TopLeft="56 56" />
+                            <Literal Facade="BooleanConstantFacade" Id="n5" Terminals="Out=w6" Bounds="28 56 14 14" Interpretation="Exact" DataType="Boolean">True</Literal>
+                            <Wire Id="w6" Joints="N(n5:Out) N(n2:Input)" />
+                            <Wire Id="w9" Joints="N(b15:d0) h(56) v(14) N(b11:d0)" />
+                            <Wire Id="w10" Joints="N(b14:i0) h(42) v(14) N(b16:d0)" />
+                            <WhileLoop.RightShiftRegister Id="b11" Terminals="n6, d0=w9" TopLeft="77 28" />
+                            <WhileLoop.LeftShiftRegister RightRegister="b11" Id="b14" Terminals="o0, i0=w10" TopLeft="0 28" />
+                            <WhileLoop.Tunnel AutoIndex="False" Id="b15" Terminals="n6=w12, d0=w9" TopLeft="0 14" />
+                            <WhileLoop.RightShiftRegister Id="b16" Terminals="n6=w10, d0=w10" TopLeft="77 42" />
+                            <WhileLoop.LeftShiftRegister RightRegister="b16" Id="b17" Terminals="o0, i0" TopLeft="0 42" />
+                        </WhileLoop>
+                        <Wire Id="w10" Joints="N(b16:n6) N(b45:D55)" />
+                        <Wire Id="w12" Joints="N(b46:D55) h(14) v(-14) h(-35) v(14) N(b15:n6)" />
+                    </CaseStructure.Case>
+                    <CaseStructure.Case Id="D56" Bounds="7 7 91 91" Pattern="6">
+                        <WhileLoop Id="n6" Bounds="0 0 91 91" DiagramId="d0">
+                            <WhileLoop.Iteration Id="n1" TopLeft="7 56" />
+                            <WhileLoop.Condition Id="n2" Terminals="Input=w6" TopLeft="56 56" />
+                            <Literal Facade="BooleanConstantFacade" Id="n5" Terminals="Out=w6" Bounds="28 56 14 14" Interpretation="Exact" DataType="Boolean">True</Literal>
+                            <Wire Id="w6" Joints="N(n5:Out) N(n2:Input)" />
+                            <Wire Id="w9" Joints="N(b15:d0) h(56) v(14) N(b11:d0)" />
+                            <Wire Id="w10" Joints="N(b14:i0) h(42) v(14) N(b16:d0)" />
+                            <WhileLoop.RightShiftRegister Id="b11" Terminals="n6, d0=w9" TopLeft="77 28" />
+                            <WhileLoop.LeftShiftRegister RightRegister="b11" Id="b14" Terminals="o0, i0=w10" TopLeft="0 28" />
+                            <WhileLoop.Tunnel AutoIndex="False" Id="b15" Terminals="n6=w12, d0=w9" TopLeft="0 14" />
+                            <WhileLoop.RightShiftRegister Id="b16" Terminals="n6=w10, d0=w10" TopLeft="77 42" />
+                            <WhileLoop.LeftShiftRegister RightRegister="b16" Id="b17" Terminals="o0, i0" TopLeft="0 42" />
+                        </WhileLoop>
+                        <Wire Id="w10" Joints="N(b16:n6) N(b45:D56)" />
+                        <Wire Id="w12" Joints="N(b46:D56) h(14) v(-14) h(-35) v(14) N(b15:n6)" />
+                    </CaseStructure.Case>
+                    <CaseStructure.Case Id="D57" Bounds="7 7 91 91" Pattern="7">
+                        <WhileLoop Id="n6" Bounds="0 0 91 91" DiagramId="d0">
+                            <WhileLoop.Iteration Id="n1" TopLeft="7 56" />
+                            <WhileLoop.Condition Id="n2" Terminals="Input=w6" TopLeft="56 56" />
+                            <Literal Facade="BooleanConstantFacade" Id="n5" Terminals="Out=w6" Bounds="28 56 14 14" Interpretation="Exact" DataType="Boolean">True</Literal>
+                            <Wire Id="w6" Joints="N(n5:Out) N(n2:Input)" />
+                            <Wire Id="w9" Joints="N(b15:d0) h(56) v(14) N(b11:d0)" />
+                            <Wire Id="w10" Joints="N(b14:i0) h(42) v(14) N(b16:d0)" />
+                            <WhileLoop.RightShiftRegister Id="b11" Terminals="n6, d0=w9" TopLeft="77 28" />
+                            <WhileLoop.LeftShiftRegister RightRegister="b11" Id="b14" Terminals="o0, i0=w10" TopLeft="0 28" />
+                            <WhileLoop.Tunnel AutoIndex="False" Id="b15" Terminals="n6=w12, d0=w9" TopLeft="0 14" />
+                            <WhileLoop.RightShiftRegister Id="b16" Terminals="n6=w10, d0=w10" TopLeft="77 42" />
+                            <WhileLoop.LeftShiftRegister RightRegister="b16" Id="b17" Terminals="o0, i0" TopLeft="0 42" />
+                        </WhileLoop>
+                        <Wire Id="w10" Joints="N(b16:n6) N(b45:D57)" />
+                        <Wire Id="w12" Joints="N(b46:D57) h(14) v(-14) h(-35) v(14) N(b15:n6)" />
+                    </CaseStructure.Case>
+                    <CaseStructure.Case Id="D58" Bounds="7 7 91 91" Pattern="8">
+                        <WhileLoop Id="n6" Bounds="0 0 91 91" DiagramId="d0">
+                            <WhileLoop.Iteration Id="n1" TopLeft="7 56" />
+                            <WhileLoop.Condition Id="n2" Terminals="Input=w6" TopLeft="56 56" />
+                            <Literal Facade="BooleanConstantFacade" Id="n5" Terminals="Out=w6" Bounds="28 56 14 14" Interpretation="Exact" DataType="Boolean">True</Literal>
+                            <Wire Id="w6" Joints="N(n5:Out) N(n2:Input)" />
+                            <Wire Id="w9" Joints="N(b15:d0) h(56) v(14) N(b11:d0)" />
+                            <Wire Id="w10" Joints="N(b14:i0) h(42) v(14) N(b16:d0)" />
+                            <WhileLoop.RightShiftRegister Id="b11" Terminals="n6, d0=w9" TopLeft="77 28" />
+                            <WhileLoop.LeftShiftRegister RightRegister="b11" Id="b14" Terminals="o0, i0=w10" TopLeft="0 28" />
+                            <WhileLoop.Tunnel AutoIndex="False" Id="b15" Terminals="n6=w12, d0=w9" TopLeft="0 14" />
+                            <WhileLoop.RightShiftRegister Id="b16" Terminals="n6=w10, d0=w10" TopLeft="77 42" />
+                            <WhileLoop.LeftShiftRegister RightRegister="b16" Id="b17" Terminals="o0, i0" TopLeft="0 42" />
+                        </WhileLoop>
+                        <Wire Id="w10" Joints="N(b16:n6) N(b45:D58)" />
+                        <Wire Id="w12" Joints="N(b46:D58) h(14) v(-14) h(-35) v(14) N(b15:n6)" />
+                    </CaseStructure.Case>
+                    <CaseStructure.Selector Id="b44" Terminals="n44=w44, D47, D52, D53, D54, D55, D56, D57, D58" TopLeft="0 63" />
+                    <CaseStructure.Tunnel Id="b45" Terminals="n44=w33, D47=w10, D52=w10, D53=w10, D54=w10, D55=w10, D56=w10, D57=w10, D58=w10" TopLeft="91 49" />
+                    <CaseStructure.Tunnel Id="b46" Terminals="n44=w15, D47=w12, D52=w12, D53=w12, D54=w12, D55=w12, D56=w12, D57=w12, D58=w12" TopLeft="0 21" />
+                </CaseStructure>
+                <DataAccessor DataItem="Instance" Id="n43" Bounds="427 252 91 14">
+                    <Terminal Id="Value" Direction="Output" Wire="w44" Hotspot="1 0.5" Bounds="0 0 91 14" />
+                </DataAccessor>
+                <Wire Id="w44" Joints="N(n43:Value) h(63) v(-133) N(b48:n0) B(1) N(b44:n44)" />
+                <CaseStructure Id="n0" Bounds="595 35 105 112" DataType="Int16" UserSelectorBounds="0 0 105 14" Selected="D61" Default="d0">
+                    <CaseStructure.Case Id="d0" Bounds="7 7 91 98" Pattern="1, Default">
+                        <WhileLoop Id="n55" Bounds="0 7 91 91" DiagramId="D16">
+                            <WhileLoop.Iteration Id="n1" TopLeft="7 56" />
+                            <WhileLoop.Condition Id="n2" Terminals="Input=w6" TopLeft="56 56" />
+                            <Literal Facade="BooleanConstantFacade" Id="n5" Terminals="Out=w6" Bounds="28 56 14 14" Interpretation="Exact" DataType="Boolean">True</Literal>
+                            <Wire Id="w6" Joints="N(n5:Out) N(n2:Input)" />
+                            <Add Id="n28" Terminals="x\+y=w12, y=w14, x=w11" TopLeft="28 7" />
+                            <Wire Id="w11" Joints="N(b16:D16) N(n28:x)" />
+                            <Wire Id="w12" Joints="N(n28:x\+y) h(7) v(7) N(b14:D16)" />
+                            <Wire Id="w14" Joints="N(b15:D16) N(n28:y)" />
+                            <WhileLoop.RightShiftRegister Id="b14" Terminals="n55=w9, D16=w12" TopLeft="77 28" />
+                            <WhileLoop.LeftShiftRegister RightRegister="b14" Id="b15" Terminals="n55, D16=w14" TopLeft="0 28" />
+                            <WhileLoop.Tunnel AutoIndex="False" Id="b16" Terminals="n55=w7, D16=w11" TopLeft="0 14" />
+                        </WhileLoop>
+                        <Wire Id="w7" Joints="N(b47:d0) N(b16:n55)" />
+                        <Wire Id="w9" Joints="N(b14:n55) N(b49:d0)" />
+                    </CaseStructure.Case>
+                    <CaseStructure.Case Id="D48" Bounds="7 7 91 98" Pattern="2">
+                        <WhileLoop Id="n55" Bounds="0 7 91 91" DiagramId="D16">
+                            <WhileLoop.Iteration Id="n1" TopLeft="7 56" />
+                            <WhileLoop.Condition Id="n2" Terminals="Input=w6" TopLeft="56 56" />
+                            <Literal Facade="BooleanConstantFacade" Id="n5" Terminals="Out=w6" Bounds="28 56 14 14" Interpretation="Exact" DataType="Boolean">True</Literal>
+                            <Wire Id="w6" Joints="N(n5:Out) N(n2:Input)" />
+                            <Add Id="n28" Terminals="x\+y=w12, y=w14, x=w11" TopLeft="28 7" />
+                            <Wire Id="w11" Joints="N(b16:D16) N(n28:x)" />
+                            <Wire Id="w12" Joints="N(n28:x\+y) h(7) v(7) N(b14:D16)" />
+                            <Wire Id="w14" Joints="N(b15:D16) N(n28:y)" />
+                            <WhileLoop.RightShiftRegister Id="b14" Terminals="n55=w9, D16=w12" TopLeft="77 28" />
+                            <WhileLoop.LeftShiftRegister RightRegister="b14" Id="b15" Terminals="n55, D16=w14" TopLeft="0 28" />
+                            <WhileLoop.Tunnel AutoIndex="False" Id="b16" Terminals="n55=w7, D16=w11" TopLeft="0 14" />
+                        </WhileLoop>
+                        <Wire Id="w7" Joints="N(b47:D48) N(b16:n55)" />
+                        <Wire Id="w9" Joints="N(b14:n55) N(b49:D48)" />
+                    </CaseStructure.Case>
+                    <CaseStructure.Case Id="D49" Bounds="7 7 91 98" Pattern="3">
+                        <WhileLoop Id="n55" Bounds="0 7 91 91" DiagramId="D16">
+                            <WhileLoop.Iteration Id="n1" TopLeft="7 56" />
+                            <WhileLoop.Condition Id="n2" Terminals="Input=w6" TopLeft="56 56" />
+                            <Literal Facade="BooleanConstantFacade" Id="n5" Terminals="Out=w6" Bounds="28 56 14 14" Interpretation="Exact" DataType="Boolean">True</Literal>
+                            <Wire Id="w6" Joints="N(n5:Out) N(n2:Input)" />
+                            <Add Id="n28" Terminals="x\+y=w12, y=w14, x=w11" TopLeft="28 7" />
+                            <Wire Id="w11" Joints="N(b16:D16) N(n28:x)" />
+                            <Wire Id="w12" Joints="N(n28:x\+y) h(7) v(7) N(b14:D16)" />
+                            <Wire Id="w14" Joints="N(b15:D16) N(n28:y)" />
+                            <WhileLoop.RightShiftRegister Id="b14" Terminals="n55=w9, D16=w12" TopLeft="77 28" />
+                            <WhileLoop.LeftShiftRegister RightRegister="b14" Id="b15" Terminals="n55, D16=w14" TopLeft="0 28" />
+                            <WhileLoop.Tunnel AutoIndex="False" Id="b16" Terminals="n55=w7, D16=w11" TopLeft="0 14" />
+                        </WhileLoop>
+                        <Wire Id="w7" Joints="N(b47:D49) N(b16:n55)" />
+                        <Wire Id="w9" Joints="N(b14:n55) N(b49:D49)" />
+                    </CaseStructure.Case>
+                    <CaseStructure.Case Id="D50" Bounds="7 7 91 98" Pattern="4">
+                        <WhileLoop Id="n55" Bounds="0 7 91 91" DiagramId="D16">
+                            <WhileLoop.Iteration Id="n1" TopLeft="7 56" />
+                            <WhileLoop.Condition Id="n2" Terminals="Input=w6" TopLeft="56 56" />
+                            <Literal Facade="BooleanConstantFacade" Id="n5" Terminals="Out=w6" Bounds="28 56 14 14" Interpretation="Exact" DataType="Boolean">True</Literal>
+                            <Wire Id="w6" Joints="N(n5:Out) N(n2:Input)" />
+                            <Add Id="n28" Terminals="x\+y=w12, y=w14, x=w11" TopLeft="28 7" />
+                            <Wire Id="w11" Joints="N(b16:D16) N(n28:x)" />
+                            <Wire Id="w12" Joints="N(n28:x\+y) h(7) v(7) N(b14:D16)" />
+                            <Wire Id="w14" Joints="N(b15:D16) N(n28:y)" />
+                            <WhileLoop.RightShiftRegister Id="b14" Terminals="n55=w9, D16=w12" TopLeft="77 28" />
+                            <WhileLoop.LeftShiftRegister RightRegister="b14" Id="b15" Terminals="n55, D16=w14" TopLeft="0 28" />
+                            <WhileLoop.Tunnel AutoIndex="False" Id="b16" Terminals="n55=w7, D16=w11" TopLeft="0 14" />
+                        </WhileLoop>
+                        <Wire Id="w7" Joints="N(b47:D50) N(b16:n55)" />
+                        <Wire Id="w9" Joints="N(b14:n55) N(b49:D50)" />
+                    </CaseStructure.Case>
+                    <CaseStructure.Case Id="D51" Bounds="7 7 91 98" Pattern="5">
+                        <WhileLoop Id="n55" Bounds="0 7 91 91" DiagramId="D16">
+                            <WhileLoop.Iteration Id="n1" TopLeft="7 56" />
+                            <WhileLoop.Condition Id="n2" Terminals="Input=w6" TopLeft="56 56" />
+                            <Literal Facade="BooleanConstantFacade" Id="n5" Terminals="Out=w6" Bounds="28 56 14 14" Interpretation="Exact" DataType="Boolean">True</Literal>
+                            <Wire Id="w6" Joints="N(n5:Out) N(n2:Input)" />
+                            <Add Id="n28" Terminals="x\+y=w12, y=w14, x=w11" TopLeft="28 7" />
+                            <Wire Id="w11" Joints="N(b16:D16) N(n28:x)" />
+                            <Wire Id="w12" Joints="N(n28:x\+y) h(7) v(7) N(b14:D16)" />
+                            <Wire Id="w14" Joints="N(b15:D16) N(n28:y)" />
+                            <WhileLoop.RightShiftRegister Id="b14" Terminals="n55=w9, D16=w12" TopLeft="77 28" />
+                            <WhileLoop.LeftShiftRegister RightRegister="b14" Id="b15" Terminals="n55, D16=w14" TopLeft="0 28" />
+                            <WhileLoop.Tunnel AutoIndex="False" Id="b16" Terminals="n55=w7, D16=w11" TopLeft="0 14" />
+                        </WhileLoop>
+                        <Wire Id="w7" Joints="N(b47:D51) N(b16:n55)" />
+                        <Wire Id="w9" Joints="N(b14:n55) N(b49:D51)" />
+                    </CaseStructure.Case>
+                    <CaseStructure.Case Id="D59" Bounds="7 7 91 98" Pattern="6">
+                        <WhileLoop Id="n55" Bounds="0 7 91 91" DiagramId="D16">
+                            <WhileLoop.Iteration Id="n1" TopLeft="7 56" />
+                            <WhileLoop.Condition Id="n2" Terminals="Input=w6" TopLeft="56 56" />
+                            <Literal Facade="BooleanConstantFacade" Id="n5" Terminals="Out=w6" Bounds="28 56 14 14" Interpretation="Exact" DataType="Boolean">True</Literal>
+                            <Wire Id="w6" Joints="N(n5:Out) N(n2:Input)" />
+                            <Add Id="n28" Terminals="x\+y=w12, y=w14, x=w11" TopLeft="28 7" />
+                            <Wire Id="w11" Joints="N(b16:D16) N(n28:x)" />
+                            <Wire Id="w12" Joints="N(n28:x\+y) h(7) v(7) N(b14:D16)" />
+                            <Wire Id="w14" Joints="N(b15:D16) N(n28:y)" />
+                            <WhileLoop.RightShiftRegister Id="b14" Terminals="n55=w9, D16=w12" TopLeft="77 28" />
+                            <WhileLoop.LeftShiftRegister RightRegister="b14" Id="b15" Terminals="n55, D16=w14" TopLeft="0 28" />
+                            <WhileLoop.Tunnel AutoIndex="False" Id="b16" Terminals="n55=w7, D16=w11" TopLeft="0 14" />
+                        </WhileLoop>
+                        <Wire Id="w7" Joints="N(b47:D59) N(b16:n55)" />
+                        <Wire Id="w9" Joints="N(b14:n55) N(b49:D59)" />
+                    </CaseStructure.Case>
+                    <CaseStructure.Case Id="D60" Bounds="7 7 91 98" Pattern="7">
+                        <WhileLoop Id="n55" Bounds="0 7 91 91" DiagramId="D16">
+                            <WhileLoop.Iteration Id="n1" TopLeft="7 56" />
+                            <WhileLoop.Condition Id="n2" Terminals="Input=w6" TopLeft="56 56" />
+                            <Literal Facade="BooleanConstantFacade" Id="n5" Terminals="Out=w6" Bounds="28 56 14 14" Interpretation="Exact" DataType="Boolean">True</Literal>
+                            <Wire Id="w6" Joints="N(n5:Out) N(n2:Input)" />
+                            <Add Id="n28" Terminals="x\+y=w12, y=w14, x=w11" TopLeft="28 7" />
+                            <Wire Id="w11" Joints="N(b16:D16) N(n28:x)" />
+                            <Wire Id="w12" Joints="N(n28:x\+y) h(7) v(7) N(b14:D16)" />
+                            <Wire Id="w14" Joints="N(b15:D16) N(n28:y)" />
+                            <WhileLoop.RightShiftRegister Id="b14" Terminals="n55=w9, D16=w12" TopLeft="77 28" />
+                            <WhileLoop.LeftShiftRegister RightRegister="b14" Id="b15" Terminals="n55, D16=w14" TopLeft="0 28" />
+                            <WhileLoop.Tunnel AutoIndex="False" Id="b16" Terminals="n55=w7, D16=w11" TopLeft="0 14" />
+                        </WhileLoop>
+                        <Wire Id="w7" Joints="N(b47:D60) N(b16:n55)" />
+                        <Wire Id="w9" Joints="N(b14:n55) N(b49:D60)" />
+                    </CaseStructure.Case>
+                    <CaseStructure.Case Id="D61" Bounds="7 7 91 98" Pattern="8">
+                        <WhileLoop Id="n55" Bounds="0 7 91 91" DiagramId="D16">
+                            <WhileLoop.Iteration Id="n1" TopLeft="7 56" />
+                            <WhileLoop.Condition Id="n2" Terminals="Input=w6" TopLeft="56 56" />
+                            <Literal Facade="BooleanConstantFacade" Id="n5" Terminals="Out=w6" Bounds="28 56 14 14" Interpretation="Exact" DataType="Boolean">True</Literal>
+                            <Wire Id="w6" Joints="N(n5:Out) N(n2:Input)" />
+                            <Add Id="n28" Terminals="x\+y=w12, y=w14, x=w11" TopLeft="28 7" />
+                            <Wire Id="w11" Joints="N(b16:D16) N(n28:x)" />
+                            <Wire Id="w12" Joints="N(n28:x\+y) h(7) v(7) N(b14:D16)" />
+                            <Wire Id="w14" Joints="N(b15:D16) N(n28:y)" />
+                            <WhileLoop.RightShiftRegister Id="b14" Terminals="n55=w9, D16=w12" TopLeft="77 28" />
+                            <WhileLoop.LeftShiftRegister RightRegister="b14" Id="b15" Terminals="n55, D16=w14" TopLeft="0 28" />
+                            <WhileLoop.Tunnel AutoIndex="False" Id="b16" Terminals="n55=w7, D16=w11" TopLeft="0 14" />
+                        </WhileLoop>
+                        <Wire Id="w7" Joints="N(b47:D61) N(b16:n55)" />
+                        <Wire Id="w9" Joints="N(b14:n55) N(b49:D61)" />
+                    </CaseStructure.Case>
+                    <CaseStructure.Selector Id="b48" Terminals="n0=w44, d0, D48, D49, D50, D51, D59, D60, D61" TopLeft="0 84" />
+                    <CaseStructure.Tunnel Id="b47" Terminals="n0=w15, d0=w7, D48=w7, D49=w7, D50=w7, D51=w7, D59=w7, D60=w7, D61=w7" TopLeft="0 28" />
+                    <CaseStructure.Tunnel Id="b49" Terminals="n0=w30, d0=w9, D48=w9, D49=w9, D50=w9, D51=w9, D59=w9, D60=w9, D61=w9" TopLeft="91 42" />
+                </CaseStructure>
+                <Multiply Id="n55" Terminals="x\*y=w58, y=w57, x=w56" TopLeft="532 -7" />
+                <Wire Id="w56" Joints="N(n34:Value) N(n55:x)" />
+                <Wire Id="w57" Joints="N(n28:Value) N(n55:y)" />
+                <Wire Id="w58" Joints="N(n55:x\*y) h(266) v(63) N(n29:x)" />
+                <DataAccessor DataItem="iMultiplier" Id="n58" Bounds="420 140 98 14">
+                    <Terminal Id="Value" Direction="Output" Wire="w62" Hotspot="1 0.5" Bounds="0 0 98 14" />
+                </DataAccessor>
+                <Multiply Id="n59" Terminals="x\*y=w61, y=w60, x=w62" TopLeft="532 140" />
+                <Wire Id="w60" Joints="N(n13:Value) N(n59:y)" />
+                <Wire Id="w61" Joints="N(n59:x\*y) N(n14:x)" />
+                <Wire Id="w62" Joints="N(n58:Value) N(n59:x)" />
+                <DataAccessor DataItem="iMultiplier" Id="n62" Bounds="420 308 98 14">
+                    <Terminal Id="Value" Direction="Output" Wire="w66" Hotspot="1 0.5" Bounds="0 0 98 14" />
+                </DataAccessor>
+                <Multiply Id="n63" Terminals="x\*y=w65, y=w66, x=w64" TopLeft="532 294" />
+                <Wire Id="w64" Joints="N(n19:Value) N(n63:x)" />
+                <Wire Id="w65" Joints="N(n63:x\*y) h(262.5) v(-56) N(n20:y)" />
+                <Wire Id="w66" Joints="N(n62:Value) N(n63:y)" />
+            </BlockDiagram>
+            <Icon>
+                <Model0:IconPanel xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:Model0="clr-namespace:NationalInstruments.LabVIEW.VI.Design;assembly=NationalInstruments.LabVIEW.VI.SourceModel" xmlns:fpruntime="clr-namespace:NationalInstruments.LabVIEW.FrontPanelRuntime;assembly=NationalInstruments.LabVIEW.FrontPanelRuntime" xmlns:ation="http://schemas.microsoft.com/winfx/2006/xaml/presentation" Height="112" Width="56">
+                    <fpruntime:AnimationProperties.Animations>
+                        <fpruntime:AnimationsContainer />
+                    </fpruntime:AnimationProperties.Animations>
+                    <fpruntime:EventProperties.Events>
+                        <fpruntime:EventContainer />
+                    </fpruntime:EventProperties.Events>
+                    <Model0:IconPanel.Background>
+                        <ation:LinearGradientBrush StartPoint="0.5, 0" EndPoint="0.5, 1">
+                            <ation:LinearGradientBrush.Transform>
+                                <ation:MatrixTransform />
+                            </ation:LinearGradientBrush.Transform>
+                            <ation:LinearGradientBrush.RelativeTransform>
+                                <ation:MatrixTransform />
+                            </ation:LinearGradientBrush.RelativeTransform>
+                            <ation:GradientStop Color="#FFF6F5C6" />
+                            <ation:GradientStop Color="#FFFFFFFE" Offset="0.25" />
+                            <ation:GradientStop Color="#FFF6F5C6" Offset="1" />
+                        </ation:LinearGradientBrush>
+                    </Model0:IconPanel.Background>
+                    <ation:Rectangle x:Name="Template" Width="NaN" Height="NaN" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="0, 13, 0, 0" ation:Grid.Row="0" ation:Grid.Column="0" ation:Grid.RowSpan="1" ation:Grid.ColumnSpan="1" Fill="#00FFFFFF" Stroke="#FF000000" StrokeThickness="1" RadiusX="0" RadiusY="0">
+                        <fpruntime:AnimationProperties.Animations>
+                            <fpruntime:AnimationsContainer />
+                        </fpruntime:AnimationProperties.Animations>
+                        <fpruntime:EventProperties.Events>
+                            <fpruntime:EventContainer />
+                        </fpruntime:EventProperties.Events>
+                    </ation:Rectangle>
+                    <ation:Rectangle x:Name="Template2" Width="NaN" Height="14" HorizontalAlignment="Stretch" VerticalAlignment="Top" Margin="0" ation:Grid.Row="0" ation:Grid.Column="0" ation:Grid.RowSpan="1" ation:Grid.ColumnSpan="1" Stroke="#FF000000" StrokeThickness="1" RadiusX="0" RadiusY="0">
+                        <fpruntime:AnimationProperties.Animations>
+                            <fpruntime:AnimationsContainer />
+                        </fpruntime:AnimationProperties.Animations>
+                        <fpruntime:EventProperties.Events>
+                            <fpruntime:EventContainer />
+                        </fpruntime:EventProperties.Events>
+                        <ation:Rectangle.Fill>
+                            <ation:LinearGradientBrush StartPoint="0.5, 0" EndPoint="0.5, 1">
+                                <ation:LinearGradientBrush.Transform>
+                                    <ation:MatrixTransform />
+                                </ation:LinearGradientBrush.Transform>
+                                <ation:LinearGradientBrush.RelativeTransform>
+                                    <ation:MatrixTransform />
+                                </ation:LinearGradientBrush.RelativeTransform>
+                                <ation:GradientStop Color="#FFFFFFFF" />
+                                <ation:GradientStop Color="#FFD5EAEA" Offset="1" />
+                            </ation:LinearGradientBrush>
+                        </ation:Rectangle.Fill>
+                    </ation:Rectangle>
+                    <ation:TextBlock x:Name="Template3" Width="NaN" Height="NaN" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0, -0.100000001490116, 0, 0" ation:Grid.Row="0" ation:Grid.Column="0" ation:Grid.RowSpan="1" ation:Grid.ColumnSpan="1" Text="SubVI" FontFamily="Portable User Interface" FontSize="10" FontWeight="Normal" Foreground="#FF000000">
+                        <fpruntime:AnimationProperties.Animations>
+                            <fpruntime:AnimationsContainer />
+                        </fpruntime:AnimationProperties.Animations>
+                        <fpruntime:EventProperties.Events>
+                            <fpruntime:EventContainer />
+                        </fpruntime:EventProperties.Events>
+                    </ation:TextBlock>
+                </Model0:IconPanel>
+            </Icon>
+        </VirtualInstrument>
+    </Namespace>
+</SourceFile>

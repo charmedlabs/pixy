@@ -1,0 +1,94 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<EditorDefinitions>
+  <PolyGroups ModuleName="Pixy" ModuleVersion="1.14">
+	  <PolyGroup Name="Pixy" BlockFamily="Sensor">
+      <Parameter Name="Port" CompilerDirectives="OneInputPort" Direction="Input" DefaultValue="1.3" />
+      <Parameter Name="Comparison" Direction="Input" Configuration="builtin://Identification_ComparisonType.xml" Identification="builtin://Identification_ComparisonType.xml" DataType="Int32" DefaultValue="4" />
+      <Parameter Name="Threshold" Identification="builtin://Identification_Threshold_UltrasonicInches.xml" DataType="Single" Direction="Input" DefaultValue="50" MinValue="0" MaxValue="100" />
+      <Parameter Name="Amount" Identification="builtin://Identification_Numeric.png" DataType="Single" Direction="Input" DefaultValue="10" />
+      <Parameter Name="i" CompilerDirectives="WaitForIteration" DataType="Int32" Direction="Input" DefaultValue="0" />
+      <Parameter Name="Result" CompilerDirectives="Result" Identification="builtin://Identification_CompareResult.png" DataType="Boolean" Direction="Output" />
+      <Parameter Name="signatureIn" Identification="builtin://Identification_Index.png" DataType="Int16" Direction="Input" DefaultValue="0" />
+      <Parameter Name="colorCodeIn" Identification="builtin://Identification_Index.png" DataType="Int32" Direction="Input" DefaultValue="0" />
+      <Parameter Name="xOut" CompilerDirectives="Result" Identification="builtin://identification_x.png" DataType="Int32" Direction="Output" />
+      <Parameter Name="yOut" Identification="builtin://identification_y.png" DataType="Int32" Direction="Output" />
+      <Parameter Name="widthOut" Identification="builtin://Identification_Width.png" DataType="Int32" Direction="Output" />
+      <Parameter Name="heightOut" Identification="builtin://Identification_Height.png" DataType="Int32" Direction="Output" />
+      <Parameter Name="nMatches" Identification="builtin://identification_Count.png" DataType="Int32" Direction="Output" />
+      <Parameter Name="signatureOut" Identification="builtin://identification_Count.png" DataType="Int32" Direction="Output" />
+      <Parameter Name="angleOut" Identification="builtin://identification_angle.png" DataType="Single" Direction="Output" />
+      <Hardware>
+        <NXTPlotColor>#ffff3132</NXTPlotColor>
+        <EV3PlotColor>#ff785028</EV3PlotColor>
+        <EV3AutoID>-1</EV3AutoID>
+        <Direction>Input</Direction>
+        <DefaultPort>1.1</DefaultPort>
+      </Hardware>
+      <Block>
+        <Mode>PixySignature</Mode>
+        <Reference Type="VILib" Name="PixyCombo.vix" />
+        <ParameterReference Name="Port" />
+        <ParameterReference Name="colorCodeIn" />
+        <ParameterReference Name="signatureOut" />
+        <ParameterReference Name="xOut" />
+        <ParameterReference Name="yOut" />
+        <ParameterReference Name="widthOut" />
+        <ParameterReference Name="heightOut" />
+        <ParameterReference Name="angleOut" />
+        <PaletteInfo Weight="0.5" />
+        <BlockInterface>Measure</BlockInterface>
+        <Flags></Flags>
+        <Hardware></Hardware>
+        <HardwareModeInfo Name="PIXY" ID="0" Range="0,255" Unit="" />
+      </Block>
+      <Block>
+        <Mode>PixyCompareSignature</Mode>
+        <Reference Type="VILib" Name="PixyCompareSignature.vix" />
+        <ParameterReference Name="Port" />
+        <ParameterReference Name="signatureIn" />
+        <ParameterReference Name="Comparison" />
+        <ParameterReference Name="Threshold" />
+        <ParameterReference Name="Result" />
+        <ParameterReference Name="nMatches" />
+        <BlockInterface>Compare</BlockInterface>
+        <Flags></Flags>
+      </Block>
+      <Block>
+        <Mode>PixyChangeSignature</Mode>
+        <Reference Type="VILib" Name="PixyChangeSignature.vix" />
+        <ParameterReference Name="Port" />
+        <ParameterReference Name="signatureIn" />
+        <ParameterReference Name="Comparison" />
+        <ParameterReference Name="Amount" />
+        <ParameterReference Name="nMatches" />
+        <ParameterReference Name="Result" />
+        <ParameterReference Name="i" />
+        <BlockInterface>Change</BlockInterface>
+        <Flags></Flags>
+      </Block>
+    </PolyGroup>
+    <PolyGroup Name="PixyPID" BlockFamily="DataOperations">
+      <Parameter Name="valueIn" Identification="builtin://Identification_ArrayInNumeric.png" DataType="Single" Direction="Input" DefaultValue="0" />
+      <Parameter Name="Instance" Direction="Input" DataType="Int16" DefaultValue="1" Identification="builtin://Identification_Index.png" MinValue="1" MaxValue="8" />
+      <Parameter Name="setPoint" Identification="builtin://Identification_Numeric.png" DataType="Single" Direction="Input" DefaultValue="0" />
+      <Parameter Name="pidP" Identification="Id_P.png" DataType="Single" Direction="Input" DefaultValue="0" />
+      <Parameter Name="pidD" Identification="Id_D.png" DataType="Single" Direction="Input" DefaultValue="0" />
+      <Parameter Name="pidI" Identification="Id_I.png" DataType="Single" Direction="Input" DefaultValue="0" />
+      <Parameter Name="iMultiplier" Identification="builtin://Identification_x.png" DataType="Single" Direction="Input" DefaultValue="1"/>
+      <Parameter Name="controlOut" Identification="builtin://Identification_ArrayOutNumeric.png" DataType="Single" Direction="Output" />
+      <Block>
+        <Mode>PixyPIDSimple</Mode>
+        <Reference Type="VILib" Name="PixyPID.vix" />
+        <ParameterReference Name="Instance" />
+        <ParameterReference Name="valueIn" />
+        <ParameterReference Name="setPoint" />
+        <ParameterReference Name="pidP" />
+        <ParameterReference Name="pidI" />
+        <ParameterReference Name="pidD" />
+        <ParameterReference Name="iMultiplier" />
+        <ParameterReference Name="controlOut" />
+        <PaletteInfo Weight="0.5" />
+      </Block>
+    </PolyGroup>
+  </PolyGroups>
+</EditorDefinitions>
