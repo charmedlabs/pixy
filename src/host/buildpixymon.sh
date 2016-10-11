@@ -9,7 +9,7 @@ fi
 
 echo Building for $platform
 
-cd src/host/pixymon
+cd pixymon
 
 if [[ "$platform" == 'linux' ]]; then
    qmake-qt4 pixymon.pro
