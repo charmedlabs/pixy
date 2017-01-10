@@ -29,15 +29,11 @@
 #include "I2C.h"
 
 #define PIXY_I2C_DEFAULT_ADDR           0x54
-#define PIXY_I2C_DEFAULT_PORT I2C::kOnboard
 
 class LinkI2C
 {
 public:
-  LinkI2C(): Wire(PIXY_I2C_DEFAULT_PORT, PIXY_I2C_DEFAULT_ADDR)
-  {
-
-  }
+  I2C* Wire = new I2C(Wire->kOnboard, PIXY_I2C_DEFAULT_ADDR);
   void init()
   {
   }
@@ -52,26 +48,25 @@ public:
   {
     uint16_t w;
   uint8_t *c;
-  Wire.Read((int)addr, 2, c);
+  Wire->ReadOnly(2, c);
     w = (c[0] << 8 ) | (c[1] & 0xff);
     return w;
   }
   uint8_t getByte()
   {
   uint8_t *c;
-  Wire.Read((int)addr, 1, c);
+  Wire->ReadOnly(1, c);
   return *c;
   }
 
   int8_t send(uint8_t *data, uint8_t len)
   {
-  Wire.Write(addr, *data);
+  Wire->WriteBulk(data, len);
   return len;
   }
   
 private:
-  I2C Wire;
-  uint8_t addr;
+  unsigned char addr;
 };
 
 typedef TPixy<LinkI2C> PixyI2C;
