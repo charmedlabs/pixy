@@ -26,50 +26,51 @@
 #define _PIXYI2C_H
 
 #include "TPixy.h"
-#include "Wire.h"
+#include "I2C.h"
 
-#define PIXY_I2C_DEFAULT_ADDR           0x54  
+#define PIXY_I2C_DEFAULT_ADDR           0x54
+#define PIXY_I2C_DEFAULT_PORT I2C::kOnboard
 
 class LinkI2C
 {
 public:
+  LinkI2C(): Wire(PIXY_I2C_DEFAULT_PORT, PIXY_I2C_DEFAULT_ADDR)
+  {
+
+  }
   void init()
   {
-    Wire.begin();
   }
   void setArg(uint16_t arg)
   {
     if (arg==PIXY_DEFAULT_ARGVAL)
       addr = PIXY_I2C_DEFAULT_ADDR;
-	else
-	  addr = arg;
+  else
+    addr = arg;
   }
   uint16_t getWord()
   {
     uint16_t w;
-	uint8_t c;
-	Wire.requestFrom((int)addr, 2);
-    c = Wire.read();
-    w = Wire.read();
-    w <<= 8;
-    w |= c; 
+  uint8_t *c;
+  Wire.Read((int)addr, 2, c);
+    w = (c[0] << 8 ) | (c[1] & 0xff);
     return w;
   }
   uint8_t getByte()
   {
-	Wire.requestFrom((int)addr, 1);
-	return Wire.read();
+  uint8_t *c;
+  Wire.Read((int)addr, 1, c);
+  return *c;
   }
 
   int8_t send(uint8_t *data, uint8_t len)
   {
-    Wire.beginTransmission(addr);
-    Wire.write(data, len);
-	Wire.endTransmission();
-	return len;
+  Wire.Write(addr, *data);
+  return len;
   }
-	
+  
 private:
+  I2C Wire;
   uint8_t addr;
 };
 
