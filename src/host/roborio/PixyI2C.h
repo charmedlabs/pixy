@@ -46,10 +46,9 @@ public:
   }
   uint16_t getWord()
   {
-    uint16_t w;
-  uint8_t *c;
-  Wire->ReadOnly(2, c);
-    w = (c[0] << 8 ) | (c[1] & 0xff);
+    uint8_t c[2];
+    Wire->ReadOnly(2, c);
+    uint16_t w = (c[1] << 8) + c[0];
     return w;
   }
   uint8_t getByte()
