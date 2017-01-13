@@ -91,10 +91,10 @@ public:
   TPixy(uint16_t arg=PIXY_DEFAULT_ARGVAL);
   ~TPixy();
   
-  uint16_t getBlocks(uint16_t maxBlocks=1000);
-  int8_t setServos(uint16_t s0, uint16_t s1);
-  int8_t setBrightness(uint8_t brightness);
-  int8_t setLED(uint8_t r, uint8_t g, uint8_t b);
+  uint16_t GetBlocks(uint16_t maxBlocks=1000);
+  int8_t GetServos(uint16_t s0, uint16_t s1);
+  int8_t SetBrightness(uint8_t brightness);
+  int8_t SetLED(uint8_t r, uint8_t g, uint8_t b);
   void init();
   
   Block *blocks;
@@ -130,7 +130,7 @@ template <class LinkType> TPixy<LinkType>::~TPixy()
   free(blocks);
 }
 
-template <class LinkType> bool TPixy<LinkType>::getStart()
+template <class LinkType> bool TPixy<LinkType>::GetStart()
 {
   uint16_t w, lastw;
  
@@ -168,13 +168,13 @@ template <class LinkType> bool TPixy<LinkType>::getStart()
   }
 }
 
-template <class LinkType> void TPixy<LinkType>::resize()
+template <class LinkType> void TPixy<LinkType>::Resize()
 {
   blockArraySize += PIXY_INITIAL_ARRAYSIZE;
   blocks = (Block *)realloc(blocks, sizeof(Block)*blockArraySize);
 }  
     
-template <class LinkType> uint16_t TPixy<LinkType>::getBlocks(uint16_t maxBlocks)
+template <class LinkType> uint16_t TPixy<LinkType>::GetBlocks(uint16_t maxBlocks)
 {
   uint8_t i;
   uint16_t w, checksum, sum;
@@ -239,7 +239,7 @@ template <class LinkType> uint16_t TPixy<LinkType>::getBlocks(uint16_t maxBlocks
   }
 }
 
-template <class LinkType> int8_t TPixy<LinkType>::setServos(uint16_t s0, uint16_t s1)
+template <class LinkType> int8_t TPixy<LinkType>::SetServos(uint16_t s0, uint16_t s1)
 {
   uint8_t outBuf[6];
    
@@ -251,7 +251,7 @@ template <class LinkType> int8_t TPixy<LinkType>::setServos(uint16_t s0, uint16_
   return link.send(outBuf, 6);
 }
 
-template <class LinkType> int8_t TPixy<LinkType>::setBrightness(uint8_t brightness)
+template <class LinkType> int8_t TPixy<LinkType>::SetBrightness(uint8_t brightness)
 {
   uint8_t outBuf[3];
    
@@ -262,7 +262,7 @@ template <class LinkType> int8_t TPixy<LinkType>::setBrightness(uint8_t brightne
   return link.send(outBuf, 3);
 }
 
-template <class LinkType> int8_t TPixy<LinkType>::setLED(uint8_t r, uint8_t g, uint8_t b)
+template <class LinkType> int8_t TPixy<LinkType>::SetLED(uint8_t r, uint8_t g, uint8_t b)
 {
   uint8_t outBuf[5];
   
