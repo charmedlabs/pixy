@@ -95,7 +95,6 @@ public:
   int8_t SetServos(uint16_t s0, uint16_t s1);
   int8_t SetBrightness(uint8_t brightness);
   int8_t SetLED(uint8_t r, uint8_t g, uint8_t b);
-  void Init();
   
   Block *blocks;
   
@@ -117,11 +116,6 @@ template <class LinkType> TPixy<LinkType>::TPixy()
   blockCount = 0;
   blockArraySize = PIXY_INITIAL_ARRAYSIZE;
   blocks = (Block *)malloc(sizeof(Block)*blockArraySize);
-}
-
-template <class LinkType> void TPixy<LinkType>::Init()
-{
-  link.init();
 }
 
 template <class LinkType> TPixy<LinkType>::~TPixy()
