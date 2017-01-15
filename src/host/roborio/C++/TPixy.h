@@ -92,16 +92,16 @@ public:
   ~TPixy();
   
   uint16_t GetBlocks(uint16_t maxBlocks=1000);
-  int8_t GetServos(uint16_t s0, uint16_t s1);
+  int8_t SetServos(uint16_t s0, uint16_t s1);
   int8_t SetBrightness(uint8_t brightness);
   int8_t SetLED(uint8_t r, uint8_t g, uint8_t b);
-  void init();
+  void Init();
   
   Block *blocks;
   
 private:
-  bool getStart();
-  void resize();
+  bool GetStart();
+  void Resize();
 
   LinkType link;
   bool  skipStart;
@@ -182,7 +182,7 @@ template <class LinkType> uint16_t TPixy<LinkType>::GetBlocks(uint16_t maxBlocks
   
   if (!skipStart)
   {
-    if (getStart()==false)
+    if (GetStart()==false)
       return 0;
   }
   else
@@ -208,7 +208,7 @@ template <class LinkType> uint16_t TPixy<LinkType>::GetBlocks(uint16_t maxBlocks
       return blockCount;
     
   if (blockCount>blockArraySize)
-    resize();
+    Resize();
   
   block = blocks + blockCount;
   
