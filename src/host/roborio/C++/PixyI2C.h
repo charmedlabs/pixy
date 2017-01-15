@@ -14,12 +14,12 @@
 //
 // This file is for defining the link class for I2C communications.  
 //
-// Note, the PixyI2C class takes an optional argument, which is the I2C address 
-// of the Pixy you want to talk to.  The default address is 0x54 (used when no 
-// argument is used.)  So, for example, if you wished to talk to Pixy at I2C 
-// address 0x55, declare like this:
+// Note, the PixyI2C class takes two optional arguments, the first being the I2C address 
+// of the Pixy you want to talk to and the second being the port on the RoboRIO you want to use (Onboard or MXP).
+// The default address and port are 0x54 and kOnboard respectively.
+// So, for example, if you wished to talk to Pixy at I2C address 0x55 and using the MXP port, declare like this:
 //
-// PixyI2C pixy(0x55);
+// PixyI2C *Pixy = new PixyI2C(0x55, I2C::Port::kMXP);
 //
 
 #ifndef _PIXYI2C_H
