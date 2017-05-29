@@ -84,11 +84,11 @@ extern "C"
 
   static int pixy_initialized = false;
 
-  int pixy_init()
+  int pixy_init(uint32_t uid)
   {
     int return_value;
 
-    return_value = interpreter.init();
+    return_value = interpreter.init(uid);
 
     if(return_value == 0) 
     {

@@ -40,6 +40,7 @@ int main(int argc, char * argv[])
   int      index;
   int      blocks_copied;
   int      pixy_init_status;
+  uint32_t pixy_uid = 0;
   char     buf[128];
 
   // Catch CTRL+C (SIGINT) signals //
@@ -48,7 +49,9 @@ int main(int argc, char * argv[])
   printf("Hello Pixy:\n libpixyusb Version: %s\n", __LIBPIXY_VERSION__);
 
   // Connect to Pixy //
-  pixy_init_status = pixy_init();
+  if (argc == 2)
+    pixy_uid = strtoul(argv[1], NULL, 0);
+  pixy_init_status = pixy_init(pixy_uid);
 
   // Was there an error initializing pixy? //
   if(!pixy_init_status == 0)

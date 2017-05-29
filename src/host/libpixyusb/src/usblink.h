@@ -26,16 +26,16 @@ public:
     USBLink();
     ~USBLink();
 
-    int open();
+    // Grab a handle for the first non-busy pixy device
+    int open(int ord=0);
     virtual int send(const uint8_t *data, uint32_t len, uint16_t timeoutMs);
     virtual int receive(uint8_t *data, uint32_t len, uint16_t timeoutMs);
     virtual void setTimer();
     virtual uint32_t getTimer();
 
 private:
-    libusb_context *m_context;
     libusb_device_handle *m_handle;
-
+    libusb_context *m_context;
     util::timer timer_;
 };
 
