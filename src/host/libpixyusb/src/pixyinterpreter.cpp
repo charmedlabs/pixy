@@ -17,6 +17,8 @@
 #include <stdio.h>
 #include "pixyinterpreter.hpp"
 
+#define MAX_PIXYS 32
+
 PixyInterpreter::PixyInterpreter()
 {
   thread_die_  = false;
@@ -29,9 +31,11 @@ PixyInterpreter::~PixyInterpreter()
   close();
 }
 
-int PixyInterpreter::init()
+int PixyInterpreter::init(uint32_t uid)
 {
-  int USB_return_value;
+  int return_value;
+  int ndevs = 0;
+  uint32_t temp_uid = 0;
 
   if(thread_dead_ == false) 
   {
@@ -39,13 +43,35 @@ int PixyInterpreter::init()
     return 0;
   }
 
-  USB_return_value = link_.open();
+  // iterate through the list of available devices, choosing the one with the
+  // correct uid
+  while (ndevs < MAX_PIXYS) {
+    return_value = link_.open(ndevs++);
+    if (return_value == PIXY_ERROR_USB_BUSY)
+      continue;
+    else if (return_value < 0)
+      break;
 
-  if(USB_return_value < 0) {
-    return USB_return_value;
-  }
+    receiver_ = new ChirpReceiver(&link_, this);
 
-  receiver_ = new ChirpReceiver(&link_, this);
+    return_value = send_command("getUID", END_OUT_ARGS, &temp_uid, END_IN_ARGS);
+    if (return_value != 0 || uid == 0 || uid == temp_uid)
+      break;
+
+    delete receiver_;
+    receiver_ = NULL;
+  };
+
+  // If we couldn't find an available device with the given uid, return a
+  // NOT_FOUND error
+  if (return_value == PIXY_ERROR_USB_BUSY && uid != 0)
+    return_value = PIXY_ERROR_USB_NOT_FOUND;
+  // Check that we haven't run over the max_devices
+  else if (ndevs == MAX_PIXYS && return_value == 0)
+    return_value = PIXY_ERROR_USB_NO_DEVICE;
+
+  if (return_value < 0)
+    return return_value;
 
   // Create the interpreter thread //
 

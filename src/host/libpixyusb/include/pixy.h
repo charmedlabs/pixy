@@ -79,14 +79,16 @@ extern "C"
   };
 
   /**
-    @brief Creates a connection with Pixy and listens for Pixy messages.
+    @brief     Creates a connection with Pixy and listens for Pixy messages.
+    @param[in] uid  Connect to pixy with a specific uid, or pass zero to grab
+                    the first available.
     @return  0                         Success
     @return  PIXY_ERROR_USB_IO         USB Error: I/O
     @return  PIXY_ERROR_NOT_FOUND      USB Error: Pixy not found
     @return  PIXY_ERROR_USB_BUSY       USB Error: Busy
     @return  PIXY_ERROR_USB_NO_DEVICE  USB Error: No device
   */
-  int pixy_init();
+  int pixy_init(uint32_t uid);
 
   /**
     @brief      Indicates when new block data from Pixy is received.

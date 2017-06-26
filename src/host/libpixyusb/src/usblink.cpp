@@ -20,6 +20,7 @@
 #include "utils/timer.hpp"
 #include "debuglog.h"
 
+
 USBLink::USBLink()
 {
   m_handle = 0;
@@ -30,84 +31,104 @@ USBLink::USBLink()
 
 USBLink::~USBLink()
 {
-  if (m_handle)
+  if (m_handle) {
     libusb_close(m_handle);
-  if (m_context)
+    log("pixydebug:  libusb_close()\n");
+  }
+  if (m_context) {
     libusb_exit(m_context);
+    log("pixydebug:  libusb_exit()\n");
+  }
 }
 
-int USBLink::open()
+int USBLink::open(int ord)
 {
-  int return_value;
+  int i, ipixy = 0, count = 0;
+  libusb_device *device;
+  libusb_device_descriptor desc;
+  libusb_device **list = NULL;
+  int return_value = 0;
 #ifdef __MACOS__
   const unsigned int MILLISECONDS_TO_SLEEP = 100;
 #endif
 
   log("pixydebug: USBLink::open()\n");
 
-  return_value = libusb_init(&m_context);
-  log("pixydebug:  libusb_init() = %d\n", return_value);
-
-  if (return_value) {
-    goto usblink_open__exit;
+  if (m_context == NULL) {
+    return_value = libusb_init(&m_context);
+    log("pixydebug:  libusb_init() = %d\n", return_value);
   }
 
-  m_handle = libusb_open_device_with_vid_pid(m_context, PIXY_VID, PIXY_PID);
-  log("pixydebug:  libusb_open_device_with_vid_pid() = %d\n", m_handle);
+  if (return_value == 0)
+    count = libusb_get_device_list(m_context, &list);
 
-  if (m_handle == NULL) {
-    return_value = PIXY_ERROR_USB_NOT_FOUND;
+  for (i=0; i < count; i++)
+  {
+    device = list[i];
+    libusb_get_device_descriptor(device, &desc);
 
-    goto usblink_open__exit;
-  }
+    if (desc.idVendor != PIXY_VID || desc.idProduct != PIXY_PID)
+      continue;
+
+    // Release any open handle we currently have
+    if ( m_handle != NULL )
+      { libusb_close(m_handle); m_handle = NULL; }
+
+    return_value = libusb_open(device, &m_handle);
+    log("pixydebug:  libusb_open() = %d\n", return_value);
 
 #ifdef __MACOS__
-  return_value = libusb_reset_device(m_handle);
-  log("pixydebug:  libusb_reset_device() = %d\n", return_value);
-  usleep(MILLISECONDS_TO_SLEEP * 1000);
+    if (return_value == 0)
+    {
+      return_value = libusb_reset_device(m_handle);
+      log("pixydebug:  libusb_reset_device() = %d\n", return_value);
+      usleep(MILLISECONDS_TO_SLEEP * 1000);
+    }
 #endif
-
-  return_value = libusb_set_configuration(m_handle, 1);
-  log("pixydebug:  libusb_set_configuration() = %d\n", return_value);
-
-  if (return_value < 0) {
-    goto usblink_open__close_and_exit;
-  }
-
-  return_value = libusb_claim_interface(m_handle, 1);
-  log("pixydebug:  libusb_claim_interface() = %d\n", return_value);
-
-  if (return_value < 0) {
-    goto usblink_open__close_and_exit;
-  }
-
+    if (return_value == 0)
+    {
+      return_value = libusb_set_configuration(m_handle, 1);
+      log("pixydebug:  libusb_set_configuration() = %d\n", return_value);
+    }
+    if (return_value == 0)
+    {
+      return_value = libusb_claim_interface(m_handle, 1);
+      log("pixydebug:  libusb_claim_interface() = %d\n", return_value);
+    }
 #ifdef __LINUX__
-  return_value = libusb_reset_device(m_handle);
-  log("pixydebug:  libusb_reset_device() = %d\n", return_value);
+    if (return_value == 0)
+    {
+      return_value = libusb_reset_device(m_handle);
+      log("pixydebug:  libusb_reset_device() = %d\n", return_value);
+    }
 #endif
+    if (return_value == 0 && ipixy == ord) // success!
+      break;
 
-  /* Success */
-  return_value = 0;
-  goto usblink_open__exit;
+    // We suffered an error setting up the device; if it's just busy continue
+    // otherwise break and return the error code
+    ipixy++;
+    if (return_value != LIBUSB_ERROR_BUSY)
+      break;
+  }
+  if (list != NULL)
+    libusb_free_device_list(list, 1);
 
-usblink_open__close_and_exit:
-  /* Cleanup after error */
+  if (i == count && return_value == 0)
+    return_value = PIXY_ERROR_USB_NO_DEVICE;
+  // if count < 0 then get_device_list returned a libusb_error
+  else if (count < 0)
+    return_value = count;
 
-  libusb_close(m_handle);
-  m_handle = 0;
-
-usblink_open__exit:
   log("pixydebug: USBLink::open() returned %d\n", return_value);
 
   return return_value;
 }
 
-
-
 int USBLink::send(const uint8_t *data, uint32_t len, uint16_t timeoutMs)
 {
     int res, transferred;
-    
+
     log("pixydebug: USBLink::send()\n");
 
     if (timeoutMs==0) // 0 equals infinity
@@ -122,7 +143,7 @@ int USBLink::send(const uint8_t *data, uint32_t len, uint16_t timeoutMs)
         log("pixydebug: USBLink::send() returned %d\n", res);
         return res;
     }
-    
+
     log("pixydebug: USBLink::send() returned %d\n", transferred);
     return transferred;
 }
@@ -144,7 +165,7 @@ int USBLink::receive(uint8_t *data, uint32_t len, uint16_t timeoutMs)
 #endif
         return res;
     }
-    
+
     log("pixydebug:  libusb_bulk_transfer(%d bytes) = %d\n", len, res);
     log("pixydebug: USBLink::receive() returned %d (bytes transferred)\n", transferred);
     return transferred;
