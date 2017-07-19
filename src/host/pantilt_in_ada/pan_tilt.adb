@@ -18,172 +18,189 @@
 --
 --  gnatmake pan_tilt.adb -aO/usr/local/lib -aO/usr/lib/gcc/x86_64-linux-gnu/4.8/ -aO/usr/lib/x86_64-linux-gnu/ -largs -lpthread -lpixyusb -lboost_system -lboost_chrono -lboost_thread -lstdc++ -lusb-1.0
 
-with Ada.Text_IO;    use Ada.Text_IO;
-with Interfaces;     use Interfaces;
-with Interfaces.C;   use Interfaces.C;
-with Pixy;           use Pixy;
-with SIGINT_Handler; use SIGINT_Handler;
+WITH ADA.TEXT_IO;    USE ADA.TEXT_IO;
+WITH INTERFACES;     USE INTERFACES;
+WITH INTERFACES.C;   USE INTERFACES.C;
+WITH PIXY;           USE PIXY;
+WITH SIGINT_HANDLER; USE SIGINT_HANDLER;
 
-function Pan_Tilt return int is
+FUNCTION PAN_TILT RETURN INT IS
 
-  Pixy_X_Center   : constant Sensor_Width  := (Sensor_Width'Last - Sensor_Width'First) / 2;
-  Pixy_Y_Center   : constant Sensor_Height := (Sensor_Height'Last - Sensor_Height'First) / 2;
-  Pixy_RCS_Center : constant RCS_Position  := (RCS_Position'Last - RCS_Position'First) / 2;
+   SUCCESS : CONSTANT := 0;
+   
 
-  -- PID Control Parameters --
-  Azimuth_Proportional_Gain  : constant integer := 400;
-  Azimuth_Derivative_Gain    : constant integer := 300;
-  Altitude_Proportional_Gain : constant integer := 500;
-  Altitude_Derivative_Gain   : constant integer := 400;
+   PIXY_X_CENTER   : CONSTANT SENSOR_WIDTH  := (SENSOR_WIDTH'LAST - SENSOR_WIDTH'FIRST) / 2;
+   PIXY_Y_CENTER   : CONSTANT SENSOR_HEIGHT := (SENSOR_HEIGHT'LAST - SENSOR_HEIGHT'FIRST) / 2;
+   PIXY_RCS_CENTER : CONSTANT RCS_POSITION  := (RCS_POSITION'LAST - RCS_POSITION'FIRST) / 2;
 
-  type Gimbal is record
-    Position             : RCS_Position;
-    Error                : RCS_Error;
-    Previous_Error       : RCS_Error;
-    Previous_Error_Valid : boolean;
-  end record;
+   -- PROPORTION-INTEGRAL-DERIVATIVE (PID) CONTROL PARAMETERS --
 
-  Block : aliased Pixy.Block;
+   AZIMUTH_PROPORTIONAL_GAIN  : CONSTANT INTEGER := 400;
+   AZIMUTH_DERIVATIVE_GAIN    : CONSTANT INTEGER := 300;
+   ALTITUDE_PROPORTIONAL_GAIN : CONSTANT INTEGER := 500;
+   ALTITUDE_DERIVATIVE_GAIN   : CONSTANT INTEGER := 400;
 
-  type Azimuth_Type is new Gimbal;
-  type Altitude_Type is new Gimbal;
+   TYPE GIMBAL IS RECORD
+      POSITION             : RCS_POSITION;
+      ERROR                : RCS_ERROR;
+      PREVIOUS_ERROR       : RCS_ERROR;
+      PREVIOUS_ERROR_VALID : BOOLEAN;
+   END RECORD;
 
-  Azimuth  : Azimuth_Type;
-  Altitude : Altitude_Type;
+   TYPE AZIMUTH_TYPE IS NEW GIMBAL;
+   TYPE ALTITUDE_TYPE IS NEW GIMBAL;
 
-  Pixy_Init_Status : int;
-  Blocks_Copied    : int;
-  Result           : int;
-  Frame_Index      : integer;
+   BLOCK            : ALIASED PIXY.BLOCK;
 
-  procedure Initialize_Gimbals is
-  begin
-    Azimuth.Position              := Pixy_RCS_Center;
-    Azimuth.Previous_Error_Valid  := false;
-    Altitude.Position             := Pixy_RCS_Center;
-    Altitude.Previous_Error_Valid := false;
-  end Initialize_Gimbals;
+   AZIMUTH          : AZIMUTH_TYPE;
+   ALTITUDE         : ALTITUDE_TYPE;
 
-  procedure Update_Azimuth is
-    P_Gain      : integer renames Azimuth_Proportional_Gain;
-    D_Gain      : integer renames Azimuth_Derivative_Gain;
-    Velocity    : integer;
-    Error_Delta : RCS_Error;
-  begin
-    if Azimuth.Previous_Error_Valid then
-      Error_Delta := Azimuth.Error - Azimuth.Previous_Error;
-      Velocity    := (integer(Azimuth.Error) * P_Gain + integer(Error_Delta) * D_Gain) / 1024;
+   PIXY_INIT_STATUS : INT;
+   BLOCKS_COPIED    : INT;
+   RESULT           : INT;
+   FRAME_INDEX      : INTEGER;
 
-      -- Update Azimuth Position --
-      if integer(Azimuth.Position) + Velocity > integer(RCS_Position'Last) then
-        Azimuth.Position := RCS_Position'Last;
-      elsif integer(Azimuth.Position) + Velocity < integer(RCS_Position'First) then
-        Azimuth.Position := RCS_Position'First;
-      else
-        Azimuth.Position := RCS_Position(integer(Azimuth.Position) + Velocity);
-      end if;
-    else
-      Azimuth.Previous_Error_Valid := true;
-    end if;
-    Azimuth.Previous_Error := Azimuth.Error;
-  end Update_Azimuth;
+   ------------------------
+   -- INITIALIZE_GIMBALS --
+   ------------------------
 
-  procedure Update_Altitude is
-    P_Gain      : integer renames Altitude_Proportional_Gain;
-    D_Gain      : integer renames Altitude_Derivative_Gain;
-    Velocity    : integer;
-    Error_Delta : RCS_Error;
-  begin
-    if Altitude.Previous_Error_Valid then
-      Error_Delta := Altitude.Error - Altitude.Previous_Error;
-      Velocity    := (integer(Altitude.Error) * P_Gain + integer(Error_Delta) * D_Gain) / 1024;
+   PROCEDURE INITIALIZE_GIMBALS IS
+   BEGIN
+     AZIMUTH.POSITION              := PIXY_RCS_CENTER;
+     AZIMUTH.PREVIOUS_ERROR_VALID  := FALSE;
+     ALTITUDE.POSITION             := PIXY_RCS_CENTER;
+     ALTITUDE.PREVIOUS_ERROR_VALID := FALSE;
+   END INITIALIZE_GIMBALS;
 
-      -- Update Altitude Position --
-      if integer(Altitude.Position) + Velocity > integer(RCS_Position'Last) then
-        Altitude.Position := RCS_Position'Last;
-      elsif integer(Altitude.Position) + Velocity < integer(RCS_Position'First) then
-        Altitude.Position := RCS_Position'First;
-      else
-        Altitude.Position := RCS_Position(integer(Altitude.Position) + Velocity);
-      end if;
-    else
-      Altitude.Previous_Error_Valid := true;
-    end if;
-    Altitude.Previous_Error := Altitude.Error;
-  end Update_Altitude;
+   --------------------
+   -- UPDATE_AZIMUTH --
+   --------------------
 
-begin
+   PROCEDURE UPDATE_AZIMUTH IS
+     P_GAIN      : INTEGER RENAMES AZIMUTH_PROPORTIONAL_GAIN;
+     D_GAIN      : INTEGER RENAMES AZIMUTH_DERIVATIVE_GAIN;
+     VELOCITY    : INTEGER;
+     ERROR_DELTA : RCS_ERROR;
+   BEGIN
+     IF AZIMUTH.PREVIOUS_ERROR_VALID THEN
+       ERROR_DELTA := AZIMUTH.ERROR - AZIMUTH.PREVIOUS_ERROR;
+       VELOCITY    := (INTEGER(AZIMUTH.ERROR) * P_GAIN + INTEGER(ERROR_DELTA) * D_GAIN) / 1024;
 
-  put_line("+ Pixy Tracking Demo Started +");
+       -- UPDATE AZIMUTH POSITION --
+       IF INTEGER(AZIMUTH.POSITION) + VELOCITY > INTEGER(RCS_POSITION'LAST) THEN
+         AZIMUTH.POSITION := RCS_POSITION'LAST;
+       ELSIF INTEGER(AZIMUTH.POSITION) + VELOCITY < INTEGER(RCS_POSITION'FIRST) THEN
+         AZIMUTH.POSITION := RCS_POSITION'FIRST;
+       ELSE
+         AZIMUTH.POSITION := RCS_POSITION(INTEGER(AZIMUTH.POSITION) + VELOCITY);
+       END IF;
+     ELSE
+       AZIMUTH.PREVIOUS_ERROR_VALID := TRUE;
+     END IF;
+     AZIMUTH.PREVIOUS_ERROR := AZIMUTH.ERROR;
+   END UPDATE_AZIMUTH;
 
-  Initialize_Gimbals;
+   ---------------------
+   -- UPDATE_ALTITUDE --
+   ---------------------
 
-  Pixy_Init_Status := Pixy.Init;
-  Frame_Index      := 0;
+   PROCEDURE UPDATE_ALTITUDE IS
+     P_GAIN      : INTEGER RENAMES ALTITUDE_PROPORTIONAL_GAIN;
+     D_GAIN      : INTEGER RENAMES ALTITUDE_DERIVATIVE_GAIN;
+     VELOCITY    : INTEGER;
+     ERROR_DELTA : RCS_ERROR;
+   BEGIN
+     IF ALTITUDE.PREVIOUS_ERROR_VALID THEN
+       ERROR_DELTA := ALTITUDE.ERROR - ALTITUDE.PREVIOUS_ERROR;
+       VELOCITY    := (INTEGER(ALTITUDE.ERROR) * P_GAIN + INTEGER(ERROR_DELTA) * D_GAIN) / 1024;
 
-  -- Was there an error initializing Pixy? --
-  if Pixy_Init_Status /= 0 then
-    put("Error: pixy_init() [" & int'image(Pixy_Init_Status) & "] ");
-    Pixy.Error(Pixy_Init_Status);
-    return Pixy_Init_Status;
-  end if;
+       -- UPDATE ALTITUDE POSITION --
+       IF INTEGER(ALTITUDE.POSITION) + VELOCITY > INTEGER(RCS_POSITION'LAST) THEN
+         ALTITUDE.POSITION := RCS_POSITION'LAST;
+       ELSIF INTEGER(ALTITUDE.POSITION) + VELOCITY < INTEGER(RCS_POSITION'FIRST) THEN
+         ALTITUDE.POSITION := RCS_POSITION'FIRST;
+       ELSE
+         ALTITUDE.POSITION := RCS_POSITION(INTEGER(ALTITUDE.POSITION) + VELOCITY);
+       END IF;
+     ELSE
+       ALTITUDE.PREVIOUS_ERROR_VALID := TRUE;
+     END IF;
+     ALTITUDE.PREVIOUS_ERROR := ALTITUDE.ERROR;
+   END UPDATE_ALTITUDE;
 
-  Tracking_Loop:
-  while not SIGINT loop
+BEGIN
 
-    -- Wait for new blocks to be available --
-    Waiting_Loop:
-    while Pixy.Blocks_Are_New = 0 and not SIGINT loop
-      null;
-    end loop Waiting_Loop;
+   PUT_LINE("+ PIXY TRACKING DEMO STARTED +");
 
-    -- Get blocks from Pixy --
-    blocks_copied := Get_Blocks(1, Block'access);
+   INITIALIZE_GIMBALS;
 
-    if blocks_copied < 0 then
-      -- Error: Pixy.Get_Blocks --
-      put("Error: pixy_get_blocks() [" & int'image(blocks_copied) & "]");
-      Pixy.Error(blocks_copied);
-    end if;
+   PIXY_INIT_STATUS := PIXY.INIT;
+   FRAME_INDEX      := 0;
 
-    if blocks_copied > 0 then
+   -- WAS THERE AN ERROR INITIALIZING PIXY? --
+   IF PIXY_INIT_STATUS /= 0 THEN
+     PUT("ERROR: PIXY_INIT() [" & INT'IMAGE(PIXY_INIT_STATUS) & "] ");
+     PIXY.ERROR(PIXY_INIT_STATUS);
+     RETURN PIXY_INIT_STATUS;
+   END IF;
 
-      -- Calculate the difference between the center of Pixy's --
-      -- focus and the target.                                 --
-      Azimuth.Error  := RCS_Error(Pixy_X_Center) - RCS_Error(Block.X);
-      Altitude.Error := RCS_Error(Block.Y) - RCS_Error(Pixy_Y_Center);
+   TRACKING_LOOP:
+   WHILE NOT SIGINT LOOP
 
-      -- Apply corrections to the Azimuth/Elevation with the goal --
-      -- of putting the target in the center of Pixy's focus.     --
-      Update_Azimuth;
-      Update_Altitude;
+     -- WAIT FOR NEW BLOCKS TO BE AVAILABLE --
+     WAITING_LOOP:
+     WHILE PIXY.BLOCKS_ARE_NEW = 0 AND NOT SIGINT LOOP
+        NULL;
+     END LOOP WAITING_LOOP;
 
-      Result := RCS_Set_Position(RCS_Azimuth_Channel, uint16(Azimuth.Position));
-      if Result < 0 then
-        put("Error: pixy_rcs_set_position() [" & int'image(Result) & "]");
-        Pixy.Error(Result);
-      end if;
+     -- GET BLOCKS FROM PIXY --
+     BLOCKS_COPIED := GET_BLOCKS(1, BLOCK'ACCESS);
 
-      Result := RCS_Set_Position(RCS_Altitude_Channel, uint16(Altitude.Position));
-      if Result < 0 then
-        put("Error: pixy_rcs_set_position() [" & int'image(Result) & "]");
-        Pixy.Error(Result);
-      end if;
+     IF BLOCKS_COPIED < 0 THEN
+       -- ERROR: PIXY.GET_BLOCKS --
+       PUT("ERROR: PIXY_GET_BLOCKS() [" & INT'IMAGE(BLOCKS_COPIED) & "]");
+       PIXY.ERROR(BLOCKS_COPIED);
+     END IF;
 
-      if Frame_Index mod 50 = 0 then
-        put_line("frame " & Integer'image(Frame_Index) & ":");
-        put_line("  sig: " & uint16'image(Block.Signature) &
-                 "  x:"      & uint16'image(Block.X) &
-                 "  y:"      & uint16'image(Block.Y) &
-                 "  width:"  & uint16'image(Block.Width) &
-                 "  height:" & uint16'image(Block.Height));
-      end if;
+     IF BLOCKS_COPIED > 0 THEN
 
-      Frame_Index := Frame_Index + 1;
-    end if;
-  end loop Tracking_Loop;
+       -- CALCULATE THE DIFFERENCE BETWEEN THE CENTER OF PIXY'S --
+       -- FOCUS AND THE TARGET.                                 --
+       AZIMUTH.ERROR  := RCS_ERROR(PIXY_X_CENTER) - RCS_ERROR(BLOCK.X);
+       ALTITUDE.ERROR := RCS_ERROR(BLOCK.Y) - RCS_ERROR(PIXY_Y_CENTER);
 
-  Pixy.Close;
+       -- APPLY CORRECTIONS TO THE AZIMUTH/ELEVATION WITH THE GOAL --
+       -- OF PUTTING THE TARGET IN THE CENTER OF PIXY'S FOCUS.     --
+       UPDATE_AZIMUTH;
+       UPDATE_ALTITUDE;
 
-  return 0;
-end pan_tilt;
+       RESULT := RCS_SET_POSITION(RCS_AZIMUTH_CHANNEL, UINT16(AZIMUTH.POSITION));
+       IF RESULT < 0 THEN
+         PUT("ERROR: PIXY_RCS_SET_POSITION() [" & INT'IMAGE(RESULT) & "]");
+         PIXY.ERROR(RESULT);
+       END IF;
+
+       RESULT := RCS_SET_POSITION(RCS_ALTITUDE_CHANNEL, UINT16(ALTITUDE.POSITION));
+       IF RESULT < 0 THEN
+         PUT("ERROR: PIXY_RCS_SET_POSITION() [" & INT'IMAGE(RESULT) & "]");
+         PIXY.ERROR(RESULT);
+       END IF;
+
+       IF FRAME_INDEX MOD 50 = 0 THEN
+         PUT_LINE("FRAME " & INTEGER'IMAGE(FRAME_INDEX) & ":");
+         PUT_LINE("  SIG: " & UINT16'IMAGE(BLOCK.SIGNATURE) &
+                  "  X:"      & UINT16'IMAGE(BLOCK.X) &
+                  "  Y:"      & UINT16'IMAGE(BLOCK.Y) &
+                  "  WIDTH:"  & UINT16'IMAGE(BLOCK.WIDTH) &
+                  "  HEIGHT:" & UINT16'IMAGE(BLOCK.HEIGHT));
+       END IF;
+
+       FRAME_INDEX := FRAME_INDEX + 1;
+     END IF;
+   END LOOP TRACKING_LOOP;
+
+   PUT_LINE ("+ PIXY TERMINATING +");
+   PIXY.CLOSE;
+
+   RETURN SUCCESS;
+END PAN_TILT;
