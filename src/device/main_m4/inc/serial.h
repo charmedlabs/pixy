@@ -25,6 +25,7 @@
 #define SER_INTERFACE_ADX             4
 #define SER_INTERFACE_ADY             5 
 #define	SER_INTERFACE_LEGO            6
+#define	SER_INTERFACE_FTC             7
 
 
 int ser_init();
