@@ -173,6 +173,67 @@ uint16_t lego_getData(uint8_t *buf, uint32_t buflen)
 #endif
 		return 6;
 	}
+	else if (c==0x70)  //FTC Extension return top 4 Largest Signatures 27 byte limit need 6 bytes per sig 6 * 4 = 24 + NumBlocks in view = 25
+		{
+			BlobA *max;
+			BlobA *maxBlobs;
+	#if 0
+			buf[0] = 1;
+			buf[1] = 2;
+			buf[2] = 3;
+			buf[3] = 4;
+			buf[4] = 5;
+			buf[5] = 6;
+			buf[6] = 7;
+			buf[7] = 8;
+			buf[8] = 9;
+			buf[9] = 10;
+			buf[10] = 11;
+			buf[11] = 12;
+			buf[12] = 13;
+			buf[13] = 14;
+			buf[14] = 15;
+			buf[15] = 16;
+			buf[16] = 17;
+			buf[17] = 18;
+			buf[18] = 19;
+			buf[19] = 20;
+			buf[20] = 21;
+			buf[21] = 22;
+			buf[22] = 23;
+			buf[23] = 24;
+			buf[24] = 25;
+			//buf[25] = 26;
+			//buf[26] = 27;
+			//buf[27] = 28;
+	#else
+			g_blobs->getMaxBlobs(0, 4, &maxBlobs, &numBlobs);
+			if (numBlobs==0)
+				memset(buf, 0, 25);
+//			else if (maxBlobs[0]==(BlobA *)-1)
+//				memset(buf, -1, 25);
+			else
+			{
+				buf[0] = numBlobs; // number of total blocks in view
+				for(uint8_t i=0; i < 4; i++){
+					*max = maxBlobs[i];
+					width = max->m_right - max->m_left;
+					height = max->m_bottom - max->m_top;
+					uint8_t buffOffset = (i*4);
+					temp = ((max->m_left + width/2)*819)>>10;
+					buf[buffOffset + 1] = temp; // x
+					buf[buffOffset + 2] = max->m_top + height/2; // y
+					temp = (width*819)>>10;
+					buf[buffOffset + 3] = temp; // width
+					buf[buffOffset + 4] = height; // height
+					//temp = ((int32_t)max->m_angle*91)>>7;
+					//buf[buffOffset + 5] = temp; // angle
+				}
+			}
+	#endif
+			return 25;
+		}
+
 	else  
 	{
 #if 0
@@ -203,213 +264,17 @@ uint16_t lego_getData(uint8_t *buf, uint32_t buflen)
 	}
 }
 
-uint16_t ftc_getData(uint8_t *buf, uint32_t buflen)
-{
-	uint8_t c;
-	uint16_t d;
-	uint16_t numBlobs;
-	uint16_t numBlobsMax;
-	uint32_t temp, width, height;
-	Iserial *serial = ser_getSerial();
 
-	if (serial->receive(&c, 1)==0)
-		return 0;
-
-#if 1
-	if (c==0x00)
-	{
-		//printf("0\n");
-		char *str = "V2.1";
-		strcpy((char *)buf, str);
-		return 5;
-		//return strlen((char *)str);
-	}
-	if (c==0x08)
-	{
-		//printf("8\n");
-		char *str = "Pixy";
-		strcpy((char *)buf, str);
-		return 5;
-		//return strlen((char *)str);
-	}
-	else if (c==0x10)
-	{
-		//printf("10\n");
-		char *str = "FTC";
-		strcpy((char *)buf, str);
-		return 4;
-		//return strlen((char *)str);
-	}
-	else
-#endif
-	if (c==0x50)
-	{
-		BlobB *max;
-#if 0
-		buf[0] = 1;
-		buf[1] = 2;
-		buf[2] = 3;
-		buf[3] = 4;
-		buf[4] = 5;
-		buf[5] = 6;
-		buf[6] = 7;
-		buf[7] = 8;
-#else
-		max = (BlobB *)g_blobs->getMaxBlob();
-		if (max==0)
-			memset(buf, 0, 7);
-		else if (max==(BlobB *)-1)
-			memset(buf, -1, 7);
-		else
-		{
-			width = max->m_right - max->m_left;
-			height = max->m_bottom - max->m_top;
-			*(uint16_t *)buf = max->m_model; // signature
-			temp = ((max->m_left + width/2)*819)>>10;
-			buf[2] = temp; // x
-			buf[3] = max->m_top + height/2; // y
-			temp = (width*819)>>10;
-			buf[4] = temp; // width
-			buf[5] = height; // height
-			if (max->m_model>CL_NUM_SIGNATURES)
-			{
-				temp = ((int32_t)max->m_angle*91)>>7;
-				g_angle = temp;
-			}else{
-				g_angle = 255;
-			}
-			buf[6] = g_angle;
-		}
-#endif
-		return 7;
-	}
-	else if (c==0x60)
-	{
-		buf[0] = g_angle;
-		return 1;
-	}
-	else if (c>=0x51 && c<=0x57)
-	{
-#if 0
-		buf[0] = 1;
-		buf[1] = 1;
-		buf[2] = 2;
-		buf[3] = 3;
-		buf[4] = 4;
-		buf[5] = 1;
-		buf[6] = 2;
-		buf[7] = 3;
-		buf[8] = 4;
-		buf[9] = 1;
-		buf[10] = 2;
-		buf[11] = 3;
-		buf[12] = 4;
-		buf[13] = 1;
-		buf[14] = 2;
-		buf[15] = 3;
-		buf[16] = 4;
-		buf[17] = 1;
-		buf[18] = 2;
-		buf[19] = 3;
-		buf[20] = 4;
-		buf[21] = 1;
-		buf[22] = 2;
-		buf[23] = 3;
-		buf[24] = 4;
-
-#else
-		numBlobsMax = 6; //we have a 27 byte buffer on the MR Dim so only return top 6
-		BlobA *max;
-		max = g_blobs->getMaxBlob(c-0x50, &numBlobs);
-		if (max==0)
-			memset(buf, 0, 24);
-		else if (max==(BlobA *)-1)
-			memset(buf, -1, 24);
-		else
-		{
-			width = max->m_right - max->m_left;
-			height = max->m_bottom - max->m_top;
-			buf[0] = numBlobs; // number of blocks that match signature
-			temp = ((max->m_left + width/2)*819)>>10;
-			buf[1] = temp; // x
-			buf[2] = max->m_top + height/2;	// y
-			temp = (width*819)>>10;
-			buf[3] = temp; // width
-			buf[4] = height; // height
-		}
-#endif
-		return 5;
-	}
-	else if (c==0x58)
-	{
-		BlobB *max;
-		if (serial->receive((uint8_t *)&d, 2)<2) // receive cc signature to look for
-			return 0;
-#if 0
-		buf[0] = 1;
-		buf[1] = 2;
-		buf[2] = 3;
-		buf[3] = 4;
-		buf[4] = 5;
-		buf[5] = 6;
-#else
-		max = (BlobB *)g_blobs->getMaxBlob(d, &numBlobs);
-		if (max==0)
-			memset(buf, 0, 6);
-		else if (max==(BlobB *)-1)
-			memset(buf, -1, 6);
-		else
-		{
-			width = max->m_right - max->m_left;
-			height = max->m_bottom - max->m_top;
-			buf[0] = numBlobs; // number of cc blocks that match
-			temp = ((max->m_left + width/2)*819)>>10;
-			buf[1] = temp; // x
-			buf[2] = max->m_top + height/2; // y
-			temp = (width*819)>>10;
-			buf[3] = temp; // width
-			buf[4] = height; // height
-			temp = ((int32_t)max->m_angle*91)>>7;
-			buf[5] = temp; // angle
-		}
-#endif
-		return 6;
-	}
-	else
-	{
-#if 0
-		static uint8_t c = 0;
-
-		buf[0] = c++;
-#else
-		//printf("%x\n", c);
-
-		if (c==0x42) // this works in port view mode on the ev3's LCD
-		{
-			BlobA *max;
-			max = g_blobs->getMaxBlob();
-			if (max==0 || max==(BlobA *)-1)
-				buf[0] = 0;
-			else
-			{
-				width = max->m_right - max->m_left;
-				temp = ((max->m_left + width/2)*819)>>10;
-				buf[0] = temp;
-			}
-		}
-		else
-			buf[0] = 1;	 // need to return nonzero value for other inquiries or LEGO brick will think we're an analog sensor
-
-#endif
-		return 1;
-	}
-}
 
 
 uint32_t callback(uint8_t *data, uint32_t len)
 {
-	if (g_interface==SER_INTERFACE_LEGO)
-		return ftc_getData(data, len);
+	if (g_interface==SER_INTERFACE_LEGO){
+		return lego_getData(data, len);
+	}
+	else if (g_interface==SER_INTERFACE_FTC){
+		return lego_getData(data, len);
+	}
 	else
 		return g_blobs->getBlock(data, len);
 }
@@ -492,10 +357,15 @@ int ser_setInterface(uint8_t interface)
 
 	case SER_INTERFACE_LEGO:
 		g_serial = g_i2c0;
- 		//g_i2c0->setSlaveAddr(0x01);
+ 		// For now comment this out tell I get to changing pixymon to pass the FTC Parmeter below g_i2c0->setSlaveAddr(0x01);
 		g_i2c0->setFlags(true, false);
 		break;
-		
+	case SER_INTERFACE_FTC:
+			g_serial = g_i2c0;
+	 		//g_i2c0->setSlaveAddr(0x01);
+			g_i2c0->setFlags(true, false);
+			break;
+
 	default:
 	case SER_INTERFACE_ARDUINO_SPI:
 		g_serial = g_spi;

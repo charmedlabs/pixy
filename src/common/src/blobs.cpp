@@ -20,6 +20,7 @@
 #endif
 
 #include "blobs.h"
+#include <stdlib.h>  //added to get sort by area functionality
 
 #define CC_SIGNATURE(s) (m_ccMode==CC_ONLY || m_clut.getType(s)==CL_MODEL_TYPE_COLORCODE)
 
@@ -503,6 +504,103 @@ BlobA *Blobs::getMaxBlob(uint16_t signature, uint16_t *numBlobs)
 
     return NULL; // no blobs...
 }
+
+static int compareBlobAreas(const void *a, const void *b)
+{
+	BlobA *ia = (struct BlobA *)a;
+	BlobA *ib = (struct BlobA *)b;
+	int areaA = (ia->m_right - ia->m_left)*(ia->m_bottom - ia->m_top);
+	int areaB = (ib->m_right - ib->m_left)*(ib->m_bottom - ib->m_top);
+	if (areaA < areaB)
+	  return -1;
+    else if (areaA > areaB)
+	  return 1;
+    else
+	  return 0;
+
+}
+
+void Blobs::getMaxBlobs(uint16_t signature, uint16_t maxNumBlobs, BlobA **maxBlobs, uint16_t *numBlobs)
+{
+    int i;
+	uint16_t blobs;
+    BlobA *blob;
+	BlobB *ccBlob;
+
+	if (m_mutex){
+		*numBlobs =  0;
+		return;
+	}
+
+    if (signature==0) // 0 means return the top maxNumBlobs largest area of and signature number <= 7
+    {
+    	//sort by Area
+    	qsort(m_blobs, m_numBlobs, sizeof (BlobA), &compareBlobAreas);
+		for (i=0; i<maxNumBlobs && i<m_numBlobs; i++)
+		{
+			blob = (BlobA *)m_blobs + i;
+			maxBlobs[i] = blob;
+		}
+		*numBlobs =  m_numBlobs;
+		return;
+    }else if (signature==8) // 8 means return the top maxNumBlobs largest area of all cc signature number > 7
+    {
+    	//sort by Area
+    	qsort(m_ccBlobs, m_numCCBlobs, sizeof (BlobB), &compareBlobAreas);
+		for (i=0; i<maxNumBlobs && i<m_numCCBlobs; i++)
+		{
+			//ccBlob = (BlobB *)m_ccBlobs + i;
+			blob = (BlobA *)m_ccBlobs + i;
+			maxBlobs[i] = blob;
+		}
+		*numBlobs =  m_numCCBlobs;
+		return;
+    }
+	// look for a specific signature
+    else
+    {
+		// regular signatures
+		if (signature<=CL_NUM_SIGNATURES)
+		{
+			qsort(m_blobs, m_numBlobs, sizeof (BlobA), &compareBlobAreas);
+        	for (i=0, blobs=0; i<m_numBlobs; i++)
+        	{
+            	blob = (BlobA *)m_blobs + i;
+           		if (blob->m_model==signature)
+				{
+					if (blobs < maxNumBlobs)
+						maxBlobs[blobs] = blob;
+	 				blobs++;  // count
+				}
+        	}
+
+		}
+		// color code
+		else
+		{
+			qsort(m_ccBlobs, m_numCCBlobs, sizeof (BlobB), &compareBlobAreas);
+        	for (i=0, blobs=0; i<m_numCCBlobs; i++)
+			{
+            	ccBlob = (BlobB *)m_ccBlobs + i;
+           		if (ccBlob->m_model==signature)
+				{
+           			if (blobs < maxNumBlobs)
+           				maxBlobs[blobs] =(BlobA *)ccBlob;
+	 				blobs++;  // count
+				}
+			}
+        }
+
+		*numBlobs = blobs;
+		return;
+    }
+
+
+    *numBlobs =  0;
+    return;
+}
+
+
 
 void Blobs::getBlobs(BlobA **blobs, uint32_t *len, BlobB **ccBlobs, uint32_t *ccLen)
 {
@@ -1055,7 +1153,7 @@ void Blobs::processCC()
         if (width > height)
             sort(blobs, j, blobs[left], true);
         else
-            sort(blobs, j, blobs[top], false);
+        	sort(blobs, j, blobs[top], false);
 
 #if 1
         cleanup2(blobs, &j);
