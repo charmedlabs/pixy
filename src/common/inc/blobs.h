@@ -29,7 +29,7 @@
 #define MIN_COLOR_CODE_AREA   10
 #define MAX_CODED_DIST        8
 #define MAX_COLOR_CODE_MODELS 5
-
+#define MAX_FTCBLOBS          5
 
 #define BL_BEGIN_MARKER	      0xaa55
 #define BL_BEGIN_MARKER_CC    0xaa56
@@ -87,6 +87,9 @@ private:
 
     uint16_t *m_blobs;
     uint16_t m_numBlobs;
+
+
+    uint16_t *m_ftcblobs;
 
     BlobB *m_ccBlobs;
     uint16_t m_numCCBlobs;

@@ -28,11 +28,13 @@ uint8_t g_interface = 0;
 int8_t g_angle = 0;
 static Iserial *g_serial = 0;
 
+
 uint16_t lego_getData(uint8_t *buf, uint32_t buflen)
 {
 	uint8_t c;
 	uint16_t d;
 	uint16_t numBlobs;
+	BlobA* ftcBlobs;
 	uint32_t temp, width, height;
 	Iserial *serial = ser_getSerial();
 
@@ -173,10 +175,10 @@ uint16_t lego_getData(uint8_t *buf, uint32_t buflen)
 #endif
 		return 6;
 	}
-	else if (c==0x70)  //FTC Extension return top 4 Largest Signatures 27 byte limit need 6 bytes per sig 6 * 4 = 24 + NumBlocks in view = 25
+	else if (c==0x70)  //FTC Extension return top 5 Largest Signatures 27 byte limit need 5 bytes per sig 5 * 5 = 25 + NumBlocks in view = 26
 		{
-			BlobA *max;
-			BlobA *maxBlobs;
+
+
 	#if 0
 			buf[0] = 1;
 			buf[1] = 2;
@@ -203,39 +205,193 @@ uint16_t lego_getData(uint8_t *buf, uint32_t buflen)
 			buf[22] = 23;
 			buf[23] = 24;
 			buf[24] = 25;
-			//buf[25] = 26;
-			//buf[26] = 27;
-			//buf[27] = 28;
+			buf[25] = 26;
 	#else
-			g_blobs->getMaxBlobs(0, 4, &maxBlobs, &numBlobs);
+
+			g_blobs->getMaxBlobs(0, 5, &ftcBlobs, &numBlobs);
 			if (numBlobs==0)
-				memset(buf, 0, 25);
+				memset(buf, 0, 26);
 //			else if (maxBlobs[0]==(BlobA *)-1)
 //				memset(buf, -1, 25);
 			else
 			{
-				buf[0] = numBlobs; // number of total blocks in view
-				for(uint8_t i=0; i < 4; i++){
-					*max = maxBlobs[i];
-					width = max->m_right - max->m_left;
-					height = max->m_bottom - max->m_top;
-					uint8_t buffOffset = (i*4);
-					temp = ((max->m_left + width/2)*819)>>10;
-					buf[buffOffset + 1] = temp; // x
-					buf[buffOffset + 2] = max->m_top + height/2; // y
-					temp = (width*819)>>10;
-					buf[buffOffset + 3] = temp; // width
-					buf[buffOffset + 4] = height; // height
-					//temp = ((int32_t)max->m_angle*91)>>7;
-					//buf[buffOffset + 5] = temp; // angle
+				if(numBlobs > 255){
+					buf[0] = 255; // Max is 255 for a single byte
+				}else{
+					buf[0] = numBlobs; // number of total blocks in view
+				}
+				for(uint8_t i=0; i < 5; i++){
+					uint8_t buffOffset = (i*5) + 1;
+					if(i < numBlobs){
+						BlobA *max = (BlobA *) ftcBlobs + i;
+						width = max->m_right - max->m_left;
+						height = max->m_bottom - max->m_top;
+						buf[buffOffset] = max->m_model; // signature 1-7 only need one byte
+						temp = ((max->m_left + width/2)*819)>>10;
+						buf[buffOffset + 1] = temp; // x
+						buf[buffOffset + 2] = max->m_top + height/2; // y
+						temp = (width*819)>>10;
+						buf[buffOffset + 3] = temp; // width
+						buf[buffOffset + 4] = height; // height
+					}else{
+						buf[buffOffset] = 0; // signature 1-7 only need one byte
+						buf[buffOffset + 1] = 0; // x
+						buf[buffOffset + 2] = 0; // y
+						buf[buffOffset + 3] = 0; // width
+						buf[buffOffset + 4] = 0; //height
+					}
+
 				}
 			}
 	#endif
-			return 25;
+			return 26;
 		}
 
-	else  
+	else if (c>=0x71 && c<=0x77)  //FTC Extension return top 6 Largest Signatures 27 byte limit need 4 bytes per sig 6 * 4 = 24 + NumBlocks in view = 25
 	{
+
+
+#if 0
+		buf[0] = 1;
+		buf[1] = 2;
+		buf[2] = 3;
+		buf[3] = 4;
+		buf[4] = 5;
+		buf[5] = 6;
+		buf[6] = 7;
+		buf[7] = 8;
+		buf[8] = 9;
+		buf[9] = 10;
+		buf[10] = 11;
+		buf[11] = 12;
+		buf[12] = 13;
+		buf[13] = 14;
+		buf[14] = 15;
+		buf[15] = 16;
+		buf[16] = 17;
+		buf[17] = 18;
+		buf[18] = 19;
+		buf[19] = 20;
+		buf[20] = 21;
+		buf[21] = 22;
+		buf[22] = 23;
+		buf[23] = 24;
+		buf[24] = 25;
+
+#else
+
+		g_blobs->getMaxBlobs(c-0x70, 6, &ftcBlobs, &numBlobs);
+		if (numBlobs==0)
+			memset(buf, 0, 25);
+//			else if (maxBlobs[0]==(BlobA *)-1)
+//				memset(buf, -1, 25);
+		else
+		{
+			if(numBlobs > 255){
+				buf[0] = 255; // Max is 255 for a single byte
+			}else{
+				buf[0] = numBlobs; // number of total blocks in view
+			}
+			for(uint8_t i=0; i < 6; i++){
+				uint8_t buffOffset = (i*4) + 1;
+				if(i < numBlobs){
+					BlobA *max = (BlobA *) ftcBlobs + i;
+					width = max->m_right - max->m_left;
+					height = max->m_bottom - max->m_top;
+					temp = ((max->m_left + width/2)*819)>>10;
+					buf[buffOffset] = temp; // x
+					buf[buffOffset + 1] = max->m_top + height/2; // y
+					temp = (width*819)>>10;
+					buf[buffOffset + 2] = temp; // width
+					buf[buffOffset + 3] = height; // height
+				}else{
+					buf[buffOffset] = 0; // x
+					buf[buffOffset + 1] = 0; // y
+					buf[buffOffset + 2] = 0; // width
+					buf[buffOffset + 3] = 0; // height
+				}
+			}
+		}
+#endif
+		return 25;
+}
+
+else if (c==0x78)  //FTC Extension return top 5 Largest Color Code Signatures 27 byte limit need 6 bytes per sig 4 * 6 = 24 + NumBlocks in view = 25
+{
+
+
+#if 0
+	buf[0] = 1;
+	buf[1] = 2;
+	buf[2] = 3;
+	buf[3] = 4;
+	buf[4] = 5;
+	buf[5] = 6;
+	buf[6] = 7;
+	buf[7] = 8;
+	buf[8] = 9;
+	buf[9] = 10;
+	buf[10] = 11;
+	buf[11] = 12;
+	buf[12] = 13;
+	buf[13] = 14;
+	buf[14] = 15;
+	buf[15] = 16;
+	buf[16] = 17;
+	buf[17] = 18;
+	buf[18] = 19;
+	buf[19] = 20;
+	buf[20] = 21;
+	buf[21] = 22;
+	buf[22] = 23;
+	buf[23] = 24;
+	buf[24] = 25;
+
+#else
+
+	g_blobs->getMaxBlobs(8, 4, &ftcBlobs, &numBlobs);
+	if (numBlobs==0)
+		memset(buf, 0, 25);
+//			else if (maxBlobs[0]==(BlobA *)-1)
+//				memset(buf, -1, 25);
+	else
+	{
+		if(numBlobs > 255){
+			buf[0] = 255; // Max is 255 for a single byte
+		}else{
+			buf[0] = numBlobs; // number of total blocks in view
+		}
+		for(uint8_t i=0; i < 4; i++){
+			uint8_t buffOffset = (i*6) + 1;
+			if(i < numBlobs){
+				BlobA *max = (BlobA *) ftcBlobs + i;
+				width = max->m_right - max->m_left;
+				height = max->m_bottom - max->m_top;
+				buf[buffOffset] = (max->m_model & 0xFF); // cc signature need two bytes Lower
+				buf[buffOffset+1] = ((max->m_model & 0xFF00) >> 8); // cc signature need two bytes Higher
+				temp = ((max->m_left + width/2)*819)>>10;
+				buf[buffOffset + 2] = temp; // x
+				buf[buffOffset + 3] = max->m_top + height/2; // y
+				temp = (width*819)>>10;
+				buf[buffOffset + 4] = temp; // width
+				buf[buffOffset + 5] = height; // height
+				//temp = ((int32_t)max->m_angle*91)>>7;
+				//buf[buffOffset + 5] = temp; // angle
+			}else{
+				buf[buffOffset] = 0; // signature lb
+				buf[buffOffset + 1] = 0; // signature hb
+				buf[buffOffset + 2] = 0; // x
+				buf[buffOffset + 3] = 0; // y
+				buf[buffOffset + 4] = 0; // width
+				buf[buffOffset + 5] = 0; // height
+			}
+		}
+	}
+#endif
+	return 25;
+}
+
+else{
 #if 0
 		static uint8_t c = 0;
 

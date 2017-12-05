@@ -45,6 +45,7 @@ Blobs::Blobs(Qqueue *qq, uint8_t *lut) : m_clut(lut)
     m_ccMode = DISABLED;
 
     m_blobs = new uint16_t[MAX_BLOBS*5];
+    m_ftcblobs = new uint16_t[MAX_FTCBLOBS*5];
     m_numBlobs = 0;
     m_blobReadIndex = 0;
     m_ccBlobReadIndex = 0;
@@ -526,8 +527,10 @@ void Blobs::getMaxBlobs(uint16_t signature, uint16_t maxNumBlobs, BlobA **maxBlo
 	uint16_t blobs;
     BlobA *blob;
 	BlobB *ccBlob;
+	BlobA *ftcblob;
 
 	if (m_mutex){
+		*maxBlobs = (BlobA *)-1;
 		*numBlobs =  0;
 		return;
 	}
@@ -539,8 +542,16 @@ void Blobs::getMaxBlobs(uint16_t signature, uint16_t maxNumBlobs, BlobA **maxBlo
 		for (i=0; i<maxNumBlobs && i<m_numBlobs; i++)
 		{
 			blob = (BlobA *)m_blobs + i;
-			maxBlobs[i] = blob;
+			ftcblob = (BlobA *)m_ftcblobs + i;
+			ftcblob->m_model = blob->m_model;
+			ftcblob->m_left = blob->m_left;
+			ftcblob->m_right = blob->m_right;
+			ftcblob->m_top = blob->m_top;
+			ftcblob->m_bottom = blob->m_bottom;
+
 		}
+
+		*maxBlobs = (BlobA *)m_ftcblobs;
 		*numBlobs =  m_numBlobs;
 		return;
     }else if (signature==8) // 8 means return the top maxNumBlobs largest area of all cc signature number > 7
@@ -551,8 +562,14 @@ void Blobs::getMaxBlobs(uint16_t signature, uint16_t maxNumBlobs, BlobA **maxBlo
 		{
 			//ccBlob = (BlobB *)m_ccBlobs + i;
 			blob = (BlobA *)m_ccBlobs + i;
-			maxBlobs[i] = blob;
+			ftcblob = (BlobA *)m_ftcblobs + i;
+			ftcblob->m_model = blob->m_model;
+			ftcblob->m_left = blob->m_left;
+			ftcblob->m_right = blob->m_right;
+			ftcblob->m_top = blob->m_top;
+			ftcblob->m_bottom = blob->m_bottom;
 		}
+		*maxBlobs = (BlobA *)m_ftcblobs;
 		*numBlobs =  m_numCCBlobs;
 		return;
     }
@@ -568,8 +585,14 @@ void Blobs::getMaxBlobs(uint16_t signature, uint16_t maxNumBlobs, BlobA **maxBlo
             	blob = (BlobA *)m_blobs + i;
            		if (blob->m_model==signature)
 				{
-					if (blobs < maxNumBlobs)
-						maxBlobs[blobs] = blob;
+					if (blobs < maxNumBlobs){
+						ftcblob = (BlobA *)m_ftcblobs + i;
+						ftcblob->m_model = blob->m_model;
+						ftcblob->m_left = blob->m_left;
+						ftcblob->m_right = blob->m_right;
+						ftcblob->m_top = blob->m_top;
+						ftcblob->m_bottom = blob->m_bottom;
+					}
 	 				blobs++;  // count
 				}
         	}
@@ -584,18 +607,24 @@ void Blobs::getMaxBlobs(uint16_t signature, uint16_t maxNumBlobs, BlobA **maxBlo
             	ccBlob = (BlobB *)m_ccBlobs + i;
            		if (ccBlob->m_model==signature)
 				{
-           			if (blobs < maxNumBlobs)
-           				maxBlobs[blobs] =(BlobA *)ccBlob;
+           			if (blobs < maxNumBlobs){
+           				ftcblob = (BlobA *)m_ftcblobs + i;
+           				ftcblob->m_model = ccBlob->m_model;
+           				ftcblob->m_left = ccBlob->m_left;
+           				ftcblob->m_right = ccBlob->m_right;
+           				ftcblob->m_top = ccBlob->m_top;
+           				ftcblob->m_bottom = ccBlob->m_bottom;
+           			}
 	 				blobs++;  // count
 				}
 			}
         }
-
+		*maxBlobs = (BlobA *)m_ftcblobs;
 		*numBlobs = blobs;
 		return;
     }
 
-
+    *maxBlobs = (BlobA *)0;
     *numBlobs =  0;
     return;
 }
