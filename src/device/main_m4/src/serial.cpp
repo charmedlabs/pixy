@@ -238,9 +238,9 @@ uint16_t ftc_getData(uint8_t *buf, uint32_t buflen)
 	else if (c==0x10)
 	{
 		//printf("10\n");
-		char *str = "Pixy";
+		char *str = "FTC";
 		strcpy((char *)buf, str);
-		return 5;
+		return 4;
 		//return strlen((char *)str);
 	}
 	else
