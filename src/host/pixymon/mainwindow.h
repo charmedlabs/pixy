@@ -33,6 +33,7 @@ class Interpreter;
 class Flash;
 class ConnectEvent;
 class ConfigDialog;
+class SigEditDialog;
 class QSettings;
 class QMessageBox;
 
@@ -56,12 +57,14 @@ private slots:
     void handleActionScriptlet(QString action, QStringList scriptlet);
     void handleLoadParams();
     void handleConfigDialogFinished();
+    void handleSigEditDialogFinished();
     void interpreterFinished();
     void handleVersion(ushort major, ushort minor, ushort build, QString type);
     void on_actionAbout_triggered();
     void on_actionPlay_Pause_triggered();
     void on_actionDefault_program_triggered();
     void on_actionConfigure_triggered();
+    void on_actionEdit_Signatures_triggered();
     void on_actionHelp_triggered();
     void on_actionSave_Image_triggered();
     void on_actionSave_Pixy_parameters_triggered();
@@ -94,6 +97,7 @@ private:
     ConnectEvent *m_connect;
     Flash *m_flash;
     ConfigDialog *m_configDialog;
+    SigEditDialog *m_sigEditDialog;
     std::vector<QAction *> m_actions;
     Ui::MainWindow *m_ui;
 
