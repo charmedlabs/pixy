@@ -12,7 +12,7 @@ echo Building for $platform
 cd src/host/pixymon
 
 if [[ "$platform" == 'linux' ]]; then
-   qmake-qt4 pixymon.pro
+   qmake pixymon.pro
    make -w
    cd ../../..
    mkdir bin

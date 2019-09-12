@@ -1,9 +1,9 @@
-To build PixyMon for Linux, run these guys first, to make sure you have 
+To build PixyMon for Linux, run these guys first, to make sure you have
 everything you need:
 
 For Ubuntu, run:
 sudo apt-get install g++
-sudo apt-get install qt4-dev-tools
+sudo apt-get install qtbase5-dev-tools
 sudo apt-get install libusb-1.0.0-dev
 
 For Redhat Fedora, run:
@@ -15,9 +15,9 @@ then run buildpixymon.sh in this directory:
 ./buildpixymon.sh
 
 The build script will make PixyMon and copy it into the bin directory.
-BUT BEFORE YOU RUN PIXYMON, you need to make sure that the Pixy device 
-has the correct permissions, otherwise you'll get a "Pixy device not 
-detected" error.  This is handled by udev.  In Ubuntu, you can copy the 
+BUT BEFORE YOU RUN PIXYMON, you need to make sure that the Pixy device
+has the correct permissions, otherwise you'll get a "Pixy device not
+detected" error.  This is handled by udev.  In Ubuntu, you can copy the
 pixy.rules file (also in this directory) into the /etc/udev/rules.d directory:
 
 sudo cp pixy.rules /etc/udev/rules.d/
@@ -36,4 +36,4 @@ the permissions correctly.
 
 Note, the file pixyflash.bin.hdr which is also in the bin directory needs
 to be in the same directory as PixyMon when installed.  It allows firmware
-uploading into Pixy.  
+uploading into Pixy.
