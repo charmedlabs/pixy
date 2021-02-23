@@ -46,14 +46,6 @@ SECTIONS
         __bss_section_table = .;
         LONG(    ADDR(.bss));
         LONG(  SIZEOF(.bss));
-        LONG(    ADDR(.bss_RAM2));
-        LONG(  SIZEOF(.bss_RAM2));
-        LONG(    ADDR(.bss_RAM3));
-        LONG(  SIZEOF(.bss_RAM3));
-        LONG(    ADDR(.bss_RAM4));
-        LONG(  SIZEOF(.bss_RAM4));
-        LONG(    ADDR(.bss_RAM5));
-        LONG(  SIZEOF(.bss_RAM5));
         __bss_section_table_end = .;
         __section_table_end = . ;
         /* End of Global Section Table */
@@ -164,43 +156,6 @@ SECTIONS
 	   . = ALIGN(4) ;
 	   _edata = . ;
 	} > RamAHB16 AT>RamAHB16
-
-    /* BSS section for RamAHB32 */
-    .bss_RAM2 : ALIGN(4)
-    {
-       PROVIDE(__start_bss_RAM2 = .) ;
-    	*(.bss.$RAM2*)
-    	*(.bss.$RamAHB32*)
-       . = ALIGN(4) ;
-       PROVIDE(__end_bss_RAM2 = .) ;
-    } > RamAHB32
-    /* BSS section for RamLoc128 */
-    .bss_RAM3 : ALIGN(4)
-    {
-       PROVIDE(__start_bss_RAM3 = .) ;
-    	*(.bss.$RAM3*)
-    	*(.bss.$RamLoc128*)
-       . = ALIGN(4) ;
-       PROVIDE(__end_bss_RAM3 = .) ;
-    } > RamLoc128
-    /* BSS section for RamLoc72 */
-    .bss_RAM4 : ALIGN(4)
-    {
-       PROVIDE(__start_bss_RAM4 = .) ;
-    	*(.bss.$RAM4*)
-    	*(.bss.$RamLoc72*)
-       . = ALIGN(4) ;
-       PROVIDE(__end_bss_RAM4 = .) ;
-    } > RamLoc72
-    /* BSS section for RamAHB_ETB16 */
-    .bss_RAM5 : ALIGN(4)
-    {
-       PROVIDE(__start_bss_RAM5 = .) ;
-    	*(.bss.$RAM5*)
-    	*(.bss.$RamAHB_ETB16*)
-       . = ALIGN(4) ;
-       PROVIDE(__end_bss_RAM5 = .) ;
-    } > RamAHB_ETB16
 
     /* MAIN BSS SECTION */
     .bss : ALIGN(4)
