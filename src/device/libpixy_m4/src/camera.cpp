@@ -601,22 +601,22 @@ void cam_loadParams()
 	prm_setShadowCallback("Camera Brightness", (ShadowCallback)cam_shadowCallback);
 
 	prm_add("Auto Exposure Correction", PRM_FLAG_ADVANCED | PRM_FLAG_CHECKBOX, 
-		"@c Camera Enables/disables Auto Exposure Correction. (default enabled)", UINT8(1), END);
+		"@c Camera Enables/disables Auto Exposure Correction. (default disabled)", UINT8(0), END);
 	prm_setShadowCallback("Auto Exposure Correction", (ShadowCallback)cam_shadowCallback);
 
 	prm_add("AEC Value", PRM_FLAG_INTERNAL, 
-		"", UINT32(0), END);
+		"", UINT32(CAM_ECV_DEFAULT), END);
 																		   
 	prm_add("Auto White Balance", PRM_FLAG_ADVANCED | PRM_FLAG_CHECKBOX, 
 		"@c Camera Enables/disables Auto White Balance. When this is set, AWB is enabled continuously. (default disabled)", UINT8(0), END);
 	prm_setShadowCallback("Auto White Balance", (ShadowCallback)cam_shadowCallback);
 
 	prm_add("Auto White Balance on power-up", PRM_FLAG_ADVANCED | PRM_FLAG_CHECKBOX, 
-		"@c Camera Enables/disables Auto White Balance on power-up. When this is set, AWB is enabled only upon power-up. (default enabled)", UINT8(1), END);
+		"@c Camera Enables/disables Auto White Balance on power-up. When this is set, AWB is enabled only upon power-up. (default disabled)", UINT8(0), END);
 	prm_setShadowCallback("Auto White Balance on power-up", (ShadowCallback)cam_shadowCallback);
 
 	prm_add("AWB Value", PRM_FLAG_INTERNAL,
-		"", UINT32(0), END);
+		"", UINT32(CAM_WBV_DEFAULT), END);
 
 	uint8_t brightness, aec, awb, awbp;
 	uint32_t ecv, wbv;
