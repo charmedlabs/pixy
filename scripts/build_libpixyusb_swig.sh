@@ -27,13 +27,13 @@ then
   OS="__LINUX__"
 fi
 
-cp get_blocks.py $PIXY_ROOT/build/$TARGET_BUILD_FOLDER
 cp pixy.i $PIXY_ROOT/build/$TARGET_BUILD_FOLDER
-cp setup.py $PIXY_ROOT/build/$TARGET_BUILD_FOLDER
+cp *.py $PIXY_ROOT/build/$TARGET_BUILD_FOLDER
+cp *.h $PIXY_ROOT/build/$TARGET_BUILD_FOLDER
 
 cd $PIXY_ROOT/build/$TARGET_BUILD_FOLDER
 
-swig -c++ -python pixy.i 
+swig -c++ -python pixy.i
 
 if [ "$1" == "debug" ]
 then
