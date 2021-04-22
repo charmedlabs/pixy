@@ -135,7 +135,7 @@ void commonInit(void)
     GPIOInit();
     USB_UserInit();
 
-    debug_frmwrk_init_clk(CLKFREQ);
+    debug_frmwrk_init_clk(CLKFREQ, DEBUG_UART_BAUD);
     lpc_printf("M4 start\n");
 }
 

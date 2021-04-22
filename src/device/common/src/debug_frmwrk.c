@@ -260,10 +260,11 @@ void  lpc_printf (const  char *format, ...)
 
 /*********************************************************************//**
  * @brief       Initialize Debug frame work through initializing UART port
- * @param[in]   None
+ * @param[in]   Clock_Speed  System clock speed
+ * @param[in]   baud_rate    Debug UART baud rate
  * @return      None
  **********************************************************************/
-void debug_frmwrk_init_clk(uint32_t Clock_Speed)
+void debug_frmwrk_init_clk(uint32_t Clock_Speed, uint32_t baud_rate)
 {
     UART_CFG_Type UARTConfigStruct;
 
@@ -274,8 +275,7 @@ void debug_frmwrk_init_clk(uint32_t Clock_Speed)
      * None parity
      */
     UART_ConfigStructInit(&UARTConfigStruct);
-    // Re-configure baudrate to 115200bps
-    UARTConfigStruct.Baud_rate = 921600;
+    UARTConfigStruct.Baud_rate = baud_rate;
     UARTConfigStruct.Clock_Speed = Clock_Speed;
 
     // Initialize DEBUG_UART_PORT peripheral with given to corresponding parameter

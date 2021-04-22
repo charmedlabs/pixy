@@ -53,6 +53,7 @@
 
 
 #define USED_UART_DEBUG_PORT    1
+#define DEBUG_UART_BAUD         921600
 
 #if (USED_UART_DEBUG_PORT==0)
 #define DEBUG_UART_PORT LPC_UART0
@@ -92,7 +93,7 @@ void UARTPutHex16 (LPC_USARTn_Type *UARTx, uint16_t hexnum);
 void UARTPutHex32 (LPC_USARTn_Type *UARTx, uint32_t hexnum);
 uint8_t UARTGetChar (LPC_USARTn_Type *UARTx);
 #define debug_frmwrk_init() debug_frmwrk_init_clk(0)
-void debug_frmwrk_init_clk(uint32_t Clock_Speed);
+void debug_frmwrk_init_clk(uint32_t Clock_Speed, uint32_t baud_rate);
 
 #ifdef __cplusplus
 }
