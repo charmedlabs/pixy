@@ -32,18 +32,18 @@ void ptLoadParams();
 class ServoLoop
 {
 public:
-	ServoLoop(uint8_t axis, uint32_t pgain, uint32_t dgain);
+    ServoLoop(uint8_t axis, uint32_t pgain, uint32_t dgain);
 
-	void update(int32_t error);
-	void reset();
-	void setGains(int32_t pgain, int32_t dgain);
+    void update(int32_t error);
+    void reset();
+    void setGains(int32_t pgain, int32_t dgain);
 
 private:
-	int32_t m_pos;
-	int32_t m_prevError;
-	uint8_t m_axis;
-	int32_t m_pgain;
-	int32_t m_dgain;
+    int32_t m_pos;
+    int32_t m_prevError;
+    uint8_t m_axis;
+    int32_t m_pgain;
+    int32_t m_dgain;
 };
 
 #endif

@@ -29,7 +29,7 @@
 #define CAM_WBV_DEFAULT         8421504
 #define CAM_ECV_DEFAULT         8600
 
-#define CAM_RES0                0x00 
+#define CAM_RES0                0x00
 #define CAM_RES1                0x01
 #define CAM_RES2                0x02
 #define CAM_RES0_WIDTH          1280

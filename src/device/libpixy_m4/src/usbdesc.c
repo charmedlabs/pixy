@@ -25,7 +25,7 @@
  *      warranties of fitness for purpose, satisfactory quality and
  *      noninfringement. Keil extends you a royalty-free right to reproduce
  *      and distribute executable files created using this software for use
- *      on NXP Semiconductors LPC microcontroller devices only. Nothing else 
+ *      on NXP Semiconductors LPC microcontroller devices only. Nothing else
  *      gives you the right to use this software.
  *
  * Copyright (c) 2009 Keil - An ARM Company. All rights reserved.
@@ -248,8 +248,8 @@ ALIGNED(4) const uint8_t USB_StringDescriptor[] = {
 
 /* USB Device Qualifier */
 ALIGNED(4) const uint8_t USB_DeviceQualifier[] = {
-  USB_DEVICE_QUALI_SIZE,             	/* bLength */
-  USB_DEVICE_QUALIFIER_DESCRIPTOR_TYPE,	/* bDescriptorType */
+  USB_DEVICE_QUALI_SIZE,                /* bLength */
+  USB_DEVICE_QUALIFIER_DESCRIPTOR_TYPE, /* bDescriptorType */
   WBVAL(0x0200), /* 2.00 */          /* bcdUSB */
   0x00,                              /* bDeviceClass */
   0x00,                              /* bDeviceSubClass */

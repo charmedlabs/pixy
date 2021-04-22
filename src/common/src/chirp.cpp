@@ -504,8 +504,8 @@ int Chirp::call(uint8_t service, ChirpProc proc, va_list args)
 
 int Chirp::call(uint8_t service, ChirpProc proc, ...)
 {
-  int result; 
-  
+  int result;
+
   va_list arguments;
 
   va_start(arguments, proc);
@@ -634,9 +634,9 @@ int Chirp::handleChirp(uint8_t type, ChirpProc proc, const void *args[])
         // write responseInt
         *(uint32_t *)(m_buf+m_headerLen) = responseInt;
         // send response
-        res = sendChirpRetry(CRP_RESPONSE | (type&~CRP_CALL), m_procTable[proc].chirpProc);	// convert call into response
+        res = sendChirpRetry(CRP_RESPONSE | (type&~CRP_CALL), m_procTable[proc].chirpProc); // convert call into response
         restoreBuffer(); // restore buffer immediately!
-        if (res!=CRP_RES_OK) 
+        if (res!=CRP_RES_OK)
             return res;
     }
 
@@ -1216,7 +1216,7 @@ int Chirp::recvHeader(uint8_t *type, ChirpProc *proc, bool wait)
     }
 
     if (return_value < (int) m_headerLen) {
-      return_value = CRP_RES_ERROR; 
+      return_value = CRP_RES_ERROR;
       goto chirp_recvheader__exit;
     }
 
@@ -1273,7 +1273,7 @@ int Chirp::recvFull(uint8_t *type, ChirpProc *proc, bool wait)
         // check to see if we received less data than expected
         if (res<sizeof(uint32_t))
             continue;
-		recvd = res;
+        recvd = res;
         startCode = *(uint32_t *)m_buf;
         if (startCode==CRP_START_CODE)
             break;

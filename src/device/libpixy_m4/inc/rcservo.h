@@ -39,4 +39,3 @@ int32_t rcs_setLimits(const uint8_t &channel, const int16_t &lower, const int16_
 int32_t rcs_setFreq(const uint16_t &freq);
 
 #endif
-

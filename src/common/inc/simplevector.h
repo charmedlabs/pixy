@@ -68,8 +68,8 @@ public:
     int capacity() const
     { return m_capacity; }
 
-	const Object *data()
-	{ return m_objects; }
+    const Object *data()
+    { return m_objects; }
 
     int push_back(const Object& x)
     {
@@ -83,8 +83,8 @@ public:
     void pop_back()
     { m_size--; }
 
-	void clear()
-	{ m_size = 0; }
+    void clear()
+    { m_size = 0; }
 
 private:
     int m_size;

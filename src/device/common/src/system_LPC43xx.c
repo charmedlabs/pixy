@@ -14,13 +14,13 @@
 //
 
 /**********************************************************************
-* $Id$		system_lpc43xx.c			2011-06-02
+* $Id$      system_lpc43xx.c            2011-06-02
 *//**
-* @file		system_lpc43xx.c
-* @brief	Cortex-M3 Device System Source File for NXP lpc43xx Series.
-* @version	1.0
-* @date		02. June. 2011
-* @author	NXP MCU SW Application Team
+* @file     system_lpc43xx.c
+* @brief    Cortex-M3 Device System Source File for NXP lpc43xx Series.
+* @version  1.0
+* @date     02. June. 2011
+* @author   NXP MCU SW Application Team
 *
 * Copyright(C) 2011, NXP Semiconductor
 * All rights reserved.
@@ -60,8 +60,8 @@ void SystemInit (void)
 #ifdef KEIL
 
 #if defined(CORE_M4) || defined(CORE_M3)
-	// Enable VTOR register to point to vector table
-	SCB->VTOR = getPC() & 0xFFF00000;
+    // Enable VTOR register to point to vector table
+    SCB->VTOR = getPC() & 0xFFF00000;
 
 #else // code red
     // CodeRed startup code will modify VTOR register to match

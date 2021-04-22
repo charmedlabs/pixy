@@ -21,9 +21,9 @@
 
 //#define LEGO
 
-#define FW_MAJOR_VER		2
-#define FW_MINOR_VER		0
-#define FW_BUILD_VER		20
+#define FW_MAJOR_VER        2
+#define FW_MINOR_VER        0
+#define FW_BUILD_VER        20
 #ifdef LEGO
 #define FW_TYPE             "LEGO"
 #else
@@ -36,17 +36,17 @@
 typedef int (*ProgFunc)();
 
 struct Program
-{  	
-	char *progName;
-	char *desc;
-	ProgFunc setup;
-	ProgFunc loop;
+{
+    char *progName;
+    char *desc;
+    ProgFunc setup;
+    ProgFunc loop;
 };
 
 struct ActionScriptlet
 {
-	const char *action;
-	const char *scriptlet;
+    const char *action;
+    const char *scriptlet;
 };
 
 void exec_loop();
@@ -76,6 +76,6 @@ void exec_sendEvent(Chirp *chirp, uint32_t event);
 uint8_t exec_pause();
 void exec_resume();
 
-extern int32_t g_execArg; 
+extern int32_t g_execArg;
 
 #endif

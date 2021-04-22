@@ -13,7 +13,7 @@
 // end license header
 //
 #ifndef COLORLUT_H
-#define COLORLUT_H	  
+#define COLORLUT_H
 
 #include <inttypes.h>
 #include "simplevector.h"
@@ -28,7 +28,7 @@
 #define CL_MIN_Y                        (int32_t)(3*((1<<8)-1)*CL_MIN_Y_F)
 #define CL_MIN_RATIO                    0.25f
 #define CL_DEFAULT_MINY                 0.1f
-#define CL_DEFAULT_SIG_RANGE			2.5f
+#define CL_DEFAULT_SIG_RANGE            2.5f
 #define CL_MAX_DIST                     2000
 #define CL_DEFAULT_TOL                  0.80f
 #define CL_DEFAULT_CCGAIN               1.5f
@@ -37,10 +37,10 @@
 
 struct ColorSignature
 {
-	ColorSignature()
-	{
-		m_uMin = m_uMax = m_uMean = m_vMin = m_vMax = m_vMean = m_type = 0;
-	}	
+    ColorSignature()
+    {
+        m_uMin = m_uMax = m_uMean = m_vMin = m_vMax = m_vMean = m_type = 0;
+    }
 
     int32_t m_uMin;
     int32_t m_uMax;
@@ -48,8 +48,8 @@ struct ColorSignature
     int32_t m_vMin;
     int32_t m_vMax;
     int32_t m_vMean;
-	uint32_t m_rgb;
-	uint32_t m_type;
+    uint32_t m_rgb;
+    uint32_t m_type;
 };
 
 struct RuntimeSignature
@@ -70,7 +70,7 @@ public:
     IterPixel(const Frame8 &frame, const Points *points);
     bool next(UVPixel *uv, RGBPixel *rgb=NULL);
     bool reset(bool cleari=true);
-	uint32_t averageRgb(uint32_t *pixels=NULL);
+    uint32_t averageRgb(uint32_t *pixels=NULL);
 
 private:
     bool nextHelper(UVPixel *uv, RGBPixel *rgb);
@@ -91,17 +91,17 @@ public:
 
     int generateSignature(const Frame8 &frame, const RectA &region, uint8_t signum);
     int generateSignature(const Frame8 &frame, const Point16 &point, Points *points, uint8_t signum);
-	ColorSignature *getSignature(uint8_t signum);
-	int setSignature(uint8_t signum, const ColorSignature &sig);
+    ColorSignature *getSignature(uint8_t signum);
+    int setSignature(uint8_t signum, const ColorSignature &sig);
 
     int generateLUT();
     void clearLUT(uint8_t signum=0);
-	void updateSignature(uint8_t signum);
+    void updateSignature(uint8_t signum);
     void growRegion(const Frame8 &frame, const Point16 &seed, Points *points);
 
-	void setSigRange(uint8_t signum, float range);
-	void setMinBrightness(float miny);
-	void setGrowDist(uint32_t dist);
+    void setSigRange(uint8_t signum, float range);
+    void setMinBrightness(float miny);
+    void setGrowDist(uint32_t dist);
     void setCCGain(float gain);
     uint32_t getType(uint8_t signum);
 

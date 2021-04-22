@@ -19,7 +19,7 @@
 #ifdef CORE_M0
 #include <stdio.h>
 #else
-#ifdef __cplusplus  
+#ifdef __cplusplus
 #include "chirp.hpp"
 #endif
 #endif
@@ -30,7 +30,7 @@
 #else
 #define printf(...)  lpc_printf(__VA_ARGS__)
 
-#ifdef __cplusplus  
+#ifdef __cplusplus
 extern uint8_t g_debug;
 
 #define DBG(...)            if (g_debug) cprintf(__VA_ARGS__)

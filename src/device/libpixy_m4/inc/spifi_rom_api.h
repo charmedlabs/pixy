@@ -45,10 +45,10 @@ extern "C"
 {
 #endif
 
-/* define the symbol TESTING in the environment	if test output desired */
+/* define the symbol TESTING in the environment if test output desired */
 
 /* maintain LONGEST_PROT >= the length (in bytes) of the largest
-	protection block of any serial flash that this driver handles */
+    protection block of any serial flash that this driver handles */
 #define LONGEST_PROT 68
 
 typedef uint8_t uc;
@@ -59,55 +59,55 @@ typedef uint8_t uc;
 
 /* protection/sector descriptors */
 typedef struct {
-	uint32_t base;
-	uc flags;
-	int8_t log2;
-	uint16_t rept;
+    uint32_t base;
+    uc flags;
+    int8_t log2;
+    uint16_t rept;
 } protEnt;
 /* bits in the flags byte */
 enum {RWPROT=1};
 
-/* overall data structure includes # sectors, length of protection reg, 
-   array of descriptors 
+/* overall data structure includes # sectors, length of protection reg,
+   array of descriptors
 typedef struct {
-	uint16_t sectors;
-	uint16_t protBytes;
-	protEnt *entries;
-} protDesc;	*/
+    uint16_t sectors;
+    uint16_t protBytes;
+    protEnt *entries;
+} protDesc; */
 
 typedef union {
-	uint16_t hw;
-	uc byte[2];
+    uint16_t hw;
+    uc byte[2];
 }stat_t;
 /* the object that init returns, and other routines use as an operand */
 typedef struct {
-	uint32_t base, regbase, devSize, memSize;
-	uc mfger, devType, devID, busy;
-	stat_t stat;
-	uint16_t reserved;
-	uint16_t set_prot, write_prot;
-	uint32_t mem_cmd, prog_cmd;
-	uint16_t sectors, protBytes;
-	uint32_t opts, errCheck;
-	uc erase_shifts[4], erase_ops[4];
-	protEnt *protEnts;
-	char prot[LONGEST_PROT];
+    uint32_t base, regbase, devSize, memSize;
+    uc mfger, devType, devID, busy;
+    stat_t stat;
+    uint16_t reserved;
+    uint16_t set_prot, write_prot;
+    uint32_t mem_cmd, prog_cmd;
+    uint16_t sectors, protBytes;
+    uint32_t opts, errCheck;
+    uc erase_shifts[4], erase_ops[4];
+    protEnt *protEnts;
+    char prot[LONGEST_PROT];
 } SPIFIobj;
 
 /* operands of program and erase */
 typedef struct {
-	char *dest;
-	uint32_t length;
+    char *dest;
+    uint32_t length;
     char *scratch;
-	int32_t protect;
-	uint32_t options;
+    int32_t protect;
+    uint32_t options;
 } SPIFIopers;
 
 /* instruction classes for wait_busy */
 typedef enum {stat_inst, block_erase, prog_inst, chip_erase} inst_type;
 
-/* bits in options operands (MODE3, RCVCLK, and FULLCLK 
-	have the same relationship as in the Control register) */
+/* bits in options operands (MODE3, RCVCLK, and FULLCLK
+    have the same relationship as in the Control register) */
 #define S_MODE3 1
 #define S_MODE0 0
 #define S_MINIMAL 2
@@ -137,7 +137,7 @@ typedef enum {stat_inst, block_erase, prog_inst, chip_erase} inst_type;
 #define FAST_READ_CMD (CMD_READ_FAST<<OPCODE_SHIFT|4<<FRAMEFORM_SHIFT|1<<INTLEN_SHIFT|UNL_DATA)
 #define BASE_PROG_CMD      (CMD_PROG<<OPCODE_SHIFT|4<<FRAMEFORM_SHIFT|DOUT)
 
-/* the length of a standard	program command is 256 on all devices */
+/* the length of a standard program command is 256 on all devices */
 #define PROG_SIZE 256
 
 /* options in obj->opts (mostly for setMulti) */
@@ -145,8 +145,8 @@ typedef enum {stat_inst, block_erase, prog_inst, chip_erase} inst_type;
 #define OPT_SEND_A3        1
 /* used by SST: send 0x38 command to enable quad and allow full command set */
 #define OPT_SEND_38        2
-/* used by Winbond and others: read status reg 2, check it, 
-	if necessary write it back with Quad Enable set */
+/* used by Winbond and others: read status reg 2, check it,
+    if necessary write it back with Quad Enable set */
 #define OPT_35_OR02_01     4
 /* used by Atmel: read Configuration register, if necessary set Quad Enable */
 #define OPT_3F_OR80_3E     8
@@ -157,15 +157,15 @@ typedef enum {stat_inst, block_erase, prog_inst, chip_erase} inst_type;
 #define OPT_81          0x20
 /* set for devices without full device erase command (Numonyx type 0x40) */
 #define OPT_NO_DEV_ERASE 0x40
-/* used by Macronix: status reg 2 includes selection between write-protect 
-	in status reg and command-based */
+/* used by Macronix: status reg 2 includes selection between write-protect
+    in status reg and command-based */
 #define OPT_WPSEL       0x80
 /* set when protection data has been read into the SPIFI object */
 #define OPT_PROT_READ  0x100
 /* set if device needs 4-byte address (and maybe 0x4B command = use 4-byte address) */
 #define OPT_4BAD       0x200
 /* set if setMulti should set the Dual bit in Control reg */
-#define OPT_DUAL	   0x400
+#define OPT_DUAL       0x400
 /* send "# dummy bits" in C0 command to Winbond */
 #define OPT_C0         0x800
 /* set QE for Chingis */
@@ -184,7 +184,7 @@ typedef enum {stat_inst, block_erase, prog_inst, chip_erase} inst_type;
 #ifndef OMIT_ROM_TABLE
 /* interface to ROM API */
 typedef struct {
-  int32_t (*spifi_init)      (SPIFIobj *obj, uint32_t csHigh, uint32_t options, 
+  int32_t (*spifi_init)      (SPIFIobj *obj, uint32_t csHigh, uint32_t options,
                           uint32_t mhz);
   int32_t (*spifi_program)   (SPIFIobj *obj, char *source, SPIFIopers *opers);
   int32_t (*spifi_erase)     (SPIFIobj *obj, SPIFIopers *opers);
@@ -194,19 +194,19 @@ typedef struct {
 
   /* mid level functions */
   int32_t (*checkAd)         (SPIFIobj *obj, SPIFIopers *opers);
-  int32_t (*setProt)         (SPIFIobj *obj, SPIFIopers *opers, char *change, 
+  int32_t (*setProt)         (SPIFIobj *obj, SPIFIopers *opers, char *change,
                           char *saveProt);
-  int32_t (*check_block)     (SPIFIobj *obj, char *source, SPIFIopers *opers, 
+  int32_t (*check_block)     (SPIFIobj *obj, char *source, SPIFIopers *opers,
                           uint32_t check_program);
   int32_t (*send_erase_cmd)  (SPIFIobj *obj, uint8_t op, uint32_t addr);
   uint32_t (*ck_erase)   (SPIFIobj *obj, uint32_t *addr, uint32_t length);
-  int32_t (*prog_block)      (SPIFIobj *obj, char *source, SPIFIopers *opers, 
+  int32_t (*prog_block)      (SPIFIobj *obj, char *source, SPIFIopers *opers,
                           uint32_t *left_in_page);
   uint32_t (*ck_prog)    (SPIFIobj *obj, char *source, char *dest, uint32_t length);
 
   /* low level functions */
   void(*setSize)         (SPIFIobj *obj, int32_t value);
-  int32_t (*setDev)          (SPIFIobj *obj, uint32_t opts, uint32_t mem_cmd, 
+  int32_t (*setDev)          (SPIFIobj *obj, uint32_t opts, uint32_t mem_cmd,
                           uint32_t prog_cmd);
   uint32_t (*cmd)        (uc op, uc addrLen, uc intLen, uint16_t len);
   uint32_t (*readAd)     (SPIFIobj *obj, uint32_t cmd, uint32_t addr);
@@ -223,33 +223,33 @@ typedef struct {
 
 #ifdef USE_SPIFI_LIB
 extern SPIFI_RTNS spifi_table;
-#endif	/* USE_SPIFI_LIB */
- 
+#endif  /* USE_SPIFI_LIB */
+
 /* example of using this interface:
 #include "spifi_rom_api.h"
 #define CSHIGH 4
 #define SPIFI_MHZ 80
 #define source_data_ad (char *)1234
 
-	int32_t rc;
-	SPIFIopers opers;
+    int32_t rc;
+    SPIFIopers opers;
 
-	define_spifi_romPtr(spifi);
-	SPIFIobj *obj = malloc(sizeof(SPIFIobj));
-	if (!obj) { can't allocate memory }
+    define_spifi_romPtr(spifi);
+    SPIFIobj *obj = malloc(sizeof(SPIFIobj));
+    if (!obj) { can't allocate memory }
 
-	rc = spifi->spifi_init (obj, CSHIGH, S_FULLCLK+S_RCVCLK, SPIFI_MHZ);
-	if (rc) { investigate init error rc }
-	printf ("the serial flash contains %d bytes\n", obj->devSize);
+    rc = spifi->spifi_init (obj, CSHIGH, S_FULLCLK+S_RCVCLK, SPIFI_MHZ);
+    if (rc) { investigate init error rc }
+    printf ("the serial flash contains %d bytes\n", obj->devSize);
 
-	opers.dest = where_to_program;
-	opers.length = how_many_bytes;
-	opers.scratch = NULL;			// unprogrammed data is not saved/restored
-	opers.protect = -1;				// save & restore protection
-	opers.options = S_VERIFY_PROG;
+    opers.dest = where_to_program;
+    opers.length = how_many_bytes;
+    opers.scratch = NULL;           // unprogrammed data is not saved/restored
+    opers.protect = -1;             // save & restore protection
+    opers.options = S_VERIFY_PROG;
 
-	rc = spifi->spifi_program (obj, source_data_ad, &opers);
-	if (rc) { investigate program error rc }
+    rc = spifi->spifi_program (obj, source_data_ad, &opers);
+    if (rc) { investigate program error rc }
 */
 
 /* these are for normal users, including boot code */

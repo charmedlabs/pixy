@@ -25,24 +25,24 @@
 class Uart : public Iserial
 {
 public:
-	Uart(LPC_USARTn_Type *uart, SerialCallback callback);
+    Uart(LPC_USARTn_Type *uart, SerialCallback callback);
 
-	// Iserial methods
-	virtual int open();
-	virtual int close();
-	virtual int receive(uint8_t *buf, uint32_t len);
-	virtual int receiveLen();
-	virtual int update();
+    // Iserial methods
+    virtual int open();
+    virtual int close();
+    virtual int receive(uint8_t *buf, uint32_t len);
+    virtual int receiveLen();
+    virtual int update();
 
-	int setBaudrate(uint32_t baudrate);
-	void irqHandler();
+    int setBaudrate(uint32_t baudrate);
+    void irqHandler();
 
 private:
 
-	LPC_USARTn_Type *m_uart;	
-	ReceiveQ<uint8_t> m_rq;
-	TransmitQ<uint8_t> m_tq;
-	bool m_flag;
+    LPC_USARTn_Type *m_uart;
+    ReceiveQ<uint8_t> m_rq;
+    TransmitQ<uint8_t> m_tq;
+    bool m_flag;
 };
 
 void uart_init(SerialCallback callback);

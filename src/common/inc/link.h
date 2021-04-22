@@ -19,7 +19,7 @@
 
 // flags
 #define LINK_FLAG_SHARED_MEM                            0x01
-#define	LINK_FLAG_ERROR_CORRECTED                       0x02
+#define LINK_FLAG_ERROR_CORRECTED                       0x02
 
 // result codes
 #define LINK_RESULT_OK                                  0

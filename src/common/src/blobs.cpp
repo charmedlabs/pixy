@@ -34,7 +34,7 @@ Blobs::Blobs(Qqueue *qq, uint8_t *lut) : m_clut(lut)
     m_mergeDist = MAX_MERGE_DIST;
     m_maxBlob = NULL;
 
-	m_qq = qq;
+    m_qq = qq;
 #ifdef PIXY
     m_maxCodedDist = MAX_CODED_DIST;
 #else
@@ -77,7 +77,7 @@ Blobs::~Blobs()
 
 int Blobs::handleSegment(uint8_t signature, uint16_t row, uint16_t startCol, uint16_t length)
 {
-	SSegment s;
+    SSegment s;
 
     s.model = signature;
     s.row = row;
@@ -110,7 +110,7 @@ int Blobs::runlengthAnalysis()
     bool merge;
     Qval qval;
     int32_t res=0;
-	register int32_t u, v, c;
+    register int32_t u, v, c;
 
 #ifndef PIXY
     m_numQvals = 0;
@@ -121,8 +121,8 @@ int Blobs::runlengthAnalysis()
         while (m_qq->dequeue(&qval)==0);
         if (qval.m_col>=0xfffe)
             break;
-		if (res<0)
-			continue;
+        if (res<0)
+            continue;
         if (qval.m_col==0)
         {
             prevStartCol = 0xffff;
@@ -136,11 +136,11 @@ int Blobs::runlengthAnalysis()
 #ifndef PIXY
             m_qvals[m_numQvals++] = 0;
 #else
-			if (icount++==5) // an interleave of every 5 lines or about every 175us seems good
-			{
-				g_chirpUsb->service();
-				icount = 0;
-			}
+            if (icount++==5) // an interleave of every 5 lines or about every 175us seems good
+            {
+                g_chirpUsb->service();
+                icount = 0;
+            }
 #endif
             continue;
         }
@@ -161,9 +161,9 @@ int Blobs::runlengthAnalysis()
         if (m_clut.m_runtimeSigs[sig-1].m_uMin<u && u<m_clut.m_runtimeSigs[sig-1].m_uMax &&
                 m_clut.m_runtimeSigs[sig-1].m_vMin<v && v<m_clut.m_runtimeSigs[sig-1].m_vMax && c>=(int32_t)m_clut.m_miny)
         {
-         	qval.m_col >>= 3;
-        	startCol = qval.m_col;
-           	merge = startCol-prevStartCol<=5 && prevSig==sig;
+            qval.m_col >>= 3;
+            startCol = qval.m_col;
+            merge = startCol-prevStartCol<=5 && prevSig==sig;
             if (segmentSig==0 && merge)
             {
                 segmentSig = sig;
@@ -188,11 +188,11 @@ int Blobs::runlengthAnalysis()
             segmentSig = 0;
         }
     }
-	endFrame();
+    endFrame();
 
     if (qval.m_col==0xfffe) // error code, queue overrun
-		return -1;
-	return 0;
+        return -1;
+    return 0;
 }
 
 int Blobs::blobify()
@@ -205,14 +205,14 @@ int Blobs::blobify()
     uint16_t left, top, right, bottom;
     //uint32_t timer, timer2=0;
 
-	if (runlengthAnalysis()<0)
-	{
-   	 	for (i=0; i<CL_NUM_SIGNATURES; i++)
-        	m_assembler[i].Reset();
-    	m_numBlobs = 0;
-		m_numCCBlobs = 0;
-		return -1;
-	}
+    if (runlengthAnalysis()<0)
+    {
+        for (i=0; i<CL_NUM_SIGNATURES; i++)
+            m_assembler[i].Reset();
+        m_numBlobs = 0;
+        m_numCCBlobs = 0;
+        return -1;
+    }
 
     // copy blobs into memory
     invalid = 0;
@@ -289,7 +289,7 @@ int Blobs::blobify()
         cprintf("%d: blobs 0\n", frame);
     frame++;
 #endif
-	return 0;
+    return 0;
 }
 
 #ifndef PIXY
@@ -311,9 +311,9 @@ uint16_t Blobs::getCCBlock(uint8_t *buf, uint32_t buflen)
         return 0;
 
     if (m_mutex || m_ccBlobReadIndex>=m_numCCBlobs) // we're copying, so no CC blocks for now....
-		return 0;
+        return 0;
 
-    if (m_blobReadIndex==0 && m_ccBlobReadIndex==0)	// beginning of frame, mark it with empty block
+    if (m_blobReadIndex==0 && m_ccBlobReadIndex==0) // beginning of frame, mark it with empty block
     {
         buf16[0] = BL_BEGIN_MARKER;
         len++;
@@ -376,9 +376,9 @@ uint16_t Blobs::getBlock(uint8_t *buf, uint32_t buflen)
         return getCCBlock(buf, buflen);
 
     if (m_mutex || m_blobReadIndex>=m_numBlobs) // we're copying, so no blocks for now....
-		return 0;
+        return 0;
 
-    if (m_blobReadIndex==0)	// beginning of frame, mark it with empty block
+    if (m_blobReadIndex==0) // beginning of frame, mark it with empty block
     {
         buf16[0] = BL_BEGIN_MARKER;
         len++;
@@ -425,18 +425,18 @@ uint16_t Blobs::getBlock(uint8_t *buf, uint32_t buflen)
 BlobA *Blobs::getMaxBlob(uint16_t signature, uint16_t *numBlobs)
 {
     int i;
-	uint16_t blobs;
+    uint16_t blobs;
     uint32_t area, maxArea;
     BlobA *blob, *maxBlob;
-	BlobB *ccBlob;
+    BlobB *ccBlob;
 
-	if (m_mutex)
-		return (BlobA *)-1;	 // busy!
+    if (m_mutex)
+        return (BlobA *)-1;  // busy!
 
     if (signature==0) // 0 means return the biggest regardless of signature number
     {
-		if (numBlobs)
-			*numBlobs = 1; // not really used in this mode, so return 1
+        if (numBlobs)
+            *numBlobs = 1; // not really used in this mode, so return 1
 
         // if we've already found it, return it
         if (m_maxBlob)
@@ -463,42 +463,42 @@ BlobA *Blobs::getMaxBlob(uint16_t signature, uint16_t *numBlobs)
                 m_maxBlob = (BlobA *)ccBlob;
             }
         }
-		return m_maxBlob;
+        return m_maxBlob;
     }
-	// look for a specific signature
+    // look for a specific signature
     else
     {
-		// regular signature
-		if (signature<=CL_NUM_SIGNATURES)
-		{
-        	for (i=0, blobs=0, maxBlob=NULL; i<m_numBlobs; i++)
-        	{
-            	blob = (BlobA *)m_blobs + i;
-           		if (blob->m_model==signature)
-				{
-					if (!maxBlob)
-                		maxBlob = blob;
-	 				blobs++;  // count
-				}
-        	}
-		}
-		// color code 
-		else
-		{
-        	for (i=0, blobs=0, maxBlob=NULL; i<m_numCCBlobs; i++)
-			{
-            	ccBlob = (BlobB *)m_ccBlobs + i;
-           		if (ccBlob->m_model==signature)
-				{
-					if (!maxBlob)
-                		maxBlob = (BlobA *)ccBlob;
-	 				blobs++;  // count
-				}
-			}
+        // regular signature
+        if (signature<=CL_NUM_SIGNATURES)
+        {
+            for (i=0, blobs=0, maxBlob=NULL; i<m_numBlobs; i++)
+            {
+                blob = (BlobA *)m_blobs + i;
+                if (blob->m_model==signature)
+                {
+                    if (!maxBlob)
+                        maxBlob = blob;
+                    blobs++;  // count
+                }
+            }
         }
-		if (numBlobs)
-			*numBlobs = blobs;
-		return maxBlob;
+        // color code
+        else
+        {
+            for (i=0, blobs=0, maxBlob=NULL; i<m_numCCBlobs; i++)
+            {
+                ccBlob = (BlobB *)m_ccBlobs + i;
+                if (ccBlob->m_model==signature)
+                {
+                    if (!maxBlob)
+                        maxBlob = (BlobA *)ccBlob;
+                    blobs++;  // count
+                }
+            }
+        }
+        if (numBlobs)
+            *numBlobs = blobs;
+        return maxBlob;
     }
 
     return NULL; // no blobs...
@@ -1115,4 +1115,3 @@ void Blobs::endFrame()
         m_assembler[i].SortFinished();
     }
 }
-

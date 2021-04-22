@@ -14,13 +14,13 @@
 //
 
 /**********************************************************************
-* $Id$		usbhw.c					2011-06-02
+* $Id$      usbhw.c                 2011-06-02
 *//**
-* @file		usbhw.c
-* @brief	 USB Hardware Layer Module for NXP's lpc43xx MCU
-* @version	1.0
-* @date		02. June. 2011
-* @author	NXP MCU SW Application Team
+* @file     usbhw.c
+* @brief     USB Hardware Layer Module for NXP's lpc43xx MCU
+* @version  1.0
+* @date     02. June. 2011
+* @author   NXP MCU SW Application Team
 *
 * Copyright(C) 2011, NXP Semiconductor
 * All rights reserved.
@@ -108,16 +108,16 @@ void USB_Init (LPC_USBDRV_INIT_T* cbs)
     g_drv.ep0_maxp = 64;
 
 #ifdef USE_USB0
-	scu_pinmux(0x8,1,MD_PLN_FAST,FUNC1);    //  0: motocon pcap0_1          1: usb0 usb0_ind1           2:  nc                      3: gpio4 gpio4_1
-	scu_pinmux(0x8,2,MD_PLN_FAST,FUNC1);    //  0: motocon pcap0_0          1: usb0 usb0_ind0           2:  nc                      3: gpio4 gpio4_2
+    scu_pinmux(0x8,1,MD_PLN_FAST,FUNC1);    //  0: motocon pcap0_1          1: usb0 usb0_ind1           2:  nc                      3: gpio4 gpio4_1
+    scu_pinmux(0x8,2,MD_PLN_FAST,FUNC1);    //  0: motocon pcap0_0          1: usb0 usb0_ind0           2:  nc                      3: gpio4 gpio4_2
 #endif
 #ifdef USE_USB0
-	CGU_SetPLL0();
-	CGU_EnableEntity(CGU_CLKSRC_PLL0, ENABLE);
-	CGU_EntityConnect(CGU_CLKSRC_PLL0, CGU_BASE_USB0);
+    CGU_SetPLL0();
+    CGU_EnableEntity(CGU_CLKSRC_PLL0, ENABLE);
+    CGU_EntityConnect(CGU_CLKSRC_PLL0, CGU_BASE_USB0);
 #else
-	CGU_EntityConnect(CGU_CLKSRC_PLL1, CGU_BASE_USB1);
-	/* enable USB phy */
+    CGU_EntityConnect(CGU_CLKSRC_PLL1, CGU_BASE_USB1);
+    /* enable USB phy */
     LPC_CREG->CREG0 &= ~(1 << 5);
     /* enable USB1_DP and USB1_DN on chip FS phy */
     LPC_SCU->SFSUSB = 0x12;
@@ -125,38 +125,38 @@ void USB_Init (LPC_USBDRV_INIT_T* cbs)
     scu_pinmux(0x2, 5, MD_PLN | MD_EZI | MD_ZI, FUNC2);
 
 #endif
-	/* Turn on the phy */
+    /* Turn on the phy */
 #ifdef USE_USB0
-	LPC_CREG->CREG0 &= ~(1<<5);
+    LPC_CREG->CREG0 &= ~(1<<5);
 #endif
-	/* reset the controller */
-	LPC_USB->USBCMD_D = USBCMD_RST;
-	/* wait for reset to complete */
-	while (LPC_USB->USBCMD_D & USBCMD_RST);
+    /* reset the controller */
+    LPC_USB->USBCMD_D = USBCMD_RST;
+    /* wait for reset to complete */
+    while (LPC_USB->USBCMD_D & USBCMD_RST);
 
-	/* Program the controller to be the USB device controller */
-	LPC_USB->USBMODE_D =   USBMODE_CM_DEV
-	                  | USBMODE_SDIS
-	                  | USBMODE_SLOM ;
+    /* Program the controller to be the USB device controller */
+    LPC_USB->USBMODE_D =   USBMODE_CM_DEV
+                      | USBMODE_SDIS
+                      | USBMODE_SLOM ;
 
-	/* set OTG transcever in proper state, device is present
-	on the port(CCS=1), port enable/disable status change(PES=1). */
-#ifdef USE_USB0	
-	LPC_USB->OTGSC = (1<<3) | (1<<0) /*| (1<<16)| (1<<24)| (1<<25)| (1<<26)| (1<<27)| (1<<28)| (1<<29)| (1<<30)*/;
+    /* set OTG transcever in proper state, device is present
+    on the port(CCS=1), port enable/disable status change(PES=1). */
+#ifdef USE_USB0
+    LPC_USB->OTGSC = (1<<3) | (1<<0) /*| (1<<16)| (1<<24)| (1<<25)| (1<<26)| (1<<27)| (1<<28)| (1<<29)| (1<<30)*/;
 #else
-	/* force full speed */
-	LPC_USB->PORTSC1_D |= (1<<24);
+    /* force full speed */
+    LPC_USB->PORTSC1_D |= (1<<24);
 #endif
 
 #ifdef USE_USB0
-	NVIC_EnableIRQ(USB0_IRQn); //  enable USB0 interrrupts
+    NVIC_EnableIRQ(USB0_IRQn); //  enable USB0 interrrupts
 #else
-  	NVIC_EnableIRQ(USB1_IRQn); //  enable USB1 interrrupts
+    NVIC_EnableIRQ(USB1_IRQn); //  enable USB1 interrrupts
 #endif
 
-	USB_Reset();
-	USB_SetAddress(0);
-	return;
+    USB_Reset();
+    USB_SetAddress(0);
+    return;
 }
 
 /*
@@ -226,7 +226,7 @@ void USB_Reset (void)
                      | USBSTS_URI
                      | USBSTS_SLI
                      | USBSTS_NAKI;
-//  LPC_USB->usbintr |= (0x1<<7);		/* Test SOF */
+//  LPC_USB->usbintr |= (0x1<<7);       /* Test SOF */
   /* enable ep0 IN and ep0 OUT */
   ep_QH[0].cap  = QH_MAXP(g_drv.ep0_maxp)
                   | QH_IOS
@@ -639,7 +639,7 @@ uint32_t USB_ReadEP(uint32_t EPNum, uint8_t *pData)
   /* return the total bytes read */
   cnt  = (pDTD->total_bytes >> 16) & 0x7FFF;
   cnt = ep_read_len[EPNum & 0x0F] - cnt;
-  return (cnt);	   
+  return (cnt);
 }
 
 /*
@@ -680,36 +680,36 @@ void USB1_IRQHandler (void)
 
 //  printf("USB interrupt: 0x%08x\n",disr);
 
-//	LPC_UART1->THR = 'U';
-//	LPC_UART1->THR = 'S';
-//	LPC_UART1->THR = 'B';
-//	LPC_UART1->THR = '\n';
+//  LPC_UART1->THR = 'U';
+//  LPC_UART1->THR = 'S';
+//  LPC_UART1->THR = 'B';
+//  LPC_UART1->THR = '\n';
 
 
   /* Device Status Interrupt (Reset, Connect change, Suspend/Resume) */
   if (disr & USBSTS_URI)                      /* Reset */
   {
-//												  	LPC_UART1->THR = 'R';
-//												  	LPC_UART1->THR = '\n';
+//                                                  LPC_UART1->THR = 'R';
+//                                                  LPC_UART1->THR = '\n';
     USB_Reset();
     if (g_drv.USB_Reset_Event)
       g_drv.USB_Reset_Event();
     return;
-	//goto isr_end;
+    //goto isr_end;
   }
 
   if (disr & USBSTS_SLI)                   /* Suspend */
   {
-//												  LPC_UART1->THR = 'U';
-//												  	LPC_UART1->THR = '\n';
+//                                                LPC_UART1->THR = 'U';
+//                                                  LPC_UART1->THR = '\n';
     if (g_drv.USB_Suspend_Event)
       g_drv.USB_Suspend_Event();
   }
 
   if (disr & USBSTS_PCI)                  /* Resume */
   {
-//												  	LPC_UART1->THR = 'P';
-//												  	LPC_UART1->THR = '\n';
+//                                                  LPC_UART1->THR = 'P';
+//                                                  LPC_UART1->THR = '\n';
     /* check if device isoperating in HS mode or full speed */
     if (LPC_USB->PORTSC1_D & (1<<9))
       DevStatusFS2HS = TRUE;
@@ -723,26 +723,26 @@ void USB1_IRQHandler (void)
   /* Only EP0 will have setup packets so call EP0 handler */
   if (val)
   {
-//												    LPC_UART1->THR = 'S';
-//												  	LPC_UART1->THR = '\n';
+//                                                  LPC_UART1->THR = 'S';
+//                                                  LPC_UART1->THR = '\n';
     /* Clear the endpoint complete CTRL OUT & IN when */
     /* a Setup is received */
     LPC_USB->ENDPTCOMPLETE = 0x00010001;
     /* enable NAK inetrrupts */
     LPC_USB->ENDPTNAKEN |= 0x00010001;
     if (g_drv.USB_P_EP[0]){
-//														LPC_UART1->THR = 's';
-//												  		LPC_UART1->THR = '\n';
+//                                                      LPC_UART1->THR = 's';
+//                                                      LPC_UART1->THR = '\n';
         g_drv.USB_P_EP[0](USB_EVT_SETUP);
-	}
+    }
   }
 
   /* handle completion interrupts */
   val = LPC_USB->ENDPTCOMPLETE;
   if (val)
   {
-//														LPC_UART1->THR = 'C';
-//													  	LPC_UART1->THR = '\n';
+//                                                      LPC_UART1->THR = 'C';
+//                                                      LPC_UART1->THR = '\n';
 
     LPC_USB->ENDPTNAK = val;
     for (n = 0; n < EP_NUM_MAX / 2; n++)
@@ -766,8 +766,8 @@ void USB1_IRQHandler (void)
 
   if (disr & USBSTS_NAKI)
   {
-//												  	LPC_UART1->THR = 'N';
-//												  	LPC_UART1->THR = '\n';
+//                                                  LPC_UART1->THR = 'N';
+//                                                  LPC_UART1->THR = '\n';
     val = LPC_USB->ENDPTNAK;
     val &= LPC_USB->ENDPTNAKEN;
     /* handle NAK interrupts */
@@ -793,8 +793,8 @@ void USB1_IRQHandler (void)
   /* Start of Frame Interrupt */
   if (disr & USBSTS_SRI)
   {
-//												  	LPC_UART1->THR = 'F';
-//												  	LPC_UART1->THR = '\n';
+//                                                  LPC_UART1->THR = 'F';
+//                                                  LPC_UART1->THR = '\n';
     if (g_drv.USB_SOF_Event)
       g_drv.USB_SOF_Event();
   }
@@ -802,14 +802,14 @@ void USB1_IRQHandler (void)
   /* Error Interrupt */
   if (disr & USBSTS_UEI)
   {
-//													  LPC_UART1->THR = 'E';
-//													  	LPC_UART1->THR = '\n';
+//                                                    LPC_UART1->THR = 'E';
+//                                                      LPC_UART1->THR = '\n';
     if (g_drv.USB_Error_Event)
       g_drv.USB_Error_Event(disr);
   }
 
 //    LPC_UART1->THR = 'r';
-//  	LPC_UART1->THR = '\n';
+//      LPC_UART1->THR = '\n';
 //isr_end:
 //  LPC_VIC->VectAddr = 0;                   /* Acknowledge Interrupt */
   return;

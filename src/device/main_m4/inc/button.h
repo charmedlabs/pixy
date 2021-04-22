@@ -18,34 +18,34 @@
 
 #include <inttypes.h>
 
-#define BT_INITIAL_BUTTON_TIMEOUT     	1250*1000
-#define BT_INDEX_CYCLE_TIMEOUT    		1000*1000
-#define BT_LIGHTPIPE_TIMEOUT    		60000*1000
-#define BT_FLASH_TIMEOUT 				60*1000
-#define BT_PROG_TIMEOUT 				1500*1000
+#define BT_INITIAL_BUTTON_TIMEOUT       1250*1000
+#define BT_INDEX_CYCLE_TIMEOUT          1000*1000
+#define BT_LIGHTPIPE_TIMEOUT            60000*1000
+#define BT_FLASH_TIMEOUT                60*1000
+#define BT_PROG_TIMEOUT                 1500*1000
 
 class ButtonMachine
 {
 public:
-	ButtonMachine();
-	~ButtonMachine();
+    ButtonMachine();
+    ~ButtonMachine();
 
-	bool handleSignature();
-	bool selectProgram(uint8_t progs, uint8_t *selectedProg);
+    bool handleSignature();
+    bool selectProgram(uint8_t progs, uint8_t *selectedProg);
 
 private:
-	void reset();
-	void wait(uint32_t us);
-	void flashLED(uint8_t flashes);
-	void setLED();
-	void ledPipe();
+    void reset();
+    void wait(uint32_t us);
+    void flashLED(uint8_t flashes);
+    void setLED();
+    void ledPipe();
 
-	void setSignature();
+    void setSignature();
 
-	uint8_t m_goto;
-	uint8_t m_index;
-	uint32_t m_timer;
-	bool m_ledPipe;
+    uint8_t m_goto;
+    uint8_t m_index;
+    uint32_t m_timer;
+    bool m_ledPipe;
 };
 
 #endif

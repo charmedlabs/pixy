@@ -29,7 +29,7 @@ uint32_t cam_getMode();
 
 int32_t cam_setAWB(const uint8_t &awb);
 uint32_t cam_getAWB();
-							   
+
 int32_t cam_setWBV(const uint32_t &wbv);
 uint32_t cam_getWBV();
 

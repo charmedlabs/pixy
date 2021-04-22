@@ -14,13 +14,13 @@
 //
 
 /**********************************************************************
-* $Id$		debug_frmwrk.h			2011-06-02
+* $Id$      debug_frmwrk.h          2011-06-02
 *//**
-* @file		debug_frmwrk.h
-* @brief	Contains some utilities that used for debugging through UART
-* @version	1.0
-* @date		02. June. 2011
-* @author	NXP MCU SW Application Team
+* @file     debug_frmwrk.h
+* @brief    Contains some utilities that used for debugging through UART
+* @version  1.0
+* @date     02. June. 2011
+* @author   NXP MCU SW Application Team
 *
 * Copyright(C) 2011, NXP Semiconductor
 * All rights reserved.
@@ -52,24 +52,24 @@
 
 
 
-#define USED_UART_DEBUG_PORT	1
+#define USED_UART_DEBUG_PORT    1
 
 #if (USED_UART_DEBUG_PORT==0)
-#define DEBUG_UART_PORT	LPC_UART0
+#define DEBUG_UART_PORT LPC_UART0
 #elif (USED_UART_DEBUG_PORT==1)
-#define DEBUG_UART_PORT	LPC_UART1
+#define DEBUG_UART_PORT LPC_UART1
 #endif
 
-#define _DBG(x)	 	UARTPuts((LPC_USARTn_Type*)DEBUG_UART_PORT, x)
-#define _DBG_(x)	UARTPuts_((LPC_USARTn_Type*)DEBUG_UART_PORT, x)
-#define _DBC(x)	 	UARTPutChar((LPC_USARTn_Type*)DEBUG_UART_PORT, x)
-#define _DBD(x)	 	UARTPutDec((LPC_USARTn_Type*)DEBUG_UART_PORT, x)
-#define _DBD16(x)	UARTPutDec16((LPC_USARTn_Type*)DEBUG_UART_PORT, x)
-#define _DBD32(x)	UARTPutDec32((LPC_USARTn_Type*)DEBUG_UART_PORT, x)
-#define _DBH(x)	 	UARTPutHex((LPC_USARTn_Type*)DEBUG_UART_PORT, x)
-#define _DBH16(x)	UARTPutHex16((LPC_USARTn_Type*)DEBUG_UART_PORT, x)
-#define _DBH32(x)	UARTPutHex32((LPC_USARTn_Type*)DEBUG_UART_PORT, x)
-#define _DG			UARTGetChar((LPC_USARTn_Type*)DEBUG_UART_PORT)
+#define _DBG(x)     UARTPuts((LPC_USARTn_Type*)DEBUG_UART_PORT, x)
+#define _DBG_(x)    UARTPuts_((LPC_USARTn_Type*)DEBUG_UART_PORT, x)
+#define _DBC(x)     UARTPutChar((LPC_USARTn_Type*)DEBUG_UART_PORT, x)
+#define _DBD(x)     UARTPutDec((LPC_USARTn_Type*)DEBUG_UART_PORT, x)
+#define _DBD16(x)   UARTPutDec16((LPC_USARTn_Type*)DEBUG_UART_PORT, x)
+#define _DBD32(x)   UARTPutDec32((LPC_USARTn_Type*)DEBUG_UART_PORT, x)
+#define _DBH(x)     UARTPutHex((LPC_USARTn_Type*)DEBUG_UART_PORT, x)
+#define _DBH16(x)   UARTPutHex16((LPC_USARTn_Type*)DEBUG_UART_PORT, x)
+#define _DBH32(x)   UARTPutHex32((LPC_USARTn_Type*)DEBUG_UART_PORT, x)
+#define _DG         UARTGetChar((LPC_USARTn_Type*)DEBUG_UART_PORT)
 #define _CR()       _DBG("\n")
 
 

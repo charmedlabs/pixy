@@ -20,7 +20,7 @@
 
 #define LED_RED                   0
 #define LED_GREEN                 1
-#define LED_BLUE                  2	 
+#define LED_BLUE                  2
 //#define LED_RED_ADCCHAN           0
 #define LED_RED_ADCCHAN           6
 #define LED_GREEN_ADCCHAN         1
@@ -38,7 +38,7 @@
 // but note, the range is huge.  For example, there isn't much difference between 20000 and 60000
 #define LED_DEFAULT_SCALE         100000.0
 #define LED_DEFAULT_MAX_CURRENT   750  // uA, can be as high as 20000, but it's difficult to look at (too bright!)
-#define LED_MAX_CURRENT           20000 
+#define LED_MAX_CURRENT           20000
 
 void led_init();
 void led_setPWM(uint8_t led, uint16_t pwm);

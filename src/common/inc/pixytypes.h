@@ -18,8 +18,8 @@
 
 #include <stdint.h>
 
-#define RENDER_FLAG_FLUSH            0x01	// add to stack, render immediately
-#define RENDER_FLAG_BLEND            0x02	// blend with a previous images in image stack
+#define RENDER_FLAG_FLUSH            0x01   // add to stack, render immediately
+#define RENDER_FLAG_BLEND            0x02   // blend with a previous images in image stack
 
 #define PRM_FLAG_INTERNAL            0x00000001
 #define PRM_FLAG_ADVANCED            0x00000002
@@ -244,8 +244,8 @@ struct RGBPixel
     }
 
     uint8_t m_r;
-	uint8_t m_g;
-	uint8_t m_b;
+    uint8_t m_g;
+    uint8_t m_b;
 };
 
 

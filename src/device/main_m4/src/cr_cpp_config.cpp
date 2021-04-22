@@ -1,13 +1,13 @@
 //*****************************************************************************
-//   +--+       
-//   | ++----+   
-//   +-++    |  
-//     |     |  
-//   +-+--+  |   
-//   | +--+--+  
+//   +--+
+//   | ++----+
+//   +-++    |
+//     |     |
+//   +-+--+  |
+//   | +--+--+
 //   +----+    Copyright (c) 2009-12 Code Red Technologies Ltd.
 //
-// Minimal implementations of the new/delete operators and the verbose 
+// Minimal implementations of the new/delete operators and the verbose
 // terminate handler for exceptions suitable for embedded use,
 // plus optional "null" stubs for malloc/free (only used if symbol
 // CPP_NO_HEAP is defined).
@@ -16,19 +16,19 @@
 // Version : 120126
 //
 // Software License Agreement
-// 
-// The software is owned by Code Red Technologies and/or its suppliers, and is 
-// protected under applicable copyright laws.  All rights are reserved.  Any 
-// use in violation of the foregoing restrictions may subject the user to criminal 
+//
+// The software is owned by Code Red Technologies and/or its suppliers, and is
+// protected under applicable copyright laws.  All rights are reserved.  Any
+// use in violation of the foregoing restrictions may subject the user to criminal
 // sanctions under applicable laws, as well as to civil liability for the breach
 // of the terms and conditions of this license.
-// 
+//
 // THIS SOFTWARE IS PROVIDED "AS IS".  NO WARRANTIES, WHETHER EXPRESS, IMPLIED
 // OR STATUTORY, INCLUDING, BUT NOT LIMITED TO, IMPLIED WARRANTIES OF
 // MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE APPLY TO THIS SOFTWARE.
 // USE OF THIS SOFTWARE FOR COMMERCIAL DEVELOPMENT AND/OR EDUCATION IS SUBJECT
 // TO A CURRENT END USER LICENSE AGREEMENT (COMMERCIAL OR EDUCATIONAL) WITH
-// CODE RED TECHNOLOGIES LTD. 
+// CODE RED TECHNOLOGIES LTD.
 //
 //*****************************************************************************
 
@@ -55,15 +55,15 @@ void operator delete[](void *p)
 }
 
 extern "C" int __aeabi_atexit(void *object,
-		void (*destructor)(void *),
-		void *dso_handle)
+        void (*destructor)(void *),
+        void *dso_handle)
 {
-	return 0;
+    return 0;
 }
 
 #ifdef CPP_NO_HEAP
 extern "C" void *malloc(size_t) {
-	return (void *)0;
+    return (void *)0;
 }
 
 extern "C" void free(void *) {

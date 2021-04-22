@@ -13,14 +13,14 @@
 // end license header
 //
 
-#ifndef __PLATFORM_CONFIG_H 
+#ifndef __PLATFORM_CONFIG_H
 #define __PLATFORM_CONFIG_H
 
 #include "stdint.h"
 
 #ifdef __cplusplus
  extern "C" {
-#endif 
+#endif
 
 /****************************************************/
 /* supported platforms list							*/
@@ -55,7 +55,7 @@
 /* these definitions are being taken from the project build rule */
 #ifdef EXT_FLASH
 #define	USE_EXT_FLASH	(YES)
-#else 
+#else
 #define USE_EXT_FLASH	(NO)
 #endif
 
@@ -131,7 +131,7 @@
 #define SLAVE_MBX_START	0x2000A000
 #define SLAVE_MBX_LEN		0x2000
 
-#else 
+#else
 
 /*******************************/
 /* this is for the ram version */
@@ -215,7 +215,6 @@ void platformInit(void);
 
 #ifdef __cplusplus
 }
-#endif 
- 
-#endif /* __PLATFORM_CONFIG_H */
+#endif
 
+#endif /* __PLATFORM_CONFIG_H */

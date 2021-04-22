@@ -25,13 +25,13 @@
 #ifdef DEBUG
 #ifndef HOST
 #include <textdisp.h>
-#else 
+#else
 #include <stdio.h>
 #endif
 
 #define DBG_BLOB(x) x
 #else
-#define DBG_BLOB(x) 
+#define DBG_BLOB(x)
 #endif
 
 bool CBlob::recordSegments= false;
@@ -109,7 +109,7 @@ void SSegment::GetMomentsTest(SMoments &moments) const {
 
 ///////////////////////////////////////////////////////////////////////////
 // CBlob
-CBlob::CBlob() 
+CBlob::CBlob()
 {
     DBG_BLOB(leakcheck++);
     // Setup pointers
@@ -120,15 +120,15 @@ CBlob::CBlob()
     Reset();
 }
 
-CBlob::~CBlob() 
+CBlob::~CBlob()
 {
     DBG_BLOB(leakcheck--);
     // Free segments, if any
     Reset();
 }
 
-void 
-CBlob::Reset() 
+void
+CBlob::Reset()
 {
     // Clear blob data
     moments.Reset();
@@ -149,8 +149,8 @@ CBlob::Reset()
     lastSegmentPtr= &firstSegment;
 }
 
-void 
-CBlob::NewRow() 
+void
+CBlob::NewRow()
 {
     if (nextBottom.row != nextBottom.invalid_row) {
         lastBottom= nextBottom;
@@ -158,8 +158,8 @@ CBlob::NewRow()
     }
 }
 
-void 
-CBlob::Add(const SSegment &segment) 
+void
+CBlob::Add(const SSegment &segment)
 {
     // Enlarge bounding box if necessary
     UpdateBoundingBox(segment.startCol, segment.row, segment.endCol);
@@ -172,7 +172,7 @@ CBlob::Add(const SSegment &segment)
         // Same row.  Add to right side of nextBottom.
         nextBottom.endCol= segment.endCol;
     }
-    
+
     SMoments segmentMoments;
     segment.GetMoments(segmentMoments);
     moments.Add(segmentMoments);
@@ -205,8 +205,8 @@ CBlob::Add(const SSegment &segment)
 // 1) The assimilated blob contains no segments on the current row
 // 2) The assimilated blob lastBottom surface is to the right
 //    of this blob's lastBottom surface
-void 
-CBlob::Assimilate(CBlob &futileResister) 
+void
+CBlob::Assimilate(CBlob &futileResister)
 {
     moments.Add(futileResister.moments);
     UpdateBoundingBox(futileResister.left,
@@ -216,7 +216,7 @@ CBlob::Assimilate(CBlob &futileResister)
     if (futileResister.lastBottom.endCol > lastBottom.endCol) {
         lastBottom.endCol= futileResister.lastBottom.endCol;
     }
-    
+
     if (recordSegments) {
         // Take segments from futileResister, append on end
         *lastSegmentPtr= futileResister.firstSegment;
@@ -227,10 +227,10 @@ CBlob::Assimilate(CBlob &futileResister)
     }
 }
 
-// Only updates left, top, and right.  bottom is updated 
+// Only updates left, top, and right.  bottom is updated
 // by UpdateAttachmentSurface below
-void 
-CBlob::UpdateBoundingBox(int newLeft, int newTop, int newRight) 
+void
+CBlob::UpdateBoundingBox(int newLeft, int newTop, int newRight)
 {
     if (newLeft  < left ) left = newLeft;
     if (newTop   < top  ) top  = newTop;
@@ -240,7 +240,7 @@ CBlob::UpdateBoundingBox(int newLeft, int newTop, int newRight)
 ///////////////////////////////////////////////////////////////////////////
 // CBlobAssembler
 
-CBlobAssembler::CBlobAssembler() 
+CBlobAssembler::CBlobAssembler()
 {
     activeBlobs= currentBlob= finishedBlobs= NULL;
     previousBlobPtr= &activeBlobs;
@@ -249,7 +249,7 @@ CBlobAssembler::CBlobAssembler()
     m_blobCount=0;
 }
 
-CBlobAssembler::~CBlobAssembler() 
+CBlobAssembler::~CBlobAssembler()
 {
     // Flush any active blobs into finished blobs
     EndFrame();
@@ -264,7 +264,7 @@ int CBlobAssembler::Add(const SSegment &segment) {
         currentRow= segment.row;
         RewindCurrent();
     }
-    
+
     // Try to link this to a previous blob
     while (currentBlob) {
         if (segment.startCol > currentBlob->lastBottom.endCol) {
@@ -315,7 +315,7 @@ int CBlobAssembler::Add(const SSegment &segment) {
             }
         }
     }
-    
+
     // Could not attach to previous blob, insert new one before currentBlob
     CBlob *newBlob= new (std::nothrow) CBlob();
     if (newBlob==NULL)
@@ -428,7 +428,7 @@ void CBlobAssembler::SortFinished() {
     // Next, merge sorted lists of length 2 into sorted lists of length 4
     // And so on.  Terminate when only one merge is performed, which
     // means we're completely sorted.
-    
+
     for (int blocksize= 1; old2; blocksize <<= 1) {
         CBlob *new1=NULL, *new2=NULL, **newptr1= &new1, **newptr2= &new2;
         while (old1 || old2) {
@@ -500,8 +500,8 @@ void CBlobAssembler::Reset() {
 // Pass in the pointer to the "next" field pointing to the blob, so
 // we can delete the blob from the linked list if it's not valid.
 
-void 
-CBlobAssembler::BlobNewRow(CBlob **ptr) 
+void
+CBlobAssembler::BlobNewRow(CBlob **ptr)
 {
     short left, top, right, bottom;
 
@@ -528,8 +528,8 @@ CBlobAssembler::BlobNewRow(CBlob **ptr)
     }
 }
 
-void 
-CBlobAssembler::RewindCurrent() 
+void
+CBlobAssembler::RewindCurrent()
 {
     BlobNewRow(&activeBlobs);
     previousBlobPtr= &activeBlobs;
@@ -538,12 +538,10 @@ CBlobAssembler::RewindCurrent()
     if (currentBlob) BlobNewRow(&currentBlob->next);
 }
 
-void 
-CBlobAssembler::AdvanceCurrent() 
+void
+CBlobAssembler::AdvanceCurrent()
 {
     previousBlobPtr= &(currentBlob->next);
     currentBlob= *previousBlobPtr;
     if (currentBlob) BlobNewRow(&currentBlob->next);
 }
-
-

@@ -22,11 +22,11 @@
 /* define here the number of mailbox desired */
 enum slaveMbxId_tag {
 
-		SLAVE_MBX_TASKD = 0,
-		SLAVE_MBX_TASKE,
-		SLAVE_MBX_TASKF,
-		SLAVE_MBX_CMD,
-		NUM_SLAVE_MBX,
+        SLAVE_MBX_TASKD = 0,
+        SLAVE_MBX_TASKE,
+        SLAVE_MBX_TASKF,
+        SLAVE_MBX_CMD,
+        NUM_SLAVE_MBX,
 };
 
 
@@ -37,4 +37,3 @@ void slaveCbackF(msg_t msg, msgId_t idNum, mbxParam_t parameter);
 void slaveCbackCmd(msg_t msg, msgId_t idNum, mbxParam_t parameter);
 
 #endif /* M0_callbacks.h */
-

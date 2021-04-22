@@ -13,10 +13,10 @@
 
 struct SmMap
 {
-	volatile uint16_t recvStatus;
-	volatile uint16_t sendStatus;
+    volatile uint16_t recvStatus;
+    volatile uint16_t sendStatus;
 
-	volatile uint8_t buf[SM_BUFSIZE];
+    volatile uint8_t buf[SM_BUFSIZE];
 };
 
 #define SM_OBJECT       ((SmMap *)SM_LOC)
@@ -25,8 +25,8 @@ struct SmMap
 class SMLink : public Link
 {
 public:
-	SMLink();
-	~SMLink();
+    SMLink();
+    ~SMLink();
     virtual int send(const uint8_t *data, uint32_t len, uint16_t timeoutMs);
     virtual int receive(uint8_t *data, uint32_t len, uint16_t timeoutMs);
     virtual void setTimer();
@@ -34,7 +34,7 @@ public:
     virtual uint32_t getFlags(uint8_t index=LINK_FLAG_INDEX_FLAGS);
 
 private:
-	uint32_t m_timer;
+    uint32_t m_timer;
 };
 
 #endif

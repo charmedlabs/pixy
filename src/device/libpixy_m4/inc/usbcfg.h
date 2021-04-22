@@ -25,7 +25,7 @@
  *      warranties of fitness for purpose, satisfactory quality and
  *      noninfringement. Keil extends you a royalty-free right to reproduce
  *      and distribute executable files created using this software for use
- *      on NXP Semiconductors LPC family microcontroller devices only. Nothing 
+ *      on NXP Semiconductors LPC family microcontroller devices only. Nothing
  *      else gives you the right to use this software.
  *
  * Copyright (c) 2009 Keil - An ARM Company. All rights reserved.
@@ -118,7 +118,7 @@
 //     <o10> Control Interface Number <0-255>
 //     <o11> Bulk Interface Number <0-255>
 //     <o12> Max Communication Device Buffer Size
-//        <8=> 8 Bytes <16=> 16 Bytes <32=> 32 Bytes <64=> 64 Bytes 
+//        <8=> 8 Bytes <16=> 16 Bytes <32=> 32 Bytes <64=> 64 Bytes
 //   </e>
 // </e>
 */
@@ -132,8 +132,8 @@
 #define USB_ADC_CIF_NUM     0
 #define USB_ADC_SIF1_NUM    1
 #define USB_ADC_SIF2_NUM    2
-#define USB_CDC  			0
-			
+#define USB_CDC             0
+
 #define USB_DEV_BUFSIZE     64
 #define USB_BULK_IN_EP      0x82
 #define USB_BULK_OUT_EP     0x02

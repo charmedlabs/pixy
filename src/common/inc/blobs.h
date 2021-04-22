@@ -29,7 +29,7 @@
 #define MAX_CODED_DIST        8
 #define MAX_COLOR_CODE_MODELS 5
 
-#define BL_BEGIN_MARKER	      0xaa55
+#define BL_BEGIN_MARKER       0xaa55
 #define BL_BEGIN_MARKER_CC    0xaa56
 
 enum ColorCodeMode
@@ -56,12 +56,12 @@ public:
     void getRunlengths(uint32_t **qvals, uint32_t *len);
 #endif
 
-	ColorLUT m_clut;
+    ColorLUT m_clut;
     Qqueue *m_qq;
 
 private:
     int handleSegment(uint8_t signature, uint16_t row, uint16_t startCol, uint16_t length);
-	void endFrame();
+    void endFrame();
     uint16_t combine(uint16_t *blobs, uint16_t numBlobs);
     uint16_t combine2(uint16_t *blobs, uint16_t numBlobs);
     uint16_t compress(uint16_t *blobs, uint16_t numBlobs);

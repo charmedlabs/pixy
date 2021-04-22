@@ -24,13 +24,13 @@
 #endif
 #define QQ_MEM_SIZE  ((QQ_SIZE-sizeof(struct QqueueFields)+sizeof(Qval))/sizeof(Qval))
 
-#ifdef __cplusplus  
+#ifdef __cplusplus
 struct Qval
 #else
 typedef struct
 #endif
 {
-#ifdef __cplusplus  
+#ifdef __cplusplus
     Qval()
     {
         m_u = m_v = m_y = m_col = 0;
@@ -50,8 +50,8 @@ typedef struct
     int16_t m_u;
     uint16_t m_y;
 
-#ifdef __cplusplus  
-}; 
+#ifdef __cplusplus
+};
 #else
 } Qval;
 #endif
@@ -78,10 +78,10 @@ public:
     ~Qqueue();
 
     uint32_t dequeue(Qval *val);
-	uint32_t queued()
-	{
-		return m_fields->produced - m_fields->consumed;
-	}
+    uint32_t queued()
+    {
+        return m_fields->produced - m_fields->consumed;
+    }
 #ifndef PIXY
     int enqueue(Qval *val);
 #endif

@@ -29,7 +29,7 @@
 // Think about heap management of SLinkedSegments
 //
 // *** Priority 5 (maybe never do):
-// 
+//
 // Try small and large SMoments structure (small for segment)
 // Try more efficient SSegment structure for lastBottom, nextBottom
 //
@@ -226,7 +226,7 @@ public:
 
     // Clear blob data and free segments, if any
     void Reset();
-    
+
     void NewRow();
 
     void Add(const SSegment &segment);
@@ -308,7 +308,7 @@ public:
     void EndFrame();
 
     int ListLength(const CBlob *b);
-    
+
     // Split a list of blobs into two halves
     void SplitList(CBlob *all, CBlob *&firstHalf, CBlob *&secondHalf);
 

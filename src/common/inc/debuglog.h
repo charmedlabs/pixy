@@ -28,7 +28,7 @@ static void log(const char *format, ...)
   vprintf(format, elements);
   fflush(stdout);
   va_end(elements);
-#endif 
+#endif
 }
 
 #endif

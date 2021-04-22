@@ -7,10 +7,10 @@
 #define _ASM_FUNC            __asm
 #define _ASM_LABEL(label)    label
 #define _ASM_START\
-	PRESERVE8
+    PRESERVE8
 #define _ASM_END
 #define _ASM_IMPORT(func)\
-	IMPORT func
+    IMPORT func
 
 #else
 
@@ -19,8 +19,8 @@
 #define PP_NARG_(...)        PP_ARG_N(__VA_ARGS__)
 #define PP_ARG_N(_1, _2, _3, _4, _5,N,...) N
 #define PP_RSEQ_N()          5,4,3,2,1,0
-		
-// APPLYXn variadic X-Macro by M Joshua Ryan   
+
+// APPLYXn variadic X-Macro by M Joshua Ryan
 #define X(x)                 #x
 #define Paste(a,b)           a ## b
 #define XPASTE(a,b)          Paste(a,b)
@@ -35,9 +35,9 @@
 #define _ASM(...)            asm(APPLYXn(__VA_ARGS__));
 #define _ASM_FUNC
 #define _ASM_LABEL(label)    asm(#label ":");
-#define _ASM_START           asm(".syntax unified"); 
+#define _ASM_START           asm(".syntax unified");
 #define _ASM_END             asm(".syntax divided");
-#define _ASM_IMPORT(func)    
+#define _ASM_IMPORT(func)
 
 #endif
 #endif

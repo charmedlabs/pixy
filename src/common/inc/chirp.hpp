@@ -21,7 +21,7 @@
 
 #define CRP_MAX_NAK                     3
 #define CRP_RETRIES                     3
-#define CRP_HEADER_TIMEOUT    	        1000
+#define CRP_HEADER_TIMEOUT              1000
 #define CRP_DATA_TIMEOUT                500
 #define CRP_IDLE_TIMEOUT                500
 #define CRP_SEND_TIMEOUT                1000

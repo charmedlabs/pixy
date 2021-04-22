@@ -96,74 +96,74 @@ bool IterPixel::nextHelper(UVPixel *uv, RGBPixel *rgb)
         g1 = m_pixels[m_x - 1];
         g2 = m_pixels[-m_frame.m_width + m_x];
         b = m_pixels[-m_frame.m_width + m_x - 1];
-		if (rgb)
-		{
-		  	rgb->m_r = r;
-			rgb->m_g = (g1+g2)/2;
-			rgb->m_b = b;
-		}
-		if (uv)
-		{
-        	c = r+g1+b;
+        if (rgb)
+        {
+            rgb->m_r = r;
+            rgb->m_g = (g1+g2)/2;
+            rgb->m_b = b;
+        }
+        if (uv)
+        {
+            c = r+g1+b;
             if (c<miny)
-			{
-				m_x += 2;
-            	continue;
-			}
-        	u = ((r-g1)<<CL_LUT_ENTRY_SCALE)/c;
-        	c = r+g2+b;
+            {
+                m_x += 2;
+                continue;
+            }
+            u = ((r-g1)<<CL_LUT_ENTRY_SCALE)/c;
+            c = r+g2+b;
             if (c<miny)
-			{
-				m_x += 2;
-            	continue;
-			}
-        	v = ((b-g2)<<CL_LUT_ENTRY_SCALE)/c;
+            {
+                m_x += 2;
+                continue;
+            }
+            v = ((b-g2)<<CL_LUT_ENTRY_SCALE)/c;
 
-        	uv->m_u = u;
-        	uv->m_v = v;
-		}
+            uv->m_u = u;
+            uv->m_v = v;
+        }
 
-		m_x += 2;
+        m_x += 2;
         return true;
     }
 }
 
 uint32_t IterPixel::averageRgb(uint32_t *pixels)
 {
-	RGBPixel rgb;
-	uint32_t r, g, b, n;
-	reset();
-	for (r=g=b=n=0; next(NULL, &rgb); n++)
-	{
-		r += rgb.m_r;
-		g += rgb.m_g;
-		b += rgb.m_b;		
-	}
+    RGBPixel rgb;
+    uint32_t r, g, b, n;
+    reset();
+    for (r=g=b=n=0; next(NULL, &rgb); n++)
+    {
+        r += rgb.m_r;
+        g += rgb.m_g;
+        b += rgb.m_b;
+    }
 
-	r /= n;
-	g /= n;
-	b /= n;
+    r /= n;
+    g /= n;
+    b /= n;
 
-	if (pixels)
-		*pixels = n;
-	return (r<<16) | (g<<8) | b;
+    if (pixels)
+        *pixels = n;
+    return (r<<16) | (g<<8) | b;
 }
 
 ColorLUT::ColorLUT(uint8_t *lut)
 {
-	int i; 
+    int i;
     m_lut = lut;
     memset((void *)m_signatures, 0, sizeof(ColorSignature)*CL_NUM_SIGNATURES);
     memset((void *)m_runtimeSigs, 0, sizeof(RuntimeSignature)*CL_NUM_SIGNATURES);
-	clearLUT();
+    clearLUT();
 
     setMinBrightness(CL_DEFAULT_MINY);
     m_minRatio = CL_MIN_RATIO;
     m_maxDist = CL_MAX_DIST;
     m_ratio = CL_DEFAULT_TOL;
     m_ccGain = CL_DEFAULT_CCGAIN;
-	for (i=0; i<CL_NUM_SIGNATURES; i++)
-		m_sigRanges[i] = CL_DEFAULT_SIG_RANGE;
+    for (i=0; i<CL_NUM_SIGNATURES; i++)
+        m_sigRanges[i] = CL_DEFAULT_SIG_RANGE;
 }
 
 
@@ -188,36 +188,36 @@ void ColorLUT::calcRatios(IterPixel *ip, ColorSignature *sig, float ratios[])
 
         if (uv.m_u>sig->m_uMin)
             counts[0]++;
-		else
+        else
             ubounded = false;
 
         if (uv.m_u<sig->m_uMax)
             counts[1]++;
-		else
+        else
             ubounded = false;
 
         if (uv.m_v>sig->m_vMin)
             counts[2]++;
-		else
+        else
             vbounded = false;
 
         if (uv.m_v<sig->m_vMax)
             counts[3]++;
-		else
+        else
             vbounded = false;
 
         // only use pixels that are within our test bounds to form the mean
         if (ubounded)
         {
             usum += uv.m_u;
-			un++;
-		}
-		if (vbounded)
-		{
+            un++;
+        }
+        if (vbounded)
+        {
             vsum += uv.m_v;
             vn++;
         }
-		n++;
+        n++;
     }
 
     // calc ratios
@@ -228,7 +228,7 @@ void ColorLUT::calcRatios(IterPixel *ip, ColorSignature *sig, float ratios[])
    // calc mean (because it's cheap to do it here)
     sig->m_uMean = usum/un;
     sig->m_vMean = vsum/vn;
- //	printf("%d %d %d %d %d %d %d %d %d\n", un, vn, n, sig->m_uMin, sig->m_uMax, sig->m_vMin, sig->m_vMax, sig->m_uMean, sig->m_vMean);
+ // printf("%d %d %d %d %d %d %d %d %d\n", un, vn, n, sig->m_uMin, sig->m_uMax, sig->m_vMin, sig->m_vMax, sig->m_uMean, sig->m_vMean);
 }
 
 #else
@@ -305,29 +305,29 @@ void ColorLUT::iterate(IterPixel *ip, ColorSignature *sig)
 
 int ColorLUT::generateSignature(const Frame8 &frame, const RectA &region, uint8_t signum)
 {
- 	if (signum<1 || signum>CL_NUM_SIGNATURES)
-		return -1;
+    if (signum<1 || signum>CL_NUM_SIGNATURES)
+        return -1;
    // this is cool-- this routine doesn't allocate any extra memory other than some stack variables
     IterPixel ip(frame, region);
     iterate(&ip, m_signatures+signum-1);
-	m_signatures[signum-1].m_type = 0;
+    m_signatures[signum-1].m_type = 0;
 
-	updateSignature(signum);
+    updateSignature(signum);
     return 0;
 }
 
 
 int ColorLUT::generateSignature(const Frame8 &frame, const Point16 &point, Points *points, uint8_t signum)
 {
-	if (signum<1 || signum>CL_NUM_SIGNATURES)
-		return -1;
+    if (signum<1 || signum>CL_NUM_SIGNATURES)
+        return -1;
     // this routine requires some memory to store the region which consists of some consistently-sized blocks
     growRegion(frame, point, points);
     IterPixel ip(frame, points);
     iterate(&ip, m_signatures+signum-1);
-	m_signatures[signum-1].m_type = 0;
+    m_signatures[signum-1].m_type = 0;
 
-	updateSignature(signum);
+    updateSignature(signum);
     return 0;
 }
 
@@ -335,38 +335,38 @@ void ColorLUT::updateSignature(uint8_t signum)
 {
     float range;
 
-	if (signum<1 || signum>CL_NUM_SIGNATURES)
-		return;
-	signum--;
+    if (signum<1 || signum>CL_NUM_SIGNATURES)
+        return;
+    signum--;
 
     if (m_signatures[signum].m_type==CL_MODEL_TYPE_COLORCODE)
         range = m_sigRanges[signum]*m_ccGain;
-	else
-		range = m_sigRanges[signum];
+    else
+        range = m_sigRanges[signum];
     m_runtimeSigs[signum].m_uMin = m_signatures[signum].m_uMean + (m_signatures[signum].m_uMin - m_signatures[signum].m_uMean)*range;
-	m_runtimeSigs[signum].m_uMax = m_signatures[signum].m_uMean + (m_signatures[signum].m_uMax - m_signatures[signum].m_uMean)*range;
-	m_runtimeSigs[signum].m_vMin = m_signatures[signum].m_vMean + (m_signatures[signum].m_vMin - m_signatures[signum].m_vMean)*range;
-	m_runtimeSigs[signum].m_vMax = m_signatures[signum].m_vMean + (m_signatures[signum].m_vMax - m_signatures[signum].m_vMean)*range;
+    m_runtimeSigs[signum].m_uMax = m_signatures[signum].m_uMean + (m_signatures[signum].m_uMax - m_signatures[signum].m_uMean)*range;
+    m_runtimeSigs[signum].m_vMin = m_signatures[signum].m_vMean + (m_signatures[signum].m_vMin - m_signatures[signum].m_vMean)*range;
+    m_runtimeSigs[signum].m_vMax = m_signatures[signum].m_vMean + (m_signatures[signum].m_vMax - m_signatures[signum].m_vMean)*range;
 
     m_runtimeSigs[signum].m_rgbSat = saturate(m_signatures[signum].m_rgb);
 }
 
 ColorSignature *ColorLUT::getSignature(uint8_t signum)
 {
-	if (signum<1 || signum>CL_NUM_SIGNATURES)
-		return NULL;
+    if (signum<1 || signum>CL_NUM_SIGNATURES)
+        return NULL;
 
-	return m_signatures+signum-1;
+    return m_signatures+signum-1;
 }
 
 int ColorLUT::setSignature(uint8_t signum, const ColorSignature &sig)
 {
-	if (signum<1 || signum>CL_NUM_SIGNATURES)
-		return -1;
+    if (signum<1 || signum>CL_NUM_SIGNATURES)
+        return -1;
 
-	m_signatures[signum-1] = sig;
-	updateSignature(signum);
-	return 0;
+    m_signatures[signum-1] = sig;
+    updateSignature(signum);
+    return 0;
 }
 
 
@@ -598,14 +598,14 @@ void ColorLUT::getMean(const RectA &region ,const Frame8 &frame, UVPixel *mean)
 
 void ColorLUT::setSigRange(uint8_t signum, float range)
 {
-	if (signum<1 || signum>CL_NUM_SIGNATURES)
-		return;
-	m_sigRanges[signum-1] = range;
+    if (signum<1 || signum>CL_NUM_SIGNATURES)
+        return;
+    m_sigRanges[signum-1] = range;
 }
 
 void ColorLUT::setGrowDist(uint32_t dist)
 {
-	m_maxDist = dist;
+    m_maxDist = dist;
 }
 
 void ColorLUT::setMinBrightness(float miny)

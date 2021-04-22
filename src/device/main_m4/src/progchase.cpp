@@ -29,10 +29,10 @@ extern Blobs *g_blobs;
 
 Program g_progChase =
 {
-	"chase",
-	"chase an object (demo)",
-	chaseSetup, 
-	chaseLoop
+    "chase",
+    "chase an object (demo)",
+    chaseSetup,
+    chaseLoop
 };
 
 static MotorLoop g_transLoop(500, 800);
@@ -42,155 +42,155 @@ static void axisMap(int32_t in[], int32_t out[]);
 
 MotorLoop::MotorLoop(uint32_t pgain, uint32_t dgain)
 {
-	m_pgain = pgain;
-	m_dgain = dgain;
-	m_prevError = 0x80000000; // to indicate that it's never been set
+    m_pgain = pgain;
+    m_dgain = dgain;
+    m_prevError = 0x80000000; // to indicate that it's never been set
 }
 
 // control loop update!
 int32_t MotorLoop::update(int32_t error)
 {
-	int32_t vel;
+    int32_t vel;
 
-	if (m_prevError!=0x80000000)
-	{	
-		vel = (error*m_pgain + (error - m_prevError)*m_dgain)/1000;	// calc proportional-derivative 
-		// saturation
-		if (vel>MOTOR_MAX) 
-			vel = MOTOR_MAX; 
-		else if (vel<MOTOR_MIN) 
-			vel = MOTOR_MIN;
-	}
-	m_prevError = error;
+    if (m_prevError!=0x80000000)
+    {
+        vel = (error*m_pgain + (error - m_prevError)*m_dgain)/1000; // calc proportional-derivative
+        // saturation
+        if (vel>MOTOR_MAX)
+            vel = MOTOR_MAX;
+        else if (vel<MOTOR_MIN)
+            vel = MOTOR_MIN;
+    }
+    m_prevError = error;
 
-	return vel;
+    return vel;
 }
 
 
 void MotorLoop::setGains(int32_t pgain, int32_t dgain)
 {
-	m_pgain = pgain;
-	m_dgain = dgain;	
+    m_pgain = pgain;
+    m_dgain = dgain;
 }
 
 int32_t scaleMotor(int32_t val)
 {
-	int32_t pos = 0;
+    int32_t pos = 0;
 
-	if (val>0)
-		pos = val + MOTOR_DEADBAND;
-	else if (val<0)
-		pos = val - MOTOR_DEADBAND;
+    if (val>0)
+        pos = val + MOTOR_DEADBAND;
+    else if (val<0)
+        pos = val - MOTOR_DEADBAND;
 
-	pos += RCS_CENTER_POS;
-			
-	if (pos>RCS_MAX_POS) 
-		pos = RCS_MAX_POS; 
-	else if (pos<RCS_MIN_POS) 
-		pos = RCS_MIN_POS;
+    pos += RCS_CENTER_POS;
 
-	return pos;
+    if (pos>RCS_MAX_POS)
+        pos = RCS_MAX_POS;
+    else if (pos<RCS_MIN_POS)
+        pos = RCS_MIN_POS;
+
+    return pos;
 }
 
-// Map axes!  go from translational/rotational to left/right 
+// Map axes!  go from translational/rotational to left/right
 void axisMap(int32_t in[], int32_t out[])
 {
- 	out[0] = (in[0] - in[1])/2;
-	out[1] = (in[0] + in[1])/2;
+    out[0] = (in[0] - in[1])/2;
+    out[1] = (in[0] + in[1])/2;
 }
 
 // calculate left and right wheel commands
 void combine(uint32_t x, uint32_t y)
 {
-	int32_t xError, yError, axesIn[2], axesOut[2];
+    int32_t xError, yError, axesIn[2], axesOut[2];
 
-	xError = X_CENTER-x;
-	yError = Y_TRACK-y;
-	
-	//cprintf("x: %d y: %d xError: %d yError: %d\n", x, y, xError, yError);
+    xError = X_CENTER-x;
+    yError = Y_TRACK-y;
 
-	axesIn[0] = g_transLoop.update(yError);
-	axesIn[1] = g_rotLoop.update(xError);
+    //cprintf("x: %d y: %d xError: %d yError: %d\n", x, y, xError, yError);
 
-	axisMap(axesIn, axesOut);
+    axesIn[0] = g_transLoop.update(yError);
+    axesIn[1] = g_rotLoop.update(xError);
 
-	rcs_setPos(LEFT_AXIS, scaleMotor(axesOut[0]));
-	rcs_setPos(RIGHT_AXIS, scaleMotor(axesOut[1]));
-}	
+    axisMap(axesIn, axesOut);
+
+    rcs_setPos(LEFT_AXIS, scaleMotor(axesOut[0]));
+    rcs_setPos(RIGHT_AXIS, scaleMotor(axesOut[1]));
+}
 
 int chaseSetup()
 {
-	// setup camera mode
-	cam_setMode(CAM_MODE1);
+    // setup camera mode
+    cam_setMode(CAM_MODE1);
 
- 	chaseLoadParams();
-	rcs_setPos(LEFT_AXIS, RCS_CENTER_POS);
-	rcs_setPos(RIGHT_AXIS, RCS_CENTER_POS);
-	
-	// load lut if we've grabbed any frames lately
-	if (g_rawFrame.m_pixels)
-		cc_loadLut();
+    chaseLoadParams();
+    rcs_setPos(LEFT_AXIS, RCS_CENTER_POS);
+    rcs_setPos(RIGHT_AXIS, RCS_CENTER_POS);
 
-	// setup qqueue and M0
-	g_qqueue->flush();
-	exec_runM0(0);
+    // load lut if we've grabbed any frames lately
+    if (g_rawFrame.m_pixels)
+        cc_loadLut();
 
-	return 0;
+    // setup qqueue and M0
+    g_qqueue->flush();
+    exec_runM0(0);
+
+    return 0;
 }
 
 void chaseLoadParams()
 {
-	prm_add("Translation P gain", 0, 
-		"@c Chase_demo tranlational proportional gain (default 500)", INT32(500), END);
-	prm_add("Translation D gain", 0, 
-		"@c Chase_demo translational derivative gain (default 800)", INT32(800), END);
-	prm_add("Rotation P gain", 0, 
-		"@c Chase_demo rotational proportional gain (default 500)", INT32(500), END);
-	prm_add("Rotation D gain", 0, 
-		"@c Chase_demo rotational derivative gain (default 800)", INT32(800), END);
+    prm_add("Translation P gain", 0,
+        "@c Chase_demo tranlational proportional gain (default 500)", INT32(500), END);
+    prm_add("Translation D gain", 0,
+        "@c Chase_demo translational derivative gain (default 800)", INT32(800), END);
+    prm_add("Rotation P gain", 0,
+        "@c Chase_demo rotational proportional gain (default 500)", INT32(500), END);
+    prm_add("Rotation D gain", 0,
+        "@c Chase_demo rotational derivative gain (default 800)", INT32(800), END);
 
-	int32_t pgain, dgain; 
+    int32_t pgain, dgain;
 
-	prm_get("Translation P gain", &pgain, END);
-	prm_get("Translation D gain", &dgain, END);
-	g_transLoop.setGains(pgain, dgain);
-	prm_get("Rotation P gain", &pgain, END);
-	prm_get("Rotation D gain", &dgain, END);
-	g_rotLoop.setGains(pgain, dgain);
+    prm_get("Translation P gain", &pgain, END);
+    prm_get("Translation D gain", &dgain, END);
+    g_transLoop.setGains(pgain, dgain);
+    prm_get("Rotation P gain", &pgain, END);
+    prm_get("Rotation D gain", &dgain, END);
+    g_rotLoop.setGains(pgain, dgain);
 }
 
 
 int chaseLoop()
 {
-	uint16_t x, y;
-	BlobA *blobs, *blob;
-	BlobB *ccBlobs;
-	uint32_t numBlobs, numCCBlobs;
+    uint16_t x, y;
+    BlobA *blobs, *blob;
+    BlobB *ccBlobs;
+    uint32_t numBlobs, numCCBlobs;
 
 
-	// create blobs
-	g_blobs->blobify();
+    // create blobs
+    g_blobs->blobify();
 
-	blob = (BlobA *)g_blobs->getMaxBlob();
-	if (blob)
-	{
-		x = blob->m_left + (blob->m_right - blob->m_left)/2;
-		y = blob->m_top + (blob->m_bottom - blob->m_top)/2;
+    blob = (BlobA *)g_blobs->getMaxBlob();
+    if (blob)
+    {
+        x = blob->m_left + (blob->m_right - blob->m_left)/2;
+        y = blob->m_top + (blob->m_bottom - blob->m_top)/2;
 
-		combine(x, y);
-	}
-	else
-	{
-		rcs_setPos(LEFT_AXIS, RCS_CENTER_POS);
-		rcs_setPos(RIGHT_AXIS, RCS_CENTER_POS);
-	}
+        combine(x, y);
+    }
+    else
+    {
+        rcs_setPos(LEFT_AXIS, RCS_CENTER_POS);
+        rcs_setPos(RIGHT_AXIS, RCS_CENTER_POS);
+    }
 
 
-	// send blobs
-	g_blobs->getBlobs(&blobs, &numBlobs, &ccBlobs, &numCCBlobs);
-	cc_sendBlobs(g_chirpUsb, blobs, numBlobs, ccBlobs, numCCBlobs);
+    // send blobs
+    g_blobs->getBlobs(&blobs, &numBlobs, &ccBlobs, &numCCBlobs);
+    cc_sendBlobs(g_chirpUsb, blobs, numBlobs, ccBlobs, numCCBlobs);
 
-	cc_setLED();
-	
-	return 0;
+    cc_setLED();
+
+    return 0;
 }

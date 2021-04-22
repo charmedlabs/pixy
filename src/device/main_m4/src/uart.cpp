@@ -24,126 +24,126 @@ extern "C" void UART0_IRQHandler(void);
 
 void UART0_IRQHandler(void)
 {
-	g_uart0->irqHandler();
+    g_uart0->irqHandler();
 }
 
 void Uart::irqHandler()
 {
-	uint32_t status;
-	uint8_t i, c;
-	volatile uint32_t v;
+    uint32_t status;
+    uint8_t i, c;
+    volatile uint32_t v;
 
-	m_flag = false;
+    m_flag = false;
 
-	/* Determine the interrupt source */
-	status = m_uart->IIR & UART_IIR_INTID_MASK;
+    /* Determine the interrupt source */
+    status = m_uart->IIR & UART_IIR_INTID_MASK;
 
-	if (status==UART_IIR_INTID_RDA) // Receive Data Available 
-		m_rq.write(m_uart->RBR&UART_RBR_MASKBIT);
-	else if (status==UART_IIR_INTID_CTI)
-		v = m_uart->RBR; // toss...
-	else if (status==UART_IIR_INTID_THRE) // Transmit Holding Empty
-	{
-		for (i=0; i<UART_TX_FIFO_SIZE; i++) // fill transmit FIFO
-		{
-			if (m_tq.read(&c))
-			{
-				m_flag = true;
-				m_uart->THR = c;
-			}
-		}
-	}
+    if (status==UART_IIR_INTID_RDA) // Receive Data Available
+        m_rq.write(m_uart->RBR&UART_RBR_MASKBIT);
+    else if (status==UART_IIR_INTID_CTI)
+        v = m_uart->RBR; // toss...
+    else if (status==UART_IIR_INTID_THRE) // Transmit Holding Empty
+    {
+        for (i=0; i<UART_TX_FIFO_SIZE; i++) // fill transmit FIFO
+        {
+            if (m_tq.read(&c))
+            {
+                m_flag = true;
+                m_uart->THR = c;
+            }
+        }
+    }
 }
 
 int Uart::open()
 {
-	scu_pinmux(0x2, 0, (MD_PLN | MD_EZI | MD_ZI | MD_EHS), FUNC1); 	         // U0_TXD 
-	scu_pinmux(0x2, 1, (MD_PLN | MD_EZI | MD_ZI | MD_EHS), FUNC1); 	         // U0_RXD
- 	scu_pinmux(0x1, 3, (MD_PLN | MD_EZI | MD_ZI | MD_EHS), FUNC0); 	         // turn SSP1_MISO into GPIO0[10]
-	scu_pinmux(0x1, 4, (MD_PLN | MD_EZI | MD_ZI | MD_EHS), FUNC0); 	         // turn SSP1_MOSI into GPIO0[11]
+    scu_pinmux(0x2, 0, (MD_PLN | MD_EZI | MD_ZI | MD_EHS), FUNC1);           // U0_TXD
+    scu_pinmux(0x2, 1, (MD_PLN | MD_EZI | MD_ZI | MD_EHS), FUNC1);           // U0_RXD
+    scu_pinmux(0x1, 3, (MD_PLN | MD_EZI | MD_ZI | MD_EHS), FUNC0);           // turn SSP1_MISO into GPIO0[10]
+    scu_pinmux(0x1, 4, (MD_PLN | MD_EZI | MD_ZI | MD_EHS), FUNC0);           // turn SSP1_MOSI into GPIO0[11]
 
     NVIC_EnableIRQ(USART0_IRQn);
-	return 0;
+    return 0;
 }
 
 int Uart::close()
 {
-	scu_pinmux(0x2, 0, (MD_PLN | MD_EZI | MD_ZI | MD_EHS), FUNC4); 	         // U0_TXD 
-	scu_pinmux(0x2, 1, (MD_PLN | MD_EZI | MD_ZI | MD_EHS), FUNC4); 	         // U0_RXD
+    scu_pinmux(0x2, 0, (MD_PLN | MD_EZI | MD_ZI | MD_EHS), FUNC4);           // U0_TXD
+    scu_pinmux(0x2, 1, (MD_PLN | MD_EZI | MD_ZI | MD_EHS), FUNC4);           // U0_RXD
 
-	NVIC_DisableIRQ(USART0_IRQn);
-	return 0;
+    NVIC_DisableIRQ(USART0_IRQn);
+    return 0;
 }
 
 int Uart::receive(uint8_t *buf, uint32_t len)
 {
-	uint32_t i;
+    uint32_t i;
 
-	for (i=0; i<len; i++)
-	{
-		if (m_rq.read(buf+i)==0)
-			break;
-	}
+    for (i=0; i<len; i++)
+    {
+        if (m_rq.read(buf+i)==0)
+            break;
+    }
 
-	return i;
+    return i;
 }
 
 int Uart::receiveLen()
-{	
-	return m_rq.receiveLen();
+{
+    return m_rq.receiveLen();
 }
 
 int Uart::update()
 {
-	if (m_flag==false)
-	{
-		m_uart->THR = 0; // send a 0 to get the transmit interrupt going again, send 16 bits		
-		m_uart->THR = 0; 		
-	}
-	return 0;
+    if (m_flag==false)
+    {
+        m_uart->THR = 0; // send a 0 to get the transmit interrupt going again, send 16 bits
+        m_uart->THR = 0;
+    }
+    return 0;
 }
 
 
 Uart::Uart(LPC_USARTn_Type *uart,  SerialCallback callback) : m_rq(UART_RECEIVE_BUF_SIZE), m_tq(UART_TRANSMIT_BUF_SIZE, callback)
 {
-	UART_FIFO_CFG_Type ufifo;
-	UART_CFG_Type ucfg;
+    UART_FIFO_CFG_Type ufifo;
+    UART_CFG_Type ucfg;
 
-	m_uart = uart;
-	m_flag = false;
-	 	
-	// regular config			 
-	ucfg.Baud_rate = UART_DEFAULT_BAUDRATE;
-	ucfg.Databits = UART_DATABIT_8;
-	ucfg.Parity = UART_PARITY_NONE;
-	ucfg.Stopbits = UART_STOPBIT_1;
-	ucfg.Clock_Speed = CLKFREQ;
+    m_uart = uart;
+    m_flag = false;
 
-	UART_Init(m_uart, &ucfg);
+    // regular config
+    ucfg.Baud_rate = UART_DEFAULT_BAUDRATE;
+    ucfg.Databits = UART_DATABIT_8;
+    ucfg.Parity = UART_PARITY_NONE;
+    ucfg.Stopbits = UART_STOPBIT_1;
+    ucfg.Clock_Speed = CLKFREQ;
 
-	// config FIFOs
-	ufifo.FIFO_DMAMode = DISABLE;
-	ufifo.FIFO_Level = UART_FIFO_TRGLEV0;
-	ufifo.FIFO_ResetRxBuf = ENABLE;
-	ufifo.FIFO_ResetTxBuf = ENABLE;
+    UART_Init(m_uart, &ucfg);
 
-	UART_FIFOConfig(m_uart, &ufifo);
-	UART_TxCmd(m_uart, ENABLE);
+    // config FIFOs
+    ufifo.FIFO_DMAMode = DISABLE;
+    ufifo.FIFO_Level = UART_FIFO_TRGLEV0;
+    ufifo.FIFO_ResetRxBuf = ENABLE;
+    ufifo.FIFO_ResetTxBuf = ENABLE;
 
-	// enable interrupts
-	UART_IntConfig(m_uart, UART_INTCFG_RBR, ENABLE);
-	UART_IntConfig(m_uart, UART_INTCFG_THRE, ENABLE);
+    UART_FIFOConfig(m_uart, &ufifo);
+    UART_TxCmd(m_uart, ENABLE);
+
+    // enable interrupts
+    UART_IntConfig(m_uart, UART_INTCFG_RBR, ENABLE);
+    UART_IntConfig(m_uart, UART_INTCFG_THRE, ENABLE);
 
     NVIC_SetPriority(USART0_IRQn, 0);
 }
 
 int Uart::setBaudrate(uint32_t baudrate)
 {
-	UART_setBaudRate(m_uart, baudrate, CLKFREQ);
-	return 0;
+    UART_setBaudRate(m_uart, baudrate, CLKFREQ);
+    return 0;
 }
 
 void uart_init(SerialCallback callback)
 {
-	g_uart0 = new Uart(LPC_USART0, callback);
+    g_uart0 = new Uart(LPC_USART0, callback);
 }

@@ -37,16 +37,16 @@ void chaseLoadParams();
 class MotorLoop
 {
 public:
-	MotorLoop(uint32_t pgain, uint32_t dgain);
+    MotorLoop(uint32_t pgain, uint32_t dgain);
 
-	int32_t update(int32_t error);
-	void setGains(int32_t pgain, int32_t dgain);
+    int32_t update(int32_t error);
+    void setGains(int32_t pgain, int32_t dgain);
 
 private:
 
-	int32_t m_prevError;
-	int32_t m_pgain;
-	int32_t m_dgain;
+    int32_t m_prevError;
+    int32_t m_pgain;
+    int32_t m_dgain;
 };
 
 #endif

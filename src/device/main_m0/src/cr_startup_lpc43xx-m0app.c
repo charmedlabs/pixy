@@ -62,7 +62,7 @@ extern void SystemInit(void);
 //*****************************************************************************
 //
 // Forward declaration of the default handlers. These are aliased.
-// When the application defines a handler (with the same name), this will 
+// When the application defines a handler (with the same name), this will
 // automatically take precedence over these weak definitions
 //
 //*****************************************************************************
@@ -87,7 +87,7 @@ WEAK void M0_IntDefaultHandler(void);
 //
 // Forward declaration of the specific IRQ handlers. These are aliased
 // to the IntDefaultHandler, which is a 'forever' loop. When the application
-// defines a handler (with the same name), this will automatically take 
+// defines a handler (with the same name), this will automatically take
 // precedence over these weak definitions
 //
 //*****************************************************************************
@@ -389,7 +389,7 @@ ResetISR(void) {
 #endif
 
   //
-  // main() shouldn't return, but if it does, we'll just enter an infinite loop 
+  // main() shouldn't return, but if it does, we'll just enter an infinite loop
   //
   while (1) {
     ;
@@ -416,8 +416,8 @@ void HardFault_Handler(void)
 void M0_HardFault_Handler(void)
 #endif
 {
-	_DBG("HardFault\n");
-	while(1) { }
+    _DBG("HardFault\n");
+    while(1) { }
 }
 
 __attribute__ ((section(".after_vectors")))
@@ -461,4 +461,3 @@ void M0_IntDefaultHandler(void)
 #endif
 {   while(1) { }
 }
-

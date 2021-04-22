@@ -23,7 +23,7 @@
 #define SER_INTERFACE_I2C             2
 #define SER_INTERFACE_UART            3
 #define SER_INTERFACE_ADX             4
-#define SER_INTERFACE_ADY             5 
+#define SER_INTERFACE_ADY             5
 #define	SER_INTERFACE_LEGO            6
 
 
