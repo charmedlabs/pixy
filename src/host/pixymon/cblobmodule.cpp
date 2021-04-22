@@ -666,7 +666,7 @@ void CBlobModule::rla(uint8_t *qmem, uint32_t qmemSize)
 Qqueue2::Qqueue2()
 {
 #ifdef PIXY
-    m_fields = (QqueueFields2 *)QQ_LOC;
+    m_fields = (QqueueFields2 *)MEM_QQ_LOC;
 #else
     m_fields = (QqueueFields2 *)(new uint8_t[QQ_SIZE]);
 #endif

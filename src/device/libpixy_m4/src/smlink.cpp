@@ -83,7 +83,7 @@ uint32_t SMLink::getFlags(uint8_t index)
     if (index==LINK_FLAG_INDEX_SHARED_MEMORY_LOCATION)
         return (uint32_t)SM_OBJECT->buf;
     else if (index==LINK_FLAG_INDEX_SHARED_MEMORY_SIZE)
-        return SM_BUFSIZE;
+        return MEM_SM_BUFSIZE;
     else
         return Link::getFlags(index);
 }

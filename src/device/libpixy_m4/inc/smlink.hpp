@@ -4,10 +4,6 @@
 #include "pixyvals.h"
 #include "link.h"
 
-#define SM_LOC                 (SRAM4_LOC+0x3c00)
-#define SM_SIZE                (SRAM4_SIZE-0x3c00)
-#define SM_BUFSIZE             (SM_SIZE-4)
-
 // status
 #define SM_STATUS_DATA_AVAIL   0x01
 
@@ -16,10 +12,10 @@ struct SmMap
     volatile uint16_t recvStatus;
     volatile uint16_t sendStatus;
 
-    volatile uint8_t buf[SM_BUFSIZE];
+    volatile uint8_t buf[MEM_SM_BUFSIZE];
 };
 
-#define SM_OBJECT       ((SmMap *)SM_LOC)
+#define SM_OBJECT       ((SmMap *)MEM_SM_LOC)
 
 
 class SMLink : public Link

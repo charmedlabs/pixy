@@ -16,13 +16,16 @@
 #define _QQUEUE_H
 #include <stdint.h>
 
-#define QQ_LOC        SRAM4_LOC
 #ifdef PIXY
-#define QQ_SIZE       0x3c00
+#define QQ_SIZE       MEM_QQ_SIZE
 #else
 #define QQ_SIZE       0x30000
 #endif
-#define QQ_MEM_SIZE  ((QQ_SIZE-sizeof(struct QqueueFields)+sizeof(Qval))/sizeof(Qval))
+#define QQ_MEM_SIZE  ((QQ_SIZE - sizeof(struct QqueueFields) + sizeof(Qval)) / sizeof(Qval))
+
+#define QVAL_LINE_BEGIN    0xfffd
+#define QVAL_FRAME_ERROR   0xfffe
+#define QVAL_FRAME_END     0xffff
 
 #ifdef __cplusplus
 struct Qval
@@ -33,22 +36,18 @@ typedef struct
 #ifdef __cplusplus
     Qval()
     {
-        m_u = m_v = m_y = m_col = 0;
+        m_col_start = m_col_end = 0;
     }
 
-    Qval(int16_t u, int16_t v, uint16_t y, uint16_t col)
+    Qval(uint16_t start, uint16_t end)
     {
-        m_u = u;
-        m_v = v;
-        m_y = y;
-        m_col = col;
+        m_col_start = start;
+        m_col_end = end;
     }
 #endif
 
-    uint16_t m_col;
-    int16_t m_v;
-    int16_t m_u;
-    uint16_t m_y;
+    uint16_t m_col_start;
+    uint16_t m_col_end;  // Not inclusive
 
 #ifdef __cplusplus
 };
@@ -95,6 +94,7 @@ private:
 
 #else //  M0 is C and the "producer" of data (Qvals)
 
+void qq_init();
 uint32_t qq_enqueue(const Qval *val);
 uint16_t qq_free(void);
 

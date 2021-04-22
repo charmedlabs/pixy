@@ -70,12 +70,6 @@ int32_t exec_versionType(Chirp *chirp=NULL);
 int32_t exec_getAction(const uint16_t &index, Chirp *chirp=NULL);
 uint32_t exec_getUID();
 
-void exec_loadParams();
-void exec_sendEvent(Chirp *chirp, uint32_t event);
-
-uint8_t exec_pause();
-void exec_resume();
-
 extern int32_t g_execArg;
 
 #endif

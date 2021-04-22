@@ -53,9 +53,6 @@ int32_t cam_getFrame(uint8_t *memory, uint32_t memSize, uint8_t type, uint16_t x
 int32_t cam_setRegister(const uint8_t &reg, const uint8_t &value);
 int32_t cam_getRegister(const uint8_t &reg);
 
-
-void cam_loadParams();
-
 extern CSccb *g_sccb;
 extern Frame8 g_rawFrame;
 

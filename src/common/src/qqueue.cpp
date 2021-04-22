@@ -22,7 +22,7 @@
 Qqueue::Qqueue()
 {
 #ifdef PIXY
-    m_fields = (QqueueFields *)QQ_LOC;
+    m_fields = (QqueueFields *)MEM_QQ_LOC;
 #else
     m_fields = (QqueueFields *)(new uint8_t[QQ_SIZE]);
 #endif

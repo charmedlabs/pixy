@@ -26,13 +26,12 @@
 #define SER_INTERFACE_ADY             5
 #define	SER_INTERFACE_LEGO            6
 
+#define SER_INTERFACE_SER_BAUD        19200
 
-int ser_init();
+int ser_init(SerialCallback callback);
 int ser_setInterface(uint8_t interface);
 uint8_t ser_getInterface();
 Iserial *ser_getSerial();
-
-void ser_loadParams();
 
 extern uint8_t g_interface;
 

@@ -18,15 +18,10 @@
 #include "pixy_init.h"
 #include "misc.h"
 #include "exec.h"
-#include "button.h"
+#include "led.h"
 #include "camera.h"
-#include "conncomp.h"
 #include "serial.h"
-#include "rcservo.h"
-#include "progpt.h"
 #include "progblobs.h"
-#include "progchase.h"
-#include "param.h"
 
 static const ProcModule g_module[] =
 {
@@ -109,111 +104,6 @@ static const ProcModule g_module[] =
 
 static const ActionScriptlet actions[]=
 {
-    {
-    "Run pan/tilt demo",
-    "runprog 1\n"
-    },
-    {
-    "Set signature 1...",
-    "cam_getFrame 0x21 0 0 320 200\n"
-    "cc_setSigRegion 0 1\n"
-    "runprogArg 8 1\n"
-    },
-    {
-    "Set signature 2...",
-    "cam_getFrame 0x21 0 0 320 200\n"
-    "cc_setSigRegion 0 2\n"
-    "runprogArg 8 1\n"
-    },
-    {
-    "Set signature 3...",
-    "cam_getFrame 0x21 0 0 320 200\n"
-    "cc_setSigRegion 0 3\n"
-    "runprogArg 8 1\n"
-    },
-    {
-    "Set signature 4...",
-    "cam_getFrame 0x21 0 0 320 200\n"
-    "cc_setSigRegion 0 4\n"
-    "runprogArg 8 1\n"
-    },
-    {
-    "Set signature 5...",
-    "cam_getFrame 0x21 0 0 320 200\n"
-    "cc_setSigRegion 0 5\n"
-    "runprogArg 8 1\n"
-    },
-    {
-    "Set signature 6...",
-    "cam_getFrame 0x21 0 0 320 200\n"
-    "cc_setSigRegion 0 6\n"
-    "runprogArg 8 1\n"
-    },
-    {
-    "Set signature 7...",
-    "cam_getFrame 0x21 0 0 320 200\n"
-    "cc_setSigRegion 0 7\n"
-    "runprogArg 8 1\n"
-    },
-
-    {
-    "Set CC signature 1...",
-    "cam_getFrame 0x21 0 0 320 200\n"
-    "cc_setSigRegion 1 1\n"
-    "runprogArg 8 1\n"
-    },
-    {
-    "Set CC signature 2...",
-    "cam_getFrame 0x21 0 0 320 200\n"
-    "cc_setSigRegion 1 2\n"
-    "runprogArg 8 1\n"
-    },
-    {
-    "Set CC signature 3...",
-    "cam_getFrame 0x21 0 0 320 200\n"
-    "cc_setSigRegion 1 3\n"
-    "runprogArg 8 1\n"
-    },
-    {
-    "Set CC signature 4...",
-    "cam_getFrame 0x21 0 0 320 200\n"
-    "cc_setSigRegion 1 4\n"
-    "runprogArg 8 1\n"
-    },
-    {
-    "Set CC signature 5...",
-    "cam_getFrame 0x21 0 0 320 200\n"
-    "cc_setSigRegion 1 5\n"
-    "runprogArg 8 1\n"
-    },
-    {
-    "Set CC signature 6...",
-    "cam_getFrame 0x21 0 0 320 200\n"
-    "cc_setSigRegion 1 6\n"
-    "runprogArg 8 1\n"
-    },
-    {
-    "Set CC signature 7...",
-    "cam_getFrame 0x21 0 0 320 200\n"
-    "cc_setSigRegion 1 7\n"
-    "runprogArg 8 1\n"
-    },
-
-    {
-    "Clear signature...",
-    "cc_clearSig\n"
-    "run\n"
-    },
-    {
-    "Clear all signatures",
-    "cc_clearAllSig\n"
-    "run\n"
-    },
-    {
-    "Restore default parameter values",
-    "prm_restore\n"
-    "close\n"
-    }
 };
 
 uint8_t g_running = false;
@@ -224,7 +114,6 @@ uint8_t g_startupProgram = 0;
 // program selection by PixyMon when it connects
 int8_t g_programChirp = -1;
 int32_t g_execArgChirp = 0;
-uint8_t g_override = 0;
 int32_t g_execArg = 0;  // this arg mechanism is lame... should introduce an argv type mechanism
 uint8_t g_debug = 0;
 
@@ -233,22 +122,15 @@ static ChirpProc g_runningM0 = -1;
 static ChirpProc g_stopM0 = -1;
 static uint8_t g_progM0 = 0;
 static Program *g_progTable[EXEC_MAX_PROGS];
-static void loadParams();
-
-ButtonMachine *g_bMachine = NULL;
 
 
 int exec_init(Chirp *chirp)
 {
-    g_bMachine = new ButtonMachine;
-
     chirp->registerModule(g_module);
 
     g_runM0 = g_chirpM0->getProc("run", NULL);
     g_runningM0 = g_chirpM0->getProc("running", NULL);
     g_stopM0 = g_chirpM0->getProc("stop", NULL);
-
-    loadParams();
 
     return 0;
 }
@@ -275,11 +157,7 @@ int exec_addProg(Program *prog, bool video)
 
 uint32_t exec_running()
 {
-    if (g_running)
-        return g_running;
-    if (g_override)
-        return 2; // we're not running and we're pressing the button
-    return 0;
+    return g_running;
 }
 
 int32_t exec_stop()
@@ -423,65 +301,7 @@ uint8_t exec_runningM0()
 void exec_periodic()
 {
     periodic();
-    g_override = g_bMachine->handleSignature();
-    if (prm_dirty())
-        exec_loadParams();
 }
-
-void exec_select()
-{
-    uint8_t progs;
-
-
-    prm_get("Startup program", &g_startupProgram, END);
-    g_program = g_startupProgram;
-
-    // count number of progs
-    for (progs=0; g_progTable[progs]; progs++);
-
-    // select using button state machine
-    g_bMachine->selectProgram(progs, &g_program);
-
-    exec_runprog(g_program);
-}
-
-static void loadParams()
-{
-#ifndef LEGO
-    int i;
-    char buf[256], buf2[64];
-
-    // create program menu
-    strcpy(buf, "Selects the program number that's run upon power-up. @c Expert");
-    for (i=0; g_progTable[i]; i++)
-    {
-        sprintf(buf2, " @s %d=%s", i, g_progTable[i]->progName);
-        strcat(buf, buf2);
-    }
-
-    // exec's params added here
-    prm_add("Startup program", 0, buf, UINT8(0), END);
-#endif
-    prm_add("Debug", 0,
-        "@c Expert Sets the debug level for the firmware. (default 0)", UINT8(0), END);
-
-    prm_get("Debug", &g_debug, END);
-}
-
-void exec_loadParams()
-{
-    cc_loadParams();
-    ser_loadParams();
-    cam_loadParams();
-#ifndef LEGO
-    rcs_loadParams();
-
-    ptLoadParams();
-    //chaseLoadParams();
-#endif
-    loadParams(); // local
-}
-
 
 void exec_loop()
 {
@@ -489,11 +309,8 @@ void exec_loop()
     bool prevConnected = false;
     bool connected;
 
-#ifdef LEGO
-    exec_runprog(0);
-#else
-    exec_select();
-#endif
+    exec_runprog(g_startupProgram);
+    led_set(0);
 
     while(1)
     {
@@ -511,28 +328,19 @@ void exec_loop()
             break;
 
         case 1:  // loop state
-            if (g_override)
-            {
-                // need to stop M0 because it's using the same memory and can possibly interfere.
-                // For example if we try to grab a raw frame while M0 is running (gathering RLS values)
-                // M0 could overwrite the frame memory with RLS scratch data.
-                exec_stopM0();
-                state = 2; // override state
-            }
-            else if (!g_run  || (*g_progTable[g_program]->loop)()<0)
+            if (!g_run  || (*g_progTable[g_program]->loop)()<0)
                 state = 3; // stop state
             else if (prevConnected && !connected) // if we disconnect from pixymon, revert back to default program
             {
-                prm_resetShadows(); // shadows are no longer valid now that the host is disconnected.
                 g_programChirp = -1; // reset this value to "unset"
                 exec_runprog(g_startupProgram); // run default program
                 state = 0; // setup state
             }
             break;
 
-        case 2: // override state
-            if (!g_override)
-                state = 0; // back to setup state
+        case 2: // override state  (REMOVED by Matternet)
+
+            state = 0; // back to setup state
             break;
 
         case 3: // stop state
@@ -564,25 +372,4 @@ void exec_loop()
 
         prevConnected = connected;
     }
-}
-
-uint8_t exec_pause()
-{
-    uint8_t running;
-    running = exec_runningM0();
-    if (running)
-        exec_stopM0();
-    return running;
-}
-
-void exec_resume()
-{
-    g_qqueue->flush();
-    exec_runM0(g_progM0);
-}
-
-void exec_sendEvent(Chirp *chirp, uint32_t event)
-{
-    if (chirp)
-        CRP_SEND_XDATA(chirp, HTYPE(FOURCC('E','V','T','1')), INT32(event));
 }

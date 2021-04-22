@@ -19,6 +19,6 @@
 #include <stdint.h>
 
 int rls_init(void);
-int32_t getRLSFrame(uint32_t *m0Mem, uint32_t *lut);
+int32_t getRLSFrame(void);
 
 #endif

@@ -40,6 +40,18 @@
 #define LED_DEFAULT_MAX_CURRENT   750  // uA, can be as high as 20000, but it's difficult to look at (too bright!)
 #define LED_MAX_CURRENT           20000
 
+typedef enum : uint32_t
+{
+    COLOR_WHITE = 0xffffff,
+    COLOR_RED = 0xff0000,
+    COLOR_ORANGE = 0xff8000,
+    COLOR_YELLOW = 0xffff00,
+    COLOR_GREEN = 0x00ff00,
+    COLOR_CYAN = 0x00ffff,
+    COLOR_BLUE = 0x0000ff,
+    COLOR_VIOLET = 0xff00ff,
+} LedColor;
+
 void led_init();
 void led_setPWM(uint8_t led, uint16_t pwm);
 void led_set(uint8_t led, uint8_t val, bool override=false);
@@ -47,6 +59,5 @@ int32_t led_set(const uint32_t &color);
 int32_t led_setRGB(const uint8_t &r, const uint8_t &g, const uint8_t &b);
 int32_t led_setMaxCurrent(const uint32_t &uamps);
 uint32_t led_getMaxCurrent();
-
 
 #endif

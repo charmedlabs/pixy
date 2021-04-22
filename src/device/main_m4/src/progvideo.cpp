@@ -17,13 +17,13 @@
 #include "progvideo.h"
 #include "pixy_init.h"
 #include "camera.h"
-//#include "colorlut.h"
 #include "blobs.h"
-#include "conncomp.h"
-#include "param.h"
 #include "led.h"
 #include <string.h>
 
+
+static int videoSetup();
+static int videoLoop();
 
 Program g_progVideo =
 {
@@ -33,23 +33,23 @@ Program g_progVideo =
     videoLoop
 };
 
-int videoSetup()
+static int videoSetup()
 {
     return 0;
 }
 
-void sendCustom(uint8_t renderFlags=RENDER_FLAG_FLUSH)
+static void sendCustom(uint8_t renderFlags=RENDER_FLAG_FLUSH)
 {
     int32_t len;
-    uint8_t *frame = (uint8_t *)SRAM1_LOC;
+    uint8_t *frame = (uint8_t *)MEM_USB_FRAME_LOC;
     uint32_t fcc;
 
     if (g_execArg==1)
     {
         // fill buffer contents manually for return data
-        len = Chirp::serialize(g_chirpUsb, frame, SRAM1_SIZE, HTYPE(FOURCC('C','M','V','2')), HINT8(renderFlags), UINT16(CAM_RES2_WIDTH), UINT16(CAM_RES2_HEIGHT), UINTS8_NO_COPY(CAM_RES2_WIDTH*CAM_RES2_HEIGHT), END);
+        len = Chirp::serialize(g_chirpUsb, frame, MEM_USB_FRAME_SIZE, HTYPE(FOURCC('C','M','V','2')), HINT8(renderFlags), UINT16(CAM_RES2_WIDTH), UINT16(CAM_RES2_HEIGHT), UINTS8_NO_COPY(CAM_RES2_WIDTH*CAM_RES2_HEIGHT), END);
         // write frame after chirp args
-        cam_getFrame(frame+len, SRAM1_SIZE-len, CAM_GRAB_M1R2, 0, 0, CAM_RES2_WIDTH, CAM_RES2_HEIGHT);
+        cam_getFrame(frame+len, MEM_USB_FRAME_SIZE-len, CAM_GRAB_M1R2, 0, 0, CAM_RES2_WIDTH, CAM_RES2_HEIGHT);
 
         // tell chirp to use this buffer
         g_chirpUsb->useBuffer(frame, len+CAM_RES2_WIDTH*CAM_RES2_HEIGHT);
@@ -57,9 +57,9 @@ void sendCustom(uint8_t renderFlags=RENDER_FLAG_FLUSH)
     else if (100<=g_execArg && g_execArg<200)
     {
         fcc =  FOURCC('E','X',(g_execArg%100)/10 + '0', (g_execArg%10) + '0');
-        len = Chirp::serialize(g_chirpUsb, frame, SRAM1_SIZE, HTYPE(fcc), HINT8(renderFlags), UINT16(CAM_RES2_WIDTH), UINT16(CAM_RES2_HEIGHT), UINTS8_NO_COPY(CAM_RES2_WIDTH*CAM_RES2_HEIGHT), END);
+        len = Chirp::serialize(g_chirpUsb, frame, MEM_USB_FRAME_SIZE, HTYPE(fcc), HINT8(renderFlags), UINT16(CAM_RES2_WIDTH), UINT16(CAM_RES2_HEIGHT), UINTS8_NO_COPY(CAM_RES2_WIDTH*CAM_RES2_HEIGHT), END);
         // write frame after chirp args
-        cam_getFrame(frame+len, SRAM1_SIZE-len, CAM_GRAB_M1R2, 0, 0, CAM_RES2_WIDTH, CAM_RES2_HEIGHT);
+        cam_getFrame(frame+len, MEM_USB_FRAME_SIZE-len, CAM_GRAB_M1R2, 0, 0, CAM_RES2_WIDTH, CAM_RES2_HEIGHT);
 
         // tell chirp to use this buffer
         g_chirpUsb->useBuffer(frame, len+CAM_RES2_WIDTH*CAM_RES2_HEIGHT);
@@ -69,7 +69,7 @@ void sendCustom(uint8_t renderFlags=RENDER_FLAG_FLUSH)
 
 }
 
-int videoLoop()
+static int videoLoop()
 {
     led_set(0);  // turn off any stray led
 

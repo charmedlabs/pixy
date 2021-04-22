@@ -1,0 +1,21 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "shell",
+			"label": "make program",
+			"command": "bash",
+			"args": [
+				"-c",
+				"cd device && PATH=/opt/lpcxpresso_8.2.2_650/lpcxpresso/tools/bin:$PATH make"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"group": "build",
+			"problemMatcher": [
+				"$gcc"
+			]
+		},
+	]
+}

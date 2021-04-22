@@ -16,7 +16,15 @@
 #include "qqueue.h"
 #include "pixyvals.h"
 
-struct QqueueFields *g_qqueue = (struct QqueueFields *)QQ_LOC;
+struct QqueueFields *g_qqueue = (struct QqueueFields *)MEM_QQ_LOC;
+
+void qq_init()
+{
+    g_qqueue->readIndex = 0;
+    g_qqueue->writeIndex = 0;
+    g_qqueue->produced = 0;
+    g_qqueue->consumed = 0;
+}
 
 uint32_t qq_enqueue(const Qval *val)
 {

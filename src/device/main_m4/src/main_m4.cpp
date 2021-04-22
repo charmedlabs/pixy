@@ -22,16 +22,11 @@
 #include <misc.h>
 #include "camera.h"
 #include "led.h"
-#include "conncomp.h"
 #include "exec.h"
 #include "camera.h"
 #include "progvideo.h"
 #include "progblobs.h"
-#include "progpt.h"
-#include "progchase.h"
-#include "param.h"
 #include "serial.h"
-#include "rcservo.h"
 
 #include <new>
 
@@ -83,111 +78,13 @@ int main(void)
     pixyInit();
 #endif
 
-#if 0
-    i = 0;
-    char *foo;
-    while(1)
-    {
-        foo = new (std::nothrow) char[128];
-        if (foo==NULL)
-        {
-            _DBG("full\n");
-            break;
-        }
-        else
-        {
-            _DBH32((int)foo); _DBG(" "); _DBH32(i); _DBG("\n");
-        }
-        i++;
-    }
-    while(1);
-#endif
     // main init of hardware plus a version-dependent number for the parameters that will
     // force a format of parameter between version numbers.
-
-#ifndef LEGO
-    rcs_init();
-#endif
-    cc_init(g_chirpUsb);
-    ser_init();
     exec_init(g_chirpUsb);
 
-#if 0
-    exec_addProg(&g_progBlobs);
-    ptLoadParams();
-    exec_addProg(&g_progPt);
-    exec_addProg(&g_progVideo, true);
-#if 0
-    cam_setMode(CAM_MODE1);
-    while(1)
-        periodic();
-#endif
-#endif
-
-#if 1
     // load programs
     exec_addProg(&g_progBlobs);
-#ifndef LEGO
-    // need to call this to get the pan/tilt parameters to display.
-    // We can make some properties modal, meaning they are only diaplayed when the program is running.
-    // We might want to do this here, but this is good for now.
-    ptLoadParams();
-    exec_addProg(&g_progPt);
-#endif
-#if 0
-    chaseLoadParams();
-    exec_addProg(&g_progChase);
-#endif
     exec_addProg(&g_progVideo, true);
 
-#if 1
-    // this code formats if the version has changed
-    for (i=0, count=0, count2=0; i<25; i++)
-    {
-        res = prm_get("fwver", &major, &minor, &build, END);
-        if (res>=0 && major==FW_MAJOR_VER && minor==FW_MINOR_VER && build==FW_BUILD_VER)
-            count++;
-        res = prm_get("fwtype", &type, END);
-        if (res>=0 && strcmp(type, FW_TYPE)==0)
-            count2++;
-    }
-    if (count==0 || count2==0)
-        prm_format();
-#endif
-
-    // check version
-    prm_add("fwver", PRM_FLAG_INTERNAL, "", UINT16(FW_MAJOR_VER), UINT16(FW_MINOR_VER), UINT16(FW_BUILD_VER), END);
-    prm_add("fwtype", PRM_FLAG_INTERNAL, "", STRING(FW_TYPE), END);
-
     exec_loop();
-#endif
-#if 0
-    #define DELAY 1000000
-    rcs_setFreq(100);
-    rcs_setLimits(0, -200, 200);
-    rcs_setLimits(1, -200, 200);
-    while(1)
-    {
-        rcs_setPos(0, 0);
-        delayus(DELAY);
-        rcs_setPos(0, 500);
-        delayus(DELAY);
-        rcs_setPos(0, 1000);
-        delayus(DELAY);
-        rcs_setPos(1, 0);
-        delayus(DELAY);
-        rcs_setPos(1, 500);
-        delayus(DELAY);
-        rcs_setPos(1, 1000);
-        delayus(DELAY);
-    }
-
-#endif
-#if 0
-    while(1)
-    {
-        g_chirpUsb->service();
-        handleButton();
-    }
-#endif
 }

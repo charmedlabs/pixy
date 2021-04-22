@@ -13,18 +13,17 @@
 // end license header
 //
 
+#include "blobs.h"
 #include "progblobs.h"
 #include "pixy_init.h"
 #include "camera.h"
 #include "led.h"
-#include "conncomp.h"
 #include "serial.h"
-#include "rcservo.h"
 #include "exec.h"
 
 
-bool g_ledSet = false;
-static uint8_t g_state=0;
+static int blobsSetup();
+static int blobsLoop();
 
 Program g_progBlobs =
 {
@@ -34,174 +33,67 @@ Program g_progBlobs =
     blobsLoop
 };
 
+static bool initialized_ = false;
+static Qqueue qqueue_;
+static Blobs blobs_;
 
-int blobsSetup()
+static uint32_t callback(uint8_t *data, uint32_t len)
 {
-    uint8_t c;
+    return blobs_.getBlock(data, len);
+}
+
+static int sendBlobs(Chirp *chirp, const BlobA *blobs, uint32_t len, uint8_t renderFlags=RENDER_FLAG_FLUSH)
+{
+    CRP_RETURN(chirp, HTYPE(FOURCC('C','C','B','1')), HINT8(renderFlags), HINT16(CAM_RES2_WIDTH), HINT16(CAM_RES2_HEIGHT), UINTS16(len*sizeof(BlobA)/sizeof(uint16_t), blobs), END);
+    return 0;
+}
+
+static int blobsSetup()
+{
+    if (initialized_ == false)
+    {
+        ser_init(callback);
+        initialized_ = true;
+    }
 
     // setup camera mode
     cam_setMode(CAM_MODE1);
 
-    // if there have been any parameter changes, we should regenerate the LUT (do it regardless)
-    g_blobs->m_clut.generateLUT();
-
     // setup qqueue and M0
-    g_qqueue->flush();
+    qqueue_.flush();
     exec_runM0(0);
 
     // flush serial receive queue
+    uint8_t c;
     while(ser_getSerial()->receive(&c, 1));
 
-    g_state = 0; // reset recv state machine
     return 0;
 }
 
-void handleRecv()
+static int blobsLoop()
 {
-    uint8_t i, a;
-    static uint16_t w=0xffff;
-    static uint8_t lastByte;
-    uint16_t s0, s1;
-    Iserial *serial = ser_getSerial();
-
-    for (i=0; i<10; i++)
-    {
-        switch(g_state)
-        {
-        case 0: // reset
-            lastByte = 0xff;  // This is not part of any of the sync word most significant bytes
-            g_state = 1;
-            break;
-
-        case 1: // sync word
-            if(serial->receive(&a, 1))
-            {
-                w = lastByte << 8;
-                w |= a;
-                lastByte = a;
-                g_state = 2;    // compare
-            }
-            break;
-
-        case 2:  // receive data byte(s)
-            if (w==SYNC_SERVO)
-            {   // read rest of data
-                if (serial->receiveLen()>=4)
-                {
-                    serial->receive((uint8_t *)&s0, 2);
-                    serial->receive((uint8_t *)&s1, 2);
-
-                    //cprintf("servo %d %d\n", s0, s1);
-                    rcs_setPos(0, s0);
-                    rcs_setPos(1, s1);
-
-                    g_state = 0;
-                }
-            }
-            else if (w==SYNC_CAM_BRIGHTNESS)
-            {
-                if(serial->receive(&a, 1))
-                {
-                    cam_setBrightness(a);
-                    g_state = 0;
-                }
-            }
-            else if (w==SYNC_SET_LED)
-            {
-                if (serial->receiveLen()>=3)
-                {
-                    uint8_t r, g, b;
-                    serial->receive(&r, 1);
-                    serial->receive(&g, 1);
-                    serial->receive(&b, 1);
-
-                    led_setRGB(r, g, b);
-                    //cprintf("%x %x %x\n", r, g ,b);
-
-                    g_ledSet = true; // it will stay true until the next power cycle
-                    g_state = 0;
-                }
-            }
-            else
-                g_state = 1; // try another word, but read only a byte
-            break;
-
-        default:
-            g_state = 0; // try another whole word
-            break;
-        }
-    }
-}
-
-int blobsLoop()
-{
-#if 1
     BlobA *blobs;
-    BlobB *ccBlobs;
-    uint32_t numBlobs, numCCBlobs;
-    static uint32_t drop = 0;
+    uint32_t numBlobs;
 
     // create blobs
-    if (g_blobs->blobify()<0)
+    if (blobs_.blobify(&qqueue_) < 0)
     {
-        DBG("drop %d\n", drop++);
         return 0;
     }
-    // handle received data immediately
-    if (g_interface!=SER_INTERFACE_LEGO)
-        handleRecv();
 
     // send blobs
-    g_blobs->getBlobs(&blobs, &numBlobs, &ccBlobs, &numCCBlobs);
-    cc_sendBlobs(g_chirpUsb, blobs, numBlobs, ccBlobs, numCCBlobs);
+    blobs_.getBlobs(&blobs, &numBlobs);
+    sendBlobs(g_chirpUsb, blobs, numBlobs);
 
-    ser_getSerial()->update();
-
-    // if user isn't controlling LED, set it here, according to biggest detected object
-    if (!g_ledSet)
-        cc_setLED();
-
-    // deal with any latent received data until the next frame comes in
-    while(!g_qqueue->queued())
+    // can do work here while waiting for more data in queue
+    Iserial *serial = ser_getSerial();
+    serial->update();
+    while(!qqueue_.queued())
     {
-        if (g_interface!=SER_INTERFACE_LEGO)
-            handleRecv();
+        // Just throw away serial input for now.
+        uint8_t c;
+        serial->receive(&c, 1);
     }
-
-#endif
-#if 0
-    Qval qval;
-    int j = 0;
-    static int i = 0;
-    while(1)
-    {
-        if (g_qqueue->dequeue(&qval))
-        {
-            j++;
-            if (qval.m_col>=0xfffe)
-            {
-                cprintf("%d: %d %x\n", i++, j, qval.m_col);
-                break;
-            }
-        }
-    }
-#endif
-#if 0
-    BlobA *blobs;
-    BlobB *ccBlobs;
-    uint32_t numBlobs, numCCBlobs;
-    static uint32_t drop = 0;
-
-    // create blobs
-    if (g_blobs->blobify()<0)
-    {
-        DBG("drop %d\n", drop++);
-        return 0;
-    }
-    g_blobs->getBlobs(&blobs, &numBlobs, &ccBlobs, &numCCBlobs);
-    cc_sendBlobs(g_chirpUsb, blobs, numBlobs, ccBlobs, numCCBlobs);
-
-#endif
 
     return 0;
 }

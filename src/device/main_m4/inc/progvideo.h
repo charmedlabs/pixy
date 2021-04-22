@@ -20,7 +20,4 @@
 
 extern Program g_progVideo;
 
-int videoSetup();
-int videoLoop();
-
 #endif

@@ -23,7 +23,6 @@
 #include "usblink.h"
 #include "param.h"
 #include "camera.h"
-#include "rcservo.h"
 #include "led.h"
 #include "power.h"
 #include "misc.h"
@@ -142,35 +141,6 @@ void commonInit(void)
 
 #define AWB_TIMEOUT   6000*1000  // 6 seconds
 
-void handleAWB()
-{
-    static uint32_t timer;
-    static uint8_t state = 0;
-    uint8_t awbp=0;
-
-    if (state==2)
-        return;
-
-    prm_get("Auto White Balance on power-up", &awbp, END);
-    if (!awbp)
-        return; // exit if auto white balance on power-up is disabled
-
-    else if (state==0)
-    {
-        setTimer(&timer);
-        cam_setAWB(1);
-        state = 1;
-    }
-    else if (state==1)
-    {
-        if (getTimer(timer)>AWB_TIMEOUT)
-        {
-            cam_setAWB(0);
-            state = 2; // end state machine (only run once)
-        }
-    }
-}
-
 void periodic()
 {
     // check to see if guard data still there
@@ -178,7 +148,6 @@ void periodic()
 //      showError(1, 0xffff00, "stack corruption\n");
 
     while(g_chirpUsb->service());
-    handleAWB();
 }
 
 #ifdef KEIL
@@ -195,10 +164,6 @@ void pixyInit(void)
 #ifdef KEIL
     IPC_haltSlave();
 #endif
-
-    // clear RC servo registers to prevent and glitches upon initialization
-    rcs_enable(0, 0);
-    rcs_enable(1, 0);
 
     ADCInit();
     SCTInit();
@@ -228,6 +193,7 @@ void pixyInit(void)
 
     // initialize devices/modules
     led_init();
+    led_setRGB(255, 0, 0);
     prm_init(g_chirpUsb);
     pwr_init();
     cam_init();

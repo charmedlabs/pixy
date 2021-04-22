@@ -17,7 +17,6 @@
 #include <pixy_init.h>
 #include <pixyvals.h>
 #include "camera.h"
-#include "param.h"
 #include "misc.h"
 
 static const ProcModule g_module[] =
@@ -172,13 +171,13 @@ CSccb *g_sccb = NULL;
 Frame8 g_rawFrame;
 
 static uint8_t g_mode = (uint8_t)-1;
-static uint8_t g_awb = 1;
-static uint8_t g_aec = 1;
+static uint8_t g_awb = 0;
+static uint8_t g_aec = 0;
 static uint8_t g_lightMode = 0;
 static uint8_t g_brightness = CAM_BRIGHTNESS_DEFAULT;
 static ChirpProc g_getFrameM0 = -1;
-static uint32_t g_aecValue = 0;
-static uint32_t g_awbValue = 0;
+static uint32_t g_aecValue = CAM_ECV_DEFAULT;
+static uint32_t g_awbValue = CAM_WBV_DEFAULT;
 
 static const uint8_t g_baseRegs[] =
 {
@@ -283,28 +282,31 @@ int cam_init()
     if (g_getFrameM0<0)
         return -1;
 
-    cam_loadParams();
-
+    cam_setBrightness(g_brightness);
+    cam_setAEC(g_aec);
+    cam_setECV(g_aecValue);
+    cam_setAWB(g_awb);
+    cam_setWBV(g_awbValue);
     return 0;
 }
 
 int32_t cam_setMode(const uint8_t &mode)
 {
-    if (mode!=g_mode)
+    if (mode==0)
     {
-        if (mode==0)
-        {
-            cam_setRegs(g_mode0Regs, sizeof(g_mode0Regs));
-            g_mode = 0;
-        }
-        else if (mode==1)
-        {
-            cam_setRegs(g_mode1Regs, sizeof(g_mode1Regs));
-            g_mode = 1;
-        }
-        else
-            return -1;
+        cam_setRegs(g_mode0Regs, sizeof(g_mode0Regs));
+        g_mode = 0;
     }
+    else if (mode==1)
+    {
+        cam_setRegs(g_mode1Regs, sizeof(g_mode1Regs));
+        g_mode = 1;
+    }
+    else
+    {
+        return -1;
+    }
+
     return 0;
 }
 
@@ -315,21 +317,19 @@ uint32_t cam_getMode()
 
 int32_t cam_setAWB(const uint8_t &awb)
 {
-    if (awb!=g_awb)
+    if (awb==0)
     {
-        if (awb==0)
-        {
-            g_sccb->Write(0x38, 0x00);
-            g_sccb->Write(0x96, 0xe1);
-            g_awb = 0;
-        }
-        else
-        {
-            g_sccb->Write(0x38, 0x10);
-            g_sccb->Write(0x96, 0xf1);
-            g_awb = 1;
-        }
+        g_sccb->Write(0x38, 0x00);
+        g_sccb->Write(0x96, 0xe1);
+        g_awb = 0;
     }
+    else
+    {
+        g_sccb->Write(0x38, 0x10);
+        g_sccb->Write(0x96, 0xf1);
+        g_awb = 1;
+    }
+
     return 0;
 }
 
@@ -366,19 +366,17 @@ uint32_t cam_getWBV()
 
 int32_t cam_setAEC(const uint8_t &aec)
 {
-    if (aec!=g_aec)
+    if (aec==0)
     {
-        if (aec==0)
-        {
-            g_sccb->Write(0x13, 0xa0); // turn off AEC, AGC
-            g_aec = 0;
-        }
-        else
-        {
-            g_sccb->Write(0x13, 0xa5); // enable AEC, AGC
-            g_aec = 1;
-        }
+        g_sccb->Write(0x13, 0xa0); // turn off AEC, AGC
+        g_aec = 0;
     }
+    else
+    {
+        g_sccb->Write(0x13, 0xa5); // enable AEC, AGC
+        g_aec = 1;
+    }
+
     return 0;
 }
 
@@ -418,7 +416,6 @@ int32_t cam_setBrightness(const uint8_t &brightness)
     g_sccb->Write(0x24, brightness);
     g_sccb->Write(0x25, brightness>CAM_BRIGHTNESS_RANGE?brightness-CAM_BRIGHTNESS_RANGE:0);
     g_brightness = brightness;
-
     return 0;
 }
 
@@ -434,27 +431,24 @@ int32_t cam_setLightMode(const uint8_t &mode)
     val13 = g_sccb->Read(0x13);
     val03 = g_sccb->Read(0x03);
 
-    if (mode!=g_lightMode)
+    if (mode==CAM_LIGHT_NORMAL) // note, it seems that once you enable VAEC, you can't disable by writing to 0x0e (you can issue a reset though)
     {
-        if (mode==CAM_LIGHT_NORMAL) // note, it seems that once you enable VAEC, you can't disable by writing to 0x0e (you can issue a reset though)
-        {
-            g_sccb->Write(0x13, val13&~0x08); // disable LAEC
-            g_sccb->Write(0x03, val03&~0x80); // set maxframes to normal
-            g_sccb->Write(0x0e, 0x40);        // disable VAEC
-            g_sccb->Write(0x21, 0x03);
-        }
-        else if (mode==CAM_LIGHT_LOW)
-        {
-            g_sccb->Write(0x13, val13&~0x08); // disable LAEC
-            g_sccb->Write(0x03, val03|0x80);  // max frames for VAEC
-            g_sccb->Write(0x0e, 0x48);        // enable VAEC
-            g_sccb->Write(0x21, 0x33);        // set VAEC trigger point to 16x gain or greater
-        }
-        else if (mode==CAM_LIGHT_HIGH)
-            g_sccb->Write(0x13, val13|0x08);  // enable LAEC
-        else
-            return -1;
+        g_sccb->Write(0x13, val13&~0x08); // disable LAEC
+        g_sccb->Write(0x03, val03&~0x80); // set maxframes to normal
+        g_sccb->Write(0x0e, 0x40);        // disable VAEC
+        g_sccb->Write(0x21, 0x03);
     }
+    else if (mode==CAM_LIGHT_LOW)
+    {
+        g_sccb->Write(0x13, val13&~0x08); // disable LAEC
+        g_sccb->Write(0x03, val03|0x80);  // max frames for VAEC
+        g_sccb->Write(0x0e, 0x48);        // enable VAEC
+        g_sccb->Write(0x21, 0x33);        // set VAEC trigger point to 16x gain or greater
+    }
+    else if (mode==CAM_LIGHT_HIGH)
+        g_sccb->Write(0x13, val13|0x08);  // enable LAEC
+    else
+        return -1;
 
     g_lightMode = mode;
     return 0;
@@ -533,12 +527,12 @@ int32_t cam_getFrameChirp(const uint8_t &type, const uint16_t &xOffset, const ui
 int32_t cam_getFrameChirpFlags(const uint8_t &type, const uint16_t &xOffset, const uint16_t &yOffset, const uint16_t &xWidth, const uint16_t &yWidth, Chirp *chirp, uint8_t renderFlags)
 {
     int32_t result, len;
-    uint8_t *frame = (uint8_t *)SRAM1_LOC;
+    uint8_t *frame = (uint8_t *)MEM_USB_FRAME_LOC;
 
     // fill buffer contents manually for return data
-    len = Chirp::serialize(chirp, frame, SRAM1_SIZE, HTYPE(FOURCC('B','A','8','1')), HINT8(renderFlags), UINT16(xWidth), UINT16(yWidth), UINTS8_NO_COPY(xWidth*yWidth), END);
+    len = Chirp::serialize(chirp, frame, MEM_USB_FRAME_SIZE, HTYPE(FOURCC('B','A','8','1')), HINT8(renderFlags), UINT16(xWidth), UINT16(yWidth), UINTS8_NO_COPY(xWidth*yWidth), END);
     // write frame after chirp args
-    result = cam_getFrame(frame+len, SRAM1_SIZE-len, type, xOffset, yOffset, xWidth, yWidth);
+    result = cam_getFrame(frame+len, MEM_USB_FRAME_SIZE-len, type, xOffset, yOffset, xWidth, yWidth);
 
     // tell chirp to use this buffer
     chirp->useBuffer(frame, len+xWidth*yWidth);
@@ -574,84 +568,4 @@ void cam_setRegs(const uint8_t *rPairs, int len)
     g_sccb->Write(0x09, 0x00);
 
     cam_setBrightness(g_brightness);
-}
-
-void cam_shadowCallback(const char *id, const uint8_t &val)
-{
-    if (strcmp(id, "Camera Brightness")==0)
-        cam_setBrightness(val);
-    else if (strcmp(id, "Auto Exposure Correction")==0)
-    {
-        if (val==0)
-            g_aecValue = cam_getECV();
-        cam_setAEC(val);
-    }
-    else if (strcmp(id, "Auto White Balance")==0)
-    {
-        if (val==0)
-            g_awbValue = cam_getWBV();
-        cam_setAWB(val);
-    }
-}
-
-void cam_loadParams()
-{
-    prm_add("Camera Brightness", PRM_FLAG_SLIDER,
-        "@c Signature_Tuning @m 0 @M 255 Sets the average brightness of the camera, can be between 0 and 255 (default " STRINGIFY(CAM_BRIGHTNESS_DEFAULT) ")", UINT8(CAM_BRIGHTNESS_DEFAULT), END);
-    prm_setShadowCallback("Camera Brightness", (ShadowCallback)cam_shadowCallback);
-
-    prm_add("Auto Exposure Correction", PRM_FLAG_ADVANCED | PRM_FLAG_CHECKBOX,
-        "@c Camera Enables/disables Auto Exposure Correction. (default disabled)", UINT8(0), END);
-    prm_setShadowCallback("Auto Exposure Correction", (ShadowCallback)cam_shadowCallback);
-
-    prm_add("AEC Value", PRM_FLAG_INTERNAL,
-        "", UINT32(CAM_ECV_DEFAULT), END);
-
-    prm_add("Auto White Balance", PRM_FLAG_ADVANCED | PRM_FLAG_CHECKBOX,
-        "@c Camera Enables/disables Auto White Balance. When this is set, AWB is enabled continuously. (default disabled)", UINT8(0), END);
-    prm_setShadowCallback("Auto White Balance", (ShadowCallback)cam_shadowCallback);
-
-    prm_add("Auto White Balance on power-up", PRM_FLAG_ADVANCED | PRM_FLAG_CHECKBOX,
-        "@c Camera Enables/disables Auto White Balance on power-up. When this is set, AWB is enabled only upon power-up. (default disabled)", UINT8(0), END);
-    prm_setShadowCallback("Auto White Balance on power-up", (ShadowCallback)cam_shadowCallback);
-
-    prm_add("AWB Value", PRM_FLAG_INTERNAL,
-        "", UINT32(CAM_WBV_DEFAULT), END);
-
-    uint8_t brightness, aec, awb, awbp;
-    uint32_t ecv, wbv;
-    prm_get("Camera Brightness", &brightness, END);
-    prm_get("Auto Exposure Correction", &aec, END);
-    prm_get("Auto White Balance", &awb, END);
-    prm_get("Auto White Balance on power-up", &awbp, END);
-
-    cam_setBrightness(brightness);
-    cam_setAEC(aec);
-    if (!aec)
-    {
-        if (g_aecValue) // save queried ECV
-        {
-            prm_set("AEC Value", UINT32(g_aecValue), END);
-            g_aecValue = 0;
-        }
-        else
-        {
-            prm_get("AEC Value", &ecv, END); // grab saved ECV and set it
-            cam_setECV(ecv);
-        }
-    }
-    cam_setAWB(awb);
-    if (!awb && !awbp)
-    {
-        if (g_awbValue) // save queried ECV
-        {
-            prm_set("AWB Value", UINT32(g_awbValue), END);
-            g_awbValue = 0;
-        }
-        else
-        {
-            prm_get("AWB Value", &wbv, END); // grab saved WBV and set it
-            cam_setWBV(wbv);
-        }
-    }
 }

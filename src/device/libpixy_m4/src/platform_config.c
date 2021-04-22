@@ -180,6 +180,7 @@ void clockInit(void)
     CGU_EntityConnect(CGU_CLKSRC_XTAL_OSC, CGU_CLKSRC_PLL1);
 //  CGU_EntityConnect(CGU_CLKSRC_IRC, CGU_CLKSRC_PLL1);
     CGU_SetPLL1(1);
+    delayus(100);   // Delay to mitigate power on hang
     CGU_EnableEntity(CGU_CLKSRC_PLL1, ENABLE);
 
     // setup CLKOUT

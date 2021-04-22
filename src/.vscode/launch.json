@@ -1,0 +1,18 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "Debug J-Link",
+        "type": "cortex-debug",
+        "request": "launch",
+        "cwd": "${workspaceRoot}",
+        "executable": "${workspaceRoot}/device/main_m4/SPIFI/main_m4.axf",
+        "serverpath": "/opt/JLink_Linux/JLinkGDBServer",
+        "servertype": "jlink",
+        "device": "LPC4330_M4",
+        "interface": "swd",
+        "runToEntryPoint": "main",
+        "gdbPath": "/opt/lpcxpresso_8.2.2_650/lpcxpresso/tools/bin/arm-none-eabi-gdb",
+      }
+    ]
+}
