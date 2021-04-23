@@ -19,9 +19,9 @@
 #include <cameravals.h>
 #include <lpc43xx.h>
 
-#define CAM_PORT 		(LPC_GPIO_PORT->PIN[1])
-#define CAM_VSYNC() 	(CAM_PORT&0x1000)
-#define CAM_HSYNC() 	(CAM_PORT&0x800)
+#define CAM_PORT        (LPC_GPIO_PORT->PIN[1])
+#define CAM_VSYNC()     (CAM_PORT&0x1000)
+#define CAM_HSYNC()     (CAM_PORT&0x800)
 
 int frame_init(void);
 void skipLine(void);
