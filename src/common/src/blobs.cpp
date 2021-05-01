@@ -141,6 +141,7 @@ int Blobs::blobify(Qqueue *qq)
 
     }
     //setTimer(&timer);
+    // thisdis test comment
     while(1)
     {
         invalid2 = combine2(blobsStart, m_numBlobs-numBlobsStart);

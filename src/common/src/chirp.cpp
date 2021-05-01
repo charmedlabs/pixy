@@ -21,7 +21,7 @@
 
 // todo yield, sleep() while waiting for sync response
 // todo
-
+//test me now please
 // assume that destination is aligned on the correct boundary and copy the source byte by byte
 void copyAlign(char *dest, const char *src, int size)
 {
