@@ -18,6 +18,7 @@
 #include <QThread>
 #include <QWaitCondition>
 #include <QMutex>
+#include <QRecursiveMutex>
 #include <QStringList>
 #include <QColor>
 #include <QVariant>
@@ -53,7 +54,7 @@ struct Command
     }
 
     // need to implement this for QList::removeAll()
-    bool operator==(const Command &rhs)
+    bool operator==(const Command &rhs) const
     {
         return m_type==rhs.m_type;
     }
@@ -183,7 +184,7 @@ private:
     USBLink m_link;
 
     // for thread
-    QMutex m_mutexProg;
+    QRecursiveMutex m_mutexProg;
     QMutex m_mutexInput;
     QMutex m_mutexQueue;
     QWaitCondition m_waitInput;

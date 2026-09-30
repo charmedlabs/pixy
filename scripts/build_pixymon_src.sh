@@ -2,10 +2,10 @@
 
 TARGET_BUILD_FOLDER=../build
 
-mkdir $TARGET_BUILD_FOLDER
-mkdir $TARGET_BUILD_FOLDER/pixymon/
-mkdir $TARGET_BUILD_FOLDER/pixymon/src
-mkdir $TARGET_BUILD_FOLDER/pixymon/src/host
+mkdir -p $TARGET_BUILD_FOLDER
+mkdir -p $TARGET_BUILD_FOLDER/pixymon/
+mkdir -p $TARGET_BUILD_FOLDER/pixymon/src
+mkdir -p $TARGET_BUILD_FOLDER/pixymon/src/host
 
 echo "Creating build folder..."
 cp -r ../src/common             $TARGET_BUILD_FOLDER/pixymon/src

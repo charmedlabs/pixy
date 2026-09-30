@@ -17,7 +17,8 @@
 #include <QMessageBox>
 #include <QFile>
 #include "debug.h"
-#include <QTime>
+#include <QElapsedTimer>
+#include <QRegularExpression>
 #include <stdarg.h>
 #include "interpreter.h"
 #include "disconnectevent.h"
@@ -31,11 +32,10 @@
 
 QString printType(uint32_t val, bool parens=false);
 
-Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, MonParameterDB *data, const QString &initScript) :
-    m_mutexProg(QMutex::Recursive)
+Interpreter::Interpreter(ConsoleWidget *console, VideoWidget *video, MonParameterDB *data, const QString &initScript)
 {
     m_initScript = initScript;
-    m_initScript.remove(QRegExp("^\\s+"));  // remove initial whitespace
+    m_initScript.remove(QRegularExpression("^\\s+"));  // remove initial whitespace
     m_console = console;
     m_video = video;
     m_pixymonParameters = data;
@@ -205,9 +205,9 @@ QStringList Interpreter::parseScriptlet(const QString &scriptlet)
 {
     if (scriptlet.contains(QString("\\") + "n")) // this is comming from the commandline -- we are looking for
         // the backslash followed by the n character, which the c-compiler will always substitute CR character
-        return scriptlet.split(QString("\\") + "n", QString::SkipEmptyParts);
+        return scriptlet.split(QString("\\") + "n", Qt::SkipEmptyParts);
     else
-        return scriptlet.split(QRegExp("[\\n]"), QString::SkipEmptyParts);
+        return scriptlet.split(QRegularExpression("[\\n]"), Qt::SkipEmptyParts);
 }
 
 QStringList Interpreter::getSections(const QString &id, const QString &string)
@@ -227,11 +227,11 @@ QStringList Interpreter::getSections(const QString &id, const QString &string)
         section = string.section('@', i, i, QString::SectionIncludeLeadingSep);
         if (section=="@")
             break;
-        words = section.split(QRegExp("\\s+"));
+        words = section.split(QRegularExpression("\\s+"));
         if (words[0].contains(id))
         {
             section.remove(words[0]); // remove id
-            section.remove(QRegExp("^\\s+")); // remove leading whitespace
+            section.remove(QRegularExpression("^\\s+")); // remove leading whitespace
             sections << section;
         }
     }
@@ -253,12 +253,12 @@ int Interpreter::getArgs(const ProcInfo *info, ArgList *argList)
     {
         if (i<sections.size())
         {
-            words = sections[i].split(QRegExp("\\s+"));
+            words = sections[i].split(QRegularExpression("\\s+"));
             label = words[0];
             desc = sections[i];
-            desc.remove(QRegExp("^\\s+")); // remove leading whitespace
-            desc.remove(QRegExp("^" + label)); // remove id
-            desc.remove(QRegExp("^\\s+")); // remove leading whitespace
+            desc.remove(QRegularExpression("^\\s+")); // remove leading whitespace
+            desc.remove(QRegularExpression("^" + label)); // remove id
+            desc.remove(QRegularExpression("^\\s+")); // remove leading whitespace
             argList->push_back(Arg(label, desc));
             // if argument is a type hint, we need to skip the 4-byte (32-bit) int, error if we run out of args
             if (info->argTypes[i]==CRP_TYPE_HINT &&
@@ -548,7 +548,7 @@ int Interpreter::saveImage(const QString &filename)
 void Interpreter::run()
 {
     int res;
-    QTime time;
+    QElapsedTimer time;
     QString paramScriptlet;
 
     // init
@@ -629,7 +629,7 @@ void Interpreter::run()
     time.start();
     getRunning();
     paramScriptlet = m_pixymonParameters->value("Pixy start command").toString();
-    paramScriptlet.remove(QRegExp("^\\s+")); // remove initial whitespace
+    paramScriptlet.remove(QRegularExpression("^\\s+")); // remove initial whitespace
     handleLoadParams(); // load params upon initialization
     if (m_initScript!="")
         execute(parseScriptlet(m_initScript));
@@ -802,12 +802,12 @@ void Interpreter::command(const QString &command)
     if (m_localProgramRunning)
         return;
 
-    QStringList words = command.split(QRegExp("[\\s(),\\t]"), QString::SkipEmptyParts);
+    QStringList words = command.split(QRegularExpression("[\\s(),\\t]"), Qt::SkipEmptyParts);
 
     if (m_waiting)
     {
         m_command = command;
-        m_command.remove(QRegExp("[(),\\t]"));
+        m_command.remove(QRegularExpression("[(),\\t]"));
         m_key = (Qt::Key)0;
         m_selection = RectA(0, 0, 0, 0);
         m_waitInput.wakeAll();
@@ -887,7 +887,7 @@ void Interpreter::execute(QString command)
     if (m_localProgramRunning)
         queueCommand(STOP_LOCAL);
 
-    command.remove(QRegExp("^\\s+")); // remove leading whitespace
+    command.remove(QRegularExpression("^\\s+")); // remove leading whitespace
     if (command!="")
         emit consoleCommand(command);
 }
@@ -1029,7 +1029,7 @@ int Interpreter::call(const QStringList &argv, bool interactive)
 
                     if (m_key==Qt::Key_Escape)
                         goto end;
-                    cargv << m_command.split(QRegExp("\\s+"));
+                    cargv << m_command.split(QRegularExpression("\\s+"));
                 }
                 // call ourselves again, now that we have all the args
                 res = call(cargv, true);
@@ -1166,13 +1166,13 @@ void Interpreter::augmentProcInfo(ProcInfo *info)
 QString Interpreter::extractProperty(const QString &tag, QString *desc)
 {
     QString property;
-    QStringList words = desc->split(QRegExp("\\s+"));
+    QStringList words = desc->split(QRegularExpression("\\s+"));
 
     int i = words.indexOf(tag);
     if (i>=0 && words.size()>i+1)
     {
         property = words[i+1];
-        *desc = desc->remove(QRegExp(tag + "\\s+" + property + "\\s*")); // remove from description
+        *desc = desc->remove(QRegularExpression(tag + "\\s+" + property + "\\s*")); // remove from description
 
         return property;
     }
@@ -1212,7 +1212,7 @@ void Interpreter::handleProperties(const uint8_t *argList, Parameter *parameter,
     {
         if ((property=extractProperty("@s", desc))=="")
             break;
-        halves = property.split('=', QString::SkipEmptyParts);
+        halves = property.split('=', Qt::SkipEmptyParts);
         if (halves.length()<2)
             continue;  // bogus!
         val = halves[0].toInt(&ok);
