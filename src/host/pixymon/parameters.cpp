@@ -245,7 +245,7 @@ QVariant Parameter::property(const QString &label)
 }
 
 
-ParameterDB::ParameterDB() : m_mutex(QMutex::Recursive)
+ParameterDB::ParameterDB()
 {
 }
 

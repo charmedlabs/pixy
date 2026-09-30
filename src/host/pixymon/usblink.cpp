@@ -148,7 +148,7 @@ void USBLink::setTimer()
 
 uint32_t USBLink::getTimer()
 {
-    return m_time.elapsed();
+    return (uint32_t)m_time.elapsed();
 }
 
 

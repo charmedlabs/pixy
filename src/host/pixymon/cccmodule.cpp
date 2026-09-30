@@ -14,6 +14,7 @@
 //
 
 #include <QPainter>
+#include <QRegularExpression>
 #include <stdio.h>
 #include "cccmodule.h"
 #include "interpreter.h"
@@ -221,11 +222,11 @@ void CccModule::paramChange()
     {
         if (params[i].id().startsWith("Signature label"))
         {
-            words = params[i].id().split(QRegExp("\\s+"));
+            words = params[i].id().split(QRegularExpression("\\s+"));
             if (words.length()<3) // bogus!
                 continue;
             signum = words[2].toUInt();
-            m_labels.push_back(QPair<uint16_t, QString>(convert10to8(signum), params[i].value().toString().remove(QRegExp("^\\s+")))); // remove leading whitespace
+            m_labels.push_back(QPair<uint16_t, QString>(convert10to8(signum), params[i].value().toString().remove(QRegularExpression("^\\s+")))); // remove leading whitespace
         }
     }
 }
@@ -441,7 +442,7 @@ void CccModule::renderBlobsA(bool blend, QImage *image, float scale, BlobA *blob
         if (blobs[i].m_model)
         {
             if ((str=lookup(blobs[i].m_model))=="")
-                str = str.sprintf("s=%d", blobs[i].m_model);
+                str = str.asprintf("s=%d", blobs[i].m_model);
             p.setPen(QPen(QColor(0, 0, 0, 0xff)));
             p.drawText(left+1, top+1, str);
             p.setPen(QPen(QColor(0xff, 0xff, 0xff, 0xff)));

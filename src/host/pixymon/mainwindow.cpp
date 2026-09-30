@@ -21,6 +21,7 @@
 #include <QSettings>
 #include <QUrl>
 #include <QDesktopServices>
+#include <QRegularExpression>
 #include <QSysInfo>
 #include "mainwindow.h"
 #include "pixymon.h"
@@ -120,7 +121,7 @@ void MainWindow::parseCommandline(int argc, char *argv[])
         {
             i++;
             m_argvFirmwareFile = argv[i];
-            m_argvFirmwareFile.remove(QRegExp("[\"']"));
+            m_argvFirmwareFile.remove(QRegularExpression("[\"']"));
         }
         else if (!strcmp("-initscript", argv[i]) && i+1<argc)
         {
@@ -451,7 +452,7 @@ void MainWindow::on_actionAbout_triggered()
     AboutDialog *about;
     QString contents;
 
-    contents.sprintf("<b>%s version %d.%d.%d</b><br>", PIXYMON_TITLE, VER_MAJOR, VER_MINOR, VER_BUILD);
+    contents.asprintf("<b>%s version %d.%d.%d</b><br>", PIXYMON_TITLE, VER_MAJOR, VER_MINOR, VER_BUILD);
 
     if (m_interpreter)
     {
@@ -459,7 +460,7 @@ void MainWindow::on_actionAbout_triggered()
         uint16_t *version;
         version = m_interpreter->getVersion();
         fwtype = m_interpreter->getVersionType();
-        contents += fwver.sprintf("<b>Pixy firmware version %d.%d.%d ", version[0], version[1], version[2]) + fwtype + " build</b> (queried)<br>";
+        contents += fwver.asprintf("<b>Pixy firmware version %d.%d.%d ", version[0], version[1], version[2]) + fwtype + " build</b> (queried)<br>";
       }
 
     contents +=
